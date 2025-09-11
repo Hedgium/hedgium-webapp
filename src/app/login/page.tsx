@@ -1,13 +1,25 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock, Mail } from 'lucide-react';
+import { myFetch } from '@/utils/api';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [emailError, setEmailError] = useState<string>('');
   const [passwordError, setPasswordError] = useState<string>('');
+
+  async function myData(){
+    let res = await myFetch(process.env.NEXT_PUBLIC_API_URL+"users/?page=1&page_size=10");
+    let data = await res.json();
+    console.log(data);
+  }
+  useEffect(()=>{
+    myData();
+  },[])
+
+
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
