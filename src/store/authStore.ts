@@ -1,8 +1,11 @@
 import { create } from "zustand";
 
+
+
+
 interface AuthState {
   accessToken: string | null;
-  user: any | null;
+  user: object | null;
   isLoading: boolean;
   isInitializing: boolean;
 

@@ -5,9 +5,9 @@ import Cookies from 'js-cookie';
 
 export async function myFetch(url: string, options: RequestInit = {}) {
 
-  let csrftoken: string = Cookies.get('csrftoken') ?? "";
+  const csrftoken: string = Cookies.get('csrftoken') ?? "";
 
-  let res = await fetch(url, {
+  const res = await fetch(url, {
     ...options,
     headers: {
       ...options.headers,
@@ -26,8 +26,8 @@ export async function myFetch(url: string, options: RequestInit = {}) {
 export async function authFetch(url: string, options: RequestInit = {}) {
   const { accessToken, refreshAccessToken } = useAuthStore.getState();
 
-  let token = accessToken;
-  var csrftoken = Cookies.get('csrftoken');
+  const token = accessToken;
+  const csrftoken = Cookies.get('csrftoken');
 
   let res = await fetch(url, {
     ...options,
