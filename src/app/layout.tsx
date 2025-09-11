@@ -3,10 +3,11 @@ import "./globals.css"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from 'next-themes'
 
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 import AuthProvider from "@/components/AuthProvider";
+
+
+
 
 
 
@@ -28,12 +29,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <AuthProvider>
         <ThemeProvider>
-          <Navbar />
             {children}
-          <Footer />
 
         </ThemeProvider>
         </AuthProvider>
+        
+        
 
         </body>
     </html>

@@ -6,10 +6,12 @@ import {
   CheckCircle, X, Check, User, Star, ChevronDown,
   TrendingUp, ArrowRight, Menu, X as CloseIcon
 } from 'lucide-react';
-import Footer from '@/components/Footer';
+
+
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function Home() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   useEffect(() => {
     // Simple smooth scroll implementation
@@ -37,6 +39,8 @@ export default function Home() {
   }, []);
 
   return (
+    <>
+    <Navbar />
     <div className="min-h-screen hero-pattern">
 
 
@@ -441,5 +445,9 @@ export default function Home() {
 
      
     </div>
+
+    <Footer />
+    
+    </>
   );
 }

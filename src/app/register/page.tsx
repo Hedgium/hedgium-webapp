@@ -3,6 +3,9 @@
 import React, { useState } from "react";
 import { Lock, Mail, User } from "lucide-react";
 
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+
 const Register: React.FC = () => {
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -55,6 +58,8 @@ const Register: React.FC = () => {
   };
 
   return (
+    <>
+    <Navbar />
     <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
@@ -177,14 +182,13 @@ const Register: React.FC = () => {
           </div>
         </div>
 
-        {/* Icon visibility smoke test (can remove after verifying) */}
-        <div className="flex items-center justify-center gap-4 text-base-content">
-          <User className="h-5 w-5 text-primary" />
-          <Mail className="h-5 w-5 text-secondary" />
-          <Lock className="h-5 w-5 text-accent" />
-        </div>
       </div>
     </div>
+
+
+<Footer />
+
+</>
   );
 };
 

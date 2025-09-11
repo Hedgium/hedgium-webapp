@@ -371,14 +371,14 @@ export default function Dashboard() {
         {/* Search and Filter Bar */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-grow">
-            <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-3 z-10 text-gray-400" size={20} />
             <input 
               type="text" 
               placeholder="Search strategies..." 
               className="input input-bordered pl-10 w-full"
             />
           </div>
-          <select value={""} className="select select-bordered w-full md:w-auto">
+          <select value={""} onChange={()=>{}} className="select select-bordered w-full md:w-auto">
             <option disabled>Sort by</option>
             <option>Recent</option>
             <option>Return: High to Low</option>

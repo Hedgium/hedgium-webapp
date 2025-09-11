@@ -3,7 +3,7 @@ import {
   LineChart
 } from 'lucide-react';
 
-export default function Footer() {
+export default function AuthFooter() {
 
     return (
               <footer className="footer md:footer-horizontal p-10 bg-neutral text-neutral-content">

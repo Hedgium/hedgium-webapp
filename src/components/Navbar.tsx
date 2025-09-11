@@ -3,9 +3,7 @@
 import React from "react";
 import { useState } from "react";
 import { 
-  LineChart, Bot, Code2, Smartphone, Shield, Users, 
-  CheckCircle, X, Check, User, Star, ChevronDown,
-  TrendingUp, ArrowRight, Menu, X as CloseIcon
+  LineChart, Menu, X as CloseIcon
 } from 'lucide-react';
 
 
@@ -26,28 +24,28 @@ export default function Navbar(){
             </label>
             {isMenuOpen && (
               <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-                <li><a href="#features" onClick={() => setIsMenuOpen(false)}>Features</a></li>
-                <li><a href="#strategies" onClick={() => setIsMenuOpen(false)}>Strategies</a></li>
-                <li><a href="#pricing" onClick={() => setIsMenuOpen(false)}>Pricing</a></li>
-                <li><a href="#testimonials" onClick={() => setIsMenuOpen(false)}>Testimonials</a></li>
+                <li><a href="/#features" onClick={() => setIsMenuOpen(false)}>Features</a></li>
+                <li><a href="/#strategies" onClick={() => setIsMenuOpen(false)}>Strategies</a></li>
+                <li><a href="/#pricing" onClick={() => setIsMenuOpen(false)}>Pricing</a></li>
+                <li><a href="/#testimonials" onClick={() => setIsMenuOpen(false)}>Testimonials</a></li>
               </ul>
             )}
           </div>
-          <a className="btn btn-ghost normal-case text-xl font-bold text-primary">
+          <a href="/" className="btn btn-ghost normal-case text-xl font-bold text-primary">
             <LineChart className="mr-2" size={24} />
             Hedgium
           </a>
         </div>
         <div className="navbar-center hidden lg:flex">
           <ul className="menu menu-horizontal px-1">
-            <li><a href="#features">Features</a></li>
-            <li><a href="#strategies">Strategies</a></li>
-            <li><a href="#pricing">Pricing</a></li>
-            <li><a href="#testimonials">Testimonials</a></li>
+            <li><a href="/#features">Features</a></li>
+            <li><a href="/#strategies">Strategies</a></li>
+            <li><a href="/#pricing">Pricing</a></li>
+            <li><a href="/#testimonials">Testimonials</a></li>
           </ul>
         </div>
         <div className="navbar-end">
-          <a className="btn btn-primary">Sign Up</a>
+          <a href="/register" className="btn btn-primary">Sign Up</a>
         </div>
       </nav>
     )

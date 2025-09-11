@@ -33,7 +33,7 @@ export async function authFetch(url: string, options: RequestInit = {}) {
     ...options,
     headers: {
       ...options.headers,
-      Authorization: token ? `JWT ${token}` : "",
+      Authorization: token ? `Bearer ${token}` : "",
       'X-CSRFToken': csrftoken ?? "",
       'X-API-Key': process.env.NEXT_PUBLIC_API_KEY ?? ""
     },
