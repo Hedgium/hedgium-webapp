@@ -5,6 +5,7 @@ import { useState } from "react";
 import { 
   LineChart, Menu, X as CloseIcon
 } from 'lucide-react';
+import Link from "next/link";
 
 
 export default function Navbar(){
@@ -24,28 +25,28 @@ export default function Navbar(){
             </label>
             {isMenuOpen && (
               <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-                <li><a href="/#features" onClick={() => setIsMenuOpen(false)}>Features</a></li>
-                <li><a href="/#strategies" onClick={() => setIsMenuOpen(false)}>Strategies</a></li>
-                <li><a href="/#pricing" onClick={() => setIsMenuOpen(false)}>Pricing</a></li>
-                <li><a href="/#testimonials" onClick={() => setIsMenuOpen(false)}>Testimonials</a></li>
+                <li><Link href="/#features" onClick={() => setIsMenuOpen(false)}>Features</Link></li>
+                <li><Link href="/#strategies" onClick={() => setIsMenuOpen(false)}>Strategies</Link></li>
+                <li><Link href="/#pricing" onClick={() => setIsMenuOpen(false)}>Pricing</Link></li>
+                <li><Link href="/#testimonials" onClick={() => setIsMenuOpen(false)}>Testimonials</Link></li>
               </ul>
             )}
           </div>
-          <a href="/" className="btn btn-ghost normal-case text-xl font-bold text-primary">
+          <Link href="/" className="btn btn-ghost normal-case text-xl font-bold text-primary">
             <LineChart className="mr-2" size={24} />
             Hedgium
-          </a>
+          </Link>
         </div>
         <div className="navbar-center hidden lg:flex">
           <ul className="menu menu-horizontal px-1">
-            <li><a href="/#features">Features</a></li>
-            <li><a href="/#strategies">Strategies</a></li>
-            <li><a href="/#pricing">Pricing</a></li>
-            <li><a href="/#testimonials">Testimonials</a></li>
+            <li><Link href="/#features">Features</Link></li>
+            <li><Link href="/#strategies">Strategies</Link></li>
+            <li><Link href="/#pricing">Pricing</Link></li>
+            <li><Link href="/#testimonials">Testimonials</Link></li>
           </ul>
         </div>
         <div className="navbar-end">
-          <a href="/register" className="btn btn-primary">Sign Up</a>
+          <Link href="/register" className="btn btn-primary">Sign Up</Link>
         </div>
       </nav>
     )

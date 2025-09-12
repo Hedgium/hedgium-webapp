@@ -5,6 +5,7 @@ import { Lock, Mail, User } from "lucide-react";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Link from "next/link";
 
 const Register: React.FC = () => {
   const [name, setName] = useState<string>("");
@@ -173,9 +174,9 @@ const Register: React.FC = () => {
               <div className="text-center text-sm">
                 <p>
                   Already have an account?{" "}
-                  <a href="/login" className="font-medium text-primary hover:opacity-80">
+                  <Link href="/login" className="font-medium text-primary hover:opacity-80">
                     Log in
-                  </a>
+                  </Link>
                 </p>
               </div>
             </div>

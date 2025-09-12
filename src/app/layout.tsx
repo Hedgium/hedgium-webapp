@@ -6,6 +6,7 @@ import { ThemeProvider } from 'next-themes'
 
 import AuthProvider from "@/components/AuthProvider";
 
+import NextTopLoader from 'nextjs-toploader';
 
 
 
@@ -27,6 +28,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       {/* Apply globally */}
       <body className={inter.className}>
+        <NextTopLoader 
+          color="#2299DD"
+          showSpinner={true}
+          height={2}
+        />
         <AuthProvider>
         <ThemeProvider>
             {children}

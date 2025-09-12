@@ -1,23 +1,32 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
+
 import { Lock, Mail } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Link from "next/link";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [emailError, setEmailError] = useState<string>("");
-  const [passwordError, setPasswordError] = useState<string>("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [nextPath, setNextPath] = useState("/dashboard");
 
-  const { login, isLoading, accessToken } = useAuthStore();
+  const { login, accessToken, isLoading } = useAuthStore();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const nextPath = searchParams.get("next") || "/dashboard";
+  // read ?next= param from URL
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const nextParam = params.get("next");
+      if (nextParam) setNextPath(nextParam);
+    }
+  }, []);
 
   // redirect if already logged in
   useEffect(() => {
@@ -25,11 +34,6 @@ const Login: React.FC = () => {
       router.push(nextPath);
     }
   }, [accessToken, router, nextPath]);
-
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const handleLogin = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -56,140 +60,100 @@ const Login: React.FC = () => {
 
   return (
     <>
-    <Navbar />
-    
-    
-    <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
+      <Navbar />
+      <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
           <h2 className="text-center text-3xl font-bold text-gray-900">
             Log in to <span className="text-primary">Hedgium</span>
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Access your AI-powered trading strategies
-          </p>
-        </div>
 
-        <div className="card bg-base-100 shadow-xl card-hover">
-          <div className="card-body">
-            <div className="space-y-6">
-              {/* Email */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Email address
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                    <Mail className="h-5 w-5 text-gray-400" />
+          <div className="card bg-base-100 shadow-xl card-hover">
+            <div className="card-body space-y-6">
+              {accessToken ? (
+                <div className="text-center">
+                  <p className="text-green-600 font-semibold text-lg">
+                    ✅ Login successful!
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Email */}
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium">
+                      Email address
+                    </label>
+                    <div className="mt-1 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                        <Mail className="h-5 w-5 text-gray-400 z-10" />
+                      </div>
+                      <input
+                        id="email"
+                        type="email"
+                        className={`input input-bordered w-full pl-10 ${
+                          emailError ? "input-error" : ""
+                        }`}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter your email"
+                      />
+                    </div>
+                    {emailError && (
+                      <p className="mt-2 text-sm text-red-600">{emailError}</p>
+                    )}
                   </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    className={`input input-bordered w-full pl-10 ${
-                      emailError ? "input-error" : ""
-                    }`}
-                    value={email}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setEmail(e.target.value)
-                    }
-                    placeholder="Enter your email"
-                  />
-                </div>
-                {emailError && (
-                  <p className="mt-2 text-sm text-red-600">{emailError}</p>
-                )}
-              </div>
 
-              {/* Password */}
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Password
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                    <Lock className="h-5 w-5 text-gray-400" />
+                  {/* Password */}
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium">
+                      Password
+                    </label>
+                    <div className="mt-1 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                        <Lock className="h-5 w-5 text-gray-400 z-10" />
+                      </div>
+                      <input
+                        id="password"
+                        type="password"
+                        className={`input input-bordered w-full pl-10 ${
+                          passwordError ? "input-error" : ""
+                        }`}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                      />
+                    </div>
+                    {passwordError && (
+                      <p className="mt-2 text-sm text-red-600">{passwordError}</p>
+                    )}
                   </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    className={`input input-bordered w-full pl-10 ${
-                      passwordError ? "input-error" : ""
-                    }`}
-                    value={password}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPassword(e.target.value)
-                    }
-                    placeholder="Enter your password"
-                  />
-                </div>
-                {passwordError && (
-                  <p className="mt-2 text-sm text-red-600">{passwordError}</p>
-                )}
-              </div>
 
-              {/* Remember + Forgot */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="checkbox checkbox-primary"
-                  />
-                  <label
-                    htmlFor="remember-me"
-                    className="ml-2 block text-sm text-gray-900"
+                  {/* Login Button */}
+                  <button
+                    className="btn btn-primary w-full"
+                    onClick={handleLogin}
+                    disabled={isLoading}
                   >
-                    Remember me
-                  </label>
-                </div>
-                <div className="text-sm">
-                  <a
-                    href="#forgot-password"
-                    className="font-medium text-primary hover:text-primary-dark"
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
-              </div>
+                    {isLoading ? "Loading..." : "Log In"}
+                  </button>
 
-              {/* Login Button */}
-              <div>
-                <button
-                  className="btn btn-primary w-full"
-                  onClick={handleLogin}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Loading..." : "Log In"}
-                </button>
-              </div>
-
-              <div className="text-center text-sm">
-                <p>
-                  Don&apos;t have an account?{" "}
-                  <a
-                    href="/register"
-                    className="font-medium text-primary hover:text-primary-dark"
-                  >
-                    Sign up
-                  </a>
-                </p>
-              </div>
+                  <div className="text-center text-sm">
+                    <p>
+                      Don&apos;t have an account?{" "}
+                      <Link
+                        href="/register"
+                        className="font-medium text-primary hover:text-primary-dark"
+                      >
+                        Sign up
+                      </Link>
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    <Footer />
+      <Footer />
     </>
   );
 };

@@ -45,7 +45,7 @@ export default function AuthNav() {
             className="menu dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
           >
             <li>
-              <Link href="/settings">
+              <Link href="/dashboard/settings">
                 <Settings className="w-4 h-4" /> Settings
               </Link>
             </li>

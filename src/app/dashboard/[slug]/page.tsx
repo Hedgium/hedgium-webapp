@@ -203,27 +203,27 @@ export default function StrategyDetailPage() {
 
         {/* Tabs for different views */}
         <div className="tabs tabs-boxed bg-base-100 p-1 mb-6">
-          <a 
+          <button
             className={`tab tab-lg ${activeTab === 'overview' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
             <BarChart3 size={18} className="mr-2" />
             Overview
-          </a> 
-          <a 
+          </button> 
+          <button
             className={`tab tab-lg ${activeTab === 'performance' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('performance')}
           >
             <LineChart size={18} className="mr-2" />
             Performance
-          </a>
-          <a 
+          </button>
+          <button
             className={`tab tab-lg ${activeTab === 'positions' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('positions')}
           >
             <PieChart size={18} className="mr-2" />
             Positions
-          </a>
+          </button>
         </div>
 
         {/* Timeframe selector */}

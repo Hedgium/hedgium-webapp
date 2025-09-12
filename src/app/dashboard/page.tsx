@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { 
-  LineChart, BarChart3, TrendingUp, TrendingDown, 
-  MoreVertical, Calendar, DollarSign, PieChart,
+  LineChart, BarChart3, TrendingUp, DollarSign, PieChart,
   Filter, Search, Plus, Clock, CheckCircle, XCircle,
   ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp
 } from 'lucide-react';
+import Link from 'next/link';
 
 // Define the types for the data structures
 type StrategyStatus = 'running' | 'pending' | 'completed' | 'stopped';
@@ -263,14 +263,14 @@ export default function Dashboard() {
                 <button className="btn btn-outline btn-error btn-sm">
                   Close Strategy
                 </button>
-                <button className="btn btn-primary btn-sm">
+                <Link href="/dashboard/single-strategy" className="btn btn-primary btn-sm">
                   Modify
-                </button>
+                </Link>
               </>
             ) : (
-              <button className="btn btn-outline btn-sm">
+              <Link href="/dashboard/single-strategy" className="btn btn-outline btn-sm">
                 View Details
-              </button>
+              </Link>
             )}
           </div>
         </div>
@@ -348,7 +348,7 @@ export default function Dashboard() {
         
         {/* Tabs for Active/Past Strategies */}
         <div className="tabs tabs-boxed bg-base-100 p-1 mb-6">
-          <a 
+          <button 
             className={`tab tab-lg ${activeTab === 'active' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('active')}
           >
@@ -356,8 +356,8 @@ export default function Dashboard() {
             <span className="badge badge-sm badge-primary ml-2">
               {strategyData.active.length}
             </span>
-          </a> 
-          <a 
+          </button> 
+          <button 
             className={`tab tab-lg ${activeTab === 'past' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('past')}
           >
@@ -365,7 +365,7 @@ export default function Dashboard() {
             <span className="badge badge-sm badge-neutral ml-2">
               {strategyData.past.length}
             </span>
-          </a>
+          </button>
         </div>
         
         {/* Search and Filter Bar */}
@@ -398,7 +398,7 @@ export default function Dashboard() {
               <div className="text-center py-12 bg-base-100 rounded-lg shadow">
                 <BarChart3 size={48} className="mx-auto text-gray-400 mb-4" />
                 <h3 className="text-xl font-semibold mb-2">No Active Strategies</h3>
-                <p className="text-gray-600 mb-4">You don't have any active trading strategies at the moment.</p>
+                <p className="text-gray-600 mb-4">{`You don't have any active trading strategies at the moment.`}</p>
                 <button className="btn btn-primary">
                   <Plus size={18} className="mr-2" />
                   Create New Strategy
@@ -414,7 +414,7 @@ export default function Dashboard() {
               <div className="text-center py-12 bg-base-100 rounded-lg shadow">
                 <Clock size={48} className="mx-auto text-gray-400 mb-4" />
                 <h3 className="text-xl font-semibold mb-2">No Past Strategies</h3>
-                <p className="text-gray-600">You don't have any past trading strategies yet.</p>
+                <p className="text-gray-600">{`You don't have any past trading strategies yet.`}</p>
               </div>
             )
           )}

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { 
-  LineChart, Bot, Code2, Smartphone, Shield, Users, 
-  CheckCircle, X, Check, User, Star, ChevronDown,
-  TrendingUp, ArrowRight, Menu, X as CloseIcon
+   Bot, Code2, Smartphone, Shield, Users, 
+  CheckCircle, X, Check, Star, ChevronDown,
+  TrendingUp, ArrowRight
 } from 'lucide-react';
+import Link from 'next/link';
 
 
 import Navbar from "@/components/Navbar";
@@ -58,14 +59,14 @@ export default function Home() {
                 Achieve the best annual returns in the market.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <a href="/register" className="btn btn-primary btn-lg">
+                <Link href="/register" className="btn btn-primary btn-lg">
                   Get Started
                   <ArrowRight size={20} />
-                </a>
-                <a href="#demo" className="btn btn-outline btn-primary btn-lg">
+                </Link>
+                <Link href="#demo" className="btn btn-outline btn-primary btn-lg">
                   View Demo
                   <ChevronDown size={20} />
-                </a>
+                </Link>
               </div>
             </div>
             <div className="lg:w-1/2">
@@ -367,7 +368,7 @@ export default function Home() {
                     <p className="text-sm text-gray-500">Professional Trader</p>
                   </div>
                 </div>
-                <p className="text-gray-600">"Hedgium's AI strategies have completely transformed my trading. My portfolio is up 76% in just 4 months!"</p>
+                <p className="text-gray-600">{`Hedgium's AI strategies have completely transformed my trading. My portfolio is up 76% in just 4 months!`}</p>
                 <div className="flex mt-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="text-yellow-400 fill-current" size={20} />
@@ -389,7 +390,7 @@ export default function Home() {
                     <p className="text-sm text-gray-500">Options Trader</p>
                   </div>
                 </div>
-                <p className="text-gray-600">"The Python code access gives me complete transparency. I can see exactly how the strategies work and modify them for my needs."</p>
+                <p className="text-gray-600">{`The Python code access gives me complete transparency. I can see exactly how the strategies work and modify them for my needs.`}</p>
                 <div className="flex mt-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="text-yellow-400 fill-current" size={20} />
@@ -411,7 +412,7 @@ export default function Home() {
                     <p className="text-sm text-gray-500">Swing Trader</p>
                   </div>
                 </div>
-                <p className="text-gray-600">"The mobile app is fantastic! I get alerts wherever I am and can execute trades instantly. It's like having a trading desk in my pocket."</p>
+                <p className="text-gray-600">{`The mobile app is fantastic! I get alerts wherever I am and can execute trades instantly. It's like having a trading desk in my pocket.`}</p>
                 <div className="flex mt-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="text-yellow-400 fill-current" size={20} />
@@ -428,17 +429,17 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Transform Your Trading?</h2>
           <p className="text-lg md:text-xl mb-10 max-w-3xl mx-auto">
-            Join thousands of successful traders using Hedgium's AI-powered strategies for consistent profits in Futures and Options trading.
+            {`Join thousands of successful traders using Hedgium's AI-powered strategies for consistent profits in Futures and Options trading.`}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#pricing" className="btn btn-lg btn-accent">
+            <Link href="#pricing" className="btn btn-lg btn-accent">
               Get Started Now
               <ArrowRight size={20} />
-            </a>
-            <a href="#demo" className="btn btn-lg btn-outline btn-white">
+            </Link>
+            <Link href="#demo" className="btn btn-lg btn-outline btn-white">
               Watch Demo
               <ChevronDown size={20} />
-            </a>
+            </Link>
           </div>
         </div>
       </section>

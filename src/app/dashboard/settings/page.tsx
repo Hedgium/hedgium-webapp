@@ -225,20 +225,20 @@ const SettingsPage: React.FC = () => {
               <ul className="menu menu-vertical space-y-2 w-full">
                 {tabs.map(tab => (
                   <li key={tab.id}>
-                    <a
+                    <button
                       className={activeTab === tab.id ? 'active' : ''}
                       onClick={() => setActiveTab(tab.id)}
                     >
                       {tab.icon}
                       {tab.label}
-                    </a>
+                    </button>
                   </li>
                 ))}
                 <li className="mt-4">
-                  <a className="text-error">
+                  <button className="text-error">
                     <LogOut className="h-5 w-5" />
                     Logout
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
