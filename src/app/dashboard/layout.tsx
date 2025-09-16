@@ -6,8 +6,8 @@ import AuthFooter from "@/components/AuthFooter";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute>
-    <AuthNav />
-    {children}
-    <AuthFooter />
+      <AuthNav />
+        {children}
+      <AuthFooter />
     </ProtectedRoute>;
 }

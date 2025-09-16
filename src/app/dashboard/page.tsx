@@ -1,12 +1,20 @@
+
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LineChart, BarChart3, TrendingUp, DollarSign, PieChart,
   Filter, Search, Plus, Clock, CheckCircle, XCircle,
   ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp
 } from 'lucide-react';
 import Link from 'next/link';
+
+import TradeCycleCard from "@/components/TradeCycleCard";
+
+
+// import { useAuthStore } from '@/store/authStore';
+
+import { authFetch } from '@/utils/api';
 
 // Define the types for the data structures
 type StrategyStatus = 'running' | 'pending' | 'completed' | 'stopped';
@@ -38,6 +46,17 @@ interface StrategyData {
   past: Strategy[];
 }
 
+interface TradeCycle {
+  id: number;
+  name: string;
+  description?: string;
+  state: string;
+  sub_state: string;
+  created_at: string;
+  // add other fields you actually return from the API
+}
+
+
 interface DashboardStats {
   totalReturn: number;
   activeStrategies: number;
@@ -54,6 +73,53 @@ interface StrategyCardProps {
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'active' | 'past'>('active');
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
+  const [activeTradeCycles, setActiveTradeCycles] = useState([]);
+  const [nextActiveTradeCycles, setNextActiveTradeCycles] = useState<string | null> (null);
+  const [pastTradeCycles, setPastTradeCycles] = useState([])
+  const [nextPastTradeCycles, setNextPastTradeCycles] = useState<string | null> (null);
+
+
+
+    async function getActiveTradeCycles() {
+      // console.log("Hello Bhai")
+  
+     try {
+
+      const res = await authFetch('trade-cycles/?page=1&page_size=10')
+      
+      if (res.ok) {
+        const data = await res.json();
+        console.log(data.results);
+        setActiveTradeCycles(data.results);
+        setNextActiveTradeCycles(data.next);
+      } else {
+      }
+    } catch {
+    }
+    }
+  
+
+    async function getPastTradeCycles() {
+      // console.log("Hello Bhai")
+  
+     try {
+
+      const res = await authFetch('trade-cycles/?page=1&page_size=10')
+      
+      if (res.ok) {
+        const data = await res.json();
+        setPastTradeCycles(data.results);
+        setNextPastTradeCycles(data.next);
+      } else {
+      }
+    } catch {
+    }
+    }
+
+    useEffect(()=>{
+        getActiveTradeCycles();
+        getPastTradeCycles();
+    },[])
 
   const toggleCardExpansion = (id: number) => {
     setExpandedCards(prev => ({
@@ -141,142 +207,6 @@ export default function Dashboard() {
     weeklyGain: 2.3
   };
 
-  const StrategyCard: React.FC<StrategyCardProps> = ({ strategy, isActive }) => {
-    const isExpanded = expandedCards[strategy.id];
-    const isProfit = strategy.return > 0;
-    
-    return (
-      <div className="card bg-base-100 shadow-md mb-6 border-l-4 border-l-primary">
-        <div className="card-body p-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="card-title text-lg">{strategy.name}</h3>
-              <div className="flex items-center mt-1">
-                <span className="text-sm font-medium bg-base-200 px-2 py-1 rounded-md mr-2">
-                  {strategy.symbol}
-                </span>
-                <span className={`badge ${isActive ? 
-                  (strategy.status === 'running' ? 'badge-success' : 'badge-warning') : 
-                  (strategy.status === 'completed' ? 'badge-info' : 'badge-error')
-                } gap-1`}>
-                  {strategy.status === 'running' && <CheckCircle size={14} />}
-                  {strategy.status === 'pending' && <Clock size={14} />}
-                  {strategy.status === 'completed' && <CheckCircle size={14} />}
-                  {strategy.status === 'stopped' && <XCircle size={14} />}
-                  {strategy.status}
-                </span>
-              </div>
-            </div>
-            
-            <div className="text-right">
-              <div className={`text-lg font-bold ${isProfit ? 'text-success' : 'text-error'}`}>
-                {isProfit ? '+' : ''}{strategy.return}%
-                {isProfit ? <ArrowUpRight size={18} className="inline ml-1" /> : <ArrowDownRight size={18} className="inline ml-1" />}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Created: {strategy.created}
-                {!isActive && strategy.closed && ` | Closed: ${strategy.closed}`}
-              </div>
-            </div>
-          </div>
-          
-          {/* Strategy legs summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            {strategy.legs.slice(0, 4).map((leg, index) => (
-              <div key={index} className="bg-base-200 p-3 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className={`font-semibold ${leg.action === 'BUY' ? 'text-success' : 'text-error'}`}>
-                    {leg.action}
-                  </span>
-                  {leg.filled ? (
-                    <CheckCircle size={14} className="text-success" />
-                  ) : (
-                    <Clock size={14} className="text-warning" />
-                  )}
-                </div>
-                <div className="text-sm mt-1">
-                  {leg.strike} {leg.type}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  Qty: {leg.quantity} | ₹{leg.premium}
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {/* Expand button for strategies with more than 4 legs */}
-          {strategy.legs.length > 4 && (
-            <button 
-              className="btn btn-ghost btn-sm self-start mb-4"
-              onClick={() => toggleCardExpansion(strategy.id)}
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp size={16} className="mr-1" />
-                  Show Less
-                </>
-              ) : (
-                <>
-                  <ChevronDown size={16} className="mr-1" />
-                  Show All {strategy.legs.length} Legs
-                </>
-              )}
-            </button>
-          )}
-          
-          {/* Expanded legs view */}
-          {isExpanded && strategy.legs.length > 4 && (
-            <div className="bg-base-200 p-4 rounded-lg mb-4">
-              <h4 className="font-semibold mb-3">All Strategy Legs</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {strategy.legs.map((leg, index) => (
-                  <div key={index} className="bg-base-100 p-3 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className={`font-semibold ${leg.action === 'BUY' ? 'text-success' : 'text-error'}`}>
-                        {leg.action} {leg.type}
-                      </span>
-                      {leg.filled ? (
-                        <CheckCircle size={14} className="text-success" />
-                      ) : (
-                        <Clock size={14} className="text-warning" />
-                      )}
-                    </div>
-                    <div className="text-sm mt-2">
-                      Strike: {leg.strike}
-                    </div>
-                    <div className="text-sm mt-1">
-                      Quantity: {leg.quantity}
-                    </div>
-                    <div className="text-sm mt-1">
-                      Premium: ₹{leg.premium}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Action buttons */}
-          <div className="card-actions justify-end">
-            {isActive ? (
-              <>
-                <button className="btn btn-outline btn-error btn-sm">
-                  Close Strategy
-                </button>
-                <Link href="/dashboard/single-strategy" className="btn btn-primary btn-sm">
-                  Modify
-                </Link>
-              </>
-            ) : (
-              <Link href="/dashboard/single-strategy" className="btn btn-outline btn-sm">
-                View Details
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-base-200 p-4 md:p-8">
@@ -388,38 +318,31 @@ export default function Dashboard() {
         </div>
         
         {/* Strategy Cards */}
-        <div className="mb-8">
-          {activeTab === 'active' ? (
-            strategyData.active.length > 0 ? (
-              strategyData.active.map(strategy => (
-                <StrategyCard key={strategy.id} strategy={strategy} isActive={true} />
-              ))
-            ) : (
-              <div className="text-center py-12 bg-base-100 rounded-lg shadow">
-                <BarChart3 size={48} className="mx-auto text-gray-400 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No Active Strategies</h3>
-                <p className="text-gray-600 mb-4">{`You don't have any active trading strategies at the moment.`}</p>
-                <button className="btn btn-primary">
-                  <Plus size={18} className="mr-2" />
-                  Create New Strategy
-                </button>
-              </div>
-            )
-          ) : (
-            strategyData.past.length > 0 ? (
-              strategyData.past.map(strategy => (
-                <StrategyCard key={strategy.id} strategy={strategy} isActive={false} />
-              ))
-            ) : (
-              <div className="text-center py-12 bg-base-100 rounded-lg shadow">
-                <Clock size={48} className="mx-auto text-gray-400 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No Past Strategies</h3>
-                <p className="text-gray-600">{`You don't have any past trading strategies yet.`}</p>
-              </div>
-            )
-          )}
-        </div>
         
+        <div className="mb-8">
+  {activeTab === "active" ? (
+    activeTradeCycles.length > 0 ? (
+      activeTradeCycles.map((tc) => (
+        <TradeCycleCard key={tc?.id} tradeCycle={tc} isActive={true} />
+      ))
+    ) : (
+      <div className="text-center py-12 bg-base-100 rounded-lg shadow">
+        <h3 className="text-xl font-semibold mb-2">No Active Trade Cycles</h3>
+        <p className="text-gray-600">{`You don't have any active trade cycles at the moment.`}</p>
+      </div>
+    )
+  ) : pastTradeCycles.length > 0 ? (
+    pastTradeCycles.map((tc) => (
+      <TradeCycleCard key={tc?.id} tradeCycle={tc} isActive={false} />
+    ))
+  ) : (
+    <div className="text-center py-12 bg-base-100 rounded-lg shadow">
+      <h3 className="text-xl font-semibold mb-2">No Past Trade Cycles</h3>
+      <p className="text-gray-600">{`You don't have any past trade cycles yet.`}</p>
+    </div>
+  )}
+</div>
+
         {/* Performance Chart Section */}
         <div className="card bg-base-100 shadow-md mb-8">
           <div className="card-body">

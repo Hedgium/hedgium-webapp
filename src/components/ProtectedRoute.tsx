@@ -7,13 +7,12 @@ import { useAuthStore } from "@/store/authStore";
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { accessToken, isInitializing } = useAuthStore();
   const router = useRouter();
-    const pathname = usePathname();
+  const pathname = usePathname();
 
 
   useEffect(() => {
     if (!isInitializing && !accessToken) {
         router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-
     }
   }, [isInitializing, accessToken, router]);
 

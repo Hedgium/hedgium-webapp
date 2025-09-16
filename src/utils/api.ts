@@ -1,59 +1,75 @@
+import Cookies from "js-cookie";
 import { useAuthStore } from "@/store/authStore";
 
-import Cookies from 'js-cookie';
-
-
-export async function myFetch(url: string, options: RequestInit = {}) {
-
-  const csrftoken: string = Cookies.get('csrftoken') ?? "";
-
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      'X-CSRFToken': csrftoken,
-      'X-API-Key': process.env.NEXT_PUBLIC_API_KEY ?? ""
-    },
-    credentials: "include",
-  });
-
-  return res;
+/**
+ * Utility: Build URL with query params
+ */
+function buildUrl(endpoint: string, queryParams?: Record<string, string | number | boolean>): string {
+  const url = new URL(`/api/proxy/${endpoint}`, window.location.origin);
+  if (queryParams) {
+    Object.entries(queryParams).forEach(([key, value]) => {
+      url.searchParams.append(key, String(value));
+    });
+  }
+  return url.toString();
 }
 
+/**
+ * Generic fetch with CSRF token (no auth)
+ */
+export async function myFetch(
+  endpoint: string,
+  options: RequestInit = {},
+  queryParams?: Record<string, string | number | boolean>
+): Promise<Response> {
+  const url = buildUrl(endpoint, queryParams);
+  const csrftoken = Cookies.get("csrftoken") ?? "";
 
-
-
-export async function authFetch(url: string, options: RequestInit = {}) {
-  const { accessToken, refreshAccessToken } = useAuthStore.getState();
-
-  const token = accessToken;
-  const csrftoken = Cookies.get('csrftoken');
-
-  let res = await fetch(url, {
+  return fetch(url, {
     ...options,
     headers: {
-      ...options.headers,
-      Authorization: token ? `Bearer ${token}` : "",
-      'X-CSRFToken': csrftoken ?? "",
-      'X-API-Key': process.env.NEXT_PUBLIC_API_KEY ?? ""
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrftoken,
+      ...(options.headers || {}),
     },
-    credentials: "include",
+    credentials: "include", // Needed for cookies (refresh token, CSRF)
   });
+}
 
-  if (res.status === 401) {
-    // try refreshing
-    await refreshAccessToken();
-    const newToken = useAuthStore.getState().accessToken;
+/**
+ * Authenticated fetch with auto Authorization header + token refresh
+ */
+export async function authFetch(
+  endpoint: string,
+  options: RequestInit = {},
+  queryParams?: Record<string, string | number | boolean>
+): Promise<Response> {
+  const url = buildUrl(endpoint, queryParams);
+  const csrftoken = Cookies.get("csrftoken") ?? "";
 
-    if (newToken) {
-      res = await fetch(url, {
-        ...options,
-        headers: {
-          ...options.headers,
-          Authorization: `JWT ${newToken}`,
-        },
-        credentials: "include",
-      });
+  const { accessToken, refreshAccessToken } = useAuthStore.getState();
+
+  const doFetch = async (token?: string) =>
+    fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrftoken,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+      credentials: "include",
+    });
+
+  // 1st attempt
+  let res = await doFetch(accessToken || undefined);
+
+  // Retry if 401 → try refreshing token
+  if (res.status === 401 && refreshAccessToken) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      const { accessToken: newToken } = useAuthStore.getState();
+      res = await doFetch(newToken || undefined);
     }
   }
 

@@ -1,3 +1,4 @@
+
 import { create } from "zustand";
 
 
@@ -26,12 +27,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (username: string, password: string) => {
     set({ isLoading: true });
     const res = await fetch(
-      process.env.NEXT_PUBLIC_API_URL + "users/auth/login/",
+      "/api/proxy/users/auth/login/",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-API-Key": process.env.NEXT_PUBLIC_API_KEY ?? "",
         },
         body: JSON.stringify({ username, password }),
         credentials: "include",
@@ -56,10 +56,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   refreshAccessToken: async () => {
     try {
       const res = await fetch(
-        process.env.NEXT_PUBLIC_API_URL + "users/token/refresh",
+        "/api/proxy/users/token/refresh/",
         {
           method: "POST",
-          headers: { "X-API-Key": process.env.NEXT_PUBLIC_API_KEY ?? "" },
           credentials: "include",
         }
       );
@@ -87,10 +86,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       const res = await fetch(
-        process.env.NEXT_PUBLIC_API_URL + "users/auth/me",
+        "/api/proxy/users/auth/me/",
         {
           headers: {
-            "X-API-Key": process.env.NEXT_PUBLIC_API_KEY ?? "",
             Authorization: `Bearer ${get().accessToken}`,
           },
           credentials: "include",
@@ -112,11 +110,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     console.log("Logout Called");
     const res = await fetch(
-      process.env.NEXT_PUBLIC_API_URL + "users/auth/logout",
+      "/api/proxy/users/auth/logout/",
       {
         method: "POST",
         headers: {
-          "X-API-Key": process.env.NEXT_PUBLIC_API_KEY ?? "",
           Authorization: get().accessToken ? `Bearer ${get().accessToken}` : "",
         },
         credentials: "include",
@@ -146,3 +143,5 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }, interval);
   },
 }));
+
+
