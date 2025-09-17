@@ -24,8 +24,6 @@ export const metadata = {
 
 import AlertsContainer from "@/components/AlertsContainer";
 
-import TempAlerts from "@/components/TempAlerts";
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 
   return (
@@ -42,7 +40,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
         </ThemeProvider>
         </AuthProvider>
-        <TempAlerts />
         <AlertsContainer />
 
         </body>
