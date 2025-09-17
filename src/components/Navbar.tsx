@@ -8,6 +8,7 @@ import {
 import Link from "next/link";
 
 
+
 export default function Navbar(){
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,7 +29,6 @@ export default function Navbar(){
                 <li><Link href="/#features" onClick={() => setIsMenuOpen(false)}>Features</Link></li>
                 <li><Link href="/#strategies" onClick={() => setIsMenuOpen(false)}>Strategies</Link></li>
                 <li><Link href="/#pricing" onClick={() => setIsMenuOpen(false)}>Pricing</Link></li>
-                <li><Link href="/#testimonials" onClick={() => setIsMenuOpen(false)}>Testimonials</Link></li>
               </ul>
             )}
           </div>
@@ -42,10 +42,10 @@ export default function Navbar(){
             <li><Link href="/#features">Features</Link></li>
             <li><Link href="/#strategies">Strategies</Link></li>
             <li><Link href="/#pricing">Pricing</Link></li>
-            <li><Link href="/#testimonials">Testimonials</Link></li>
           </ul>
         </div>
-        <div className="navbar-end">
+        <div className="navbar-end space-x-2">
+          <Link href="/login" className="btn btn-primary btn-outline">Login</Link>
           <Link href="/register" className="btn btn-primary">Sign Up</Link>
         </div>
       </nav>

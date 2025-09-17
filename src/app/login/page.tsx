@@ -14,7 +14,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [nextPath, setNextPath] = useState("/dashboard");
+  const [nextPath, setNextPath] = useState("/hedgium/dashboard");
 
   const { login, accessToken, isLoading } = useAuthStore();
   const router = useRouter();

@@ -45,9 +45,7 @@ export default function Home() {
   return (
     <>
     <Navbar />
-    <div className="min-h-screen hero-pattern">
-
-
+    <div className=" hero-pattern">
 
       {/* Hero Section */}
       <section className="py-20 px-4">
@@ -349,84 +347,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 px-4 hero-pattern">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">What Our Traders Say</h2>
-          <p className="text-lg md:text-xl text-center text-gray-600 mb-16">
-            Join thousands of successful traders using Hedgium
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <div className="flex items-center mb-4">
-                  <div className="avatar placeholder">
-                    <div className="bg-primary text-white rounded-full w-12">
-                      <span>RS</span>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-bold">Rahul Sharma</h4>
-                    <p className="text-sm text-gray-500">Professional Trader</p>
-                  </div>
-                </div>
-                <p className="text-gray-600">{`Hedgium's AI strategies have completely transformed my trading. My portfolio is up 76% in just 4 months!`}</p>
-                <div className="flex mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="text-yellow-400 fill-current" size={20} />
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <div className="flex items-center mb-4">
-                  <div className="avatar placeholder">
-                    <div className="bg-primary text-white rounded-full w-12">
-                      <span>PK</span>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-bold">Priya Kumar</h4>
-                    <p className="text-sm text-gray-500">Options Trader</p>
-                  </div>
-                </div>
-                <p className="text-gray-600">{`The Python code access gives me complete transparency. I can see exactly how the strategies work and modify them for my needs.`}</p>
-                <div className="flex mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="text-yellow-400 fill-current" size={20} />
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <div className="flex items-center mb-4">
-                  <div className="avatar placeholder">
-                    <div className="bg-primary text-white rounded-full w-12">
-                      <span>AS</span>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-bold">Amit Singh</h4>
-                    <p className="text-sm text-gray-500">Swing Trader</p>
-                  </div>
-                </div>
-                <p className="text-gray-600">{`The mobile app is fantastic! I get alerts wherever I am and can execute trades instantly. It's like having a trading desk in my pocket.`}</p>
-                <div className="flex mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="text-yellow-400 fill-current" size={20} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
+  
       {/* CTA Section */}
       <section className="py-20 gradient-bg text-white">
         <div className="max-w-7xl mx-auto px-4 text-center">

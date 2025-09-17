@@ -9,7 +9,7 @@ import Link from 'next/link';
 export default function AuthFooter() {
 
     return (
-              <footer className="footer md:footer-horizontal p-10 bg-neutral text-neutral-content">
+      <footer className="footer md:footer-horizontal p-10">
         <div>
           <span className="footer-title">
             <LineChart className="mr-2" size={20} />

@@ -22,12 +22,16 @@ export const metadata = {
   description: "AI-Powered Trading Strategies",
 }
 
+import AlertsContainer from "@/components/AlertsContainer";
+
+import TempAlerts from "@/components/TempAlerts";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <html lang="en" suppressHydrationWarning>
       {/* Apply globally */}
-      <body className={inter.className}>
+      <body className={inter.className + " h-screen flex flex-col"} >
         <NextTopLoader 
           color="#2299DD"
           showSpinner={true}
@@ -36,11 +40,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
         <ThemeProvider>
             {children}
-
         </ThemeProvider>
         </AuthProvider>
-        
-        
+        <TempAlerts />
+        <AlertsContainer />
 
         </body>
     </html>
