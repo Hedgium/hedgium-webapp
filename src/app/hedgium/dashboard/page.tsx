@@ -10,7 +10,8 @@ import {
 import Link from 'next/link';
 
 import TradeCycleCard from "@/components/TradeCycleCard";
-
+import MarketHeader from '@/components/MarketHeader';
+import DashboardMetrics from '@/components/DashboardMetrics';
 
 // import { useAuthStore } from '@/store/authStore';
 
@@ -64,11 +65,7 @@ interface DashboardStats {
   weeklyGain: number;
 }
 
-// Props interface for the StrategyCard component
-interface StrategyCardProps {
-  strategy: Strategy;
-  isActive: boolean;
-}
+
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'active' | 'past'>('active');
@@ -210,9 +207,13 @@ export default function Dashboard() {
 
   return (
     <div className="bg-base-200 p-4 md:p-8">
+
+      <MarketHeader />
+
+      <DashboardMetrics />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        {/* <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold">Trading Dashboard</h1>
             <p className="text-gray-600">Welcome back, here are your current strategies</p>
@@ -227,54 +228,9 @@ export default function Dashboard() {
               New Strategy
             </button>
           </div>
-        </div>
-        
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="stats bg-base-100 shadow">
-            <div className="stat">
-              <div className="stat-figure text-primary">
-                <TrendingUp size={32} />
-              </div>
-              <div className="stat-title">Total Return</div>
-              <div className="stat-value text-primary">{stats.totalReturn}%</div>
-              <div className="stat-desc">Since joining</div>
-            </div>
-          </div>
-          
-          <div className="stats bg-base-100 shadow">
-            <div className="stat">
-              <div className="stat-figure text-secondary">
-                <BarChart3 size={32} />
-              </div>
-              <div className="stat-title">Active Strategies</div>
-              <div className="stat-value text-secondary">{stats.activeStrategies}</div>
-              <div className="stat-desc">3 running, 0 pending</div>
-            </div>
-          </div>
-          
-          <div className="stats bg-base-100 shadow">
-            <div className="stat">
-              <div className="stat-figure text-accent">
-                <PieChart size={32} />
-              </div>
-              <div className="stat-title">Success Rate</div>
-              <div className="stat-value text-accent">{stats.successRate}%</div>
-              <div className="stat-desc">Profitable strategies</div>
-            </div>
-          </div>
-          
-          <div className="stats bg-base-100 shadow">
-            <div className="stat">
-              <div className="stat-figure text-info">
-                <DollarSign size={32} />
-              </div>
-              <div className="stat-title">Weekly Gain</div>
-              <div className="stat-value text-info">+{stats.weeklyGain}%</div>
-              <div className="stat-desc">↗︎ +₹12,450 this week</div>
-            </div>
-          </div>
-        </div>
+        </div> */}
+  
+  
         
         {/* Tabs for Active/Past Strategies */}
         <div className="tabs tabs-boxed bg-base-100 p-1 mb-6">

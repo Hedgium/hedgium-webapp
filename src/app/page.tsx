@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { 
    Bot, Code2, Smartphone, Shield, Users, 
   CheckCircle, X, Check, Star, ChevronDown,
@@ -8,14 +8,25 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+import { useAuthStore } from '@/store/authStore'; // Adjust the path as needed
 
+import { useRouter } from 'nextjs-toploader/app';
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export default function Home() {
 
+  const router = useRouter();
+  const { accessToken, isInitializing } = useAuthStore();
 
+
+  useEffect(() => {
+    // Redirect if user is logged in and not initializing
+    if (!isInitializing && accessToken) {
+      router.replace('/hedgium/dashboard');
+    }
+  }, [accessToken, isInitializing, router]);
   
   useEffect(() => {
     // Simple smooth scroll implementation
@@ -44,6 +55,7 @@ export default function Home() {
 
   return (
     <>
+    <div style={{ display: (!isInitializing && !accessToken) ? 'block' : 'none' }}>
     <Navbar />
     <div className=" hero-pattern">
 
@@ -64,10 +76,10 @@ export default function Home() {
                   Get Started
                   <ArrowRight size={20} />
                 </Link>
-                <Link href="#demo" className="btn btn-outline btn-primary btn-lg">
+                {/* <Link href="#demo" className="btn btn-outline btn-primary btn-lg">
                   View Demo
                   <ChevronDown size={20} />
-                </Link>
+                </Link> */}
               </div>
             </div>
             <div className="lg:w-1/2">
@@ -373,6 +385,13 @@ export default function Home() {
 
     <Footer />
     
+    </div>
+
+    {(isInitializing || accessToken) && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      )}
     </>
   );
 }

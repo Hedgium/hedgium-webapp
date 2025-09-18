@@ -9,7 +9,6 @@ import { useAuthStore } from "@/store/authStore";
 
 export default function AuthNav() {
   const { theme, setTheme } = useTheme();
-  const router = useRouter();
 
   const {logout} = useAuthStore();
 
@@ -20,7 +19,7 @@ export default function AuthNav() {
   };
 
   return (
-    <div className="navbar sticky top-0 z-50  bg-base-100 shadow-sm px-4">
+    <div className="navbar md:hidden sticky top-0 z-50  bg-base-100 shadow-sm px-4">
       {/* Left side brand */}
       <div className="flex-1">
         <Link href="/" className="btn btn-ghost normal-case text-xl font-bold text-primary">
