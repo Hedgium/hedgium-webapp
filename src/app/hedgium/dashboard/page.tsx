@@ -206,7 +206,7 @@ export default function Dashboard() {
 
 
   return (
-    <div className="bg-base-200 p-4 md:p-8">
+    <div className="bg-base-200 p-4 md:p-6">
 
       <MarketHeader />
 
@@ -255,7 +255,7 @@ export default function Dashboard() {
         </div>
         
         {/* Search and Filter Bar */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {/* <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-3 z-10 text-gray-400" size={20} />
             <input 
@@ -271,7 +271,7 @@ export default function Dashboard() {
             <option>Return: Low to High</option>
             <option>Name A-Z</option>
           </select>
-        </div>
+        </div> */}
         
         {/* Strategy Cards */}
         

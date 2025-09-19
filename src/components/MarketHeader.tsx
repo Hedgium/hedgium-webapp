@@ -20,7 +20,7 @@ export default function MarketHeader() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="bg-base-200 rounded-lg mb-6">
+    <div className="bg-base-200 rounded-lg mb-4">
       <div 
         ref={scrollRef}
         className="flex flex-nowrap overflow-x-auto md:flex-wrap gap-4 justify-between scrollbar-hide snap-x snap-mandatory"
@@ -30,8 +30,8 @@ export default function MarketHeader() {
             key={index} 
             className="flex-1 min-w-[200px] snap-center md:flex-auto"
           >
-            <div className="bg-base-100 p-4 rounded-lg shadow-sm">
-              <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
+            <div className="bg-base-100 p-4 border border-base-300 rounded-lg">
+              <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
               <div className="flex items-center justify-between">
                 <span className="text-xl font-bold">{item.value.toLocaleString()}</span>
                 <div className={`flex items-center ${item.change >= 0 ? 'text-success' : 'text-error'}`}>

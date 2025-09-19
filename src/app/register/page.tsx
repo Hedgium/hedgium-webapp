@@ -1,18 +1,32 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Lock, Mail, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { myFetch } from "@/utils/api";
+import { useAuthStore } from "@/store/authStore";
+import useAlert from "@/hooks/useAlert";
 
-const Register: React.FC = () => {
-  const [name, setName] = useState<string>("");
+function Register() {
+  const router = useRouter();
+  const alert = useAlert();
+
+
+  const [firstName, setFirstName] = useState<string>("");
+  const {login, accessToken} = useAuthStore();
+  const [lastName, setLastName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [nameError, setNameError] = useState<string>("");
+  const [registering, setRegistering] = useState<boolean>(false);
+
+  // Errors
+  const [firstNameError, setFirstNameError] = useState<string>("");
+  const [lastNameError, setLastNameError] = useState<string>("");
   const [emailError, setEmailError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
   const [confirmPasswordError, setConfirmPasswordError] = useState<string>("");
@@ -20,14 +34,22 @@ const Register: React.FC = () => {
   const validateEmail = (email: string): boolean =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const handleRegister = (e: React.MouseEvent<HTMLButtonElement>) => {
+  async function handleRegister(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
+    setRegistering(true)
     let valid = true;
 
-    if (!name) {
-      setNameError("Name is required");
+    try{
+
+    if (!firstName) {
+      setFirstNameError("First name is required");
       valid = false;
-    } else setNameError("");
+    } else setFirstNameError("");
+
+    if (!lastName) {
+      setLastNameError("Last name is required");
+      valid = false;
+    } else setLastNameError("");
 
     if (!email) {
       setEmailError("Email is required");
@@ -53,143 +75,217 @@ const Register: React.FC = () => {
       valid = false;
     } else setConfirmPasswordError("");
 
-    if (valid) {
-      console.log("Registration attempted with:", { name, email, password });
+
+    const dataToSend = {
+      "first_name": firstName,
+      "last_name": lastName,
+      "email": email,
+      "username": email,
+      "password": password
     }
-  };
+    try {
+      const res = await myFetch('users', {
+        method: "POST",
+        body: JSON.stringify(dataToSend) // Convert the data object to a JSON string
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        alert.success('User is created sucessfully', { duration: 3000 });
+        login(email, password);
+      } else {}
+      }
+    catch {
+      alert.error("Something went wrong", {duration: 5000})
+      }
+
+    } finally{
+      setRegistering(false);
+    }
+
+  
+  }
+
+
+  
+  useEffect(()=>{
+
+    if(accessToken){router.push("/hedgium/complete-profile")}
+  }, [accessToken])
+        
+
 
   return (
     <>
-    <Navbar />
-    <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="text-center text-3xl font-bold text-base-content">
-            Sign up for <span className="text-primary">Hedgium</span>
-          </h2>
-          <p className="mt-2 text-center text-sm text-base-content/60">
-            Start trading with AI-powered strategies today
-          </p>
-        </div>
+      <Navbar />
+      <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="text-center text-3xl font-bold text-base-content">
+              Sign up for <span className="text-primary">Hedgium</span>
+            </h2>
+            <p className="mt-2 text-center text-sm text-base-content/60">
+              Start trading with AI-powered strategies today
+            </p>
+          </div>
 
-        <div className="card bg-base-100 shadow-xl card-hover">
-          <div className="card-body">
-            <div className="space-y-6">
-              {/* Name */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-base-content">
-                  Full Name
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                    <User className="h-5 w-5 text-base-content/60" />
+          <div className="card bg-base-100 shadow-xl card-hover">
+            <div className="card-body">
+              <div className="space-y-6">
+                {/* First Name */}
+                <div>
+                  <label className="block text-sm font-medium text-base-content">
+                    First Name
+                  </label>
+                  <div className="mt-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
+                      <User className="h-5 w-5 text-base-content/60" />
+                    </div>
+                    <input
+                      type="text"
+                      className={`input input-bordered w-full pl-10 ${
+                        firstNameError ? "input-error" : ""
+                      }`}
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Enter your first name"
+                    />
                   </div>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    className={`input input-bordered w-full pl-10 ${nameError ? "input-error" : ""}`}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your full name"
-                  />
+                  {firstNameError && (
+                    <p className="mt-2 text-sm text-error">{firstNameError}</p>
+                  )}
                 </div>
-                {nameError && <p className="mt-2 text-sm text-error">{nameError}</p>}
-              </div>
 
-              {/* Email */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-base-content">
-                  Email address
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                    <Mail className="h-5 w-5 text-base-content/60" />
+                {/* Last Name */}
+                <div>
+                  <label className="block text-sm font-medium text-base-content">
+                    Last Name
+                  </label>
+                  <div className="mt-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
+                      <User className="h-5 w-5 text-base-content/60" />
+                    </div>
+                    <input
+                      type="text"
+                      className={`input input-bordered w-full pl-10 ${
+                        lastNameError ? "input-error" : ""
+                      }`}
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Enter your last name"
+                    />
                   </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    className={`input input-bordered w-full pl-10 ${emailError ? "input-error" : ""}`}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                  />
+                  {lastNameError && (
+                    <p className="mt-2 text-sm text-error">{lastNameError}</p>
+                  )}
                 </div>
-                {emailError && <p className="mt-2 text-sm text-error">{emailError}</p>}
-              </div>
 
-              {/* Password */}
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-base-content">
-                  Password
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                    <Lock className="h-5 w-5 text-base-content/60" />
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-medium text-base-content">
+                    Email address
+                  </label>
+                  <div className="mt-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
+                      <Mail className="h-5 w-5 text-base-content/60" />
+                    </div>
+                    <input
+                      type="email"
+                      className={`input input-bordered w-full pl-10 ${
+                        emailError ? "input-error" : ""
+                      }`}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                    />
                   </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    className={`input input-bordered w-full pl-10 ${passwordError ? "input-error" : ""}`}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                  />
+                  {emailError && (
+                    <p className="mt-2 text-sm text-error">{emailError}</p>
+                  )}
                 </div>
-                {passwordError && <p className="mt-2 text-sm text-error">{passwordError}</p>}
-              </div>
 
-              {/* Confirm Password */}
-              <div>
-                <label htmlFor="confirm-password" className="block text-sm font-medium text-base-content">
-                  Confirm Password
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                    <Lock className="h-5 w-5 text-base-content/60" />
+                {/* Password */}
+                <div>
+                  <label className="block text-sm font-medium text-base-content">
+                    Password
+                  </label>
+                  <div className="mt-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
+                      <Lock className="h-5 w-5 text-base-content/60" />
+                    </div>
+                    <input
+                      type="password"
+                      className={`input input-bordered w-full pl-10 ${
+                        passwordError ? "input-error" : ""
+                      }`}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                    />
                   </div>
-                  <input
-                    id="confirm-password"
-                    name="confirm-password"
-                    type="password"
-                    className={`input input-bordered w-full pl-10 ${confirmPasswordError ? "input-error" : ""}`}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm your password"
-                  />
+                  {passwordError && (
+                    <p className="mt-2 text-sm text-error">{passwordError}</p>
+                  )}
                 </div>
-                {confirmPasswordError && <p className="mt-2 text-sm text-error">{confirmPasswordError}</p>}
-              </div>
 
-              {/* Submit */}
-              <div>
-                <button className="btn btn-primary w-full" onClick={handleRegister}>
-                  Sign Up
-                </button>
-              </div>
+                {/* Confirm Password */}
+                <div>
+                  <label className="block text-sm font-medium text-base-content">
+                    Confirm Password
+                  </label>
+                  <div className="mt-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
+                      <Lock className="h-5 w-5 text-base-content/60" />
+                    </div>
+                    <input
+                      type="password"
+                      className={`input input-bordered w-full pl-10 ${
+                        confirmPasswordError ? "input-error" : ""
+                      }`}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm your password"
+                    />
+                  </div>
+                  {confirmPasswordError && (
+                    <p className="mt-2 text-sm text-error">
+                      {confirmPasswordError}
+                    </p>
+                  )}
+                </div>
 
-              {/* Link */}
-              <div className="text-center text-sm">
-                <p>
-                  Already have an account?{" "}
-                  <Link href="/login" className="font-medium text-primary hover:opacity-80">
-                    Log in
-                  </Link>
-                </p>
+                {/* Submit */}
+                <div>
+                  <button
+                    className="btn btn-primary w-full"
+                    disabled={registering}
+                    onClick={handleRegister}
+                  >
+                  {registering ? "Loading..." : "Register"}
+
+                  </button>
+                </div>
+
+                {/* Link */}
+                <div className="text-center text-sm">
+                  <p>
+                    Already have an account?{" "}
+                    <Link
+                      href="/login"
+                      className="font-medium text-primary hover:opacity-80"
+                    >
+                      Log in
+                    </Link>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
       </div>
-    </div>
 
-
-<Footer />
-
-</>
+      <Footer />
+    </>
   );
 };
 

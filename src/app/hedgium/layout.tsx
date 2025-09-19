@@ -2,6 +2,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthNav from "@/components/AuthNav";
 import AuthFooter from "@/components/AuthFooter";
 import AuthNavigation from "@/components/AuthNavigation";
+import SliderDemo from "@/components/SliderDemo";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -19,7 +20,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <main className="flex-1 overflow-y-auto">
             <AuthNav />
 
+
             {children}
+
+
             <AuthFooter />
           </main>
         </div>
