@@ -1,216 +1,201 @@
-// pages/strategies/[id]/positions.tsx (Single Strategy Positions Page)
-"use client"
-import { NextPage } from 'next';
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+// app/hedgium/trade-cycle/[id]/page.tsx
+"use client";
 
-import Link from 'next/link';
+import React, { JSX } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import {
+  CheckCircle,
+  Clock,
+  XCircle,
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react";
 
-interface Position {
-  id: string;
+// Types
+type Position = {
+  id: number;
   symbol: string;
   quantity: number;
   entryPrice: number;
   currentPrice: number;
-  pnl: number;
-  pnlPercentage: number;
-  type: 'long' | 'short';
-}
-
-interface Strategy {
-  id: string;
-  name: string;
-  description: string;
-}
-
-const StrategyPositionsPage: NextPage = () => {
-  const params = useParams();
-  const { slug } = params;
-  
-  const [strategy, setStrategy] = useState<Strategy | null>(null);
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate API fetch based on strategy ID
-    const fetchStrategyData = async () => {
-      if (!slug) return;
-      
-      try {
-        // In a real app, these would be API calls
-        const mockStrategies: Record<string, Strategy> = {
-          'strat-1': {
-            id: 'strat-1',
-            name: 'Moving Average Crossover',
-            description: 'Buys when short MA crosses above long MA, sells when opposite occurs.'
-          },
-          'strat-2': {
-            id: 'strat-2',
-            name: 'RSI Reversion',
-            description: 'Takes positions based on RSI overbought/oversold conditions.'
-          },
-          'strat-3': {
-            id: 'strat-3',
-            name: 'Breakout Strategy',
-            description: 'Enters positions when price breaks through key resistance/support levels.'
-          }
-        };
-
-        const mockPositions: Record<string, Position[]> = {
-          'strat-1': [
-            {
-              id: '1',
-              symbol: 'AAPL',
-              quantity: 10,
-              entryPrice: 150.25,
-              currentPrice: 165.32,
-              pnl: 150.70,
-              pnlPercentage: 10.03,
-              type: 'long'
-            },
-            {
-              id: '3',
-              symbol: 'TSLA',
-              quantity: 8,
-              entryPrice: 210.75,
-              currentPrice: 195.42,
-              pnl: -122.64,
-              pnlPercentage: -7.27,
-              type: 'long'
-            }
-          ],
-          'strat-2': [
-            {
-              id: '2',
-              symbol: 'MSFT',
-              quantity: 5,
-              entryPrice: 310.50,
-              currentPrice: 327.89,
-              pnl: 86.95,
-              pnlPercentage: 5.6,
-              type: 'long'
-            }
-          ],
-          'strat-3': [
-            {
-              id: '4',
-              symbol: 'NVDA',
-              quantity: 3,
-              entryPrice: 435.60,
-              currentPrice: 452.83,
-              pnl: 51.69,
-              pnlPercentage: 3.96,
-              type: 'short'
-            }
-          ]
-        };
-
-        setStrategy(mockStrategies[slug as string] || null);
-        setPositions(mockPositions[slug as string] || []);
-      } catch (error) {
-        console.error('Failed to fetch strategy data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStrategyData();
-  }, [slug]);
-
-  // Calculate strategy PnL
-  const strategyPnl = positions.reduce((sum, position) => sum + position.pnl, 0);
-  const strategyPnlPercentage = positions.length > 0 
-    ? (strategyPnl / positions.reduce((sum, pos) => sum + (pos.entryPrice * pos.quantity), 0)) * 100 
-    : 0;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    );
-  }
-
-  if (!strategy) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Strategy Not Found</h1>
-        <Link href="/hedgium/positions">
-          <button className="btn btn-primary">Back to All Positions</button>
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="breadcrumbs text-sm mb-4">
-        <ul>
-          <li><Link href="/hedgium/positions">All Positions</Link></li>
-          <li>{strategy.name} Positions</li>
-        </ul>
-      </div>
-
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">{strategy.name} Positions</h1>
-          <p className="text-gray-600">{strategy.description}</p>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-semibold">Strategy P&L: 
-            <span className={strategyPnl >= 0 ? 'text-green-500' : 'text-red-500'}>
-              ${strategyPnl.toFixed(2)} ({strategyPnlPercentage.toFixed(2)}%)
-            </span>
-          </div>
-          <div className="text-sm text-gray-500">{positions.length} open positions</div>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="table table-zebra w-full">
-          <thead>
-            <tr>
-              <th>Symbol</th>
-              <th>Quantity</th>
-              <th>Entry Price</th>
-              <th>Current Price</th>
-              <th>Type</th>
-              <th>P&L</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {positions.map((position) => (
-              <tr key={position.id}>
-                <td className="font-bold">{position.symbol}</td>
-                <td>{position.quantity}</td>
-                <td>${position.entryPrice.toFixed(2)}</td>
-                <td>${position.currentPrice.toFixed(2)}</td>
-                <td>
-                  <span className={`badge ${position.type === 'long' ? 'badge-success' : 'badge-error'}`}>
-                    {position.type}
-                  </span>
-                </td>
-                <td className={position.pnl >= 0 ? 'text-green-500' : 'text-red-500'}>
-                  ${position.pnl.toFixed(2)} ({position.pnlPercentage.toFixed(2)}%)
-                </td>
-                <td>
-                  <button className="btn btn-ghost btn-xs">Details</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {positions.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-2xl text-gray-500 mb-4">No positions found for this strategy</div>
-          <p className="text-gray-400">{`This strategy doesn't have any open positions at the moment.`}</p>
-        </div>
-      )}
-    </div>
-  );
+  side: "BUY" | "SELL";
+  status: string;
 };
 
-export default StrategyPositionsPage;
+type TradeCycle = {
+  id: number;
+  name: string;
+  description: string;
+  state: "NEW" | "PENDING" | "COMPLETED" | "STOPPED";
+  sub_state: string;
+  created_at: string;
+  positions: Position[];
+};
+
+// Dummy fetcher (replace with real API call)
+function getTradeCycle(id: string): TradeCycle | null {
+  const dummy: TradeCycle = {
+    id: 1,
+    name: "NIFTY Option Strategy",
+    description: "Intraday Iron Fly with hedges",
+    state: "PENDING",
+    sub_state: "RUNNING",
+    created_at: "2025-09-01T10:30:00Z",
+    positions: [
+      {
+        id: 101,
+        symbol: "NIFTY23SEP18000CE",
+        quantity: 50,
+        entryPrice: 120,
+        currentPrice: 135,
+        side: "SELL",
+        status: "OPEN",
+      },
+      {
+        id: 102,
+        symbol: "NIFTY23SEP18200PE",
+        quantity: 50,
+        entryPrice: 110,
+        currentPrice: 95,
+        side: "BUY",
+        status: "OPEN",
+      },
+    ],
+  };
+
+  if (String(dummy.id) !== id) return null;
+  return dummy;
+}
+
+export default function TradeCycleDetailPage() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+
+  const tradeCycle = getTradeCycle("1");
+
+  if (!tradeCycle) {
+    // Redirect to 404 if not found
+    router.push("/404");
+    return null;
+  }
+
+  const statusMap: Record<string, JSX.Element> = {
+    NEW: <Clock size={16} className="text-warning" />,
+    PENDING: <Clock size={16} className="text-warning" />,
+    COMPLETED: <CheckCircle size={16} className="text-success" />,
+    STOPPED: <XCircle size={16} className="text-error" />,
+  };
+
+  const totalPnl = tradeCycle.positions.reduce((acc, pos) => {
+    const pnl =
+      pos.side === "BUY"
+        ? (pos.currentPrice - pos.entryPrice) * pos.quantity
+        : (pos.entryPrice - pos.currentPrice) * pos.quantity;
+    return acc + pnl;
+  }, 0);
+
+  return (
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="card bg-base-100 shadow-md mb-6">
+        <div className="card-body">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="card-title text-2xl">{tradeCycle.name}</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {tradeCycle.description}
+              </p>
+              <div className="flex gap-2 mt-2">
+                <span className="badge">{tradeCycle.sub_state}</span>
+                <span className="badge gap-1">
+                  {statusMap[tradeCycle.state] ?? <Clock size={16} />}
+                  {tradeCycle.state}
+                </span>
+              </div>
+            </div>
+            <div className="text-sm text-gray-500">
+              Created:{" "}
+              {new Date(tradeCycle.created_at).toLocaleDateString("en-IN")}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div className="stats shadow mb-6 w-full">
+        <div className="stat">
+          <div className="stat-title">Total Positions</div>
+          <div className="stat-value">{tradeCycle.positions.length}</div>
+        </div>
+        <div className="stat">
+          <div className="stat-title">Total PnL</div>
+          <div
+            className={`stat-value text-lg ${
+              totalPnl >= 0 ? "text-success" : "text-error"
+            }`}
+          >
+            {totalPnl >= 0 ? (
+              <ArrowUpRight className="inline mr-1" />
+            ) : (
+              <ArrowDownRight className="inline mr-1" />
+            )}
+            ₹{totalPnl.toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      {/* Positions */}
+      <div className="card bg-base-100 shadow-md">
+        <div className="card-body">
+          <h3 className="card-title text-lg mb-4">Positions</h3>
+          <div className="space-y-3">
+            {tradeCycle.positions.map((pos) => {
+              const pnl =
+                pos.side === "BUY"
+                  ? (pos.currentPrice - pos.entryPrice) * pos.quantity
+                  : (pos.entryPrice - pos.currentPrice) * pos.quantity;
+              return (
+                <div
+                  key={pos.id}
+                  className="flex justify-between items-center bg-base-200 rounded-lg p-3"
+                >
+                  <div>
+                    <div className="font-medium">{pos.symbol}</div>
+                    <div className="text-xs text-gray-500">
+                      {pos.side} | Qty: {pos.quantity}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm">
+                      Entry: ₹{pos.entryPrice} | Current: ₹{pos.currentPrice}
+                    </div>
+                    <div
+                      className={`font-semibold ${
+                        pnl >= 0 ? "text-success" : "text-error"
+                      }`}
+                    >
+                      {pnl >= 0 ? "+" : ""}
+                      ₹{pnl.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="mt-6 flex justify-end gap-3">
+        <button className="btn btn-outline btn-error">Close Trade Cycle</button>
+        <Link
+          href={`/hedgium/trade-cycle/${tradeCycle.id}/edit`}
+          className="btn btn-primary"
+        >
+          Modify
+        </Link>
+      </div>
+    </div>
+  );
+}

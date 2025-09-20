@@ -2,7 +2,13 @@
 "use client";
 
 import React, { JSX, useState } from "react";
-import { CheckCircle, Clock, XCircle, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import {
+  CheckCircle,
+  Clock,
+  XCircle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import Link from "next/link";
 
 interface Leg {
@@ -42,7 +48,7 @@ interface Props {
 const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const latestAdjustment = tradeCycle.adjustments[0]; // show latest adjustment first
+  const latestAdjustment = tradeCycle.adjustments[0]; // latest adjustment
   const legs = latestAdjustment?.legs ?? [];
 
   const statusMap: Record<string, JSX.Element> = {
@@ -53,52 +59,50 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
   };
 
   return (
-    <div className="card bg-base-100 shadow-md mb-6 border-l-4 border-l-primary">
-      <div className="card-body p-6">
+    <div className="card bg-base-100 snap-start shrink-0 w-[85%] sm:w-[60%] md:w-[50%] shadow-md mb-6 flex flex-col">
+      <div className="card-body p-4 flex flex-col flex-1">
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="card-title text-lg">{tradeCycle.name}</h3>
-            <div className="flex items-center mt-1">
-              <span className="text-sm font-medium bg-base-200 px-2 py-1 rounded-md mr-2">
-                {tradeCycle.sub_state}
-              </span>
-              <span className="badge gap-1">
+            <div className="flex gap-2 items-center mt-1">
+              <span className="badge badge-outline badge-dash">{tradeCycle.sub_state}</span>
+              <span className="badge badge-outline badge-info gap-1">
                 {statusMap[tradeCycle.state] ?? <Clock size={14} />}
                 {tradeCycle.state}
               </span>
             </div>
           </div>
-
-          <div className="text-right">
-            <div className="text-xs text-gray-500 mt-1">
-              Created: {new Date(tradeCycle.created_at).toLocaleDateString()}
-            </div>
+          <div className="text-xs text-gray-500">
+            Created: {new Date(tradeCycle.created_at).toLocaleDateString()}
           </div>
         </div>
 
         {/* Legs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          {legs.slice(0, 4).map((leg) => (
-            <div key={leg.id} className="bg-base-200 p-3 rounded-lg">
-              <div className="flex justify-between items-center">
-                <span
-                  className={`font-semibold ${
-                    leg.action === "BUY" ? "text-success" : "text-error"
-                  }`}
-                >
-                  {leg.action}
-                </span>
-                {leg.status === "PENDING" ? (
-                  <Clock size={14} className="text-warning" />
-                ) : (
-                  <CheckCircle size={14} className="text-success" />
-                )}
-              </div>
-              <div className="text-xs mt-1">{leg.instrument}</div>
-              <div className="text-sm text-gray-500 mt-1">
-                Qty: {leg.quantity} | ₹{leg.price}
-              </div>
+        <h4 className="font-semibold mb-2">Legs</h4>
+        <div className="space-y-2">
+          {legs.slice(0, expanded ? legs.length : 4).map((leg) => (
+            <div
+              key={leg.id}
+              className="flex items-center justify-between bg-base-200 px-3 py-2 rounded-lg text-sm"
+            >
+              <span
+                className={`font-semibold ${
+                  leg.action === "BUY" ? "text-success" : "text-error"
+                }`}
+              >
+                {leg.action}
+              </span>
+              <span className="flex-1 text-gray-600 ml-3 truncate">
+                {leg.instrument}
+              </span>
+              <span className="text-gray-500">Qty {leg.quantity}</span>
+              <span className="ml-2">₹{leg.price}</span>
+              {leg.status === "PENDING" ? (
+                <Clock size={14} className="ml-2 text-warning" />
+              ) : (
+                <CheckCircle size={14} className="ml-2 text-success" />
+              )}
             </div>
           ))}
         </div>
@@ -106,68 +110,34 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
         {/* Expand toggle */}
         {legs.length > 4 && (
           <button
-            className="btn btn-ghost btn-sm self-start mb-4"
+            className="btn btn-ghost btn-xs mt-2 self-start"
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? (
               <>
-                <ChevronUp size={16} className="mr-1" />
+                <ChevronUp size={14} className="mr-1" />
                 Show Less
               </>
             ) : (
               <>
-                <ChevronDown size={16} className="mr-1" />
-                Show All {legs.length} Legs
+                <ChevronDown size={14} className="mr-1" />
+                Show All {legs.length}
               </>
             )}
           </button>
         )}
 
-        {expanded && (
-          <div className="bg-base-200 p-4 rounded-lg mb-4">
-            <h4 className="font-semibold mb-3">All Legs</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {legs.map((leg) => (
-                <div key={leg.id} className="bg-base-100 p-3 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <span
-                      className={`font-semibold ${
-                        leg.action === "BUY" ? "text-success" : "text-error"
-                      }`}
-                    >
-                      {leg.action}
-                    </span>
-                    {leg.status === "PENDING" ? (
-                      <Clock size={14} className="text-warning" />
-                    ) : (
-                      <CheckCircle size={14} className="text-success" />
-                    )}
-                  </div>
-                  <div className="text-sm mt-2">{leg.instrument}</div>
-                  <div className="text-sm mt-1">Qty: {leg.quantity}</div>
-                  <div className="text-sm mt-1">Price: ₹{leg.price}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Spacer pushes actions down */}
+        <div className="flex-1"></div>
 
-        {/* Action buttons */}
-        <div className="card-actions justify-end">
-          {isActive ? (
-            <>
-              <button className="btn btn-outline btn-error btn-sm">
-                Close Trade Cycle
-              </button>
-              <Link href={`/dashboard/trade-cycle/${tradeCycle.id}`} className="btn btn-primary btn-sm">
-                Modify
-              </Link>
-            </>
-          ) : (
-            <Link href={`/dashboard/trade-cycle/${tradeCycle.id}`} className="btn btn-outline btn-sm">
-              View Details
-            </Link>
-          )}
+        {/* Actions */}
+        <div className="card-actions justify-end mt-4">
+          <Link
+            href={`/hedgium/positions/${tradeCycle.id}`}
+            className="btn btn-outline btn-sm"
+          >
+            View Positions
+          </Link>
         </div>
       </div>
     </div>
