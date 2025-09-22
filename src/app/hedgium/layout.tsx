@@ -1,38 +1,103 @@
-import ProtectedRoute from "@/components/ProtectedRoute";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import AuthNav from "@/components/AuthNav";
 import AuthFooter from "@/components/AuthFooter";
 import AuthNavigation from "@/components/AuthNavigation";
-import SliderDemo from "@/components/SliderDemo";
+import { useAuthStore } from "@/store/authStore";
+import { authFetch } from "@/utils/api";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const { accessToken, isInitializing, user, updateUser } = useAuthStore();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Redirect if user is not logged in
+  useEffect(() => {
+    if (!isInitializing && !accessToken) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [isInitializing, accessToken, router, pathname]);
+
+    const formData = new FormData();
+
+
+  // Determine KYC route
+  const kycRoute = async () => {
+
+    try{
+        formData.append("kyc_skipped", "false"); // optional, if you added this field
+        await authFetch("users/" + (user?.id ?? "") + "/", {
+          method: "PUT",
+          body: formData,
+        });
+    
+      updateUser({  kyc_skipped: false });
+    
+      } catch(e){
+        console.log("Error")
+      }
+    
+    switch (user?.signup_step) {
+      case "initiated":
+        router.push("/register/complete-profile")
+
+      case "documents_uploaded":
+        router.push("/register/add-broker")
+
+      case "broker_profile_added":
+        router.push("/register/verification")
+
+      default:
+        router.push("/hedgium/dashboard/")
+
+    }
+  };
+
+  if (!accessToken) return null; // Show nothing until auth is ready
+
   return (
-    <ProtectedRoute>
-      <div className="flex flex-col h-screen">
-        {/* Top Navbar */}
-
-        <div className="flex flex-1 overflow-hidden">
-          {/* Sidebar - visible on md+ */}
-          <aside className="hidden md:flex md:flex-col md:w-56 md:shrink-0 bg-base-200 border-r border-base-300">
-            <AuthNavigation sidebar />
-          </aside>
-
-          {/* Main content area */}
-          <main className="flex-1 overflow-y-auto">
-            <AuthNav />
+    <div className="flex flex-col h-screen">
 
 
-            {children}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar - visible on md+ */}
+        <aside className="hidden md:flex md:flex-col md:w-56 md:shrink-0 bg-base-200 border-r border-base-300">
+          <AuthNavigation sidebar />
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto flex flex-col">
+
+          
+                {user?.signup_step !== "verified" && (
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 flex justify-between items-center">
+                <p className="text-sm font-medium">
+                  Your profile verification is pending. Please complete your KYC to unlock full access.
+                </p>
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={kycRoute}
+                >
+                  Complete KYC
+                </button>
+              </div>
+            )}
 
 
-            <AuthFooter />
-          </main>
-        </div>
+          <AuthNav />
 
-        {/* Bottom Navigation - visible on mobile only */}
-        <div className="md:hidden">
-          <AuthNavigation />
-        </div>
+          <div className="flex-1">{children}</div>
+
+          <AuthFooter />
+        </main>
       </div>
-    </ProtectedRoute>
+
+      {/* Bottom Navigation for mobile */}
+      <div className="md:hidden">
+        <AuthNavigation />
+      </div>
+    </div>
   );
 }

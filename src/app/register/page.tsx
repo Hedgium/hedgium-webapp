@@ -17,7 +17,7 @@ function Register() {
 
 
   const [firstName, setFirstName] = useState<string>("");
-  const {login, accessToken} = useAuthStore();
+  const {login, accessToken, updateUser} = useAuthStore();
   const [lastName, setLastName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -44,35 +44,50 @@ function Register() {
     if (!firstName) {
       setFirstNameError("First name is required");
       valid = false;
+      return;
     } else setFirstNameError("");
 
     if (!lastName) {
       setLastNameError("Last name is required");
       valid = false;
+      return;
+
     } else setLastNameError("");
 
     if (!email) {
       setEmailError("Email is required");
       valid = false;
+      return;
+
     } else if (!validateEmail(email)) {
       setEmailError("Please enter a valid email");
       valid = false;
+      return;
+
     } else setEmailError("");
 
     if (!password) {
       setPasswordError("Password is required");
       valid = false;
+      return;
+
     } else if (password.length < 6) {
       setPasswordError("Password must be at least 6 characters");
       valid = false;
+      return;
+
     } else setPasswordError("");
 
     if (!confirmPassword) {
       setConfirmPasswordError("Please confirm your password");
       valid = false;
+      return;
+
     } else if (confirmPassword !== password) {
       setConfirmPasswordError("Passwords do not match");
       valid = false;
+      return;
+
     } else setConfirmPasswordError("");
 
 
@@ -92,10 +107,14 @@ function Register() {
       if (res.ok) {
         const data = await res.json();
         alert.success('User is created sucessfully', { duration: 3000 });
+
+        
         login(email, password);
+        updateUser({ signup_step: "initiated" })
       } else {}
       }
-    catch {
+    catch (e) {
+      console.log(e);
       alert.error("Something went wrong", {duration: 5000})
       }
 
@@ -105,19 +124,15 @@ function Register() {
 
   
   }
-
-
   
   useEffect(()=>{
-
-    if(accessToken){router.push("/hedgium/complete-profile")}
+    if(accessToken){router.push("/register/complete-profile")}
   }, [accessToken])
         
 
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div>
@@ -284,7 +299,6 @@ function Register() {
         </div>
       </div>
 
-      <Footer />
     </>
   );
 };

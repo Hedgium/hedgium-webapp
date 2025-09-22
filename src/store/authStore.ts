@@ -1,14 +1,23 @@
-
 import { create } from "zustand";
 
-
-
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  mobile?: string | null;
+  verified: boolean;
+  signup_step: string;
+  created_at: string;
+  updated_at: string;
+  kyc_skipped: boolean;
+}
 
 interface AuthState {
   accessToken: string | null;
-  user: object | null;
+  user: User | null;
   isLoading: boolean;
   isInitializing: boolean;
+  refreshTimerId: NodeJS.Timeout | null;
 
   login: (username: string, password: string) => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
@@ -16,6 +25,9 @@ interface AuthState {
   logout: () => Promise<void>;
   autoLogin: () => Promise<void>;
   startAutoRefresh: () => void;
+  stopAutoRefresh: () => void;
+  updateUser: (partial: Partial<User>) => void; // 👈 new
+
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -23,20 +35,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: false,
   isInitializing: true,
+  refreshTimerId: null,
 
-  login: async (username: string, password: string) => {
+  login: async (username, password) => {
     set({ isLoading: true });
-    const res = await fetch(
-      "/api/proxy/users/auth/login/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-        credentials: "include",
-      }
-    );
+    const res = await fetch("/api/proxy/users/auth/login/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+      credentials: "include",
+    });
 
     if (!res.ok) {
       set({ isLoading: false });
@@ -46,30 +54,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const data = await res.json();
     set({ accessToken: data.access_token, isLoading: false });
 
-    // fetch user details separately
     await get().fetchUser();
-
     set({ isInitializing: false });
     get().startAutoRefresh();
   },
 
   refreshAccessToken: async () => {
     try {
-      const res = await fetch(
-        "/api/proxy/users/token/refresh/",
-        {
-          method: "POST",
-          credentials: "include",
-        }
-      );
+      const res = await fetch("/api/proxy/users/token/refresh/", {
+        method: "POST",
+        credentials: "include",
+      });
 
       if (res.ok) {
         const data = await res.json();
         set({ accessToken: data.access_token });
-
-        // fetch user after refresh
         await get().fetchUser();
-
         return true;
       } else {
         set({ accessToken: null, user: null });
@@ -85,19 +85,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!get().accessToken) return;
 
     try {
-      const res = await fetch(
-        "/api/proxy/users/auth/me/",
-        {
-          headers: {
-            Authorization: `Bearer ${get().accessToken}`,
-          },
-          credentials: "include",
-        }
-      );
+      const res = await fetch("/api/proxy/users/auth/me/", {
+        headers: { Authorization: `Bearer ${get().accessToken}` },
+        credentials: "include",
+      });
 
       if (res.ok) {
-        const user = await res.json();
-        console.log(user);
+        const user: User = await res.json();
         set({ user });
       } else {
         set({ user: null });
@@ -109,19 +103,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     console.log("Logout Called");
-    const res = await fetch(
-      "/api/proxy/users/auth/logout/",
-      {
-        method: "POST",
-        headers: {
-          Authorization: get().accessToken ? `Bearer ${get().accessToken}` : "",
-        },
-        credentials: "include",
-      }
-    );
 
-    const data = await res.json();
-    console.log(data);
+    await fetch("/api/proxy/users/auth/logout/", {
+      method: "POST",
+      headers: {
+        Authorization: get().accessToken ? `Bearer ${get().accessToken}` : "",
+      },
+      credentials: "include",
+    }).catch(() => {});
+
+    // stop auto refresh loop
+    get().stopAutoRefresh();
 
     set({ accessToken: null, user: null });
   },
@@ -129,19 +121,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   autoLogin: async () => {
     set({ isInitializing: true });
     const ok = await get().refreshAccessToken();
-    if (ok) {
-      get().startAutoRefresh();
-    }
+    if (ok) get().startAutoRefresh();
     set({ isInitializing: false });
   },
 
   startAutoRefresh: () => {
-    const interval = 1000 * 60 * 1; // 1 miutes
-    setTimeout(async function refreshLoop() {
+    get().stopAutoRefresh(); // clear any old one first
+    const interval = 1000 * 60 * 1; // 1 minute
+    const id = setInterval(async () => {
       await get().refreshAccessToken();
-      setTimeout(refreshLoop, interval);
     }, interval);
+    set({ refreshTimerId: id });
+  },
+
+  stopAutoRefresh: () => {
+    const id = get().refreshTimerId;
+    if (id) clearInterval(id);
+    set({ refreshTimerId: null });
+  },
+
+  updateUser: (partial) => {
+    console.log(partial);
+    const user = get().user;
+    if (!user) return; // ignore if user not loaded
+    set({ user: { ...user, ...partial } });
   },
 }));
-
-

@@ -1,0 +1,46 @@
+"use client";
+
+import React from "react";
+
+type Step = {
+  id: string;
+  name: string;
+};
+
+const steps: Step[] = [
+  { id: "initiated", name: "Initiated" },
+  { id: "documents_uploaded", name: "Upload Documents" },
+  { id: "broker_profile_added", name: "Add Broker Profile" },
+  { id: "verified", name: "Verified" },
+];
+
+interface StepperProps {
+  currentStepId: string;
+}
+
+const SignUpStepper: React.FC<StepperProps> = ({ currentStepId }) => {
+  const currentIndex = steps.findIndex((step) => step.id === currentStepId);
+
+  return (
+    <div className="w-full flex flex-col items-center gap-8 p-6">
+      <ul className="steps w-full">
+        {steps.map((step, idx) => (
+          <li
+            key={step.id}
+            className={`step ${
+              idx < currentIndex
+                ? "step-primary" // ✅ completed
+                : idx === currentIndex
+                ? "step-primary" // ⏳ current
+                : "" // 🔲 yet to be completed
+            }`}
+          >
+            {step.name}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default SignUpStepper;
