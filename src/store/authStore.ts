@@ -1,16 +1,38 @@
 import { create } from "zustand";
 
-interface User {
+
+export interface SubscriptionPlan {
+  id: number;
+  name: string;
+  price: number;
+  max_strategies: number;
+  created_at: string; // ISO date string
+}
+
+export interface UserSubscription {
+  id: number;
+  user_id: number;
+  plan_id: number;
+  plan: SubscriptionPlan;
+  start_date: string; // ISO date string
+  end_date: string;   // ISO date string
+  is_active: boolean;
+}
+
+export interface User {
   id: number;
   username: string;
   email: string;
-  mobile?: string | null;
+  mobile: string | null;
   verified: boolean;
   signup_step: string;
-  created_at: string;
-  updated_at: string;
+  created_at: string; // ISO date string
+  updated_at: string; // ISO date string
   kyc_skipped: boolean;
+  active_subscription: UserSubscription | null;
 }
+
+
 
 interface AuthState {
   accessToken: string | null;

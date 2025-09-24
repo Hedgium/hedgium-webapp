@@ -7,6 +7,8 @@ import AuthFooter from "@/components/AuthFooter";
 import AuthNavigation from "@/components/AuthNavigation";
 import { useAuthStore } from "@/store/authStore";
 import { authFetch } from "@/utils/api";
+import Link from "next/link";
+import { formatDateOnly } from "@/utils/formatDate";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { accessToken, isInitializing, user, updateUser } = useAuthStore();
@@ -61,6 +63,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col h-screen">
 
 
+
+
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - visible on md+ */}
         <aside className="hidden md:flex md:flex-col md:w-56 md:shrink-0 bg-base-200 border-r border-base-300">
@@ -71,8 +75,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-y-auto flex flex-col">
 
           
-                {user?.signup_step !== "verified" && (
-              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 flex justify-between items-center">
+              {user?.signup_step !== "verified" && (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 flex justify-between items-center">
                 <p className="text-sm font-medium">
                   Your profile verification is pending. Please complete your KYC to unlock full access.
                 </p>
@@ -83,7 +87,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   Complete KYC
                 </button>
               </div>
-            )}
+              )}
+
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 flex justify-between items-center">
+                <p className="text-sm font-medium">
+                  Your current plan : {user?.active_subscription?.plan?.name}
+                </p>
+                <p>
+                {user?.active_subscription?.plan?.name !="Legends" && <Link
+                  className="btn btn-sm btn-primary"
+                  href={"/hedgium/upgrade"}
+                >
+                  Upgrade Now
+                </Link> }
+                {/* Expires on {formatDateOnly(user?.active_subscription?.end_date)} */}
+                </p>
+              </div>
+              
 
 
           <AuthNav />
