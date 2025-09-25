@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const { headers } = request;
   const accessToken = headers.get('Authorization')?.replace('Bearer ', '');
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}users/auth/me`;
+  const backendUrl = `${process.env.BACKEND_API_URL}users/auth/me`;
   const apiKey = process.env.BACKEND_API_KEY;
 
   if (!accessToken) {

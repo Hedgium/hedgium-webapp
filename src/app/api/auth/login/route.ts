@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   const { username, password } = await request.json();
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}users/auth/login/`;
+  const backendUrl = `${process.env.BACKEND_API_URL}users/auth/login/`;
   const apiKey = process.env.BACKEND_API_KEY;
 
   try {

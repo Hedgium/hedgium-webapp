@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export async function POST() {
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}users/token/refresh`;
+  const backendUrl = `${process.env.BACKEND_API_URL}users/token/refresh`;
   const apiKey = process.env.BACKEND_API_KEY;
 
   try {

@@ -25,7 +25,7 @@ async function handleProxyRequest(request: Request) {
   const backendPath = pathSegments.join("/");
   const normalizedPath =
     backendPath.endsWith("/") ? backendPath : backendPath + "/";
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}${normalizedPath}${search}`;
+  const backendUrl = `${process.env.BACKEND_API_URL}${normalizedPath}${search}`;
   const apiKey = process.env.BACKEND_API_KEY;
 
   if (!apiKey) {
