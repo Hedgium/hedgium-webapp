@@ -1,22 +1,25 @@
-// pages/notifications/index.tsx
 'use client'
 
 import { NextPage } from 'next';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useEffect, useRef } from 'react';
+import { authFetch } from '@/utils/api';
+import { useAuthStore } from '@/store/authStore';
+interface RelatedEntity {
+  type: 'strategy' | 'position' | 'order';
+  id: number;
+  name: string;
+}
 
 interface Notification {
-  id: string;
+  id: number;
   type: 'info' | 'success' | 'warning' | 'error';
   title: string;
   message: string;
-  timestamp: Date;
+  timestamp: string; // ISO string from API
   read: boolean;
-  relatedEntity?: {
-    type: 'strategy' | 'position' | 'order';
-    id: string;
-    name: string;
-  };
+  related_entity?: RelatedEntity;
+  related_model_name: 'strategy' | 'position' | 'order'
+  related_model_id: number
 }
 
 const NotificationsPage: NextPage = () => {
@@ -25,137 +28,107 @@ const NotificationsPage: NextPage = () => {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [activeCategory, setActiveCategory] = useState<'all' | 'trading' | 'system'>('all');
 
-  useEffect(() => {
-    // Simulate API fetch
-    const fetchNotifications = async () => {
-      try {
-        // In a real app, this would be an API call
-        const mockNotifications: Notification[] = [
-          {
-            id: '1',
-            type: 'success',
-            title: 'Strategy Executed',
-            message: 'Your Moving Average Crossover strategy has successfully entered a long position on AAPL.',
-            timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
-            read: false,
-            relatedEntity: {
-              type: 'strategy',
-              id: 'strat-1',
-              name: 'Moving Average Crossover'
-            }
-          },
-          {
-            id: '2',
-            type: 'warning',
-            title: 'Price Alert',
-            message: 'TSLA has dropped 5% below your entry price of $210.75. Consider adjusting your stop loss.',
-            timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-            read: false,
-            relatedEntity: {
-              type: 'position',
-              id: 'pos-3',
-              name: 'TSLA Position'
-            }
-          },
-          {
-            id: '3',
-            type: 'error',
-            title: 'Order Failed',
-            message: 'Failed to execute buy order for NVDA. Insufficient buying power.',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-            read: true,
-            relatedEntity: {
-              type: 'order',
-              id: 'order-4',
-              name: 'NVDA Buy Order'
-            }
-          },
-          {
-            id: '4',
-            type: 'info',
-            title: 'System Update',
-            message: 'Scheduled maintenance will occur this weekend. The system will be unavailable from 2 AM to 4 AM EST.',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5), // 5 hours ago
-            read: true
-          },
-          {
-            id: '5',
-            type: 'success',
-            title: 'Profit Target Reached',
-            message: 'MSFT has reached your profit target of $327.89. Position has been partially closed.',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12), // 12 hours ago
-            read: true,
-            relatedEntity: {
-              type: 'position',
-              id: 'pos-2',
-              name: 'MSFT Position'
-            }
-          },
-          {
-            id: '6',
-            type: 'warning',
-            title: 'High Volatility Alert',
-            message: 'Unusual volatility detected in BTC/USD. Consider adjusting position size or stop loss levels.',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-            read: true,
-            relatedEntity: {
-              type: 'strategy',
-              id: 'strat-4',
-              name: 'Crypto Momentum'
-            }
-          },
-          {
-            id: '7',
-            type: 'info',
-            title: 'New Feature Available',
-            message: 'Backtesting module is now available. Test your strategies against historical market data.',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 36), // 36 hours ago
-            read: true
-          },
-          {
-            id: '8',
-            type: 'error',
-            title: 'Connection Issue',
-            message: 'Temporary connectivity issue with data feed. Historical data unaffected.',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48), // 2 days ago
-            read: true
-          }
-        ];
-        setNotifications(mockNotifications);
-      } catch (error) {
-        console.error('Failed to fetch notifications:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const {accessToken} = useAuthStore();
 
+  const fetchNotifications = async () => {
+    try {
+      const res = await authFetch('/notifications/', { method: 'GET' });
+      
+      setNotifications(await res.json());
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchNotifications();
   }, []);
 
-  const markAsRead = (id: string) => {
-    setNotifications(notifications.map(notification => 
-      notification.id === id ? { ...notification, read: true } : notification
-    ));
+  
+  const reconnectTimeout = useRef(null); // Moved useRef outside useEffect
+  const wsRef = useRef(null); // Store WebSocket instance to avoid redeclaring
+
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const maxRetries = 5; // Maximum number of reconnection attempts
+    const retryDelay = 3000; // Delay between retries in milliseconds (3 seconds)
+    let retryCount = 0; // Current retry attempt
+
+    const connectWebSocket = () => {
+      wsRef.current = new WebSocket(`${protocol}://localhost:8000/ws/notifications/?token=${accessToken}`);
+
+      wsRef.current.onopen = () => {
+        console.log('WebSocket connected ✅');
+        retryCount = 0; // Reset retry count on successful connection
+      };
+
+      wsRef.current.onmessage = (event) => {
+        const newNotification = JSON.parse(event.data);
+        setNotifications((prev) => [newNotification, ...prev]); // Prepend new notification
+      };
+
+      wsRef.current.onclose = () => {
+        console.log('WebSocket disconnected ❌');
+
+        if (retryCount < maxRetries) {
+          retryCount += 1;
+          console.log(`Attempting to reconnect (${retryCount}/${maxRetries}) in ${retryDelay / 1000} seconds...`);
+          reconnectTimeout.current = setTimeout(connectWebSocket, retryDelay);
+        } else {
+          console.log('Max reconnection attempts reached. Giving up.');
+        }
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        wsRef.current.close(); // Close the WebSocket to trigger onclose
+      };
+    };
+
+    // Initial connection
+    connectWebSocket();
+
+    // Cleanup on unmount
+    return () => {
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current); // Clear any pending reconnect timeout
+      }
+      if (wsRef.current) {
+        wsRef.current.close(); // Close the WebSocket
+      }
+    };
+  }, [accessToken]); // Re-run effect if accessToken changes
+
+  const markAsRead = async (id: number) => {
+    try {
+      await authFetch(`/notifications/${id}/read/`, { method: 'POST' });
+      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(notification => ({ ...notification, read: true })));
+  const markAllAsRead = async () => {
+    try {
+      await authFetch('/notifications/mark-all-read/', { method: 'POST' });
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(notifications.filter(notification => notification.id !== id));
+  const deleteNotification = async (id: number) => {
+    try {
+      await authFetch(`/notifications/${id}/`, { method: 'DELETE' });
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+    }
   };
 
-  const filteredNotifications = notifications.filter(notification => {
-    // Apply read/unread filter
-    if (filter === 'unread' && notification.read) return false;
-    
-    // Apply category filter
-    if (activeCategory === 'trading' && !notification.relatedEntity) return false;
-    if (activeCategory === 'system' && notification.relatedEntity) return false;
-    
-    return true;
-  });
+  const filteredNotifications = notifications;
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -178,9 +151,9 @@ const NotificationsPage: NextPage = () => {
           </div>
           <div className="flex items-center mt-4 md:mt-0">
             {unreadCount > 0 && (
-              <button 
+              <button
                 onClick={markAllAsRead}
-                className="px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 mr-3"
+                className="px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 mr-3 cursor-pointer"
               >
                 Mark all as read
               </button>
@@ -206,27 +179,8 @@ const NotificationsPage: NextPage = () => {
             >
               Unread
             </button>
-            
-            <div className="ml-auto flex gap-2">
-              <button
-                className={`px-4 py-2 rounded-lg ${activeCategory === 'all' ? 'bg-gray-200 text-gray-900' : 'bg-gray-100 text-gray-700'}`}
-                onClick={() => setActiveCategory('all')}
-              >
-                All Categories
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg ${activeCategory === 'trading' ? 'bg-gray-200 text-gray-900' : 'bg-gray-100 text-gray-700'}`}
-                onClick={() => setActiveCategory('trading')}
-              >
-                Trading
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg ${activeCategory === 'system' ? 'bg-gray-200 text-gray-900' : 'bg-gray-100 text-gray-700'}`}
-                onClick={() => setActiveCategory('system')}
-              >
-                System
-              </button>
-            </div>
+
+      
           </div>
         </div>
 
@@ -242,7 +196,7 @@ const NotificationsPage: NextPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredNotifications.map((notification) => (
+            {filteredNotifications.map(notification => (
               <div
                 key={notification.id}
                 className={`bg-white rounded-xl shadow-sm p-5 border-l-4 ${
@@ -254,68 +208,67 @@ const NotificationsPage: NextPage = () => {
               >
                 <div className="flex justify-between items-start">
                   <div className="flex items-start">
-                    <div className={`p-2 rounded-full mr-4 ${
+                    {/* Type Icon */}
+                    <div className={`p-2 rounded-full mr-4 flex items-center justify-center ${
                       notification.type === 'success' ? 'bg-green-100 text-green-600' :
                       notification.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
                       notification.type === 'error' ? 'bg-red-100 text-red-600' :
                       'bg-blue-100 text-blue-600'
                     }`}>
                       {notification.type === 'success' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                       {notification.type === 'warning' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M4.93 19h14.14l1.41-2.83L12 3 3.52 16.17 4.93 19z" />
                         </svg>
                       )}
                       {notification.type === 'error' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       )}
                       {notification.type === 'info' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 3a9 9 0 110 18 9 9 0 010-18z" />
                         </svg>
                       )}
                     </div>
+
                     <div>
                       <h3 className="font-semibold text-gray-900">{notification.title}</h3>
                       <p className="text-gray-700 mt-1">{notification.message}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {notification.relatedEntity && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {notification.relatedEntity.type}: {notification.relatedEntity.name}
+                            {notification.related_model_name}
                           </span>
-                        )}
+
                         <span className="text-xs text-gray-500">
-                          {formatTimeAgo(notification.timestamp)}
+                          {formatTimeAgo(new Date(notification.timestamp))}
                         </span>
                       </div>
                     </div>
                   </div>
+
+                  {/* Action buttons */}
                   <div className="flex space-x-2">
                     {!notification.read && (
                       <button
                         onClick={() => markAsRead(notification.id)}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-gray-400 hover:text-gray-600 cursor-pointer"
                         title="Mark as read"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
+                        ✔
                       </button>
                     )}
                     <button
                       onClick={() => deleteNotification(notification.id)}
-                      className="text-gray-400 hover:text-red-500"
+                      className="text-gray-400 hover:text-red-500 cursor-pointer"
                       title="Delete notification"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
+                      🗑
                     </button>
                   </div>
                 </div>
@@ -328,30 +281,18 @@ const NotificationsPage: NextPage = () => {
   );
 };
 
-// Helper function to format time ago
+// Helper function to format "time ago"
 function formatTimeAgo(date: Date): string {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  if (diffInSeconds < 60) {
-    return 'Just now';
-  }
-  
+
+  if (diffInSeconds < 60) return 'Just now';
   const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`;
-  }
-  
+  if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`;
   const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) {
-    return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
-  }
-  
+  if (diffInHours < 24) return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
   const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) {
-    return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
-  }
-  
+  if (diffInDays < 7) return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
   return date.toLocaleDateString();
 }
 
