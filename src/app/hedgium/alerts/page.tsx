@@ -4,6 +4,8 @@ import { NextPage } from 'next';
 import { useState, useEffect, useRef } from 'react';
 import { authFetch } from '@/utils/api';
 import { useAuthStore } from '@/store/authStore';
+import { Icon } from '@iconify/react';
+
 interface RelatedEntity {
   type: 'strategy' | 'position' | 'order';
   id: number;
@@ -26,7 +28,6 @@ const NotificationsPage: NextPage = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const [activeCategory, setActiveCategory] = useState<'all' | 'trading' | 'system'>('all');
 
   const {accessToken} = useAuthStore();
 
@@ -82,7 +83,7 @@ const NotificationsPage: NextPage = () => {
       };
 
       wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.log('WebSocket error:', error);
         wsRef.current.close(); // Close the WebSocket to trigger onclose
       };
     };
@@ -121,7 +122,7 @@ const NotificationsPage: NextPage = () => {
 
   const deleteNotification = async (id: number) => {
     try {
-      await authFetch(`/notifications/${id}/`, { method: 'DELETE' });
+      const res = await authFetch(`/notifications/${id}/`, { method: 'DELETE' });
       setNotifications(prev => prev.filter(n => n.id !== id));
     } catch (error) {
       console.error('Failed to delete notification:', error);
@@ -260,7 +261,8 @@ const NotificationsPage: NextPage = () => {
                         className="text-gray-400 hover:text-gray-600 cursor-pointer"
                         title="Mark as read"
                       >
-                        ✔
+                      <Icon icon="lucide:check" className='h-4 w-4' />
+                        
                       </button>
                     )}
                     <button
@@ -268,7 +270,7 @@ const NotificationsPage: NextPage = () => {
                       className="text-gray-400 hover:text-red-500 cursor-pointer"
                       title="Delete notification"
                     >
-                      🗑
+                      <Icon icon="lucide:trash" className='h-4 w-4' />
                     </button>
                   </div>
                 </div>

@@ -1,7 +1,6 @@
 
-import { 
-  LineChart
-} from 'lucide-react';
+
+import { Icon } from '@iconify/react';
 
 import Link from 'next/link';
 
@@ -11,7 +10,7 @@ export default function Footer() {
               <footer className="footer md:footer-horizontal p-10 bg-neutral text-neutral-content">
         <div>
           <span className="footer-title">
-            <LineChart className="mr-2" size={20} />
+            <Icon icon={"line-chart"} width={20} className='mr-2' />
             Hedgium
           </span> 
           <Link href="#"className="link link-hover">AI-Powered Trading Strategies</Link>

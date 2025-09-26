@@ -1,0 +1,192 @@
+"use client";
+
+import { useState } from "react";
+import { Icon } from "@iconify/react";
+import { authFetch } from "@/utils/api";
+
+import useAlert from "@/hooks/useAlert";
+
+interface PasswordData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+interface Errors {
+  currentPassword?: string;
+  newPassword?: string;
+  confirmPassword?: string;
+}
+
+const PasswordInput: React.FC<{
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  showPassword: boolean;
+  toggleShowPassword: () => void;
+  placeholder: string;
+  error?: string;
+}> = ({
+  label,
+  name,
+  value,
+  onChange,
+  showPassword,
+  toggleShowPassword,
+  placeholder,
+  error,
+}) => (
+  <div className="form-control">
+    <label className="label">
+      <span className="label-text text-base-content">{label}</span>
+    </label>
+    <div className="relative">
+      <input
+        type={showPassword ? "text" : "password"}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className={`input input-bordered w-full pr-10 ${
+          error ? "input-error" : ""
+        }`}
+        placeholder={placeholder}
+      />
+      <button
+        type="button"
+        className="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/60"
+        onClick={toggleShowPassword}
+      >
+        {showPassword ? (
+          <Icon icon="lucide:eye-off" className="h-6 w-6" />
+        ) : (
+          <Icon icon="lucide:eye" className="h-6 w-6" />
+        )}
+      </button>
+    </div>
+    {error && <p className="mt-2 text-sm text-error">{error}</p>}
+  </div>
+);
+
+const PasswordTab: React.FC = () => {
+  const alert = useAlert();
+  const [passwordData, setPasswordData] = useState<PasswordData>({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [errors, setErrors] = useState<Errors>({});
+  const [loading, setLoading] = useState(false);
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handlePasswordSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    let valid = true;
+    const newErrors: Errors = {};
+
+    if (!passwordData.currentPassword) {
+      newErrors.currentPassword = "Current password is required";
+      valid = false;
+    }
+    if (!passwordData.newPassword) {
+      newErrors.newPassword = "New password is required";
+      valid = false;
+    } else if (passwordData.newPassword.length < 6) {
+      newErrors.newPassword = "Password must be at least 6 characters";
+      valid = false;
+    }
+    if (!passwordData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+      valid = false;
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+      valid = false;
+    }
+
+    setErrors(newErrors);
+
+    if (!valid) return;
+
+    try {
+      setLoading(true);
+      const res = await authFetch("/users/password/change/", {
+        method: "POST",
+        body: JSON.stringify({
+          old_password: passwordData.currentPassword,
+          new_password: passwordData.newPassword,
+          confirm_password: passwordData.confirmPassword,
+        }),
+      });
+
+
+      if (res?.ok) {
+        alert("Password changed successfully!");
+        setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      } else {
+        const data = await res.json()
+        alert(data?.message || "Failed to change password");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="card bg-base-100 shadow-xl card-hover p-6">
+      <h2 className="text-2xl font-bold mb-6 text-base-content">Change Password</h2>
+      <div className="space-y-4">
+        <PasswordInput
+          label="Current Password"
+          name="currentPassword"
+          value={passwordData.currentPassword}
+          onChange={handlePasswordChange}
+          showPassword={showCurrentPassword}
+          toggleShowPassword={() => setShowCurrentPassword(!showCurrentPassword)}
+          placeholder="Enter your current password"
+          error={errors.currentPassword}
+        />
+        <PasswordInput
+          label="New Password"
+          name="newPassword"
+          value={passwordData.newPassword}
+          onChange={handlePasswordChange}
+          showPassword={showNewPassword}
+          toggleShowPassword={() => setShowNewPassword(!showNewPassword)}
+          placeholder="Enter your new password"
+          error={errors.newPassword}
+        />
+        <PasswordInput
+          label="Confirm New Password"
+          name="confirmPassword"
+          value={passwordData.confirmPassword}
+          onChange={handlePasswordChange}
+          showPassword={showConfirmPassword}
+          toggleShowPassword={() => setShowConfirmPassword(!showConfirmPassword)}
+          placeholder="Confirm your new password"
+          error={errors.confirmPassword}
+        />
+        <button
+          onClick={handlePasswordSubmit}
+          disabled={loading}
+          className="btn btn-primary w-full"
+        >
+          {loading ? "Updating..." : "Update Password"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default PasswordTab;

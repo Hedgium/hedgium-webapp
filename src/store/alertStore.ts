@@ -30,6 +30,7 @@ const useAlertStore = create<AlertStore>((set, get) => ({
     }));
     
     // Auto remove if duration is set
+    if (!alert.duration) alert.duration = 3000;
     if (alert.duration && alert.duration > 0) {
       setTimeout(() => {
         get().removeAlert(id);

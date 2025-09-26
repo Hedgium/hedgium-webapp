@@ -2,13 +2,7 @@
 "use client";
 
 import React, { JSX, useState } from "react";
-import {
-  CheckCircle,
-  Clock,
-  XCircle,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Icon } from "@iconify/react";
 import Link from "next/link";
 
 interface Leg {
@@ -52,10 +46,10 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
   const legs = latestAdjustment?.legs ?? [];
 
   const statusMap: Record<string, JSX.Element> = {
-    NEW: <Clock size={14} className="text-warning" />,
-    PENDING: <Clock size={14} className="text-warning" />,
-    COMPLETED: <CheckCircle size={14} className="text-success" />,
-    STOPPED: <XCircle size={14} className="text-error" />,
+    NEW: <Icon icon="lucide:clock" width={14} className="text-warning" />,
+    PENDING: <Icon icon="lucide:clock" width={14} className="text-warning" />,
+    COMPLETED: <Icon icon="lucide:check-circle" width={14} className="text-success" />,
+    STOPPED: <Icon icon="lucide:x-circle" width={14} className="text-error" />,
   };
 
   return (
@@ -68,7 +62,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
             <div className="flex gap-2 items-center mt-1">
               <span className="badge badge-outline badge-dash">{tradeCycle.sub_state}</span>
               <span className="badge badge-outline badge-info gap-1">
-                {statusMap[tradeCycle.state] ?? <Clock size={14} />}
+                {statusMap[tradeCycle.state] ?? <Icon icon="lucide:clock" width={14} />}
                 {tradeCycle.state}
               </span>
             </div>
@@ -99,9 +93,9 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
               <span className="text-gray-500">Qty {leg.quantity}</span>
               <span className="ml-2">₹{leg.price}</span>
               {leg.status === "PENDING" ? (
-                <Clock size={14} className="ml-2 text-warning" />
+                <Icon icon="lucide:clock" width={14} className="ml-2 text-warning" />
               ) : (
-                <CheckCircle size={14} className="ml-2 text-success" />
+                <Icon icon="lucide:check-circle" width={14} className="ml-2 text-success" />
               )}
             </div>
           ))}
@@ -115,12 +109,12 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
           >
             {expanded ? (
               <>
-                <ChevronUp size={14} className="mr-1" />
+                <Icon icon="lucide:chevron-up" width={14} className="mr-1" />
                 Show Less
               </>
             ) : (
               <>
-                <ChevronDown size={14} className="mr-1" />
+                <Icon icon="lucide:chevron-down" width={14} className="mr-1" />
                 Show All {legs.length}
               </>
             )}

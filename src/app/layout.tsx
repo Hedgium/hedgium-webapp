@@ -1,7 +1,6 @@
 // app/layout.tsx
 'use client'
-
-import "./globals.css"
+import './global.css'
 import { Inter } from "next/font/google"
 import { ThemeProvider } from 'next-themes'
 

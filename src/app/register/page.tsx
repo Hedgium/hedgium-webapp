@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Lock, Mail, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { myFetch } from "@/utils/api";
 import { useAuthStore } from "@/store/authStore";
@@ -16,17 +14,17 @@ function Register() {
   const alert = useAlert();
 
 
-  const [firstName, setFirstName] = useState<string>("");
+  const [first_name, setFirstName] = useState<string>("");
   const {login, accessToken, updateUser} = useAuthStore();
-  const [lastName, setLastName] = useState<string>("");
+  const [last_name, setLastName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [registering, setRegistering] = useState<boolean>(false);
 
   // Errors
-  const [firstNameError, setFirstNameError] = useState<string>("");
-  const [lastNameError, setLastNameError] = useState<string>("");
+  const [first_nameError, setFirstNameError] = useState<string>("");
+  const [last_nameError, setLastNameError] = useState<string>("");
   const [emailError, setEmailError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
   const [confirmPasswordError, setConfirmPasswordError] = useState<string>("");
@@ -41,13 +39,13 @@ function Register() {
 
     try{
 
-    if (!firstName) {
+    if (!first_name) {
       setFirstNameError("First name is required");
       valid = false;
       return;
     } else setFirstNameError("");
 
-    if (!lastName) {
+    if (!last_name) {
       setLastNameError("Last name is required");
       valid = false;
       return;
@@ -92,8 +90,8 @@ function Register() {
 
 
     const dataToSend = {
-      "first_name": firstName,
-      "last_name": lastName,
+      "first_name": first_name,
+      "last_name": last_name,
       "email": email,
       "username": email,
       "password": password
@@ -154,20 +152,21 @@ function Register() {
                   </label>
                   <div className="mt-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                      <User className="h-5 w-5 text-base-content/60" />
+                      <Icon icon="lucide:user"  className="h-5 w-5 text-base-content/60"  />
+                      
                     </div>
                     <input
                       type="text"
                       className={`input input-bordered w-full pl-10 ${
-                        firstNameError ? "input-error" : ""
+                        first_nameError ? "input-error" : ""
                       }`}
-                      value={firstName}
+                      value={first_name}
                       onChange={(e) => setFirstName(e.target.value)}
                       placeholder="Enter your first name"
                     />
                   </div>
-                  {firstNameError && (
-                    <p className="mt-2 text-sm text-error">{firstNameError}</p>
+                  {first_nameError && (
+                    <p className="mt-2 text-sm text-error">{first_nameError}</p>
                   )}
                 </div>
 
@@ -178,20 +177,21 @@ function Register() {
                   </label>
                   <div className="mt-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                      <User className="h-5 w-5 text-base-content/60" />
+                      <Icon icon="lucide:user"  className="h-5 w-5 text-base-content/60"  />
+                      
                     </div>
                     <input
                       type="text"
                       className={`input input-bordered w-full pl-10 ${
-                        lastNameError ? "input-error" : ""
+                        last_nameError ? "input-error" : ""
                       }`}
-                      value={lastName}
+                      value={last_name}
                       onChange={(e) => setLastName(e.target.value)}
                       placeholder="Enter your last name"
                     />
                   </div>
-                  {lastNameError && (
-                    <p className="mt-2 text-sm text-error">{lastNameError}</p>
+                  {last_nameError && (
+                    <p className="mt-2 text-sm text-error">{last_nameError}</p>
                   )}
                 </div>
 
@@ -202,7 +202,8 @@ function Register() {
                   </label>
                   <div className="mt-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                      <Mail className="h-5 w-5 text-base-content/60" />
+                      <Icon icon="lucide:mail"  className="h-5 w-5 text-base-content/60"  />
+                      
                     </div>
                     <input
                       type="email"
@@ -226,7 +227,8 @@ function Register() {
                   </label>
                   <div className="mt-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                      <Lock className="h-5 w-5 text-base-content/60" />
+                      <Icon icon="lucide:lock"  className="h-5 w-5 text-base-content/60"  />
+                      
                     </div>
                     <input
                       type="password"
@@ -250,7 +252,7 @@ function Register() {
                   </label>
                   <div className="mt-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                      <Lock className="h-5 w-5 text-base-content/60" />
+                      <Icon icon="lucide:lock"  className="h-5 w-5 text-base-content/60"  />
                     </div>
                     <input
                       type="password"

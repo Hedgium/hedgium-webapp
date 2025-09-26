@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Clock } from "lucide-react";
+import { Icon } from "@iconify/react";
 import SignUpStepper from "@/components/SignUpStepper";
 import { useAuthStore } from "@/store/authStore";
 import { useEffect } from "react";
@@ -63,7 +63,8 @@ const VerificationPending: React.FC = () => {
       {/* Card with pending message */}
       <div className="card w-full max-w-lg shadow-xl bg-base-100 p-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <Clock className="w-16 h-16 text-warning animate-pulse" />
+          <Icon icon="lucide:clock"  className="w-16 h-16 text-warning animate-pulse"  />
+          
 
           <h1 className="text-2xl font-bold text-warning">
             Profile Verification Pending

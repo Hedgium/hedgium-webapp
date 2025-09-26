@@ -2,8 +2,7 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
-
+import { Icon } from "@iconify/react";
 
 interface Position {
   id: string;
@@ -15,7 +14,7 @@ interface Position {
   pnlPercentage: number;
   strategyId: string;
   strategyName: string;
-  type: 'long' | 'short';
+  type: "long" | "short";
   assetType: string;
   side: "BUY" | "SELL"; // trade direction
   status: "OPEN" | "CLOSED";
@@ -83,9 +82,9 @@ const PositionCard: React.FC<Props> = ({ position }) => {
             className={`font-semibold flex items-center gap-1 ${pnlColor}`}
           >
             {pnl >= 0 ? (
-              <TrendingUp size={16} />
+              <Icon icon="lucide:trending-up" width={16} height={16} />
             ) : (
-              <TrendingDown size={16} />
+              <Icon icon="lucide:trending-down" width={16} height={16} />
             )}
             ₹{pnl.toFixed(2)}
           </span>

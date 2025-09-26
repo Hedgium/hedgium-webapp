@@ -21,6 +21,8 @@ export interface UserSubscription {
 
 export interface User {
   id: number;
+  first_name: string | null,
+  last_name: string | null,
   username: string;
   email: string;
   mobile: string | null;
@@ -75,9 +77,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const data = await res.json();
     set({ accessToken: data.access_token, isLoading: false });
+    set({ isInitializing: false });
 
     await get().fetchUser();
-    set({ isInitializing: false });
     get().startAutoRefresh();
   },
 
@@ -114,6 +116,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (res.ok) {
         const user: User = await res.json();
+        console.log(user);
         set({ user });
       } else {
         set({ user: null });

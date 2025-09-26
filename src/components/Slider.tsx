@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 interface SliderProps {
   children: React.ReactNode;
@@ -41,16 +41,13 @@ export default function Slider({
     }
     slideStepRef.current = step || 1;
 
-    // Respect current padding for scroll-snap alignment:
+    // Respect current padding for scroll-snap alignment
     const cs = window.getComputedStyle(container);
     const padLeft = parseFloat(cs.paddingLeft || "0") || 0;
     const padRight = parseFloat(cs.paddingRight || "0") || 0;
 
-    // Set scroll-padding so snap aligns to the visible padded area
-    // (this directly fixes the "first card hugging edge" snapping issue).
     container.style.setProperty("scroll-padding-left", `${padLeft}px`);
     container.style.setProperty("scroll-padding-right", `${padRight}px`);
-
 
     const clientWidth = container.clientWidth;
     const scrollWidth = container.scrollWidth;
@@ -64,7 +61,7 @@ export default function Slider({
     updateIndexFromScroll();
   };
 
-  // Round scrollLeft/step into an index to avoid tiny fractional errors
+  // Round scrollLeft/step into an index
   const updateIndexFromScroll = () => {
     const container = containerRef.current;
     if (!container) return;
@@ -90,7 +87,6 @@ export default function Slider({
     setCanScrollLeft(index > 0);
     setCanScrollRight(index < maxIndexRef.current);
 
-    // final check after smooth scroll finishes (debounced)
     if (scrollDebounceRef.current) window.clearTimeout(scrollDebounceRef.current);
     scrollDebounceRef.current = window.setTimeout(() => {
       updateIndexFromScroll();
@@ -133,12 +129,11 @@ export default function Slider({
       ro = new ResizeObserver(() => calcMetrics());
       if (containerRef.current) {
         ro.observe(containerRef.current);
-        // observe first child as well to capture card size changes
         if (containerRef.current.firstElementChild)
           ro.observe(containerRef.current.firstElementChild);
       }
     } catch (err) {
-      // ResizeObserver might not be available in some old envs - resize fallback covers most cases
+      // fallback for old browsers
     }
 
     const initTimer = window.setTimeout(calcMetrics, 120);
@@ -152,7 +147,6 @@ export default function Slider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [children]);
 
-  // small mount-time recalculation (helps when images/fonts load)
   useEffect(() => {
     const t = window.setTimeout(calcMetrics, 50);
     return () => clearTimeout(t);
@@ -170,10 +164,10 @@ export default function Slider({
                     bg-base-200 rounded-full p-2 shadow transition-opacity
                     ${canScrollLeft ? "cursor-pointer opacity-100" : "cursor-not-allowed opacity-40"}`}
       >
-        <ChevronLeft />
+        <Icon icon="lucide:chevron-left" width={20} height={20} />
       </button>
 
-      {/* slider wrapper: NOTE - px classes add initial space */}
+      {/* slider wrapper */}
       <div
         ref={containerRef}
         onScroll={onScroll}
@@ -193,7 +187,7 @@ export default function Slider({
                     bg-base-200 rounded-full p-2 shadow transition-opacity
                     ${canScrollRight ? "cursor-pointer opacity-100" : "cursor-not-allowed opacity-40"}`}
       >
-        <ChevronRight />
+        <Icon icon="lucide:chevron-right" width={20} height={20} />
       </button>
     </div>
   );

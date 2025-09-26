@@ -4,16 +4,16 @@
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
 
-import { Home, Briefcase, Bell, Settings, Sun, Moon, LogOut, LineChart } from "lucide-react";
+import { Icon } from "@iconify/react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 
 const tabs = [
-  { name: "Dashboard", href: "/hedgium/dashboard", icon: Home },
-  { name: "Positions", href: "/hedgium/positions", icon: Briefcase },
-  { name: "Alerts", href: "/hedgium/alerts", icon: Bell },
-  { name: "Settings", href: "/hedgium/settings", icon: Settings },
+  { name: "Dashboard", href: "/hedgium/dashboard", icon: "lucide:home" },
+  { name: "Positions", href: "/hedgium/positions", icon: "lucide:briefcase" },
+  { name: "Alerts", href: "/hedgium/alerts", icon: "lucide:bell" },
+  { name: "Settings", href: "/hedgium/settings", icon: "lucide:cog" },
 ];
 
 export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean }) {
@@ -33,7 +33,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
         {/* Logo/Brand */}
         <div className="p-4 border-b border-base-300">
           <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary">
-            <LineChart size={26} className="text-primary" />
+            <Icon icon="mdi:chart-line" width="26" height="26" className="text-primary" />
             <span>Hedgium</span>
           </Link>
         </div>
@@ -42,7 +42,6 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
         <nav className="flex-1 overflow-y-auto p-4">
           <ul className="gap-2 space-y-1">
             {tabs.map((tab, idx) => {
-              const Icon = tab.icon;
               const active = pathname === tab.href;
               return (
                 <li key={idx}>
@@ -53,7 +52,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
                       : 'hover:bg-base-300/70'}`}
                     aria-current={active ? "page" : undefined}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon icon={tab.icon} className="h-5 w-5" />
                     <span className="font-medium">{tab.name}</span>
                   </Link>
                 </li>
@@ -70,7 +69,11 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
               className="btn btn-ghost justify-start normal-case gap-2"
               aria-label="Toggle theme"
             >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {theme === "dark" ? (
+                <Icon icon="lucide:sun" className="h-4 w-4" />
+              ) : (
+                <Icon icon="lucide:moon" className="h-4 w-4" />
+              )}
               <span>Theme</span>
             </button>
 
@@ -82,7 +85,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
               className="btn btn-ghost justify-start normal-case gap-2 text-error hover:text-error-content"
               aria-label="Logout"
             >
-              <LogOut className="h-4 w-4" />
+              <Icon icon="mdi:logout" className="h-4 w-4" />
               <span>Logout</span>
             </button>
           </div>
@@ -93,9 +96,8 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
 
   // ----- Mobile bottom dock -----
   return (
-    <div className="dock md:hidden z-40  backdrop-blur-sm">
+    <div className="dock md:hidden z-40 backdrop-blur-sm">
       {tabs.map((tab, index) => {
-        const Icon = tab.icon;
         const active = pathname === tab.href;
         return (
           <button
@@ -103,7 +105,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
             onClick={() => sendToPage(tab.href)}
             className={`text-xs transition-all ${active ? 'active text-primary' : ''}`}
           >
-            <Icon className="h-5 w-5 mx-auto" />
+            <Icon icon={tab.icon} className="h-5 w-5 mx-auto" />
             <span className="btm-nav-label">{tab.name}</span>
           </button>
         );

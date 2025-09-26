@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react';
 
-import { CheckIcon } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 import { useAuthStore } from '@/store/authStore';
 
@@ -62,7 +62,7 @@ export default function PricingPage() {
 
     const data = await res.json();
     // console.log(data);
-    updateUser({active_subscription:data})
+    updateUser({activeSubscription:data})
 
 
 
@@ -127,7 +127,7 @@ export default function PricingPage() {
         <div className="card w-full max-w-md bg-base-100 shadow-xl">
           <div className="card-body text-center">
             <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckIcon className="w-8 h-8 text-white" />
+              <Icon icon="lucide:check-icon" className="w-8 h-8 text-white" />
             </div>
             <h2 className="card-title justify-center text-2xl mb-2">Payment Successful!</h2>
             <p className="text-lg font-semibold mb-2">{selectedPlan?.name} Plan Activated</p>
@@ -313,9 +313,9 @@ export default function PricingPage() {
                 <ul className="space-y-3 mb-8 flex-1">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
-                      <CheckIcon className={`w-5 h-5 mt-0.5 mr-3 flex-shrink-0 ${
+                      <Icon icon="lucide:check-icon" className={`w-5 h-5 mt-0.5 mr-3 flex-shrink-0 ${
                         plan.popular ? 'text-green-400' : 'text-green-500'
-                      }`} />
+                      }`}  />
                       <span className="text-sm">{feature}</span>
                     </li>
                   ))}

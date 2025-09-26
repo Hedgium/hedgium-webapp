@@ -2,16 +2,9 @@
 "use client";
 
 import React, { JSX, useState } from "react";
-import {
-  CheckCircle,
-  Clock,
-  XCircle,
-  ChevronDown,
-  ChevronUp,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react";
+import { Icon } from "@iconify/react";
 import Link from "next/link";
+
 
 interface Position {
   id: number;
@@ -41,10 +34,10 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
   const [expanded, setExpanded] = useState(false);
 
   const statusMap: Record<string, JSX.Element> = {
-    NEW: <Clock size={14} className="text-warning" />,
-    PENDING: <Clock size={14} className="text-warning" />,
-    COMPLETED: <CheckCircle size={14} className="text-success" />,
-    STOPPED: <XCircle size={14} className="text-error" />,
+    NEW: <Icon icon="lucide:clock" width={14} className="text-warning" />,
+    PENDING: <Icon icon="lucide:clock" width={14} className="text-warning" />,
+    COMPLETED: <Icon icon="lucide:check-circle" width={14} className="text-success" />,
+    STOPPED: <Icon icon="lucide:x-circle" width={14} className="text-error" />,
   };
 
   return (
@@ -99,7 +92,11 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
                   </div>
                 </div>
                 <div className={`font-semibold flex items-center gap-1 ${pnlColor}`}>
-                  {pnl >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  {pnl >= 0 ? (
+                    <Icon icon="lucide:trending-up" width={14} />
+                  ) : (
+                    <Icon icon="lucide:trending-down" width={14} />
+                  )}
                   ₹{pnl.toFixed(2)}
                 </div>
               </div>
@@ -115,11 +112,11 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
           >
             {expanded ? (
               <>
-                <ChevronUp size={16} className="mr-1" /> Show Less
+                <Icon icon="lucide:chevron-up" width={16} className="mr-1" /> Show Less
               </>
             ) : (
               <>
-                <ChevronDown size={16} className="mr-1" /> Show All{" "}
+                <Icon icon="lucide:chevron-down" width={16} className="mr-1" /> Show All{" "}
                 {tradeCycle.positions.length} Positions
               </>
             )}

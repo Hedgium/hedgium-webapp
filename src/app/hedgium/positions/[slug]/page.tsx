@@ -3,14 +3,9 @@
 
 import React, { JSX } from "react";
 import Link from "next/link";
+import { Icon } from "@iconify/react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  CheckCircle,
-  Clock,
-  XCircle,
-  ArrowUpRight,
-  ArrowDownRight,
-} from "lucide-react";
+
 
 // Types
 type Position = {
@@ -81,10 +76,10 @@ export default function TradeCycleDetailPage() {
   }
 
   const statusMap: Record<string, JSX.Element> = {
-    NEW: <Clock size={16} className="text-warning" />,
-    PENDING: <Clock size={16} className="text-warning" />,
-    COMPLETED: <CheckCircle size={16} className="text-success" />,
-    STOPPED: <XCircle size={16} className="text-error" />,
+    NEW: <Icon icon="lucide:clock" width={16} className="text-warning"/>,
+    PENDING:  <Icon icon="lucide:clock" width={16} className="text-warning"/> ,
+    COMPLETED:  <Icon icon="lucide:check-circle" width={16} className="text-success" /> ,
+    STOPPED:  <Icon icon="lucide:x-circle" width={16} className="text-error"/>,
   };
 
   const totalPnl = tradeCycle.positions.reduce((acc, pos) => {
@@ -109,7 +104,7 @@ export default function TradeCycleDetailPage() {
               <div className="flex gap-2 mt-2">
                 <span className="badge">{tradeCycle.sub_state}</span>
                 <span className="badge gap-1">
-                  {statusMap[tradeCycle.state] ?? <Clock size={16} />}
+                  {statusMap[tradeCycle.state] ??  <Icon icon="lucide:clock" width={16} /> }
                   {tradeCycle.state}
                 </span>
               </div>
@@ -136,9 +131,10 @@ export default function TradeCycleDetailPage() {
             }`}
           >
             {totalPnl >= 0 ? (
-              <ArrowUpRight className="inline mr-1" />
+               <Icon icon="lucide:arrow-up-right" width={16} className="inline mr-1"/>
             ) : (
-              <ArrowDownRight className="inline mr-1" />
+               <Icon icon="lucide:arrow-down-right" width={16} className="inline mr-1"/>
+
             )}
             ₹{totalPnl.toFixed(2)}
           </div>

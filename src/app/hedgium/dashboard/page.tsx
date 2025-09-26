@@ -2,9 +2,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  LineChart
-} from 'lucide-react';
+
+
+import { Icon } from '@iconify/react';
+
 // import Link from 'next/link';
 import Slider from '@/components/Slider';
 
@@ -308,7 +309,7 @@ export default function Dashboard() {
             <h2 className="card-title mb-6">Performance Overview</h2>
             <div className="h-80 bg-base-200 rounded-lg flex items-center justify-center">
               <div className="text-center">
-                <LineChart size={48} className="mx-auto text-gray-400 mb-4" />
+                <Icon icon="lucide:line-chart" width={48} className="mx-auto text-gray-400 mb-4" />
                 <p className="text-gray-600">Performance chart will be displayed here</p>
                 <p className="text-sm text-gray-500">Connect your trading account to see detailed analytics</p>
               </div>
