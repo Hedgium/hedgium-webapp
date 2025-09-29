@@ -3,9 +3,10 @@
 import './global.css'
 import { Inter } from "next/font/google"
 import { ThemeProvider } from 'next-themes'
+import NotificationProvider from '@/providers/NotificationProvider'
 
 
-import AuthProvider from "@/components/AuthProvider";
+import AuthProvider from "@/providers/AuthProvider";
 import NextTopLoader from 'nextjs-toploader';
 
 const inter = Inter({
@@ -63,10 +64,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           showSpinner={true}
           height={2}
         />
+
         <AuthProvider>
-        <ThemeProvider>
-            {children}
-        </ThemeProvider>
+        <NotificationProvider>
+          <ThemeProvider>
+              {children}
+          </ThemeProvider>
+        </NotificationProvider>
         </AuthProvider>
         <AlertsContainer />
 

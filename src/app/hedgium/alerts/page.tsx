@@ -2,137 +2,28 @@
 
 import { NextPage } from 'next';
 import { useState, useEffect, useRef } from 'react';
-import { authFetch } from '@/utils/api';
-import { useAuthStore } from '@/store/authStore';
 import { Icon } from '@iconify/react';
+import { useNotificationStore } from "@/store/notificationStore";
 
-interface RelatedEntity {
-  type: 'strategy' | 'position' | 'order';
-  id: number;
-  name: string;
-}
 
-interface Notification {
-  id: number;
-  type: 'info' | 'success' | 'warning' | 'error';
-  title: string;
-  message: string;
-  timestamp: string; // ISO string from API
-  read: boolean;
-  related_entity?: RelatedEntity;
-  related_model_name: 'strategy' | 'position' | 'order'
-  related_model_id: number
-}
 
 const NotificationsPage: NextPage = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  const {
+    notifications,
+    isLoading,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotificationStore();
+
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
-  const {accessToken} = useAuthStore();
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await authFetch('/notifications/', { method: 'GET' });
-      
-      setNotifications(await res.json());
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
 
-  
-  const reconnectTimeout = useRef(null); // Moved useRef outside useEffect
-  const wsRef = useRef(null); // Store WebSocket instance to avoid redeclaring
 
-  useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const maxRetries = 5; // Maximum number of reconnection attempts
-    const retryDelay = 3000; // Delay between retries in milliseconds (3 seconds)
-    let retryCount = 0; // Current retry attempt
-
-    const connectWebSocket = () => {
-      
-      wsRef.current = new WebSocket(`${protocol}://${process.env.NEXT_PUBLIC_BACKEND_DOMAIN}/ws/notifications/?token=${accessToken}`);
-      console.log(`${protocol}://${process.env.NEXT_PUBLIC_BACKEND_DOMAIN}/ws/notifications/?token=${accessToken}`)
-      wsRef.current.onopen = () => {
-        console.log('WebSocket connected ✅');
-        retryCount = 0; // Reset retry count on successful connection
-      };
-
-      wsRef.current.onmessage = (event) => {
-        const newNotification = JSON.parse(event.data);
-        setNotifications((prev) => [newNotification, ...prev]); // Prepend new notification
-      };
-
-      wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected ❌');
-
-        if (retryCount < maxRetries) {
-          retryCount += 1;
-          console.log(`Attempting to reconnect (${retryCount}/${maxRetries}) in ${retryDelay / 1000} seconds...`);
-          reconnectTimeout.current = setTimeout(connectWebSocket, retryDelay);
-        } else {
-          console.log('Max reconnection attempts reached. Giving up.');
-        }
-      };
-
-      wsRef.current.onerror = (error) => {
-        console.log('WebSocket error:', error);
-        wsRef.current.close(); // Close the WebSocket to trigger onclose
-      };
-    };
-
-    // Initial connection
-    connectWebSocket();
-
-    // Cleanup on unmount
-    return () => {
-      if (reconnectTimeout.current) {
-        clearTimeout(reconnectTimeout.current); // Clear any pending reconnect timeout
-      }
-      if (wsRef.current) {
-        wsRef.current.close(); // Close the WebSocket
-      }
-    };
-  }, [accessToken]); // Re-run effect if accessToken changes
-
-  const markAsRead = async (id: number) => {
-    try {
-      await authFetch(`/notifications/${id}/read/`, { method: 'POST' });
-      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
-    } catch (error) {
-      console.error('Failed to mark as read:', error);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      await authFetch('/notifications/mark-all-read/', { method: 'POST' });
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    } catch (error) {
-      console.error('Failed to mark all as read:', error);
-    }
-  };
-
-  const deleteNotification = async (id: number) => {
-    try {
-      const res = await authFetch(`/notifications/${id}/`, { method: 'DELETE' });
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    } catch (error) {
-      console.error('Failed to delete notification:', error);
-    }
-  };
-
-  const filteredNotifications = notifications;
-
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   if (isLoading) {
     return (
@@ -187,7 +78,7 @@ const NotificationsPage: NextPage = () => {
         </div>
 
         {/* Notifications List */}
-        {filteredNotifications.length === 0 ? (
+        {notifications.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl shadow">
             <div className="text-2xl text-gray-500 mb-4">
               {filter === 'unread' ? 'No unread notifications' : 'No notifications found'}
@@ -198,7 +89,7 @@ const NotificationsPage: NextPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredNotifications.map(notification => (
+            {notifications.map(notification => (
               <div
                 key={notification.id}
                 className={`bg-white rounded-xl shadow-sm p-5 border-l-4 ${
