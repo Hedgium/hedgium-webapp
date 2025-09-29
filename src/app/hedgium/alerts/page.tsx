@@ -58,6 +58,7 @@ const NotificationsPage: NextPage = () => {
     let retryCount = 0; // Current retry attempt
 
     const connectWebSocket = () => {
+      
       wsRef.current = new WebSocket(`${protocol}://${process.env.NEXT_PUBLIC_BACKEND_DOMAIN}/ws/notifications/?token=${accessToken}`);
       console.log(`${protocol}://${process.env.NEXT_PUBLIC_BACKEND_DOMAIN}/ws/notifications/?token=${accessToken}`)
       wsRef.current.onopen = () => {
