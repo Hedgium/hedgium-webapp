@@ -91,16 +91,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
               <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 flex justify-between items-center">
                 <p className="text-sm font-medium">
-                  Your current plan : {user?.activeSubscription?.plan?.name}
+                  Your current plan : {user?.active_subscription?.plan?.name}
                 </p>
                 <p>
-                {user?.activeSubscription?.plan?.name !="Legends" && <Link
+                {user?.active_subscription?.plan?.name !="Legends" && <Link
                   className="btn btn-sm btn-primary"
                   href={"/hedgium/upgrade"}
                 >
                   Upgrade Now
                 </Link> }
-                {/* Expires on {formatDateOnly(user?.activeSubscription?.end_date)} */}
+                {/* Expires on {formatDateOnly(user?.active_subscription?.end_date)} */}
                 </p>
               </div>
               

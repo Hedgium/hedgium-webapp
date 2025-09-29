@@ -62,7 +62,7 @@ export default function PricingPage() {
 
     const data = await res.json();
     // console.log(data);
-    updateUser({activeSubscription:data})
+    updateUser({active_subscription:data})
 
 
 
