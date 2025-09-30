@@ -5,9 +5,11 @@
 // app/hedgium/trade-cycles/page.tsx
 "use client";
 
-import React from "react";
+import React, {useEffect, useState} from "react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import Slider from "@/components/Slider"; // ✅ the reusable slider we made
+import { authFetch } from "@/utils/api";
+
 
 // Dummy data for demo
 const tradeCycles = [
@@ -78,10 +80,37 @@ const tradeCycles = [
   },
 ];
 
+type TradeCycle = {
+  id: string;
+  name: string;
+  description: string;
+  state: "NEW" | "PENDING" | "COMPLETED" | "STOPPED";
+  sub_state: string;
+  created_at: string;
+  updated_at: string;
+};
+
+
 export default function TradeCyclesPage() {
 
+  const [tradeCycles, setTradeCycles] = useState<TradeCycle[]>([]);
+
   const totalPnl = 3000;
-  const totalPnlPercentage = 10 
+  const totalPnlPercentage = 10;
+
+  async function getAllTradeCycles () {
+    const res = await authFetch("trade-cycles/?state=ACTIVATED");
+    const data = await res.json();
+    console.log(data);
+    setTradeCycles(data.results);
+  }
+
+  useEffect(()=>{
+    getAllTradeCycles();
+  },[])
+
+
+
   return (
     <div className="p-4 hero-pattern">
 
@@ -112,6 +141,9 @@ export default function TradeCyclesPage() {
           <TradeCycleWithPositionsCard key={cycle.id} tradeCycle={cycle} />
         ))}
       </Slider>
+
+      <br />
+      <br />
     </div>
   );
 }

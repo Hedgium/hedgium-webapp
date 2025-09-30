@@ -2,10 +2,11 @@
 "use client";
 
 import React, { JSX } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
-import { useParams, useRouter } from "next/navigation";
-
+import { useParams } from "next/navigation";
+import { myFetch } from "@/utils/api";
 
 // Types
 type Position = {
@@ -25,64 +26,49 @@ type TradeCycle = {
   state: "NEW" | "PENDING" | "COMPLETED" | "STOPPED";
   sub_state: string;
   created_at: string;
-  positions: Position[];
+  updated_at: string;
 };
-
-// Dummy fetcher (replace with real API call)
-function getTradeCycle(id: string): TradeCycle | null {
-  const dummy: TradeCycle = {
-    id: 1,
-    name: "NIFTY Option Strategy",
-    description: "Intraday Iron Fly with hedges",
-    state: "PENDING",
-    sub_state: "RUNNING",
-    created_at: "2025-09-01T10:30:00Z",
-    positions: [
-      {
-        id: 101,
-        symbol: "NIFTY23SEP18000CE",
-        quantity: 50,
-        entryPrice: 120,
-        currentPrice: 135,
-        side: "SELL",
-        status: "OPEN",
-      },
-      {
-        id: 102,
-        symbol: "NIFTY23SEP18200PE",
-        quantity: 50,
-        entryPrice: 110,
-        currentPrice: 95,
-        side: "BUY",
-        status: "OPEN",
-      },
-    ],
-  };
-
-  if (String(dummy.id) !== id) return null;
-  return dummy;
-}
 
 export default function TradeCycleDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
+  const { id } = params;
 
-  const tradeCycle = getTradeCycle("1");
 
-  if (!tradeCycle) {
-    // Redirect to 404 if not found
-    router.push("/404");
-    return null;
+  const [tradeCycle, setTradeCycle] = useState<TradeCycle | null>(null);
+  const [positions, setPositions] = useState<Position[]>([]);
+
+  async function getTradeCycle(id: string) {
+    const res = await myFetch(`trade-cycles/${id}/`);
+    const data: TradeCycle = await res.json();
+    setTradeCycle(data);
   }
 
+  async function getTradeCyclePositions(id: string) {
+    const res = await myFetch(
+      `positions/?page=1&page_size=10&trade_cycle_id=${id}`
+    );
+    const data: { results: Position[] } = await res.json();
+    console.log(data);
+    setPositions(data.results);
+  }
+
+  useEffect(() => {
+    if (id) {
+      getTradeCycle(id);
+      getTradeCyclePositions(id);
+    }
+  }, [id]);
+
   const statusMap: Record<string, JSX.Element> = {
-    NEW: <Icon icon="lucide:clock" width={16} className="text-warning"/>,
-    PENDING:  <Icon icon="lucide:clock" width={16} className="text-warning"/> ,
-    COMPLETED:  <Icon icon="lucide:check-circle" width={16} className="text-success" /> ,
-    STOPPED:  <Icon icon="lucide:x-circle" width={16} className="text-error"/>,
+    NEW: <Icon icon="lucide:clock" width={16} className="text-warning" />,
+    PENDING: <Icon icon="lucide:clock" width={16} className="text-warning" />,
+    COMPLETED: (
+      <Icon icon="lucide:check-circle" width={16} className="text-success" />
+    ),
+    STOPPED: <Icon icon="lucide:x-circle" width={16} className="text-error" />,
   };
 
-  const totalPnl = tradeCycle.positions.reduce((acc, pos) => {
+  const totalPnl = positions.reduce((acc, pos) => {
     const pnl =
       pos.side === "BUY"
         ? (pos.currentPrice - pos.entryPrice) * pos.quantity
@@ -97,21 +83,23 @@ export default function TradeCycleDetailPage() {
         <div className="card-body">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="card-title text-2xl">{tradeCycle.name}</h2>
+              <h2 className="card-title text-2xl">{tradeCycle?.name}</h2>
               <p className="text-sm text-gray-500 mt-1">
-                {tradeCycle.description}
+                {tradeCycle?.description}
               </p>
               <div className="flex gap-2 mt-2">
-                <span className="badge">{tradeCycle.sub_state}</span>
+                <span className="badge">{tradeCycle?.sub_state}</span>
                 <span className="badge gap-1">
-                  {statusMap[tradeCycle.state] ??  <Icon icon="lucide:clock" width={16} /> }
-                  {tradeCycle.state}
+                  {statusMap[tradeCycle?.state] ?? (
+                    <Icon icon="lucide:clock" width={16} />
+                  )}
+                  {tradeCycle?.state}
                 </span>
               </div>
             </div>
             <div className="text-sm text-gray-500">
               Created:{" "}
-              {new Date(tradeCycle.created_at).toLocaleDateString("en-IN")}
+              {new Date(tradeCycle?.created_at).toLocaleDateString("en-IN")}
             </div>
           </div>
         </div>
@@ -121,7 +109,7 @@ export default function TradeCycleDetailPage() {
       <div className="stats shadow mb-6 w-full">
         <div className="stat">
           <div className="stat-title">Total Positions</div>
-          <div className="stat-value">{tradeCycle.positions.length}</div>
+          <div className="stat-value">{positions.length}</div>
         </div>
         <div className="stat">
           <div className="stat-title">Total PnL</div>
@@ -131,10 +119,17 @@ export default function TradeCycleDetailPage() {
             }`}
           >
             {totalPnl >= 0 ? (
-               <Icon icon="lucide:arrow-up-right" width={16} className="inline mr-1"/>
+              <Icon
+                icon="lucide:arrow-up-right"
+                width={16}
+                className="inline mr-1"
+              />
             ) : (
-               <Icon icon="lucide:arrow-down-right" width={16} className="inline mr-1"/>
-
+              <Icon
+                icon="lucide:arrow-down-right"
+                width={16}
+                className="inline mr-1"
+              />
             )}
             ₹{totalPnl.toFixed(2)}
           </div>
@@ -146,7 +141,7 @@ export default function TradeCycleDetailPage() {
         <div className="card-body">
           <h3 className="card-title text-lg mb-4">Positions</h3>
           <div className="space-y-3">
-            {tradeCycle.positions.map((pos) => {
+            {positions.map((pos) => {
               const pnl =
                 pos.side === "BUY"
                   ? (pos.currentPrice - pos.entryPrice) * pos.quantity
@@ -186,7 +181,7 @@ export default function TradeCycleDetailPage() {
       <div className="mt-6 flex justify-end gap-3">
         <button className="btn btn-outline btn-error">Close Trade Cycle</button>
         <Link
-          href={`/hedgium/trade-cycle/${tradeCycle.id}/edit`}
+          href={`/hedgium/trade-cycle/${tradeCycle?.id}/edit`}
           className="btn btn-primary"
         >
           Modify

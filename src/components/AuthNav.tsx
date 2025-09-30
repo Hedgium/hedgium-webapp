@@ -1,5 +1,7 @@
 "use client";
 
+// This is for mobile > Mobile Navbar
+
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Icon } from "@iconify/react";

@@ -60,11 +60,13 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
           <div>
             <h3 className="card-title text-lg">{tradeCycle.name}</h3>
             <div className="flex gap-2 items-center mt-1">
-              <span className="badge badge-outline badge-dash">{tradeCycle.sub_state}</span>
               <span className="badge badge-outline badge-info gap-1">
                 {statusMap[tradeCycle.state] ?? <Icon icon="lucide:clock" width={14} />}
                 {tradeCycle.state}
               </span>
+              
+              <span className="badge badge-outline badge-dash">{tradeCycle.sub_state}</span>
+              
             </div>
           </div>
           <div className="text-xs text-gray-500">
@@ -126,12 +128,14 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
 
         {/* Actions */}
         <div className="card-actions justify-end mt-4">
+        { tradeCycle.state != "NEW" &&
           <Link
             href={`/hedgium/positions/${tradeCycle.id}`}
             className="btn btn-outline btn-sm"
           >
             View Positions
           </Link>
+        }
         </div>
       </div>
     </div>

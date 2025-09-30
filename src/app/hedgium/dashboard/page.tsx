@@ -233,26 +233,7 @@ export default function Dashboard() {
   
         
         {/* Tabs for Active/Past Strategies */}
-        <div className="tabs tabs-boxed bg-base-100 p-1 mb-6">
-          <button 
-            className={`tab tab-lg ${activeTab === 'active' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('active')}
-          >
-            Active Cards
-            {/* <span className="badge badge-sm badge-primary ml-2">
-              {strategyData.active.length}
-            </span> */}
-          </button> 
-          <button 
-            className={`tab tab-lg ${activeTab === 'past' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('past')}
-          >
-            Other Cards
-            {/* <span className="badge badge-sm badge-neutral ml-2">
-              {strategyData.past.length}
-            </span> */}
-          </button>
-        </div>
+        
         
         {/* Search and Filter Bar */}
         {/* <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -274,37 +255,30 @@ export default function Dashboard() {
         </div> */}
         
         {/* Strategy Cards */}
+
+        
         
         <div className="mb-8">
-  {activeTab === "active" ? (
-    activeTradeCycles.length > 0 ? <>
-    <Slider>
-      {activeTradeCycles.map((tc) => (
-        <TradeCycleCard key={tc?.id} tradeCycle={tc} isActive={true} />
-      ))}
-    </Slider>
-    </> : (
-      <div className="text-center py-12 bg-base-100 rounded-lg shadow">
-        <h3 className="text-xl font-semibold mb-2">No Active Trade Cycles</h3>
-        <p className="text-gray-600">{`You don't have any active trade cycles at the moment.`}</p>
+
+          {
+          activeTradeCycles.length > 0 ? <>
+          <Slider>
+            {activeTradeCycles.map((tc) => (
+              <TradeCycleCard key={tc?.id} tradeCycle={tc} isActive={true} />
+            ))}
+          </Slider>
+          </> : (
+            <div className="text-center py-12 bg-base-100 rounded-lg shadow">
+              <h3 className="text-xl font-semibold mb-2">No Active Trade Cycles</h3>
+              <p className="text-gray-600">{`You don't have any active trade cycles at the moment.`}</p>
+            </div>
+          )
+      }
+
       </div>
-    )
-  ) : pastTradeCycles.length > 0 ? (
-    <Slider>
-    {pastTradeCycles.map((tc) => (
-      <TradeCycleCard key={tc?.id} tradeCycle={tc} isActive={false} />
-    ))}
-    </Slider>
-  ) : (
-    <div className="text-center py-12 bg-base-100 rounded-lg shadow">
-      <h3 className="text-xl font-semibold mb-2">No Past Trade Cycles</h3>
-      <p className="text-gray-600">{`You don't have any past trade cycles yet.`}</p>
-    </div>
-  )}
-</div>
 
         {/* Performance Chart Section */}
-        <div className="card bg-base-100 shadow-md mb-8">
+        {/* <div className="card bg-base-100 shadow-md mb-8">
           <div className="card-body">
             <h2 className="card-title mb-6">Performance Overview</h2>
             <div className="h-80 bg-base-200 rounded-lg flex items-center justify-center">
@@ -315,7 +289,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

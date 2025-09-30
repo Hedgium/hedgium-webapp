@@ -28,14 +28,11 @@ export default function AuthFooter() {
           <span className="footer-title">Company</span> 
           <Link href="#" className="link link-hover">About us</Link>
           <Link href="#" className="link link-hover">Contact</Link>
-          <Link href="#" className="link link-hover">Careers</Link>
-          <Link href="#" className="link link-hover">Press kit</Link>
         </div> 
         <div>
           <span className="footer-title">Legal</span> 
           <Link href="#" className="link link-hover">Terms of use</Link>
           <Link href="#" className="link link-hover">Privacy policy</Link>
-          <Link href="#" className="link link-hover">Cookie policy</Link>
         </div>
       </footer>
 

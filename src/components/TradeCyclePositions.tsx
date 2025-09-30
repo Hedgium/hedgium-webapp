@@ -1,29 +1,32 @@
 // components/TradeCycleWithPositionsCard.tsx
 "use client";
 
-import React, { JSX, useState } from "react";
+import React, { JSX, useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
+import { myFetch } from "@/utils/api";
 
 
-interface Position {
+
+// Types
+type Position = {
   id: number;
   symbol: string;
   quantity: number;
   entryPrice: number;
   currentPrice: number;
   side: "BUY" | "SELL";
-  status: "OPEN" | "CLOSED";
-}
+  status: string;
+};
+
 
 interface TradeCycle {
-  id: number;
+  id: string;
   name: string;
   description: string;
   state: "NEW" | "PENDING" | "COMPLETED" | "STOPPED";
   sub_state: string;
   created_at: string;
-  positions: Position[];
 }
 
 interface Props {
@@ -33,6 +36,21 @@ interface Props {
 const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
   const [expanded, setExpanded] = useState(false);
 
+    const [positions, setPositions] = useState<Position[]>([]);
+  
+    async function getTradeCyclePositions(id: string) {
+      const res = await myFetch(
+        `positions/?page=1&page_size=10&trade_cycle_id=${id}`
+      );
+      const data: { results: Position[] } = await res.json();
+      console.log(data);
+      setPositions(data.results);
+    }
+
+  useEffect(()=>{
+    if(tradeCycle) getTradeCyclePositions(tradeCycle?.id)
+  },[tradeCycle])
+
   const statusMap: Record<string, JSX.Element> = {
     NEW: <Icon icon="lucide:clock" width={14} className="text-warning" />,
     PENDING: <Icon icon="lucide:clock" width={14} className="text-warning" />,
@@ -41,28 +59,28 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
   };
 
   return (
-    <div className="card bg-base-100 shadow-md w-[90%] md:w-[60%] snap-start shrink-0">
+    <div className="card bg-base-200 shadow-md w-[90%] md:w-[60%] snap-start shrink-0">
       <div className="card-body p-4 flex flex-col flex-1">
         {/* Header */}
         <div className="flex justify-between items-start mb-3">
           <div>
-            <h3 className="card-title text-lg">{tradeCycle.name}</h3>
+            <h3 className="card-title text-lg">{tradeCycle?.name}</h3>
             <div className="flex gap-2 items-center mt-1">
-              <span className="badge">{tradeCycle.sub_state}</span>
+              <span className="badge">{tradeCycle?.sub_state}</span>
               <span className="badge gap-1">
-                {statusMap[tradeCycle.state]} {tradeCycle.state}
+                {statusMap[tradeCycle?.state]} {tradeCycle?.state}
               </span>
             </div>
           </div>
           <div className="text-xs text-gray-500">
-            {new Date(tradeCycle.created_at).toLocaleDateString()}
+            {new Date(tradeCycle?.created_at).toLocaleDateString()}
           </div>
         </div>
 
         {/* Positions */}
         <h4 className="font-semibold mb-2">Positions</h4>
         <div className="space-y-2">
-          {tradeCycle.positions.slice(0, expanded ? undefined : 2).map((pos) => {
+          {positions.slice(0, expanded ? undefined : 2).map((pos) => {
             const pnl =
               pos.side === "BUY"
                 ? (pos.currentPrice - pos.entryPrice) * pos.quantity
@@ -105,7 +123,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
         </div>
 
         {/* Expand toggle */}
-        {tradeCycle.positions.length > 2 && (
+        {positions.length > 2 && (
           <button
             className="btn btn-ghost btn-sm mt-2 self-start"
             onClick={() => setExpanded(!expanded)}
@@ -117,7 +135,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
             ) : (
               <>
                 <Icon icon="lucide:chevron-down" width={16} className="mr-1" /> Show All{" "}
-                {tradeCycle.positions.length} Positions
+                {positions.length} Positions
               </>
             )}
           </button>

@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function Footer() {
 
     return (
-              <footer className="footer md:footer-horizontal p-10 bg-neutral text-neutral-content">
+      <footer className="footer md:footer-horizontal p-10 bg-neutral text-neutral-content">
         <div>
           <span className="footer-title">
             <Icon icon={"line-chart"} width={20} className='mr-2' />
@@ -28,14 +28,11 @@ export default function Footer() {
           <span className="footer-title">Company</span> 
           <Link href="#"className="link link-hover">About us</Link>
           <Link href="#"className="link link-hover">Contact</Link>
-          <Link href="#"className="link link-hover">Careers</Link>
-          <Link href="#"className="link link-hover">Press kit</Link>
         </div> 
         <div>
           <span className="footer-title">Legal</span> 
-          <Link href="#"className="link link-hover">Terms of use</Link>
-          <Link href="#"className="link link-hover">Privacy policy</Link>
-          <Link href="#"className="link link-hover">Cookie policy</Link>
+          <Link href="/terms-of-use"className="link link-hover">Terms of use</Link>
+          <Link href="/privacy-policy"className="link link-hover">Privacy policy</Link>
         </div>
       </footer>
 

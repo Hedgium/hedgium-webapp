@@ -62,9 +62,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col h-screen">
 
-
-
-
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - visible on md+ */}
         <aside className="hidden md:flex md:flex-col md:w-56 md:shrink-0 bg-base-200 border-r border-base-300">
