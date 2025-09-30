@@ -206,7 +206,7 @@ export default function Dashboard() {
 
 
   return (
-    <div className="bg-base-200 p-4 md:p-6">
+    <div className="bg-base-200 hero-pattern p-4 md:p-6">
 
       <MarketHeader />
 

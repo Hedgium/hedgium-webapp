@@ -1,6 +1,6 @@
-// app/layout.tsx
 'use client'
 import './global.css'
+
 import { Inter } from "next/font/google"
 import { ThemeProvider } from 'next-themes'
 import NotificationProvider from '@/providers/NotificationProvider'

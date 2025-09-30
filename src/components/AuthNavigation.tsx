@@ -32,7 +32,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
       <div className="flex flex-col h-full bg-base-200/50 border border-base-300">
         {/* Logo/Brand */}
         <div className="p-4 border-b border-base-300">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary">
+          <Link href="/hedgium/dashboard" className="flex items-center gap-2 text-xl font-bold text-primary">
             <Icon icon="mdi:chart-line" width="26" height="26" className="text-primary" />
             <span>Hedgium</span>
           </Link>

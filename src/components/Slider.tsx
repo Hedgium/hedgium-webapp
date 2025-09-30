@@ -173,7 +173,7 @@ export default function Slider({
         onScroll={onScroll}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="flex gap-4 px-2 md:px-6 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide"
+        className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide"
       >
         {children}
       </div>

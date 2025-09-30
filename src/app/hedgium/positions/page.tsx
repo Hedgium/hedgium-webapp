@@ -83,7 +83,7 @@ export default function TradeCyclesPage() {
   const totalPnl = 3000;
   const totalPnlPercentage = 10 
   return (
-    <div className="p-4">
+    <div className="p-4 hero-pattern">
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
