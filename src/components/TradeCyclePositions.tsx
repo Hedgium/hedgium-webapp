@@ -9,15 +9,26 @@ import { myFetch } from "@/utils/api";
 
 
 // Types
+// Types
 type Position = {
   id: number;
   symbol: string;
-  quantity: number;
-  entryPrice: number;
-  currentPrice: number;
-  side: "BUY" | "SELL";
-  status: string;
+
+  buy_quantity: number;
+  average_buy_price: number;
+
+  sell_quantity: number;
+  average_sell_price: number;
+
+  quantity: number; // net quantity
+
+  realised_total: number;
+  realised_today: number;
+  unrealised: number;
+  pnl: number; // total pnl = realised_total + realised_today + unrealised
 };
+
+
 
 
 interface TradeCycle {
@@ -79,48 +90,45 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
 
         {/* Positions */}
         <h4 className="font-semibold mb-2">Positions</h4>
-        <div className="space-y-2">
-          {positions.slice(0, expanded ? undefined : 2).map((pos) => {
-            const pnl =
-              pos.side === "BUY"
-                ? (pos.currentPrice - pos.entryPrice) * pos.quantity
-                : (pos.entryPrice - pos.currentPrice) * pos.quantity;
+      
+      <div className="space-y-2">
+  {positions.slice(0, expanded ? undefined : 2).map((pos) => {
+    const pnlColor = pos.pnl >= 0 ? "text-success" : "text-error";
 
-            const pnlColor = pnl >= 0 ? "text-success" : "text-error";
-
-            return (
-              <div
-                key={pos.id}
-                className="bg-base-200 p-3 rounded-lg flex justify-between items-center"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`font-semibold ${
-                        pos.side === "BUY" ? "text-success" : "text-error"
-                      }`}
-                    >
-                      {pos.side}
-                    </span>
-                    <span className="text-sm">{pos.symbol}</span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Qty: {pos.quantity} | Entry: ₹{pos.entryPrice} | Now: ₹
-                    {pos.currentPrice}
-                  </div>
-                </div>
-                <div className={`font-semibold flex items-center gap-1 ${pnlColor}`}>
-                  {pnl >= 0 ? (
-                    <Icon icon="lucide:trending-up" width={14} />
-                  ) : (
-                    <Icon icon="lucide:trending-down" width={14} />
-                  )}
-                  ₹{pnl.toFixed(2)}
-                </div>
-              </div>
-            );
-          })}
+    return (
+      <div
+        key={pos.id}
+        className="bg-base-200 p-3 rounded-lg flex justify-between items-center"
+      >
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{pos.symbol}</span>
+            <span className="text-xs text-gray-500">
+              Net Qty: {pos.quantity}
+            </span>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Buy: {pos.buy_quantity} @ ₹{pos.average_buy_price} | 
+            Sell: {pos.sell_quantity} @ ₹{pos.average_sell_price}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Realised Total: ₹{pos.realised_total} | Realised Today: ₹{pos.realised_today} | Unrealised: ₹{pos.unrealised}
+          </div>
         </div>
+        <div className={`font-semibold flex items-center gap-1 ${pnlColor}`}>
+          {pos.pnl >= 0 ? (
+            <Icon icon="lucide:trending-up" width={14} />
+          ) : (
+            <Icon icon="lucide:trending-down" width={14} />
+          )}
+          ₹{pos.pnl.toFixed(2)}
+        </div>
+      </div>
+    );
+  })}
+</div>
+
+
 
         {/* Expand toggle */}
         {positions.length > 2 && (
