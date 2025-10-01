@@ -1,9 +1,11 @@
-// components/TradeCycleCard.tsx
 "use client";
 
-import React, { JSX, useState } from "react";
+import React, { JSX, useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
+import { authFetch } from "@/utils/api";
+import { Button } from "@nextui-org/react";
+import useAlert from "@/hooks/useAlert";
 
 interface Leg {
   id: number;
@@ -41,16 +43,45 @@ interface Props {
 
 const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
   const [expanded, setExpanded] = useState(false);
+  const alert = useAlert()
 
-  const latestAdjustment = tradeCycle.adjustments[0]; // latest adjustment
+  // ✅ Mirror props into state
+  const [cycle, setCycle] = useState<TradeCycle>(tradeCycle);
+
+  // ✅ Sync if parent updates the prop
+  useEffect(() => {
+    setCycle(tradeCycle);
+  }, [tradeCycle]);
+
+  const latestAdjustment = cycle.adjustments[0];
   const legs = latestAdjustment?.legs ?? [];
 
   const statusMap: Record<string, JSX.Element> = {
     NEW: <Icon icon="lucide:clock" width={14} className="text-warning" />,
-    PENDING: <Icon icon="lucide:clock" width={14} className="text-warning" />,
-    COMPLETED: <Icon icon="lucide:check-circle" width={14} className="text-success" />,
-    STOPPED: <Icon icon="lucide:x-circle" width={14} className="text-error" />,
+    ACTIVATED: <Icon icon="lucide:clock" width={14} className="text-warning" />,
+    ADJUSTED: <Icon icon="lucide:check-circle" width={14} className="text-success" />,
+    CLOSED: <Icon icon="lucide:x-circle" width={14} className="text-error" />,
   };
+
+  async function activateTradeCycle() {
+    const url = `trade-cycles/activate-trade/${cycle.id}/`;
+
+    alert("Trade Cycle Activated", {
+      duration:2000
+    })
+
+    setCycle((prev) => ({
+        ...prev,
+        state: "ACTIVATED",
+      }));
+    try {
+      const res = await authFetch(url);
+      const data = await res.json();
+      console.log("Activated:", data);
+    } catch (err) {
+      console.error("Activation failed:", err);
+    }
+  }
 
   return (
     <div className="card bg-base-100 snap-start shrink-0 w-[85%] sm:w-[60%] md:w-[50%] shadow-md mb-6 flex flex-col">
@@ -58,19 +89,17 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="card-title text-lg">{tradeCycle.name}</h3>
+            <h3 className="card-title text-lg">{cycle.name}</h3>
             <div className="flex gap-2 items-center mt-1">
               <span className="badge badge-outline badge-info gap-1">
-                {statusMap[tradeCycle.state] ?? <Icon icon="lucide:clock" width={14} />}
-                {tradeCycle.state}
+                {statusMap[cycle.state] ?? <Icon icon="lucide:clock" width={14} />}
+                {cycle.state}
               </span>
-              
-              <span className="badge badge-outline badge-dash">{tradeCycle.sub_state}</span>
-              
+              <span className="badge badge-outline badge-dash">{cycle.sub_state}</span>
             </div>
           </div>
           <div className="text-xs text-gray-500">
-            Created: {new Date(tradeCycle.created_at).toLocaleDateString()}
+            Created: {new Date(cycle.created_at).toLocaleDateString()}
           </div>
         </div>
 
@@ -89,9 +118,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
               >
                 {leg.action}
               </span>
-              <span className="flex-1 text-gray-600 ml-3 truncate">
-                {leg.instrument}
-              </span>
+              <span className="flex-1 text-gray-600 ml-3 truncate">{leg.instrument}</span>
               <span className="text-gray-500">Qty {leg.quantity}</span>
               <span className="ml-2">₹{leg.price}</span>
               {leg.status === "PENDING" ? (
@@ -128,14 +155,17 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
 
         {/* Actions */}
         <div className="card-actions justify-end mt-4">
-        { tradeCycle.state != "NEW" &&
-          <Link
-            href={`/hedgium/positions/${tradeCycle.id}`}
-            className="btn btn-outline btn-sm"
-          >
-            View Positions
-          </Link>
-        }
+          {cycle.state !== "NEW" && (
+            <Link href={`/hedgium/positions/${cycle.id}`} className="btn btn-outline btn-sm">
+              View Positions
+            </Link>
+          )}
+
+          {cycle.state === "NEW" && (
+            <Button onClick={activateTradeCycle} className="btn btn-outline btn-sm">
+              Activate
+            </Button>
+          )}
         </div>
       </div>
     </div>

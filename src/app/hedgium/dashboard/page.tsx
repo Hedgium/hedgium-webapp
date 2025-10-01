@@ -17,45 +17,7 @@ import DashboardMetrics from '@/components/DashboardMetrics';
 
 import { authFetch } from '@/utils/api';
 
-// Define the types for the data structures
-type StrategyStatus = 'running' | 'pending' | 'completed' | 'stopped';
-type StrategyAction = 'BUY' | 'SELL';
-type OptionType = 'CE' | 'PE';
 
-interface StrategyLeg {
-  action: StrategyAction;
-  type: OptionType;
-  strike: number;
-  quantity: number;
-  premium: number;
-  filled: boolean;
-}
-
-interface Strategy {
-  id: number;
-  name: string;
-  symbol: string;
-  status: StrategyStatus;
-  return: number;
-  created: string;
-  closed?: string; // Optional field for past strategies
-  legs: StrategyLeg[];
-}
-
-interface StrategyData {
-  active: Strategy[];
-  past: Strategy[];
-}
-
-interface TradeCycle {
-  id: number;
-  name: string;
-  description?: string;
-  state: string;
-  sub_state: string;
-  created_at: string;
-  // add other fields you actually return from the API
-}
 
 
 interface DashboardStats {
@@ -68,12 +30,8 @@ interface DashboardStats {
 
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'active' | 'past'>('active');
-  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
   const [activeTradeCycles, setActiveTradeCycles] = useState([]);
   const [nextActiveTradeCycles, setNextActiveTradeCycles] = useState<string | null> (null);
-  const [pastTradeCycles, setPastTradeCycles] = useState([])
-  const [nextPastTradeCycles, setNextPastTradeCycles] = useState<string | null> (null);
 
 
 
@@ -82,7 +40,7 @@ export default function Dashboard() {
   
      try {
 
-      const res = await authFetch('trade-cycles/?page=1&page_size=10')
+      const res = await authFetch('trade-cycles/?approved=true&page=1&page_size=10')
       
       if (res.ok) {
         const data = await res.json();
@@ -96,106 +54,14 @@ export default function Dashboard() {
     }
   
 
-    async function getPastTradeCycles() {
-      // console.log("Hello Bhai")
-  
-     try {
 
-      const res = await authFetch('trade-cycles/?page=1&page_size=10')
-      
-      if (res.ok) {
-        const data = await res.json();
-        setPastTradeCycles(data.results);
-        setNextPastTradeCycles(data.next);
-      } else {
-      }
-    } catch {
-    }
-    }
 
     useEffect(()=>{
         getActiveTradeCycles();
-        getPastTradeCycles();
     },[])
 
-  const toggleCardExpansion = (id: number) => {
-    setExpandedCards(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
 
-  // Sample data for strategy cards
-  const strategyData: StrategyData = {
-    active: [
-      {
-        id: 1,
-        name: "Bull Call Spread",
-        symbol: "NIFTY",
-        status: "running",
-        return: 12.5,
-        created: "2023-09-10",
-        legs: [
-          { action: "BUY", type: "CE", strike: 19800, quantity: 75, premium: 152, filled: true },
-          { action: "SELL", type: "CE", strike: 19900, quantity: 75, premium: 112, filled: true }
-        ]
-      },
-      {
-        id: 2,
-        name: "Iron Condor",
-        symbol: "BANKNIFTY",
-        status: "running",
-        return: 8.2,
-        created: "2023-09-15",
-        legs: [
-          { action: "SELL", type: "PE", strike: 44000, quantity: 50, premium: 205, filled: true },
-          { action: "BUY", type: "PE", strike: 43800, quantity: 50, premium: 180, filled: true },
-          { action: "SELL", type: "CE", strike: 44200, quantity: 50, premium: 190, filled: true },
-          { action: "BUY", type: "CE", strike: 44400, quantity: 50, premium: 165, filled: true }
-        ]
-      },
-      {
-        id: 3,
-        name: "Long Straddle",
-        symbol: "RELIANCE",
-        status: "pending",
-        return: 0,
-        created: "2023-09-20",
-        legs: [
-          { action: "BUY", type: "CE", strike: 2450, quantity: 100, premium: 32, filled: false },
-          { action: "BUY", type: "PE", strike: 2450, quantity: 100, premium: 28, filled: false }
-        ]
-      }
-    ],
-    past: [
-      {
-        id: 4,
-        name: "Bear Put Spread",
-        symbol: "NIFTY",
-        status: "completed",
-        return: 15.3,
-        created: "2023-08-25",
-        closed: "2023-09-05",
-        legs: [
-          { action: "BUY", type: "PE", strike: 19200, quantity: 75, premium: 145, filled: true },
-          { action: "SELL", type: "PE", strike: 19100, quantity: 75, premium: 120, filled: true }
-        ]
-      },
-      {
-        id: 5,
-        name: "Credit Spread",
-        symbol: "BANKNIFTY",
-        status: "stopped",
-        return: -5.7,
-        created: "2023-08-20",
-        closed: "2023-08-28",
-        legs: [
-          { action: "SELL", type: "CE", strike: 43500, quantity: 50, premium: 225, filled: true },
-          { action: "BUY", type: "CE", strike: 43700, quantity: 50, premium: 195, filled: true }
-        ]
-      }
-    ]
-  };
+
 
   const stats: DashboardStats = {
     totalReturn: 18.4,
