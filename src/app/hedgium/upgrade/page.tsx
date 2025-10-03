@@ -1,12 +1,8 @@
 "use client"
 import { useState, useEffect } from 'react';
-
-import { Icon } from '@iconify/react';
-
+import { CheckCircle, Check } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-
 import { authFetch, myFetch } from '@/utils/api';
-
 
 interface Plan {
   id: string;
@@ -25,7 +21,6 @@ interface PaymentData {
   cardHolder: string;
 }
 
-
 export default function PricingPage() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [plans, setPlans] = useState<Plan[] | null>([]);
@@ -38,7 +33,6 @@ export default function PricingPage() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
-
 
   const [currentStep, setCurrentStep] = useState<'select' | 'payment' | 'success'>('select');
   const handlePlanSelect = (plan: Plan) => {
@@ -64,9 +58,6 @@ export default function PricingPage() {
     // console.log(data);
     updateUser({active_subscription:data})
 
-
-
-    
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 2000));
     
@@ -127,7 +118,7 @@ export default function PricingPage() {
         <div className="card w-full max-w-md bg-base-100 shadow-xl">
           <div className="card-body text-center">
             <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Icon icon="lucide:check-icon" className="w-8 h-8 text-white" />
+              <CheckCircle className="w-8 h-8 text-white" />
             </div>
             <h2 className="card-title justify-center text-2xl mb-2">Payment Successful!</h2>
             <p className="text-lg font-semibold mb-2">{selectedPlan?.name} Plan Activated</p>
@@ -313,7 +304,7 @@ export default function PricingPage() {
                 <ul className="space-y-3 mb-8 flex-1">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
-                      <Icon icon="lucide:check-icon" className={`w-5 h-5 mt-0.5 mr-3 flex-shrink-0 ${
+                      <Check className={`w-5 h-5 mt-0.5 mr-3 flex-shrink-0 ${
                         plan.popular ? 'text-green-400' : 'text-green-500'
                       }`}  />
                       <span className="text-sm">{feature}</span>

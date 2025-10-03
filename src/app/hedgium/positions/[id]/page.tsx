@@ -1,8 +1,8 @@
 "use client";
 
 import React, { JSX, useEffect, useState } from "react";
+import { Clock, CheckCircle, XCircle, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown } from "lucide-react";
 import Link from "next/link";
-import { Icon } from "@iconify/react";
 import { useParams } from "next/navigation";
 import { myFetch } from "@/utils/api";
 
@@ -10,15 +10,11 @@ import { myFetch } from "@/utils/api";
 type Position = {
   id: number;
   symbol: string;
-
   buy_quantity: number;
   average_buy_price: number;
-
   sell_quantity: number;
   average_sell_price: number;
-
   quantity: number; // net quantity
-
   realised_total: number;
   realised_today: number;
   unrealised: number;
@@ -64,10 +60,10 @@ export default function TradeCycleDetailPage() {
   }, [id]);
 
   const statusMap: Record<string, JSX.Element> = {
-    NEW: <Icon icon="lucide:clock" width={16} className="text-warning" />,
-    PENDING: <Icon icon="lucide:clock" width={16} className="text-warning" />,
-    COMPLETED: <Icon icon="lucide:check-circle" width={16} className="text-success" />,
-    STOPPED: <Icon icon="lucide:x-circle" width={16} className="text-error" />,
+    NEW: <Clock width={16} className="text-warning" />,
+    PENDING: <Clock width={16} className="text-warning" />,
+    COMPLETED: <CheckCircle width={16} className="text-success" />,
+    STOPPED: <XCircle width={16} className="text-error" />,
   };
 
   const totalPnl = positions.reduce((acc, pos) => acc + pos.pnl, 0);
@@ -84,7 +80,7 @@ export default function TradeCycleDetailPage() {
               <div className="flex gap-2 mt-2">
                 <span className="badge">{tradeCycle?.sub_state}</span>
                 <span className="badge gap-1">
-                  {statusMap[tradeCycle?.state] ?? <Icon icon="lucide:clock" width={16} />}
+                  {statusMap[tradeCycle?.state] ?? <Clock width={16} />}
                   {tradeCycle?.state}
                 </span>
               </div>
@@ -106,9 +102,9 @@ export default function TradeCycleDetailPage() {
           <div className="stat-title">Total PnL</div>
           <div className={`stat-value text-lg ${totalPnl >= 0 ? "text-success" : "text-error"}`}>
             {totalPnl >= 0 ? (
-              <Icon icon="lucide:arrow-up-right" width={16} className="inline mr-1" />
+              <ArrowUpRight width={16} className="inline mr-1" />
             ) : (
-              <Icon icon="lucide:arrow-down-right" width={16} className="inline mr-1" />
+              <ArrowDownRight width={16} className="inline mr-1" />
             )}
             ₹{totalPnl.toFixed(2)}
           </div>
@@ -135,9 +131,9 @@ export default function TradeCycleDetailPage() {
                   </div>
                   <div className={`text-right font-semibold flex items-center gap-1 ${pnlColor}`}>
                     {pos.pnl >= 0 ? (
-                      <Icon icon="lucide:trending-up" width={14} />
+                      <TrendingUp width={14} />
                     ) : (
-                      <Icon icon="lucide:trending-down" width={14} />
+                      <TrendingDown width={14} />
                     )}
                     ₹{pos.pnl.toFixed(2)}
                   </div>

@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-import { Icon } from "@iconify/react";
+import { User, Mail, Lock } from "lucide-react";
 import Link from "next/link";
 import { myFetch } from "@/utils/api";
 import { useAuthStore } from "@/store/authStore";
@@ -13,9 +12,8 @@ function Register() {
   const router = useRouter();
   const alert = useAlert();
 
-
   const [first_name, setFirstName] = useState<string>("");
-  const {login, accessToken, updateUser} = useAuthStore();
+  const { login, accessToken, updateUser } = useAuthStore();
   const [last_name, setLastName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -34,100 +32,85 @@ function Register() {
 
   async function handleRegister(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
-    setRegistering(true)
+    setRegistering(true);
     let valid = true;
 
-    try{
-
-    if (!first_name) {
-      setFirstNameError("First name is required");
-      valid = false;
-      return;
-    } else setFirstNameError("");
-
-    if (!last_name) {
-      setLastNameError("Last name is required");
-      valid = false;
-      return;
-
-    } else setLastNameError("");
-
-    if (!email) {
-      setEmailError("Email is required");
-      valid = false;
-      return;
-
-    } else if (!validateEmail(email)) {
-      setEmailError("Please enter a valid email");
-      valid = false;
-      return;
-
-    } else setEmailError("");
-
-    if (!password) {
-      setPasswordError("Password is required");
-      valid = false;
-      return;
-
-    } else if (password.length < 6) {
-      setPasswordError("Password must be at least 6 characters");
-      valid = false;
-      return;
-
-    } else setPasswordError("");
-
-    if (!confirmPassword) {
-      setConfirmPasswordError("Please confirm your password");
-      valid = false;
-      return;
-
-    } else if (confirmPassword !== password) {
-      setConfirmPasswordError("Passwords do not match");
-      valid = false;
-      return;
-
-    } else setConfirmPasswordError("");
-
-
-    const dataToSend = {
-      "first_name": first_name,
-      "last_name": last_name,
-      "email": email,
-      "username": email,
-      "password": password
-    }
     try {
-      const res = await myFetch('users', {
-        method: "POST",
-        body: JSON.stringify(dataToSend) // Convert the data object to a JSON string
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        alert.success('User is created sucessfully', { duration: 3000 });
+      if (!first_name) {
+        setFirstNameError("First name is required");
+        valid = false;
+        return;
+      } else setFirstNameError("");
 
+      if (!last_name) {
+        setLastNameError("Last name is required");
+        valid = false;
+        return;
+      } else setLastNameError("");
+
+      if (!email) {
+        setEmailError("Email is required");
+        valid = false;
+        return;
+      } else if (!validateEmail(email)) {
+        setEmailError("Please enter a valid email");
+        valid = false;
+        return;
+      } else setEmailError("");
+
+      if (!password) {
+        setPasswordError("Password is required");
+        valid = false;
+        return;
+      } else if (password.length < 6) {
+        setPasswordError("Password must be at least 6 characters");
+        valid = false;
+        return;
+      } else setPasswordError("");
+
+      if (!confirmPassword) {
+        setConfirmPasswordError("Please confirm your password");
+        valid = false;
+        return;
+      } else if (confirmPassword !== password) {
+        setConfirmPasswordError("Passwords do not match");
+        valid = false;
+        return;
+      } else setConfirmPasswordError("");
+
+      const dataToSend = {
+        "first_name": first_name,
+        "last_name": last_name,
+        "email": email,
+        "username": email,
+        "password": password
+      };
+      try {
+        const res = await myFetch('users', {
+          method: "POST",
+          body: JSON.stringify(dataToSend) // Convert the data object to a JSON string
+        });
         
-        login(email, password);
-        updateUser({ signup_step: "initiated" })
-      } else {}
+        if (res.ok) {
+          const data = await res.json();
+          alert.success('User is created sucessfully', { duration: 3000 });
+          login(email, password);
+          updateUser({ signup_step: "initiated" });
+        } else {}
+      } catch (e) {
+        console.log(e);
+        alert.error("Something went wrong", { duration: 5000 });
       }
-    catch (e) {
-      console.log(e);
-      alert.error("Something went wrong", {duration: 5000})
-      }
-
-    } finally{
+    } finally {
       setRegistering(false);
     }
-
-  
   }
   
-  useEffect(()=>{
-    if(accessToken){router.push("/register/complete-profile")}
-  }, [accessToken])
-        
-
+  useEffect(() => {
+    if (accessToken) {
+      router.push("/register/complete-profile");
+    }
+  }, [accessToken]);
 
   return (
     <>
@@ -152,8 +135,7 @@ function Register() {
                   </label>
                   <div className="mt-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                      <Icon icon="lucide:user"  className="h-5 w-5 text-base-content/60"  />
-                      
+                      <User className="h-5 w-5 text-base-content/60" />
                     </div>
                     <input
                       type="text"
@@ -177,8 +159,7 @@ function Register() {
                   </label>
                   <div className="mt-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                      <Icon icon="lucide:user"  className="h-5 w-5 text-base-content/60"  />
-                      
+                      <User className="h-5 w-5 text-base-content/60" />
                     </div>
                     <input
                       type="text"
@@ -202,8 +183,7 @@ function Register() {
                   </label>
                   <div className="mt-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                      <Icon icon="lucide:mail"  className="h-5 w-5 text-base-content/60"  />
-                      
+                      <Mail className="h-5 w-5 text-base-content/60" />
                     </div>
                     <input
                       type="email"
@@ -227,8 +207,7 @@ function Register() {
                   </label>
                   <div className="mt-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                      <Icon icon="lucide:lock"  className="h-5 w-5 text-base-content/60"  />
-                      
+                      <Lock className="h-5 w-5 text-base-content/60" />
                     </div>
                     <input
                       type="password"
@@ -252,7 +231,7 @@ function Register() {
                   </label>
                   <div className="mt-1 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center z-10">
-                      <Icon icon="lucide:lock"  className="h-5 w-5 text-base-content/60"  />
+                      <Lock className="h-5 w-5 text-base-content/60" />
                     </div>
                     <input
                       type="password"
@@ -278,8 +257,7 @@ function Register() {
                     disabled={registering}
                     onClick={handleRegister}
                   >
-                  {registering ? "Loading..." : "Register"}
-
+                    {registering ? "Loading..." : "Register"}
                   </button>
                 </div>
 
@@ -300,7 +278,6 @@ function Register() {
           </div>
         </div>
       </div>
-
     </>
   );
 };

@@ -1,7 +1,5 @@
 // pages/positions/index.tsx (All Positions Page with Cards)
 
- 
-
 // app/hedgium/trade-cycles/page.tsx
 "use client";
 
@@ -9,76 +7,6 @@ import React, {useEffect, useState} from "react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import Slider from "@/components/Slider"; // ✅ the reusable slider we made
 import { authFetch } from "@/utils/api";
-
-
-// Dummy data for demo
-const tradeCycles = [
-  {
-    id: 1,
-    name: "NIFTY Option Strategy",
-    description: "Iron Fly Strategy",
-    state: "PENDING" as const,
-    sub_state: "RUNNING",
-    created_at: "2025-09-01T10:30:00Z",
-    positions: [
-      {
-        id: 101,
-        symbol: "NIFTY23SEP18000CE",
-        quantity: 50,
-        entryPrice: 120,
-        currentPrice: 135,
-        side: "SELL" as const,
-        status: "OPEN" as const,
-      },
-      {
-        id: 102,
-        symbol: "NIFTY23SEP18200PE",
-        quantity: 50,
-        entryPrice: 110,
-        currentPrice: 95,
-        side: "BUY" as const,
-        status: "OPEN" as const,
-      },
-      {
-        id: 103,
-        symbol: "NIFTY23SEP18300CE",
-        quantity: 25,
-        entryPrice: 80,
-        currentPrice: 60,
-        side: "BUY" as const,
-        status: "OPEN" as const,
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "BANKNIFTY Strategy",
-    description: "Straddle with hedge",
-    state: "NEW" as const,
-    sub_state: "WAITING",
-    created_at: "2025-09-02T11:15:00Z",
-    positions: [
-      {
-        id: 201,
-        symbol: "BANKNIFTY23SEP43000CE",
-        quantity: 15,
-        entryPrice: 200,
-        currentPrice: 240,
-        side: "SELL" as const,
-        status: "OPEN" as const,
-      },
-      {
-        id: 202,
-        symbol: "BANKNIFTY23SEP43000PE",
-        quantity: 15,
-        entryPrice: 220,
-        currentPrice: 190,
-        side: "BUY" as const,
-        status: "OPEN" as const,
-      },
-    ],
-  },
-];
 
 type TradeCycle = {
   id: string;
@@ -89,7 +17,6 @@ type TradeCycle = {
   created_at: string;
   updated_at: string;
 };
-
 
 export default function TradeCyclesPage() {
 
@@ -108,8 +35,6 @@ export default function TradeCyclesPage() {
   useEffect(()=>{
     getAllTradeCycles();
   },[])
-
-
 
   return (
     <div className="p-4 hero-pattern">
@@ -134,7 +59,6 @@ export default function TradeCyclesPage() {
           </div>
         </div>
 
-
       <h2 className="text-2xl font-bold mb-6">Trade Cycles</h2>
       <Slider>
         {tradeCycles.map((cycle) => (
@@ -147,4 +71,3 @@ export default function TradeCyclesPage() {
     </div>
   );
 }
-

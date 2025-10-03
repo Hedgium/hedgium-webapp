@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { Icon } from "@iconify/react";
+
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface SliderProps {
   children: React.ReactNode;
@@ -164,7 +165,7 @@ export default function Slider({
                     bg-base-200 rounded-full p-2 shadow transition-opacity
                     ${canScrollLeft ? "cursor-pointer opacity-100" : "cursor-not-allowed opacity-40"}`}
       >
-        <Icon icon="lucide:chevron-left" width={20} height={20} />
+        <ChevronLeft size={20}/>
       </button>
 
       {/* slider wrapper */}
@@ -187,7 +188,7 @@ export default function Slider({
                     bg-base-200 rounded-full p-2 shadow transition-opacity
                     ${canScrollRight ? "cursor-pointer opacity-100" : "cursor-not-allowed opacity-40"}`}
       >
-        <Icon icon="lucide:chevron-right" width={20} height={20} />
+        <ChevronRight size={20} />
       </button>
     </div>
   );

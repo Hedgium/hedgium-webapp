@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Icon } from "@iconify/react";
+import { TrendingDown, TrendingUp } from "lucide-react";
 
 interface Position {
   id: string;
@@ -82,9 +82,9 @@ const PositionCard: React.FC<Props> = ({ position }) => {
             className={`font-semibold flex items-center gap-1 ${pnlColor}`}
           >
             {pnl >= 0 ? (
-              <Icon icon="lucide:trending-up" width={16} height={16} />
+              <TrendingUp size={16} />
             ) : (
-              <Icon icon="lucide:trending-down" width={16} height={16} />
+              <TrendingDown size={16} />
             )}
             ₹{pnl.toFixed(2)}
           </span>

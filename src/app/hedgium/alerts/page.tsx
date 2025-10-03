@@ -2,10 +2,8 @@
 
 import { NextPage } from 'next';
 import { useState, useEffect, useRef } from 'react';
-import { Icon } from '@iconify/react';
+import { Check, Trash, CheckCircle, AlertTriangle, XCircle, Info } from 'lucide-react';
 import { useNotificationStore } from "@/store/notificationStore";
-
-
 
 const NotificationsPage: NextPage = () => {
   
@@ -19,11 +17,6 @@ const NotificationsPage: NextPage = () => {
   } = useNotificationStore();
 
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-
-
-
-
-
 
   if (isLoading) {
     return (
@@ -72,8 +65,6 @@ const NotificationsPage: NextPage = () => {
             >
               Unread
             </button>
-
-      
           </div>
         </div>
 
@@ -109,24 +100,16 @@ const NotificationsPage: NextPage = () => {
                       'bg-blue-100 text-blue-600'
                     }`}>
                       {notification.type === 'success' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <CheckCircle className="h-5 w-5" />
                       )}
                       {notification.type === 'warning' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M4.93 19h14.14l1.41-2.83L12 3 3.52 16.17 4.93 19z" />
-                        </svg>
+                        <AlertTriangle className="h-5 w-5" />
                       )}
                       {notification.type === 'error' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <XCircle className="h-5 w-5" />
                       )}
                       {notification.type === 'info' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 3a9 9 0 110 18 9 9 0 010-18z" />
-                        </svg>
+                        <Info className="h-5 w-5" />
                       )}
                     </div>
 
@@ -134,10 +117,9 @@ const NotificationsPage: NextPage = () => {
                       <h3 className="font-semibold text-gray-900">{notification.title}</h3>
                       <p className="text-gray-700 mt-1">{notification.message}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {notification.related_model_name}
-                          </span>
-
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {notification.related_model_name}
+                        </span>
                         <span className="text-xs text-gray-500">
                           {formatTimeAgo(new Date(notification.timestamp))}
                         </span>
@@ -153,8 +135,7 @@ const NotificationsPage: NextPage = () => {
                         className="text-gray-400 hover:text-gray-600 cursor-pointer"
                         title="Mark as read"
                       >
-                      <Icon icon="lucide:check" className='h-4 w-4' />
-                        
+                        <Check className='h-4 w-4' />
                       </button>
                     )}
                     <button
@@ -162,7 +143,7 @@ const NotificationsPage: NextPage = () => {
                       className="text-gray-400 hover:text-red-500 cursor-pointer"
                       title="Delete notification"
                     >
-                      <Icon icon="lucide:trash" className='h-4 w-4' />
+                      <Trash className='h-4 w-4' />
                     </button>
                   </div>
                 </div>

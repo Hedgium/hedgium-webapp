@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Icon } from "@iconify/react";
+import { Clock } from "lucide-react";
 import SignUpStepper from "@/components/SignUpStepper";
 import { useAuthStore } from "@/store/authStore";
 import { useEffect } from "react";
@@ -13,14 +13,13 @@ const VerificationPending: React.FC = () => {
   const { user, updateUser } = useAuthStore();
   const [submitting, setSubmitting] = useState(false);
 
-  const router = useRouter()
-  const alert = useAlert()
+  const router = useRouter();
+  const alert = useAlert();
 
   const formData = new FormData();
- 
 
   const handleSkip = async (e: React.FormEvent) => {
-      try{
+    try {
       setSubmitting(true);
   
       e.preventDefault();
@@ -30,28 +29,23 @@ const VerificationPending: React.FC = () => {
         body: formData,
       });
   
-    updateUser({  kyc_skipped: true });
+      updateUser({ kyc_skipped: true });
   
-    alert.success("Verification skipped", {
-      duration: 3000,
-    }); 
-    } catch(e){
-      // alert.error("Something went wrong!!", {duration:4000})
+      alert.success("Verification skipped", {
+        duration: 3000,
+      }); 
+    } catch (e) {
+      // alert.error("Something went wrong!!", { duration: 4000 });
+    } finally {
+      setSubmitting(false);
     }
-    
-    finally{
-          setSubmitting(false);
-    }
-  
-  
-    }
+  };
 
-
-  useEffect(()=>{
-    if (user.signup_step=="verified") {
-      router.push("/hedgium/dashboard")
+  useEffect(() => {
+    if (user.signup_step == "verified") {
+      router.push("/hedgium/dashboard");
     }
-  },[])
+  }, []);
 
   return (
     <div className="min-h-screen hero-pattern flex flex-col items-center justify-center bg-base-200 p-6">
@@ -63,9 +57,8 @@ const VerificationPending: React.FC = () => {
       {/* Card with pending message */}
       <div className="card w-full max-w-lg shadow-xl bg-base-100 p-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <Icon icon="lucide:clock"  className="w-16 h-16 text-warning animate-pulse"  />
+          <Clock className="w-16 h-16 text-warning animate-pulse" />
           
-
           <h1 className="text-2xl font-bold text-warning">
             Profile Verification Pending
           </h1>
@@ -80,13 +73,13 @@ const VerificationPending: React.FC = () => {
           </p>
 
           <button
-                type="button"
-                disabled={submitting}
-                onClick={handleSkip}
-                className="btn btn-outline"
-              >
-                Skip Verification
-        </button>
+            type="button"
+            disabled={submitting}
+            onClick={handleSkip}
+            className="btn btn-outline"
+          >
+            Skip Verification
+          </button>
         </div>
       </div>
     </div>

@@ -1,46 +1,20 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
-
-
-import { Icon } from '@iconify/react';
-
-// import Link from 'next/link';
+import { LineChart } from 'lucide-react';
 import Slider from '@/components/Slider';
-
 import TradeCycleCard from "@/components/TradeCycleCard";
 import MarketHeader from '@/components/MarketHeader';
 import DashboardMetrics from '@/components/DashboardMetrics';
-
-// import { useAuthStore } from '@/store/authStore';
-
 import { authFetch } from '@/utils/api';
-
-
-
-
-interface DashboardStats {
-  totalReturn: number;
-  activeStrategies: number;
-  successRate: number;
-  weeklyGain: number;
-}
-
-
 
 export default function Dashboard() {
   const [activeTradeCycles, setActiveTradeCycles] = useState([]);
-  const [nextActiveTradeCycles, setNextActiveTradeCycles] = useState<string | null> (null);
+  const [nextActiveTradeCycles, setNextActiveTradeCycles] = useState<string | null>(null);
 
-
-
-    async function getActiveTradeCycles() {
-      // console.log("Hello Bhai")
-  
-     try {
-
-      const res = await authFetch('trade-cycles/?approved=true&page=1&page_size=10')
+  async function getActiveTradeCycles() {
+    try {
+      const res = await authFetch('trade-cycles/?approved=true&page=1&page_size=10');
       
       if (res.ok) {
         const data = await res.json();
@@ -51,31 +25,15 @@ export default function Dashboard() {
       }
     } catch {
     }
-    }
-  
+  }
 
-
-
-    useEffect(()=>{
-        getActiveTradeCycles();
-    },[])
-
-
-
-
-  const stats: DashboardStats = {
-    totalReturn: 18.4,
-    activeStrategies: 3,
-    successRate: 76.8,
-    weeklyGain: 2.3
-  };
-
+  useEffect(() => {
+    getActiveTradeCycles();
+  }, []);
 
   return (
     <div className="bg-base-200 hero-pattern p-4 md:p-6">
-
       <MarketHeader />
-
       <DashboardMetrics />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -96,10 +54,7 @@ export default function Dashboard() {
           </div>
         </div> */}
   
-  
-        
         {/* Tabs for Active/Past Strategies */}
-        
         
         {/* Search and Filter Bar */}
         {/* <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -121,27 +76,22 @@ export default function Dashboard() {
         </div> */}
         
         {/* Strategy Cards */}
-
-        
-        
         <div className="mb-8">
-
-          {
-          activeTradeCycles.length > 0 ? <>
-          <Slider>
-            {activeTradeCycles.map((tc) => (
-              <TradeCycleCard key={tc?.id} tradeCycle={tc} isActive={true} />
-            ))}
-          </Slider>
-          </> : (
+          {activeTradeCycles.length > 0 ? (
+            <>
+              <Slider>
+                {activeTradeCycles.map((tc) => (
+                  <TradeCycleCard key={tc?.id} tradeCycle={tc} isActive={true} />
+                ))}
+              </Slider>
+            </>
+          ) : (
             <div className="text-center py-12 bg-base-100 rounded-lg shadow">
               <h3 className="text-xl font-semibold mb-2">No Active Trade Cycles</h3>
               <p className="text-gray-600">{`You don't have any active trade cycles at the moment.`}</p>
             </div>
-          )
-      }
-
-      </div>
+          )}
+        </div>
 
         {/* Performance Chart Section */}
         {/* <div className="card bg-base-100 shadow-md mb-8">
@@ -149,7 +99,7 @@ export default function Dashboard() {
             <h2 className="card-title mb-6">Performance Overview</h2>
             <div className="h-80 bg-base-200 rounded-lg flex items-center justify-center">
               <div className="text-center">
-                <Icon icon="lucide:line-chart" width={48} className="mx-auto text-gray-400 mb-4" />
+                <LineChart size={48} className="mx-auto text-gray-400 mb-4" />
                 <p className="text-gray-600">Performance chart will be displayed here</p>
                 <p className="text-sm text-gray-500">Connect your trading account to see detailed analytics</p>
               </div>

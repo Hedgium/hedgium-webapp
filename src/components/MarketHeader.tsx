@@ -1,7 +1,8 @@
 "use client";
 
-import { Icon } from "@iconify/react";
 import { useRef } from "react";
+
+import { TrendingDown, TrendingUp } from "lucide-react";
 
 interface MarketData {
   name: string;
@@ -36,9 +37,9 @@ export default function MarketHeader() {
                 <span className="text-xl font-bold">{item.value.toLocaleString()}</span>
                 <div className={`flex items-center ${item.change >= 0 ? 'text-success' : 'text-error'}`}>
                   {item.change >= 0 ? (
-                    <Icon icon="lucide:trending-up" width={18} height={18} className="mr-1" />
+                    <TrendingUp width={18} height={18} className="mr-1" />
                   ) : (
-                    <Icon icon="lucide:trending-down" width={18} height={18} className="mr-1" />
+                    <TrendingDown width={18} height={18} className="mr-1" />
                   )}
                   <span>
                     {item.change >= 0 ? '+' : ''}

@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Icon } from "@iconify/react";
+import { User, Shield, Palette, Bell, CreditCard, ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-
 
 import PasswordTab from "@/components/settings/PasswordTab";
 import ProfileTab from "@/components/settings/ProfileTab";
@@ -18,11 +17,11 @@ const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("profile");
 
   const tabs = [
-    { id: "profile", label: "Profile", icon: <Icon icon="lucide:user" className="h-5 w-5" /> },
-    { id: "password", label: "Password", icon: <Icon icon="lucide:shield" className="h-5 w-5" /> },
-    { id: "theme", label: "Theme", icon: <Icon icon="lucide:palette" className="h-5 w-5" /> },
-    { id: "notifications", label: "Notifications", icon: <Icon icon="lucide:bell" className="h-5 w-5" /> },
-    { id: "subscription", label: "Subscription", icon: <Icon icon="lucide:credit-card" className="h-5 w-5" /> },
+    { id: "profile", label: "Profile", icon: <User className="h-5 w-5" /> },
+    { id: "password", label: "Password", icon: <Shield className="h-5 w-5" /> },
+    { id: "theme", label: "Theme", icon: <Palette className="h-5 w-5" /> },
+    { id: "notifications", label: "Notifications", icon: <Bell className="h-5 w-5" /> },
+    { id: "subscription", label: "Subscription", icon: <CreditCard className="h-5 w-5" /> },
   ];
 
   return (
@@ -34,7 +33,7 @@ const SettingsPage: React.FC = () => {
             onClick={() => router.back()}
             className="btn btn-ghost btn-circle mr-2"
           >
-            <Icon icon="lucide:chevron-left" className="h-6 w-6" />
+            <ChevronLeft className="h-6 w-6" />
           </button>
           <h1 className="text-3xl font-bold text-base-content">Settings</h1>
         </div>
@@ -55,7 +54,6 @@ const SettingsPage: React.FC = () => {
                     </button>
                   </li>
                 ))}
-                
               </ul>
             </div>
           </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Icon } from "@iconify/react";
+
+import { TrendingDown, TrendingUp } from "lucide-react";
 
 export default function DashboardMetrics() {
   const metrics = [
@@ -94,9 +95,9 @@ export default function DashboardMetrics() {
                     className={`flex items-center text-sm font-medium ${trendColor}`}
                   >
                     {metric.trend === "up" ? (
-                      <Icon icon="lucide:trending-up" width={16} height={16} className="mr-1" />
+                      <TrendingUp width={16} height={16} className="mr-1" />
                     ) : metric.trend === "down" ? (
-                      <Icon icon="lucide:trending-down" width={16} height={16} className="mr-1" />
+                      <TrendingDown width={16} height={16} className="mr-1" />
                     ) : null}
                     {metric.trendValue}
                   </span>

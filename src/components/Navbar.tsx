@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Icon } from "@iconify/react";
+import { X, Menu } from "lucide-react";
 import Link from "next/link";
 
 export default function Navbar() {
@@ -17,9 +17,9 @@ export default function Navbar() {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? (
-              <Icon icon="lucide:x" width={24} height={24} />
+              <X size={24} height={24} />
             ) : (
-              <Icon icon="lucide:menu" width={24} height={24} />
+              <Menu size={24} height={24} />
             )}
           </label>
           {isMenuOpen && (
@@ -49,7 +49,7 @@ export default function Navbar() {
           href="/"
           className="btn btn-ghost normal-case text-xl font-bold text-primary"
         >
-          <Icon icon="lucide:line-chart" className="mr-2" width={24} height={24} />
+          {/* <Icon icon="lucide:line-chart" className="mr-2" width={24} height={24} /> */}
           Hedgium
         </Link>
       </div>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "nextjs-toploader/app";
-import { Icon } from "@iconify/react";
+import { Mail, Lock } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -83,7 +83,7 @@ const Login: React.FC = () => {
                     </label>
                     <div className="mt-1 relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                        <Icon icon="lucide:mail"  className="h-5 w-5 text-gray-400 z-10"  />
+                        <Mail className="h-5 w-5 text-gray-400 z-10" />
                       </div>
                       <input
                         id="email"
@@ -108,8 +108,7 @@ const Login: React.FC = () => {
                     </label>
                     <div className="mt-1 relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                        <Icon icon="lucide:lock"  className="h-5 w-5 text-gray-400 z-10"  />
-                        
+                        <Lock className="h-5 w-5 text-gray-400 z-10" />
                       </div>
                       <input
                         id="password"

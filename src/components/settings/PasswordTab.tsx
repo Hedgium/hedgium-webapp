@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Icon } from "@iconify/react";
 import { authFetch } from "@/utils/api";
-
+import { Eye, EarOff, EyeOff } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 
 interface PasswordData {
@@ -58,9 +57,9 @@ const PasswordInput: React.FC<{
         onClick={toggleShowPassword}
       >
         {showPassword ? (
-          <Icon icon="lucide:eye-off" className="h-6 w-6" />
+          <EyeOff className="h-6 w-6" />
         ) : (
-          <Icon icon="lucide:eye" className="h-6 w-6" />
+          <Eye className="h-6 w-6" />
         )}
       </button>
     </div>

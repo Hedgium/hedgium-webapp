@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Icon } from '@iconify/react';
+import { ArrowRight, Bot, TrendingUp, Code, Smartphone, Shield, Users, CheckCircle, Check, X, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
 import Navbar from "@/components/Navbar";
@@ -54,11 +54,11 @@ export default function Home() {
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Link href="/register" className="btn btn-primary btn-lg">
                       Get Started
-                      <Icon icon="lucide:arrow-right" width={20} />
+                      <ArrowRight size={20} />
                     </Link>
                     {/* <Link href="#demo" className="btn btn-outline btn-primary btn-lg">
                       View Demo
-                      <Icon icon="lucide:chevron-down" width={20} />
+                      <ChevronDown size={20} />
                     </Link> */}
                   </div>
                 </div>
@@ -112,7 +112,7 @@ export default function Home() {
                 <div className="card bg-base-100 shadow-xl card-hover">
                   <div className="card-body">
                     <div className="text-blue-500 mb-4">
-                      <Icon icon="lucide:bot" width={40} />
+                      <Bot size={40} />
                     </div>
                     <h3 className="card-title">AI-Powered Strategies</h3>
                     <p>Our algorithms analyze market data in real-time to identify profitable opportunities.</p>
@@ -122,7 +122,7 @@ export default function Home() {
                 <div className="card bg-base-100 shadow-xl card-hover">
                   <div className="card-body">
                     <div className="text-purple-500 mb-4">
-                      <Icon icon="lucide:trending-up" width={40} />
+                      <TrendingUp size={40} />
                     </div>
                     <h3 className="card-title">Proven Performance</h3>
                     <p>Backtested strategies with consistent returns across various market conditions.</p>
@@ -132,7 +132,7 @@ export default function Home() {
                 <div className="card bg-base-100 shadow-xl card-hover">
                   <div className="card-body">
                     <div className="text-green-500 mb-4">
-                      <Icon icon="lucide:code-2" width={40} />
+                      <Code size={40} />
                     </div>
                     <h3 className="card-title">Python Code Access</h3>
                     <p>Get direct access to the Python code behind our strategies for complete transparency.</p>
@@ -142,7 +142,7 @@ export default function Home() {
                 <div className="card bg-base-100 shadow-xl card-hover">
                   <div className="card-body">
                     <div className="text-red-500 mb-4">
-                      <Icon icon="lucide:smartphone" width={40} />
+                      <Smartphone size={40} />
                     </div>
                     <h3 className="card-title">Multi-Platform</h3>
                     <p>Access our strategies on web and mobile apps, anytime, anywhere.</p>
@@ -152,7 +152,7 @@ export default function Home() {
                 <div className="card bg-base-100 shadow-xl card-hover">
                   <div className="card-body">
                     <div className="text-yellow-500 mb-4">
-                      <Icon icon="lucide:shield" width={40} />
+                      <Shield size={40} />
                     </div>
                     <h3 className="card-title">Risk Management</h3>
                     <p>Built-in risk management features to protect your capital during volatile markets.</p>
@@ -162,7 +162,7 @@ export default function Home() {
                 <div className="card bg-base-100 shadow-xl card-hover">
                   <div className="card-body">
                     <div className="text-indigo-500 mb-4">
-                      <Icon icon="lucide:users" width={40} />
+                      <Users size={40} />
                     </div>
                     <h3 className="card-title">Community Support</h3>
                     <p>Join our community of traders to share insights and strategies.</p>
@@ -188,15 +188,15 @@ export default function Home() {
                     <p className="mt-4">Advanced algorithmic trading strategy for Nifty and BankNifty futures with high-frequency signals.</p>
                     <ul className="mt-4 space-y-2">
                       <li className="flex items-center">
-                        <Icon icon="lucide:check-circle" className="text-green-500 mr-2" width={20} />
+                        <CheckCircle className="text-green-500 mr-2" size={20} />
                         <span>Average monthly return: 12-15%</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check-circle" className="text-green-500 mr-2" width={20} />
+                        <CheckCircle className="text-green-500 mr-2" size={20} />
                         <span>3-5 signals per day</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check-circle" className="text-green-500 mr-2" width={20} />
+                        <CheckCircle className="text-green-500 mr-2" size={20} />
                         <span>95% accuracy rate</span>
                       </li>
                     </ul>
@@ -210,15 +210,15 @@ export default function Home() {
                     <p className="mt-4">AI-powered options strategy that identifies premium buying opportunities with defined risk.</p>
                     <ul className="mt-4 space-y-2">
                       <li className="flex items-center">
-                        <Icon icon="lucide:check-circle" className="text-green-500 mr-2" width={20} />
+                        <CheckCircle className="text-green-500 mr-2" size={20} />
                         <span>Average monthly return: 15-20%</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check-circle" className="text-green-500 mr-2" width={20} />
+                        <CheckCircle className="text-green-500 mr-2" size={20} />
                         <span>2-4 signals per day</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check-circle" className="text-green-500 mr-2" width={20} />
+                        <CheckCircle className="text-green-500 mr-2" size={20} />
                         <span>92% accuracy rate</span>
                       </li>
                     </ul>
@@ -243,23 +243,23 @@ export default function Home() {
                     <div className="text-4xl font-bold my-4">₹9,999<span className="text-lg font-normal">/month</span></div>
                     <ul className="space-y-3">
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>1 Trading Strategy</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>Web App Access</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>Email Support</span>
                       </li>
                       <li className="flex items-center text-gray-400">
-                        <Icon icon="lucide:x" className="text-red-500 mr-2" width={20} />
+                        <X className="text-red-500 mr-2" size={20} />
                         <span>Python Code Access</span>
                       </li>
                       <li className="flex items-center text-gray-400">
-                        <Icon icon="lucide:x" className="text-red-500 mr-2" width={20} />
+                        <X className="text-red-500 mr-2" size={20} />
                         <span>Mobile App Access</span>
                       </li>
                     </ul>
@@ -278,23 +278,23 @@ export default function Home() {
                     <div className="text-4xl font-bold my-4">₹19,999<span className="text-lg font-normal">/month</span></div>
                     <ul className="space-y-3">
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>All Trading Strategies</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>Web & Mobile App Access</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>Priority Support</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>Python Code Access</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>Community Access</span>
                       </li>
                     </ul>
@@ -310,23 +310,23 @@ export default function Home() {
                     <div className="text-4xl font-bold my-4">₹49,999<span className="text-lg font-normal">/month</span></div>
                     <ul className="space-y-3">
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>All Trading Strategies</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>Web & Mobile App Access</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>24/7 Dedicated Support</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>Custom Strategy Development</span>
                       </li>
                       <li className="flex items-center">
-                        <Icon icon="lucide:check" className="text-green-500 mr-2" width={20} />
+                        <Check className="text-green-500 mr-2" size={20} />
                         <span>API Access</span>
                       </li>
                     </ul>
@@ -349,11 +349,11 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="#pricing" className="btn btn-lg btn-accent">
                   Get Started Now
-                  <Icon icon="lucide:arrow-right" width={20} />
+                  <ArrowRight size={20} />
                 </Link>
                 <Link href="#demo" className="btn btn-lg btn-outline btn-white">
                   Watch Demo
-                  <Icon icon="lucide:chevron-down" width={20} />
+                  <ChevronDown size={20} />
                 </Link>
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Icon } from "@iconify/react";
+import { Sun, Moon, Laptop } from "lucide-react";
 
 interface ThemeTabProps {
   theme: string | undefined;
@@ -9,9 +9,9 @@ interface ThemeTabProps {
 
 const ThemeTab: React.FC<ThemeTabProps> = ({ theme, setTheme }) => {
   const themes = [
-    { id: "light", label: "Light", icon: "lucide:sun" },
-    { id: "dark", label: "Dark", icon: "lucide:moon" },
-    { id: "system", label: "System", icon: "lucide:laptop" },
+    { id: "light", label: "Light", icon: <Sun className="h-5 w-5 mr-2" /> },
+    { id: "dark", label: "Dark", icon: <Moon className="h-5 w-5 mr-2" /> },
+    { id: "system", label: "System", icon: <Laptop className="h-5 w-5 mr-2" /> },
   ];
 
   return (
@@ -26,7 +26,7 @@ const ThemeTab: React.FC<ThemeTabProps> = ({ theme, setTheme }) => {
               theme === t.id ? "btn-primary" : "btn-ghost"
             }`}
           >
-            <Icon icon={t.icon} className="h-5 w-5 mr-2" />
+            {t.icon}
             {t.label}
           </button>
         ))}

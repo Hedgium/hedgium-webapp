@@ -1,10 +1,9 @@
 "use client";
 
 import React, { JSX, useState, useEffect } from "react";
-import { Icon } from "@iconify/react";
+import { Clock, CheckCircle, XCircle, ChevronUp, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { authFetch } from "@/utils/api";
-import { Button } from "@nextui-org/react";
 import useAlert from "@/hooks/useAlert";
 
 interface Leg {
@@ -43,7 +42,7 @@ interface Props {
 
 const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
   const [expanded, setExpanded] = useState(false);
-  const alert = useAlert()
+  const alert = useAlert();
 
   // ✅ Mirror props into state
   const [cycle, setCycle] = useState<TradeCycle>(tradeCycle);
@@ -57,23 +56,23 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
   const legs = latestAdjustment?.legs ?? [];
 
   const statusMap: Record<string, JSX.Element> = {
-    NEW: <Icon icon="lucide:clock" width={14} className="text-warning" />,
-    ACTIVATED: <Icon icon="lucide:clock" width={14} className="text-warning" />,
-    ADJUSTED: <Icon icon="lucide:check-circle" width={14} className="text-success" />,
-    CLOSED: <Icon icon="lucide:x-circle" width={14} className="text-error" />,
+    NEW: <Clock width={14} className="text-warning" />,
+    ACTIVATED: <Clock width={14} className="text-warning" />,
+    ADJUSTED: <CheckCircle width={14} className="text-success" />,
+    CLOSED: <XCircle width={14} className="text-error" />,
   };
 
   async function activateTradeCycle() {
     const url = `trade-cycles/activate-trade/${cycle.id}/`;
 
     alert("Trade Cycle Activated", {
-      duration:2000
-    })
+      duration: 2000,
+    });
 
     setCycle((prev) => ({
-        ...prev,
-        state: "ACTIVATED",
-      }));
+      ...prev,
+      state: "ACTIVATED",
+    }));
     try {
       const res = await authFetch(url);
       const data = await res.json();
@@ -92,7 +91,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
             <h3 className="card-title text-lg">{cycle.name}</h3>
             <div className="flex gap-2 items-center mt-1">
               <span className="badge badge-outline badge-info gap-1">
-                {statusMap[cycle.state] ?? <Icon icon="lucide:clock" width={14} />}
+                {statusMap[cycle.state] ?? <Clock width={14} />}
                 {cycle.state}
               </span>
               <span className="badge badge-outline badge-dash">{cycle.sub_state}</span>
@@ -122,9 +121,9 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
               <span className="text-gray-500">Qty {leg.quantity}</span>
               <span className="ml-2">₹{leg.price}</span>
               {leg.status === "PENDING" ? (
-                <Icon icon="lucide:clock" width={14} className="ml-2 text-warning" />
+                <Clock width={14} className="ml-2 text-warning" />
               ) : (
-                <Icon icon="lucide:check-circle" width={14} className="ml-2 text-success" />
+                <CheckCircle width={14} className="ml-2 text-success" />
               )}
             </div>
           ))}
@@ -138,12 +137,12 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
           >
             {expanded ? (
               <>
-                <Icon icon="lucide:chevron-up" width={14} className="mr-1" />
+                <ChevronUp width={14} className="mr-1" />
                 Show Less
               </>
             ) : (
               <>
-                <Icon icon="lucide:chevron-down" width={14} className="mr-1" />
+                <ChevronDown width={14} className="mr-1" />
                 Show All {legs.length}
               </>
             )}
@@ -162,9 +161,9 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
           )}
 
           {cycle.state === "NEW" && (
-            <Button onClick={activateTradeCycle} className="btn btn-outline btn-sm">
+            <button onClick={activateTradeCycle} className="btn btn-outline btn-sm">
               Activate
-            </Button>
+            </button>
           )}
         </div>
       </div>

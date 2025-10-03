@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { Icon } from "@iconify/react";
+import { LineChart, Settings, Moon, Sun, LogOut } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 
 export default function AuthNav() {
@@ -25,7 +25,7 @@ export default function AuthNav() {
           href="/"
           className="btn btn-ghost normal-case text-xl font-bold text-primary"
         >
-          <Icon icon="mdi:chart-line" className="mr-2" width="24" height="24" />
+          <LineChart className="mr-2" width="24" height="24" />
           Hedgium
         </Link>
       </div>
@@ -51,7 +51,7 @@ export default function AuthNav() {
           >
             <li>
               <Link href="/dashboard/settings">
-                <Icon icon="mdi:cog" className="w-4 h-4" /> Settings
+                <Settings className="w-4 h-4" /> Settings
               </Link>
             </li>
             <li>
@@ -60,20 +60,18 @@ export default function AuthNav() {
               >
                 {theme === "light" ? (
                   <>
-                    <Icon icon="mdi:moon-waxing-crescent" className="w-4 h-4" />{" "}
-                    Dark Mode
+                    <Moon className="w-4 h-4" /> Dark Mode
                   </>
                 ) : (
                   <>
-                    <Icon icon="mdi:white-balance-sunny" className="w-4 h-4" />{" "}
-                    Light Mode
+                    <Sun className="w-4 h-4" /> Light Mode
                   </>
                 )}
               </button>
             </li>
             <li>
               <button onClick={handleLogout}>
-                <Icon icon="mdi:logout" className="w-4 h-4" /> Logout
+                <LogOut className="w-4 h-4" /> Logout
               </button>
             </li>
           </ul>
