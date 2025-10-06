@@ -42,10 +42,11 @@ const VerificationPending: React.FC = () => {
   };
 
   useEffect(() => {
-    if (user.signup_step == "verified") {
+    if (user?.signup_step == "verified") {
+      alert.success("User is verified. Redirecting to dashboard!")
       router.push("/hedgium/dashboard");
     }
-  }, []);
+  }, [user]);
 
   return (
     <div className="min-h-screen hero-pattern flex flex-col items-center justify-center bg-base-200 p-6">

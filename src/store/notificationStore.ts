@@ -34,16 +34,20 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   fetchNotifications: async () => {
     try {
       const res = await authFetch("/notifications/", { method: "GET" });
+
+      if (res.ok){
       const data: Notification[] = await res.json();
       set({
         notifications: data,
         unreadCount: data.filter((n) => !n.read).length,
         isLoading: false,
       });
+      }
     } catch (err) {
       console.error("Failed to fetch notifications", err);
       set({ isLoading: false });
     }
+  
   },
 
   addNotification: (n) =>

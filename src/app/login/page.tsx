@@ -15,6 +15,8 @@ const Login: React.FC = () => {
   const [passwordError, setPasswordError] = useState("");
   const [nextPath, setNextPath] = useState("/hedgium/dashboard");
 
+  const [loginError, setLoginError] = useState(""); // Add this
+
   const { login, accessToken, isLoading } = useAuthStore();
   const router = useRouter();
 
@@ -34,14 +36,20 @@ const Login: React.FC = () => {
     }
   }, [accessToken, router, nextPath]);
 
-  const handleLogin = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleLogin = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     let valid = true;
 
     if (!email) {
       setEmailError("Email is required");
       valid = false;
-    } else {
+    }
+    // Email pattern check
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Please enter a valid email address");
+      valid = false;
+    } 
+    else {
       setEmailError("");
     }
 
@@ -53,7 +61,12 @@ const Login: React.FC = () => {
     }
 
     if (valid) {
-      login(email, password);
+      try{
+        await login(email, password);
+      } catch (err: any) {
+        // Show error to user
+        setLoginError(err.detail || "Something went wrong");
+      }
     }
   };
 
@@ -66,8 +79,8 @@ const Login: React.FC = () => {
             Log in to <span className="text-primary">Hedgium</span>
           </h2>
 
-          <div className="card bg-base-100 shadow-xl card-hover">
-            <div className="card-body space-y-6">
+          <div className="card bg-base-100 border border-base-300 card-hover">
+            <div className="card-body space-y-4">
               {accessToken ? (
                 <div className="text-center">
                   <p className="text-green-600 font-semibold text-lg">
@@ -134,6 +147,11 @@ const Login: React.FC = () => {
                   >
                     {isLoading ? "Loading..." : "Log In"}
                   </button>
+
+                  {loginError && (
+                    <p className="text-red-600 text-sm text-center mb-2">{loginError}</p>
+                  )}
+
 
                   <div className="text-center text-sm">
                     <p>

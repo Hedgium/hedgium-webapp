@@ -1,6 +1,6 @@
 'use client'
-import './global.css'
 
+import './global.css'
 import { Inter } from "next/font/google"
 import { ThemeProvider } from 'next-themes'
 import NotificationProvider from '@/providers/NotificationProvider'
@@ -78,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {(isInitializing) && (
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <span className="loading loading-dots loading-md"></span>
         </div>
         )}
 

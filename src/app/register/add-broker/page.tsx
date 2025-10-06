@@ -12,6 +12,7 @@ const BrokerSetup: React.FC = () => {
   const router = useRouter();
 
   const [brokerName, setBrokerName] = useState("");
+  const [brokerUserId, setBrokerUserId] = useState("");
   const alert = useAlert();
   const [apiKey, setApiKey] = useState("");
   const { user, updateUser } = useAuthStore();
@@ -58,6 +59,7 @@ const BrokerSetup: React.FC = () => {
         const formData = {
             "user_id": user.id,
             "broker_name": brokerName,
+            "broker_user_id": brokerUserId,
             "broker_api_key": apiKey,
             "broker_access_token": accessToken,
             "broker_twofa": brokerTwofa
@@ -118,13 +120,27 @@ const BrokerSetup: React.FC = () => {
             className="select select-bordered w-full"
           >
             <option value="">Select Broker</option>
-            <option value="zerodha">Zerodha</option>
-            <option value="upstox">Upstox</option>
-            <option value="angelone">AngelOne</option>
-            <option value="fyers">Fyers</option>
+            <option value="ZERODHA">Zerodha</option>
+            <option value="ANGELONE">Upstox</option>
+            <option value="UPSTOX">AngelOne</option>
+            <option value="SHOONYA">Shoonya</option>
             <option value="other">Other</option>
           </select>
         </div>
+
+
+        <div>
+          <label className="block text-sm font-medium">Broker User Id</label>
+          <input
+            type="text"
+            value={brokerUserId}
+            onChange={(e) => setBrokerUserId(e.target.value)}
+            className="input input-bordered w-full"
+            placeholder="Enter Broker user id"
+          />
+        </div>
+
+
 
         {/* API Key */}
         <div>
@@ -151,7 +167,7 @@ const BrokerSetup: React.FC = () => {
         </div>
 
         {/* Broker 2FA */}
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium">Broker 2FA</label>
           <input
             type="text"
@@ -160,7 +176,7 @@ const BrokerSetup: React.FC = () => {
             className="input input-bordered w-full"
             placeholder="Enter 2FA Code / PIN"
           />
-        </div>
+        </div> */}
 
         {/* Submit */}
         <div className="flex justify-between gap-2">

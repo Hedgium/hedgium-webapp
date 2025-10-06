@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import useAlert from "@/hooks/useAlert";
 
 
 export interface SubscriptionPlan {
@@ -34,8 +35,6 @@ export interface User {
   active_subscription: UserSubscription | null;
 }
 
-
-
 interface AuthState {
   accessToken: string | null;
   user: User | null;
@@ -55,6 +54,7 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
+
   accessToken: null,
   user: null,
   isLoading: false,
@@ -70,16 +70,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       credentials: "include",
     });
 
+    console.log(res)
+
     if (!res.ok) {
+      console.log("Hello Bhai!!")
       set({ isLoading: false });
-      throw new Error("Login failed");
+      const data =  await res.json();
+      console.log(data);
+      throw data;
     }
 
     const data = await res.json();
     set({ accessToken: data.access_token, isLoading: false });
     set({ isInitializing: false });
 
-    await get().fetchUser();
+    get().fetchUser();
     get().startAutoRefresh();
   },
 
@@ -93,7 +98,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (res.ok) {
         const data = await res.json();
         set({ accessToken: data.access_token });
-        await get().fetchUser();
         return true;
       } else {
         set({ accessToken: null, user: null });
@@ -128,7 +132,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     console.log("Logout Called");
-
     await fetch("/api/proxy/users/auth/logout/", {
       method: "POST",
       headers: {
@@ -139,15 +142,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     // stop auto refresh loop
     get().stopAutoRefresh();
-
     set({ accessToken: null, user: null });
   },
 
   autoLogin: async () => {
     set({ isInitializing: true });
     const ok = await get().refreshAccessToken();
-    if (ok) get().startAutoRefresh();
     set({ isInitializing: false });
+    await get().fetchUser();
+    if (ok) get().startAutoRefresh();
+    
   },
 
   startAutoRefresh: () => {

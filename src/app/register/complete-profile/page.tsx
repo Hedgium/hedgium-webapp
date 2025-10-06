@@ -79,7 +79,7 @@ const CompleteProfile: React.FC = () => {
         {/* Card form */}
         <div className="max-w-md w-full">
           <h2 className="text-center text-2xl font-bold mb-6 text-base-content">
-            Complete Your Profile
+            Complete Your Profile on <span className="text-primary">Hedgium</span>
           </h2>
 
           <form

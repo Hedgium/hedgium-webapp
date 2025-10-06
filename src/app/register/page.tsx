@@ -27,6 +27,9 @@ function Register() {
   const [passwordError, setPasswordError] = useState<string>("");
   const [confirmPasswordError, setConfirmPasswordError] = useState<string>("");
 
+
+  const [error, setError] = useState(""); // Add this
+  
   const validateEmail = (email: string): boolean =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -86,6 +89,7 @@ function Register() {
         "password": password
       };
       try {
+        setError(null)
         const res = await myFetch('users', {
           method: "POST",
           body: JSON.stringify(dataToSend) // Convert the data object to a JSON string
@@ -93,10 +97,15 @@ function Register() {
         
         if (res.ok) {
           const data = await res.json();
-          alert.success('User is created sucessfully', { duration: 3000 });
+          alert.success('User created sucessfully', { duration: 3000 });
           login(email, password);
           updateUser({ signup_step: "initiated" });
-        } else {}
+        } else {
+          const errorRes = await res.json();
+          setError(errorRes?.detail)
+          alert(errorRes?.detail, {duration:3000})
+
+        }
       } catch (e) {
         console.log(e);
         alert.error("Something went wrong", { duration: 5000 });
@@ -260,6 +269,12 @@ function Register() {
                     {registering ? "Loading..." : "Register"}
                   </button>
                 </div>
+
+                {error && (
+                    <p className="text-red-600 text-sm text-center mb-2">{error}</p>
+                  )}
+
+
 
                 {/* Link */}
                 <div className="text-center text-sm">
