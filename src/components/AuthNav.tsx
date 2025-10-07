@@ -2,10 +2,14 @@
 
 // This is for mobile > Mobile Navbar
 
+
+
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { LineChart, Settings, Moon, Sun, LogOut } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import CurrentSubscription from "./CurrentSubscription";
+
 
 export default function AuthNav() {
   const { theme, setTheme } = useTheme();
@@ -49,6 +53,7 @@ export default function AuthNav() {
             tabIndex={0}
             className="menu dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
           >
+              <CurrentSubscription />
             <li>
               <Link href="/dashboard/settings">
                 <Settings className="w-4 h-4" /> Settings

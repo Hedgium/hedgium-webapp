@@ -9,15 +9,14 @@ export default function SubscriptionTab(){
 
     console.log(user?.active_subscription)
 
-    
-
-
     return(
        <>
 
        <div className="card bg-base-100 shadow-xl card-hover p-6">
                 <h2 className="text-2xl font-bold mb-6 text-base-content">Subscription Info</h2>
-                <div className="space-y-6">
+                
+                
+                {user?.active_subscription && <div className="space-y-6">
                   <div className="card bg-base-200 p-4">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-lg font-semibold">Current Plan</h3>
@@ -31,7 +30,21 @@ export default function SubscriptionTab(){
                     
                   </div>
 
-                </div>
+                </div>}
+
+                {!user?.active_subscription && <div className="space-y-6">
+                  <div className="card bg-base-200 p-4">
+                    <p>No active subscription.</p>
+                    <a href="/hedgium/upgrade" className="btn btn-outline btn-sm mt-4">Upgrade now</a>
+                  </div>
+                  <div>
+                    
+                  </div>
+
+                </div>}
+
+
+
               </div>
 
        </> 

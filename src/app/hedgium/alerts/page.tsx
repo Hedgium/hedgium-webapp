@@ -20,26 +20,26 @@ const NotificationsPage: NextPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-base-100">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen hero-pattern bg-gray-50 p-6">
+    <div className="min-h-screen bg-base-100 hero-pattern p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-            <p className="text-gray-600 mt-2">Stay updated with your trading activities and system alerts</p>
+            <h1 className="text-3xl font-bold ">Notifications</h1>
+            <p className=" mt-2">Stay updated with your trading activities and system alerts</p>
           </div>
           <div className="flex items-center mt-4 md:mt-0">
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 mr-3 cursor-pointer"
+                className="px-4 py-2 bg-base-200 text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 mr-3 cursor-pointer"
               >
                 Mark all as read
               </button>
@@ -51,16 +51,16 @@ const NotificationsPage: NextPage = () => {
         </div>
 
         {/* Filter Tabs */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+        <div className="bg-base-200 rounded-xl shadow-sm p-4 mb-6">
           <div className="flex flex-wrap gap-2">
             <button
-              className={`px-4 py-2 rounded-lg ${filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+              className={`px-4 py-2 cursor-pointer rounded-lg ${filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
               onClick={() => setFilter('all')}
             >
               All
             </button>
             <button
-              className={`px-4 py-2 rounded-lg ${filter === 'unread' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+              className={`px-4 py-2 cursor-pointer rounded-lg ${filter === 'unread' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
               onClick={() => setFilter('unread')}
             >
               Unread
@@ -70,11 +70,11 @@ const NotificationsPage: NextPage = () => {
 
         {/* Notifications List */}
         {notifications.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl shadow">
-            <div className="text-2xl text-gray-500 mb-4">
+          <div className="text-center py-12 rounded-xl shadow">
+            <div className="text-2xl  mb-4">
               {filter === 'unread' ? 'No unread notifications' : 'No notifications found'}
             </div>
-            <p className="text-gray-400">
+            <p className="">
               {filter === 'unread' ? 'You\'re all caught up!' : 'Try changing your filters to see more notifications'}
             </p>
           </div>
@@ -114,13 +114,13 @@ const NotificationsPage: NextPage = () => {
                     </div>
 
                     <div>
-                      <h3 className="font-semibold text-gray-900">{notification.title}</h3>
-                      <p className="text-gray-700 mt-1">{notification.message}</p>
+                      <h3 className="font-semibold ">{notification.title}</h3>
+                      <p className=" mt-1">{notification.message}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {notification.related_model_name}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs">
                           {formatTimeAgo(new Date(notification.timestamp))}
                         </span>
                       </div>

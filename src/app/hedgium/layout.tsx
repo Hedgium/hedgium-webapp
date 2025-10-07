@@ -7,8 +7,7 @@ import AuthFooter from "@/components/AuthFooter";
 import AuthNavigation from "@/components/AuthNavigation";
 import { useAuthStore } from "@/store/authStore";
 import { authFetch } from "@/utils/api";
-import Link from "next/link";
-import { formatDateOnly } from "@/utils/formatDate";
+
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { accessToken, isInitializing, user, updateUser } = useAuthStore();
@@ -73,12 +72,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           
               {user?.signup_step !== "verified" && (
-                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 flex justify-between items-center">
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-2 flex justify-between items-center">
                 <p className="text-sm font-medium">
                   Your profile verification is pending. Please complete your KYC to unlock full access.
                 </p>
                 <button
-                  className="btn btn-sm btn-primary"
+                  className="btn btn-sm btn-error"
                   onClick={kycRoute}
                 >
                   Complete KYC
@@ -86,20 +85,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </div>
               )}
 
-              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 flex justify-between items-center">
-                <p className="text-sm font-medium">
-                  Your current plan : {user?.active_subscription?.plan?.name}
-                </p>
-                <p>
-                {user?.active_subscription?.plan?.name !="Legends" && <Link
-                  className="btn btn-sm btn-primary"
-                  href={"/hedgium/upgrade"}
-                >
-                  Upgrade Now
-                </Link> }
-                {/* Expires on {formatDateOnly(user?.active_subscription?.end_date)} */}
-                </p>
-              </div>
               
 
 

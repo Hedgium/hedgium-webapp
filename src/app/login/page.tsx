@@ -63,9 +63,9 @@ const Login: React.FC = () => {
     if (valid) {
       try{
         await login(email, password);
-      } catch (err: any) {
+      } catch (err) {
         // Show error to user
-        setLoginError(err.detail || "Something went wrong");
+        setLoginError(err?.detail || "Something went wrong");
       }
     }
   };

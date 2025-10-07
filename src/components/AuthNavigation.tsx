@@ -7,6 +7,7 @@ import { useRouter } from "nextjs-toploader/app";
 import { Home, Briefcase, Bell, Settings, LineChart, Sun, Moon, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
+import CurrentSubscription from "@/components/CurrentSubscription";
 import Link from "next/link";
 
 const tabs = [
@@ -31,12 +32,16 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
     return (
       <div className="flex flex-col h-full bg-base-200/50 border border-base-300">
         {/* Logo/Brand */}
-        <div className="p-4 border-b border-base-300">
+
+        <CurrentSubscription />
+
+
+        {/* <div className="p-4 border-b border-base-300">
           <Link href="/hedgium/dashboard" className="flex items-center gap-2 text-xl font-bold text-primary">
             <LineChart width="26" height="26" className="text-primary" />
             <span>Hedgium</span>
           </Link>
-        </div>
+        </div> */}
         
         {/* Navigation items */}
         <nav className="flex-1 overflow-y-auto p-4">
@@ -63,6 +68,8 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
 
         {/* bottom controls */}
         <div className="p-4 border-t border-base-300">
+
+          
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
