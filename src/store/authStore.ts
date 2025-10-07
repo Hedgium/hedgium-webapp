@@ -33,6 +33,7 @@ export interface User {
   updated_at: string; // ISO date string
   kyc_skipped: boolean;
   active_subscription: UserSubscription | null;
+  broker_logged_in: boolean | false;
 }
 
 interface AuthState {
@@ -170,7 +171,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   updateUser: (partial) => {
-    console.log(partial);
+    // console.log(partial);
     const user = get().user;
     if (!user) return; // ignore if user not loaded
     set({ user: { ...user, ...partial } });

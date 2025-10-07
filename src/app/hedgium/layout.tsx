@@ -8,6 +8,8 @@ import AuthNavigation from "@/components/AuthNavigation";
 import { useAuthStore } from "@/store/authStore";
 import { authFetch } from "@/utils/api";
 
+import BrokerConnect from "@/components/BrokerConnect";
+
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { accessToken, isInitializing, user, updateUser } = useAuthStore();
@@ -70,8 +72,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Main content */}
         <main className="flex-1 overflow-y-auto flex flex-col">
 
-          
-              {user?.signup_step !== "verified" && (
+              {(user && user?.signup_step !== "verified" ) && (
                 <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-2 flex justify-between items-center">
                 <p className="text-sm font-medium">
                   Your profile verification is pending. Please complete your KYC to unlock full access.
@@ -84,6 +85,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </button>
               </div>
               )}
+
+              <BrokerConnect />
 
               
 

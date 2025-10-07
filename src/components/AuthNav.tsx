@@ -26,7 +26,7 @@ export default function AuthNav() {
       {/* Left side brand */}
       <div className="flex-1">
         <Link
-          href="/"
+          href="/hedgium/dashboard"
           className="btn btn-ghost normal-case text-xl font-bold text-primary"
         >
           <LineChart className="mr-2" width="24" height="24" />
