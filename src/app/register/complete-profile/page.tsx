@@ -66,26 +66,26 @@ const CompleteProfile: React.FC = () => {
     }
 
     // Step 2: Update documents (FormData) if not skipped and files exist
-    // if (!skip && (panDocument || aadharDocument)) {
-    //   const formData = new FormData();
-    //   if (panDocument) formData.append("pan_document", panDocument);
-    //   if (aadharDocument) formData.append("aadhar_document", aadharDocument);
+    if (!skip && (panDocument || aadharDocument)) {
+      const formData = new FormData();
+      if (panDocument) formData.append("pan_document", panDocument);
+      if (aadharDocument) formData.append("aadhar_document", aadharDocument);
 
-    //   // Debug log for FormData
-    //   for (const [key, value] of formData.entries()) {
-    //     console.log(`FormData ${key}: ${value}`);
-    //   }
+      // Debug log for FormData
+      for (const [key, value] of formData.entries()) {
+        console.log(`FormData ${key}: ${value}`);
+      }
 
-    //   const documentsRes = await authFetch(`users/${user?.id ?? ""}/documents/`, {
-    //     method: "PUT",
-    //     body: formData,
-    //   });
+      const documentsRes = await authFetch(`users/${user?.id ?? ""}/uploads/`, {
+        method: "PUT",
+        body: formData,
+      });
 
-    //   if (!documentsRes.ok) {
-    //     const errorData = await documentsRes.json();
-    //     throw new Error(`Documents upload failed: ${errorData.message || documentsRes.statusText}`);
-    //   }
-    // }
+      if (!documentsRes.ok) {
+        const errorData = await documentsRes.json();
+        throw new Error(`Documents upload failed: ${errorData.message || documentsRes.statusText}`);
+      }
+    }
 
     if (!skip){
       updateUser({ kyc_skipped: skip, signup_step: "documents_uploaded" });

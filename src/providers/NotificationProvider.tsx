@@ -6,16 +6,18 @@ import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
 
 export default function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const { accessToken } = useAuthStore();
+  const { accessToken, user } = useAuthStore();
   const { addNotification, fetchNotifications } = useNotificationStore();
 
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    fetchNotifications(); // load initial notifications
+    
 
     if (!accessToken) return;
     if (wsRef.current) return;
+
+    fetchNotifications(); // load initial notifications
 
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
 
