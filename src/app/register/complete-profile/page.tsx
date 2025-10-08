@@ -8,13 +8,14 @@ import useAlert from "@/hooks/useAlert";
 import SignUpStepper from "@/components/SignUpStepper";
 
 const CompleteProfile: React.FC = () => {
+
   const router = useRouter();
   const alert = useAlert();
 
   const [mobile, setMobile] = useState("");
   const [panNumber, setPanNumber] = useState("");
   const [aadharNumber, setAadharNumber] = useState("");
-  const { user, updateUser } = useAuthStore();
+  const { user, updateUser, accessToken } = useAuthStore();
   const [panDocument, setPanDocument] = useState<File | null>(null);
   const [aadharDocument, setAadharDocument] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -40,15 +41,28 @@ const CompleteProfile: React.FC = () => {
         if (aadharDocument) formData.append("aadhar_document", aadharDocument);
         formData.append("signup_step", "documents_uploaded");
       }
+
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL + "users/" + (user?.id ?? "") + "/";
+
+
       // Mark step as completed even if skipped
       if (skip) {
         formData.append("kyc_skipped", "true"); // optional, if you added this field
       }
 
-      const res = await authFetch("users/" + (user?.id ?? "") + "/", {
-        method: "POST",
-        body: formData,
+    const res = await fetch(backendUrl, {
+      method: "PUT",
+      body: formData,
+      headers: {
+          'Authorization': `Bearer ${accessToken}`, // Add auth header
+          // 'X-API-Key': process.env.BACKEND_API_KEY,
+        },
       });
+
+      // const res = await authFetch("users/" + (user?.id ?? "") + "/", {
+      //   method: "PUT",
+      //   body: formData,
+      // });
       const data = await res.json();
 
       // Update local store
