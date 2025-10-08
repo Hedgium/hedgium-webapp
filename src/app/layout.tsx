@@ -47,9 +47,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         } else if (user?.signup_step=="verified" && !pathname.includes("hedgium")){
           router.push("/hedgium/dashboard/")
         }
-      }
+      } 
     }, [accessToken, isInitializing, router, pathname]);
-    
+
 
   return (
     <html lang="en" suppressHydrationWarning>

@@ -39,7 +39,7 @@ export default function NotificationProvider({ children }: { children: React.Rea
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [accessToken, fetchNotifications, addNotification]);
+  }, [accessToken]);
 
   return <>{children}</>;
 }

@@ -61,7 +61,7 @@ export default function TradeCyclesPage() {
 
       <h2 className="text-2xl font-bold mb-6">Trade Cycles</h2>
       <Slider>
-        {tradeCycles.map((cycle) => (
+        {tradeCycles?.map((cycle) => (
           <TradeCycleWithPositionsCard key={cycle.id} tradeCycle={cycle} />
         ))}
       </Slider>
