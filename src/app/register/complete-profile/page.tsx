@@ -65,6 +65,14 @@ const CompleteProfile: React.FC = () => {
       throw new Error(`Details update failed: ${errorData.message || detailsRes.statusText}`);
     }
 
+    if (!skip){
+      updateUser({ kyc_skipped: skip, signup_step: "documents_uploaded" });
+      router.push("/register/add-broker");
+    }
+    alert.success(skip ? "Skipped KYC" : "Profile updated successfully", {
+      duration: 3000,
+    });
+    
     // Step 2: Update documents (FormData) if not skipped and files exist
     if (!skip && (panDocument || aadharDocument)) {
       const formData = new FormData();
@@ -87,13 +95,7 @@ const CompleteProfile: React.FC = () => {
       }
     }
 
-    if (!skip){
-      updateUser({ kyc_skipped: skip, signup_step: "documents_uploaded" });
-      router.push("/register/add-broker");
-    }
-    alert.success(skip ? "Skipped KYC" : "Profile updated successfully", {
-      duration: 3000,
-    });
+    
     
 
 
