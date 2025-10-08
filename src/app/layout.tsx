@@ -36,7 +36,7 @@ useEffect(() => {
         router.push(targetPath);
       }
     };
-
+    
     if (user?.kyc_skipped) {
       redirectIfNeeded("/hedgium/dashboard/");
     } 

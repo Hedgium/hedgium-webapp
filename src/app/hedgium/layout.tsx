@@ -23,17 +23,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   }, [isInitializing, accessToken, router, pathname]);
 
-    const formData = new FormData();
+    
 
 
   // Determine KYC route
   const kycRoute = async () => {
 
     try{
-        formData.append("kyc_skipped", "false"); // optional, if you added this field
+        const formData = {"kyc_skipped": false}; // optional, if you added this field
         await authFetch("users/" + (user?.id ?? "") + "/", {
           method: "PUT",
-          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
         });
     
       updateUser({  kyc_skipped: false });

@@ -16,17 +16,19 @@ const VerificationPending: React.FC = () => {
   const router = useRouter();
   const alert = useAlert();
 
-  const formData = new FormData();
 
   const handleSkip = async (e: React.FormEvent) => {
     try {
       setSubmitting(true);
   
       e.preventDefault();
-      formData.append("kyc_skipped", "true"); // optional, if you added this field
+      const formData = {"kyc_skipped": true}; // optional, if you added this field
       const res = await authFetch("users/" + (user?.id ?? "") + "/", {
         method: "PUT",
-        body: formData,
+        headers: {
+        "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
       });
   
       updateUser({ kyc_skipped: true });

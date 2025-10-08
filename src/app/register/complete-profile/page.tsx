@@ -8,14 +8,13 @@ import useAlert from "@/hooks/useAlert";
 import SignUpStepper from "@/components/SignUpStepper";
 
 const CompleteProfile: React.FC = () => {
-
   const router = useRouter();
   const alert = useAlert();
 
   const [mobile, setMobile] = useState("");
   const [panNumber, setPanNumber] = useState("");
   const [aadharNumber, setAadharNumber] = useState("");
-  const { user, updateUser, accessToken } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const [panDocument, setPanDocument] = useState<File | null>(null);
   const [aadharDocument, setAadharDocument] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -29,71 +28,95 @@ const CompleteProfile: React.FC = () => {
     await saveProfile({ skip: true });
   };
 
-  const saveProfile = async ({ skip }: { skip: boolean }) => {
-    try {
-      setSubmitting(true);
-      const formData = new FormData();
-      if (!skip) {
-        formData.append("mobile", mobile);
-        formData.append("pan_number", panNumber);
-        formData.append("aadhar_number", aadharNumber);
-        if (panDocument) formData.append("pan_document", panDocument);
-        if (aadharDocument) formData.append("aadhar_document", aadharDocument);
-        formData.append("signup_step", "documents_uploaded");
+  
+  const saveProfile = async ({ skip }) => {
+  try {
+    setSubmitting(true);
+
+    // Step 1: Update user details (JSON payload)
+    let userDetails: { kyc_skipped?: boolean; mobile?: string; pan_number?: string; aadhar_number?: string; signup_step?: string; };
+    if (!skip) {
+      userDetails = {
+        "mobile": mobile,
+        "pan_number":panNumber,
+        "aadhar_number": aadharNumber,
+        "signup_step": "documents_uploaded"
       }
-
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL + "users/" + (user?.id ?? "") + "/";
-
-
-      // Mark step as completed even if skipped
-      if (skip) {
-        formData.append("kyc_skipped", "true"); // optional, if you added this field
-      }
-
-    const res = await fetch(backendUrl, {
-      method: "PUT",
-      body: formData,
-      headers: {
-          'Authorization': `Bearer ${accessToken}`, // Add auth header
-          // 'X-API-Key': process.env.BACKEND_API_KEY,
-        },
-      });
-
-      // const res = await authFetch("users/" + (user?.id ?? "") + "/", {
-      //   method: "PUT",
-      //   body: formData,
-      // });
-      const data = await res.json();
-
-      // Update local store
-      updateUser({  kyc_skipped: skip, signup_step:"documents_uploaded" });
-
-      alert.success(skip ? "Skipped KYC" : "Profile updated successfully", {
-        duration: 3000,
-      });
-
-      // Redirect to next step
-      router.push("/register/add-broker");
-    } catch (e) {
-      alert.error("Something went wrong. Please try again.", { duration: 3000 });
-    } finally {
-      setSubmitting(false);
     }
-  };
+    else {
+      userDetails = {
+        "kyc_skipped": true,
+      }
+      updateUser({ kyc_skipped: skip });
 
-  // const formatAadharNumber = (value: string) => {
-  //   // Remove all non-digit characters
-  //   const digits = value.replace(/\D/g, '');
+    }
 
-  //   // Limit to 12 digits (Aadhaar length)
-  //   const limited = digits.slice(0, 12);
+    console.log("Sending user details:", userDetails); // Debug log
+    const detailsRes = await authFetch(`users/${user?.id ?? ""}/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userDetails),
+    });
 
-  //   // Group into 4-digit chunks
-  //   const formatted = limited.replace(/(\d{4})(?=\d)/g, '$1 ');
+    if (!detailsRes.ok) {
+      const errorData = await detailsRes.json();
+      throw new Error(`Details update failed: ${errorData.message || detailsRes.statusText}`);
+    }
 
-  //   return formatted.trim();
-  // };
+    // Step 2: Update documents (FormData) if not skipped and files exist
+    // if (!skip && (panDocument || aadharDocument)) {
+    //   const formData = new FormData();
+    //   if (panDocument) formData.append("pan_document", panDocument);
+    //   if (aadharDocument) formData.append("aadhar_document", aadharDocument);
 
+    //   // Debug log for FormData
+    //   for (const [key, value] of formData.entries()) {
+    //     console.log(`FormData ${key}: ${value}`);
+    //   }
+
+    //   const documentsRes = await authFetch(`users/${user?.id ?? ""}/documents/`, {
+    //     method: "PUT",
+    //     body: formData,
+    //   });
+
+    //   if (!documentsRes.ok) {
+    //     const errorData = await documentsRes.json();
+    //     throw new Error(`Documents upload failed: ${errorData.message || documentsRes.statusText}`);
+    //   }
+    // }
+
+    if (!skip){
+      updateUser({ kyc_skipped: skip, signup_step: "documents_uploaded" });
+      router.push("/register/add-broker");
+    }
+    alert.success(skip ? "Skipped KYC" : "Profile updated successfully", {
+      duration: 3000,
+    });
+    
+
+
+  } catch (e) {
+    console.error("Error in saveProfile:", e);
+    alert.error(`Something went wrong: ${e.message || "Please try again"}`, { duration: 3000 });
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+const formatAadharNumber = (value: string) => {
+  // Remove all non-digit characters
+  const digits = value.replace(/\D/g, '');
+
+  // Limit to 12 digits (Aadhaar length)
+  const limited = digits.slice(0, 12);
+
+  // Group into 4-digit chunks
+  const formatted = limited.replace(/(\d{4})(?=\d)/g, '$1 ');
+
+  return formatted.trim();
+};
 
   return (
     <>
@@ -143,7 +166,7 @@ const CompleteProfile: React.FC = () => {
               <label className="block text-sm font-medium">Aadhar Number</label>
               <input
                 type="text"
-                value={aadharNumber}
+                value={formatAadharNumber(aadharNumber)}
                 onChange={(e) => setAadharNumber(e.target.value)}
                 className="input input-bordered w-full"
                 placeholder="Enter your Aadhar number"
