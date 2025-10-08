@@ -57,7 +57,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       default:
         router.push("/hedgium/dashboard/")
-
     }
   };
 
