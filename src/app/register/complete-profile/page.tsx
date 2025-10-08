@@ -67,6 +67,20 @@ const CompleteProfile: React.FC = () => {
     }
   };
 
+  const formatAadharNumber = (value: string) => {
+    // Remove all non-digit characters
+    const digits = value.replace(/\D/g, '');
+
+    // Limit to 12 digits (Aadhaar length)
+    const limited = digits.slice(0, 12);
+
+    // Group into 4-digit chunks
+    const formatted = limited.replace(/(\d{4})(?=\d)/g, '$1 ');
+
+    return formatted.trim();
+  };
+
+
   return (
     <>
       {/* Hero background wrapper */}
@@ -115,7 +129,7 @@ const CompleteProfile: React.FC = () => {
               <label className="block text-sm font-medium">Aadhar Number</label>
               <input
                 type="text"
-                value={aadharNumber}
+                value={formatAadharNumber(aadharNumber)}
                 onChange={(e) => setAadharNumber(e.target.value)}
                 className="input input-bordered w-full"
                 placeholder="Enter your Aadhar number"

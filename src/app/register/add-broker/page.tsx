@@ -18,7 +18,7 @@ const BrokerSetup: React.FC = () => {
   const { user, updateUser } = useAuthStore();
   const [submitting, setSubmitting] = useState(false);
   
-  const [accessToken, setAccessToken] = useState("");
+  const [secretKey, setSecretKey] = useState("");
   const [brokerTwofa, setBrokerTwofa] = useState("");
 
   const formData = new FormData();
@@ -61,24 +61,23 @@ const BrokerSetup: React.FC = () => {
             "broker_name": brokerName,
             "broker_user_id": brokerUserId,
             "broker_api_key": apiKey,
-            "broker_access_token": accessToken,
+            "broker_secret_key": secretKey,
             "broker_twofa": brokerTwofa
         }
         const url = "profiles/"
 
         const res = await authFetch(url, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
             body: JSON.stringify(formData)
         })
 
-        // console.log(data);
-        updateUser({ signup_step: "broker_profile_added" })
+        if (res.ok){
 
-        alert.success("Broker added successfully", {duration:3000})
-        router.push("/register/verification/")
+        // console.log(data);
+          updateUser({ signup_step: "broker_profile_added" })
+          alert.success("Broker added successfully", {duration:3000})
+          router.push("/register/verification/")
+        }
     } catch (e) {
 
     } finally {
@@ -124,7 +123,6 @@ const BrokerSetup: React.FC = () => {
             <option value="ANGELONE">Upstox</option>
             <option value="UPSTOX">AngelOne</option>
             <option value="SHOONYA">Shoonya</option>
-            <option value="other">Other</option>
           </select>
         </div>
 
@@ -159,8 +157,8 @@ const BrokerSetup: React.FC = () => {
           <label className="block text-sm font-medium">Access Token</label>
           <input
             type="text"
-            value={accessToken}
-            onChange={(e) => setAccessToken(e.target.value)}
+            value={secretKey}
+            onChange={(e) => setSecretKey(e.target.value)}
             className="input input-bordered w-full"
             placeholder="Enter Access Token"
           />

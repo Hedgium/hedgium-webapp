@@ -99,6 +99,7 @@ function Register() {
           const data = await res.json();
           alert.success('User created sucessfully', { duration: 3000 });
           login(email, password);
+          router.push("/register/complete-profile");
           updateUser({ signup_step: "initiated" });
         } else {
           const errorRes = await res.json();
@@ -115,11 +116,11 @@ function Register() {
     }
   }
   
-  useEffect(() => {
-    if (accessToken) {
-      router.push("/register/complete-profile");
-    }
-  }, [accessToken]);
+  // useEffect(() => {
+  //   if (accessToken) {
+  //     router.push("/register/complete-profile");
+  //   }
+  // }, [accessToken]);
 
   return (
     <>

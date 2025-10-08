@@ -28,28 +28,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     const router = useRouter()
     const pathname = usePathname()
   
-    useEffect(() => {
+useEffect(() => {
+  if (!isInitializing && accessToken) {
 
-      if (!isInitializing && accessToken){
-
-        if (user?.kyc_skipped) {
-          if (!pathname.includes("hedgium")) {
-            router.push("/hedgium/dashboard/");
-          }
-          return;
-        }
-        else if (user?.signup_step=="initiated"){
-          router.push("/register/complete-profile")
-        } else if(user?.signup_step=="documents_uploaded"){
-          router.push("/register/add-broker")
-        } else if (user?.signup_step=="broker_profile_added"){
-          router.push("/register/verification")
-        } else if (user?.signup_step=="verified" && !pathname.includes("hedgium")){
-          router.push("/hedgium/dashboard/")
-        }
+    const redirectIfNeeded = (targetPath) => {
+      if (!pathname.startsWith(targetPath)) {
+        router.push(targetPath);
       }
-    }, [accessToken, isInitializing, router, pathname]);
+    };
 
+    if (user?.kyc_skipped) {
+      redirectIfNeeded("/hedgium/dashboard/");
+    } 
+    else if (user?.signup_step === "initiated") {
+      redirectIfNeeded("/register/complete-profile");
+    } 
+    else if (user?.signup_step === "documents_uploaded") {
+      redirectIfNeeded("/register/add-broker");
+    } 
+    else if (user?.signup_step === "broker_profile_added") {
+      redirectIfNeeded("/register/verification");
+    } 
+    else if (user?.signup_step === "verified") {
+      redirectIfNeeded("/hedgium/dashboard/");
+    }
+  }
+}, [accessToken, isInitializing, router, pathname, user]);
 
   return (
     <html lang="en" suppressHydrationWarning>
