@@ -50,12 +50,12 @@ export default function NotificationProvider({ children }: { children: React.Rea
           console.log(`🔁 Reconnecting in ${retryDelay / 1000}s...`);
           setTimeout(connectWebSocket, retryDelay);
         } else {
-          console.error("🚫 Max retry attempts reached. WebSocket not reconnecting.");
+          console.log("🚫 Max retry attempts reached. WebSocket not reconnecting.");
         }
       };
 
       wsRef.current.onerror = (err) => {
-        console.error("⚠️ WebSocket error:", err);
+        console.log("⚠️ WebSocket error:", err);
         wsRef.current?.close();
       };
     };

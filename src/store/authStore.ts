@@ -133,17 +133,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     console.log("Logout Called");
+    get().stopAutoRefresh();
+    const accessT =  get().accessToken
+    set({ accessToken: null, user: null });
+
     await fetch("/api/proxy/users/auth/logout/", {
       method: "POST",
       headers: {
-        Authorization: get().accessToken ? `Bearer ${get().accessToken}` : "",
+        Authorization: accessT ? `Bearer ${accessT}` : "",
       },
       credentials: "include",
     }).catch(() => {});
-
     // stop auto refresh loop
-    get().stopAutoRefresh();
-    set({ accessToken: null, user: null });
   },
 
   autoLogin: async () => {
