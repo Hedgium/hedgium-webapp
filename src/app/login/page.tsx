@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { Shield } from "lucide-react";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -72,7 +73,6 @@ const Login: React.FC = () => {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <h2 className="text-center text-3xl font-bold text-gray-900">
@@ -80,7 +80,7 @@ const Login: React.FC = () => {
           </h2>
 
           <div className="card bg-base-100 border border-base-300 card-hover">
-            <div className="card-body space-y-4">
+            <div className="card-body space-y-2">
               {accessToken ? (
                 <div className="text-center">
                   <p className="text-green-600 font-semibold text-lg">
@@ -152,8 +152,16 @@ const Login: React.FC = () => {
                     <p className="text-red-600 text-sm text-center mb-2">{loginError}</p>
                   )}
 
+                  
+                    
 
-                  <div className="text-center text-sm">
+
+                  <div className="text-center text-sm space-y-2">
+                    <p className="text-xs text-base-content/50 flex items-center justify-center gap-1">
+                      <Shield className="w-3 h-3" />
+                      Your data is securely encrypted and protected
+                    </p>
+
                     <p>
                       Don&apos;t have an account?{" "}
                       <Link
@@ -163,14 +171,16 @@ const Login: React.FC = () => {
                         Sign up
                       </Link>
                     </p>
+
+
                   </div>
+
                 </>
               )}
             </div>
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 };

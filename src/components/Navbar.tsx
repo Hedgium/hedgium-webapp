@@ -8,7 +8,7 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="navbar bg-base-100 sticky top-0 z-50 shadow-md">
+    <nav className="navbar bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 glass-effect">
       <div className="navbar-start">
         <div className="dropdown">
           <label
@@ -47,31 +47,30 @@ export default function Navbar() {
         </div>
         <Link
           href="/"
-          className="btn btn-ghost normal-case text-xl font-bold text-primary"
+          className="btn btn-ghost normal-case text-xl font-bold text-gray-900 hover:text-primary"
         >
-          {/* <Icon icon="lucide:line-chart" className="mr-2" width={24} height={24} /> */}
           Hedgium
         </Link>
       </div>
       <div className="navbar-center hidden lg:flex">
-        <ul className="menu menu-horizontal px-1">
+        <ul className="menu menu-horizontal px-1 text-gray-700">
           <li>
-            <Link href="/#features">Features</Link>
+            <Link href="/#features" className="hover:text-primary">Features</Link>
           </li>
           <li>
-            <Link href="/#strategies">Strategies</Link>
+            <Link href="/#strategies" className="hover:text-primary">Strategies</Link>
           </li>
           <li>
-            <Link href="/#pricing">Pricing</Link>
+            <Link href="/#pricing" className="hover:text-primary">Pricing</Link>
           </li>
         </ul>
       </div>
       <div className="navbar-end space-x-2">
-        <Link href="/login" className="btn btn-primary btn-outline">
+        <Link href="/login" className="btn btn-ghost text-gray-700 hover:text-primary">
           Login
         </Link>
-        <Link href="/register" className="btn btn-primary">
-          Sign Up
+        <Link href="/register" className="btn btn-primary shadow hover:shadow-md">
+          Get Started
         </Link>
       </div>
     </nav>

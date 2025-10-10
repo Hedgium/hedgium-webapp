@@ -4,8 +4,6 @@
   themes: light --default, dark --prefersdark, cupcake;
 }
 
-
-
 .gradient-bg {
     background: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%);
 }

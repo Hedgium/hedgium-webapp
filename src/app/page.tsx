@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { ArrowRight, Bot, TrendingUp, Code, Smartphone, Shield, Users, CheckCircle, Check, X, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 

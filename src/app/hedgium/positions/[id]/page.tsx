@@ -70,6 +70,7 @@ export default function TradeCycleDetailPage() {
     const res = await authFetch(`trade-cycles/${id}/details`);
     const data = await res.json();
     setTradeCycleDetail(data);
+    console.log(data);
     setLoading(false);
   }
 

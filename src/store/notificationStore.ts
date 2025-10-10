@@ -5,7 +5,7 @@ import { authFetch } from "@/utils/api";
 
 export interface Notification {
   id: number;
-  type: "info" | "success" | "warning" | "error";
+  type: "INFO" | "SUCCESS" | "WARNING" | "ERROR";
   title: string;
   message: string;
   timestamp: string;
@@ -58,7 +58,6 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   markAsRead: async (id) => {
     try {
-      await authFetch(`/notifications/${id}/read/`, { method: "POST" });
       set((state) => {
         const updated = state.notifications.map((n) =>
           n.id === id ? { ...n, read: true } : n
@@ -68,6 +67,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
           unreadCount: updated.filter((n) => !n.read).length,
         };
       });
+      
+      await authFetch(`/notifications/${id}/read/`, { method: "POST" });
+      
     } catch (err) {
       console.error("Failed to mark as read", err);
     }
@@ -75,11 +77,14 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   markAllAsRead: async () => {
     try {
-      await authFetch("/notifications/mark-all-read/", { method: "POST" });
+
       set((state) => ({
         notifications: state.notifications.map((n) => ({ ...n, read: true })),
         unreadCount: 0,
       }));
+
+      await authFetch("/notifications/mark-all-read/", { method: "POST" });
+      
     } catch (err) {
       console.error("Failed to mark all as read", err);
     }
@@ -87,7 +92,6 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   deleteNotification: async (id) => {
     try {
-      await authFetch(`/notifications/${id}/`, { method: "DELETE" });
       set((state) => {
         const updated = state.notifications.filter((n) => n.id !== id);
         return {
@@ -95,6 +99,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
           unreadCount: updated.filter((n) => !n.read).length,
         };
       });
+
+      await authFetch(`/notifications/${id}/`, { method: "DELETE" });
+      
     } catch (err) {
       console.error("Failed to delete notification", err);
     }

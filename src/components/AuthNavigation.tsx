@@ -9,6 +9,7 @@ import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import CurrentSubscription from "@/components/CurrentSubscription";
 import Link from "next/link";
+import { useNotificationStore } from "@/store/notificationStore";
 
 const tabs = [
   { name: "Dashboard", href: "/hedgium/dashboard", icon: <Home className="h-5 w-5" /> },
@@ -22,6 +23,8 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { logout } = useAuthStore();
+
+  const {unreadCount} = useNotificationStore();
 
   const sendToPage = (url: string) => {
     router.push(url);
@@ -52,15 +55,24 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
                 <li key={idx}>
                   <Link
                     href={tab.href}
-                    className={`flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all ${active 
-                      ? 'bg-primary text-primary-content shadow-sm' 
-                      : 'hover:bg-base-300/70'}`}
+                    className={`flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all ${
+                      active ? "bg-primary text-primary-content shadow-sm" : "hover:bg-base-300/70"
+                    }`}
                     aria-current={active ? "page" : undefined}
                   >
                     {tab.icon}
                     <span className="font-medium">{tab.name}</span>
+
+                    {/* Unread indicator for Alerts */}
+                    {tab.name === "Alerts" && unreadCount > 0 && (
+                      <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
+
+
               );
             })}
           </ul>
@@ -104,19 +116,27 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
   // ----- Mobile bottom dock -----
   return (
     <div className="dock md:hidden z-40 backdrop-blur-sm">
-      {tabs.map((tab, index) => {
-        const active = pathname === tab.href;
-        return (
-          <button
-            key={index}
-            onClick={() => sendToPage(tab.href)}
-            className={`text-xs transition-all ${active ? 'active text-primary' : ''}`}
-          >
-            {tab.icon}
-            <span className="btm-nav-label">{tab.name}</span>
-          </button>
-        );
-      })}
-    </div>
+  {tabs.map((tab, index) => {
+    const active = pathname === tab.href;
+    return (
+      <button
+        key={index}
+        onClick={() => sendToPage(tab.href)}
+        className={`relative text-xs transition-all ${active ? "active text-primary" : ""}`}
+      >
+        {tab.icon}
+        <span className="btm-nav-label">{tab.name}</span>
+
+        {/* Unread indicator for Alerts */}
+        {tab.name === "Alerts" && unreadCount > 0 && (
+          <span className="absolute top-0 right-0 -mt-1 -mr-1 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full">
+            {unreadCount}
+          </span>
+        )}
+      </button>
+    );
+  })}
+</div>
+
   );
 }

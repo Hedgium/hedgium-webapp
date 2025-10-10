@@ -10,10 +10,8 @@ export default function NotificationProvider({ children }: { children: React.Rea
   const { addNotification, fetchNotifications } = useNotificationStore();
 
   const wsRef = useRef<WebSocket | null>(null);
-    const retryCountRef = useRef(0);
-
-
-   const maxRetries = 5;
+  const retryCountRef = useRef(0);
+  const maxRetries = 5;
 
   useEffect(() => {
     if (!accessToken) return;

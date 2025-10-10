@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { LineChart } from 'lucide-react';
 import Slider from '@/components/Slider';
 import TradeCycleCard from "@/components/TradeCycleCard";
 import MarketHeader from '@/components/MarketHeader';
@@ -32,9 +31,8 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="bg-base-200 hero-pattern p-4 md:p-6">
+    <div className="bg-base-200 p-4 md:p-6">
       <MarketHeader />
-      <DashboardMetrics />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         {/* <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">

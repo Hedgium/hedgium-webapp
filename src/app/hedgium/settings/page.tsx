@@ -25,7 +25,7 @@ const SettingsPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen hero-pattern flex flex-col px-4 py-8">
+    <div className="min-h-screen flex flex-col px-4 py-8">
       <div className="max-w-6xl mx-auto w-full">
         {/* Header */}
         <div className="flex items-center mb-8">

@@ -10,7 +10,7 @@ import { authFetch } from "@/utils/api";
 
 interface Position {
   id: number;
-  symbol: string;
+  instrument: string;
   buy_quantity: number;
   average_buy_price: number;
   sell_quantity: number;
@@ -58,7 +58,6 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
       `trade-cycles/${tradeCycle.id}/details`
     );
     const data = await res.json();
-    console.log(data);
     setUnmappedOrders(data.unmapped_orders)
     setPositions(data.positions);
   }
@@ -105,7 +104,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">{pos.symbol}</span>
+                      <span className="font-semibold">{pos.instrument}</span>
                       <span className="text-xs text-gray-500">
                         Net Qty: {pos.quantity}
                       </span>

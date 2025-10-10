@@ -81,8 +81,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <span className="loading loading-dots loading-md"></span>
         </div>
         )}
-
-
         </body>
     </html>
   )

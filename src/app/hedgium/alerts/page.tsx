@@ -16,7 +16,15 @@ const NotificationsPage: NextPage = () => {
     deleteNotification,
   } = useNotificationStore();
 
+  const [filterNotifications, setFilterNotifications] = useState([]);
+
+
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+
+  useEffect(()=>{
+    if (filter=="all") setFilterNotifications(notifications)
+    if (filter=="unread") setFilterNotifications(notifications.filter((n) => !n.read))
+  },[filter, notifications])
 
   if (isLoading) {
     return (
@@ -27,7 +35,7 @@ const NotificationsPage: NextPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-100 hero-pattern p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
@@ -69,7 +77,7 @@ const NotificationsPage: NextPage = () => {
         </div>
 
         {/* Notifications List */}
-        {notifications.length === 0 ? (
+        {filterNotifications?.length === 0 ? (
           <div className="text-center py-12 rounded-xl shadow">
             <div className="text-2xl  mb-4">
               {filter === 'unread' ? 'No unread notifications' : 'No notifications found'}
@@ -80,13 +88,15 @@ const NotificationsPage: NextPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {notifications.map(notification => (
+
+
+            {filterNotifications?.map(notification => (
               <div
                 key={notification.id}
                 className={`bg-white rounded-xl shadow-sm p-5 border-l-4 ${
-                  notification.type === 'success' ? 'border-green-500' :
-                  notification.type === 'warning' ? 'border-yellow-500' :
-                  notification.type === 'error' ? 'border-red-500' :
+                  notification.type === 'SUCCESS' ? 'border-green-500' :
+                  notification.type === 'WARNING' ? 'border-yellow-500' :
+                  notification.type === 'ERROR' ? 'border-red-500' :
                   'border-blue-500'
                 } ${!notification.read ? 'ring-2 ring-blue-100' : ''}`}
               >
@@ -94,21 +104,21 @@ const NotificationsPage: NextPage = () => {
                   <div className="flex items-start">
                     {/* Type Icon */}
                     <div className={`p-2 rounded-full mr-4 flex items-center justify-center ${
-                      notification.type === 'success' ? 'bg-green-100 text-green-600' :
-                      notification.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
-                      notification.type === 'error' ? 'bg-red-100 text-red-600' :
+                      notification.type === 'SUCCESS' ? 'bg-green-100 text-green-600' :
+                      notification.type === 'WARNING' ? 'bg-yellow-100 text-yellow-600' :
+                      notification.type === 'ERROR' ? 'bg-red-100 text-red-600' :
                       'bg-blue-100 text-blue-600'
                     }`}>
-                      {notification.type === 'success' && (
+                      {notification.type === 'SUCCESS' && (
                         <CheckCircle className="h-5 w-5" />
                       )}
-                      {notification.type === 'warning' && (
+                      {notification.type === 'WARNING' && (
                         <AlertTriangle className="h-5 w-5" />
                       )}
-                      {notification.type === 'error' && (
+                      {notification.type === 'ERROR' && (
                         <XCircle className="h-5 w-5" />
                       )}
-                      {notification.type === 'info' && (
+                      {notification.type === 'INFO' && (
                         <Info className="h-5 w-5" />
                       )}
                     </div>
@@ -149,6 +159,8 @@ const NotificationsPage: NextPage = () => {
                 </div>
               </div>
             ))}
+
+
           </div>
         )}
       </div>
