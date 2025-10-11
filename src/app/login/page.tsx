@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "nextjs-toploader/app";
 import { Mail, Lock } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+// import Navbar from "@/components/Navbar";
+// import Footer from "@/components/Footer";
 import Link from "next/link";
 import { Shield } from "lucide-react";
 
@@ -28,6 +28,11 @@ const Login: React.FC = () => {
       const nextParam = params.get("next");
       if (nextParam) setNextPath(nextParam);
     }
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/session", { method: "GET", credentials: "include" })
+      .catch(console.error);
   }, []);
 
   // redirect if already logged in

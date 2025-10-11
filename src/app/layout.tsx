@@ -29,9 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     const pathname = usePathname()
   
    useEffect(() => {
-
       if (!isInitializing && accessToken){
-
         if (user?.kyc_skipped) {
           if (!pathname.includes("hedgium")) {
             router.push("/hedgium/dashboard/");

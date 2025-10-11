@@ -1,7 +1,24 @@
-// /app/api/auth/login/route.ts (App Router)
+// app/api/auth/login/route.ts
 import { NextResponse } from 'next/server';
+import { getSessionCookie } from '@/utils/sessions';
 
 export async function POST(request: Request) {
+  // 1️⃣ Verify origin
+  const allowedOrigin = process.env.ALLOWED_ORIGIN;
+  const origin = request.headers.get('origin');
+  if (allowedOrigin && origin !== allowedOrigin) {
+    // console.log("ALLOWED");
+    return NextResponse.json({ error: 'Forbidden - bad origin' }, { status: 403 });
+  }
+
+  // 2️⃣ Verify session cookie
+  const session = getSessionCookie();
+  if (!session) {
+    console.log("SESSION RECEIVED");
+    return NextResponse.json({ error: 'Unauthorized - no valid session' }, { status: 401 });
+  }
+
+  // 3️⃣ Continue with backend login
   const { username, password } = await request.json();
   const backendUrl = `${process.env.BACKEND_API_URL}users/auth/login/`;
   const apiKey = process.env.BACKEND_API_KEY;
@@ -14,7 +31,7 @@ export async function POST(request: Request) {
         'X-API-Key': apiKey ?? '',
       },
       body: JSON.stringify({ username, password }),
-      credentials: 'include', // Forward credentials
+      credentials: 'include',
     });
 
     const data = await response.json();
@@ -22,12 +39,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Login failed' }, { status: response.status });
     }
 
-    return NextResponse.json(data, {
-      status: 200,
-      headers: {
-        'Set-Cookie': response.headers.get('set-cookie') || '', // Forward cookies
-      },
-    });
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }

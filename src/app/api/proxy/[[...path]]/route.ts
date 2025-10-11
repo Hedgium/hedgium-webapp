@@ -1,6 +1,7 @@
 // Edge runtime for low latency
 export const runtime = "edge";
 
+import { getSessionCookie } from '@/utils/sessions';
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -34,6 +35,21 @@ async function handleProxyRequest(request: Request) {
       { status: 500 }
     );
   }
+
+    const allowedOrigin = process.env.ALLOWED_ORIGIN;
+    const origin = request.headers.get('origin');
+    if (allowedOrigin && origin !== allowedOrigin) {
+      // console.log("ALLOWED");
+      return NextResponse.json({ error: 'Forbidden - bad origin' }, { status: 403 });
+    }
+  
+    // 2️⃣ Verify session cookie
+    const session = getSessionCookie();
+    if (!session) {
+      console.log("SESSION RECEIVED");
+      return NextResponse.json({ error: 'Unauthorized - no valid session' }, { status: 401 });
+    }
+
 
   try {
     const headers: HeadersInit = {
