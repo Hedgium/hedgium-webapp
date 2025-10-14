@@ -110,31 +110,49 @@ export default function TradeCyclesPage() {
 
                     <span
                       className={`text-xl font-bold mb-1 ${
-                        value && value >= 0
-                          ? "text-emerald-600"
-                          : "text-rose-600"
+                        value !== undefined && value !== null
+                          ? value >= 0
+                            ? "text-emerald-600"
+                            : "text-rose-600"
+                          : "text-gray-500"
                       }`}
                     >
                       ₹
-                      {value
+                      {value !== undefined && value !== null
                         ? value.toLocaleString("en-IN", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })
                         : "0.00"}
-                      {value && value >= 0 ? " ↗" : " ↘"}
-
+                      {value !== undefined && value !== null
+                        ? value > 0
+                          ? " ↗"
+                          : value < 0
+                          ? " ↘"
+                          : ""
+                        : ""}
                     </span>
 
                     <span
                       className={`text-xs font-medium px-2 py-1 rounded-full ${
-                        value && value >= 0
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-rose-50 text-rose-700"
+                        value !== undefined && value !== null
+                          ? value > 0
+                            ? "bg-emerald-50 text-emerald-700"
+                            : value < 0
+                            ? "bg-rose-50 text-rose-700"
+                            : "bg-gray-50 text-gray-600"
+                          : "bg-gray-50 text-gray-600"
                       }`}
                     >
-                      {value && value >= 0 ? "+ Profit" : "Loss"}
+                      {value !== undefined && value !== null
+                        ? value > 0
+                          ? "+ Profit"
+                          : value < 0
+                          ? "Loss"
+                          : "No Change"
+                        : "No Data"}
                     </span>
+
                   </div>
                 ))}
               </div>
