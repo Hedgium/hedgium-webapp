@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import useAlert from "@/hooks/useAlert";
+// import useAlert from "@/hooks/useAlert";
 
 
 export interface SubscriptionPlan {
@@ -158,7 +158,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   startAutoRefresh: () => {
     get().stopAutoRefresh(); // clear any old one first
-    const interval = 1000 * 60 * 1; // 1 minute
+    const interval = 1000 * 60 * 29; // 29 minute
     const id = setInterval(async () => {
       await get().refreshAccessToken();
     }, interval);

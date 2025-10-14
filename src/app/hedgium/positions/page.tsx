@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Loader2, TrendingUp, RotateCw } from "lucide-react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import Slider from "@/components/Slider";
 import { authFetch } from "@/utils/api";
@@ -26,6 +27,7 @@ type PnlSummary = {
 export default function TradeCyclesPage() {
   const [tradeCycles, setTradeCycles] = useState<TradeCycle[]>([]);
   const [pnlSummary, setPnlSummary] = useState<PnlSummary | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Fetch PNL summary from backend
   async function getPNLSummary() {
@@ -33,11 +35,12 @@ export default function TradeCyclesPage() {
       const res = await authFetch("positions/pnl/");
       if (!res.ok) throw new Error("Failed to fetch PNL summary");
       const data = await res.json();
-      console.log("PNL Summary:", data);
       setPnlSummary({
         all_time: data.pnl_summary?.all_time,
-        last_month: data.pnl_summary?.last_month
-      })
+        last_month: data.pnl_summary?.last_month,
+        last_week: data.pnl_summary?.last_week,
+        today: data.pnl_summary?.today,
+      });
     } catch (error) {
       console.error("Error fetching PNL summary:", error);
     }
@@ -56,89 +59,116 @@ export default function TradeCyclesPage() {
   }
 
   useEffect(() => {
-    getAllTradeCycles();
-    getPNLSummary();
+    (async () => {
+      setLoading(true);
+      await Promise.all([getPNLSummary(), getAllTradeCycles()]);
+      setLoading(false);
+    })();
   }, []);
 
   return (
-    <div className="p-4">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Trading Dashboard</h1>
-          <p className="text-gray-600">Monitor your algorithmic trading performance</p>
+    <div className="p-4 md:px-8 bg-base-200 min-h-screen">
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-24">
+          <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+          <p className="text-gray-600 text-lg">Loading dashboard data...</p>
         </div>
+      ) : (
+        <div className="max-w-7xl mx-auto space-y-12">
 
-      </div>
+          {/* --- PnL Summary Section --- */}
+          {pnlSummary && (
+            <section>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-6 h-6 text-primary" />
+                  <h3 className="text-2xl font-semibold">PnL Summary</h3>
+                </div>
+                <RotateCw
+                  className="w-5 h-5 text-gray-400 hover:text-primary cursor-pointer transition-colors"
+                  onClick={() => {
+                    setLoading(true);
+                    getPNLSummary().finally(() => setLoading(false));
+                  }}
+                />
+              </div>
 
-        {pnlSummary && (
-  <div>
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="text-lg font-semibold text-gray-800">PnL Summary</h3>
-      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-    </div>
-    
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-      {Object.entries(pnlSummary).map(([period, value]) => (
-        <div 
-          key={period} 
-          className="flex flex-col items-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200"
-        >
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
-            value >= 0 
-              ? "bg-emerald-50 border border-emerald-100" 
-              : "bg-rose-50 border border-rose-100"
-          }`}>
-            <span className={`text-lg ${
-              value >= 0 ? "text-emerald-600" : "text-rose-600"
-            }`}>
-              {value >= 0 ? "↗" : "↘"}
-            </span>
-          </div>
-          
-          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-            {period
-              .split("_")
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-              .join(" ")}
-          </span>
-          
-          <span
-            className={`text-xl font-bold mb-1 ${
-              value >= 0 ? "text-emerald-600" : "text-rose-600"
-            }`}
-          >
-            ₹{value.toLocaleString("en-IN", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </span>
-          
-          <span
-            className={`text-xs font-medium px-2 py-1 rounded-full ${
-              value >= 0 
-                ? "bg-emerald-50 text-emerald-700" 
-                : "bg-rose-50 text-rose-700"
-            }`}
-          >
-            {value >= 0 ? "+ Profit" : "Loss"}
-          </span>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {Object.entries(pnlSummary).map(([period, value]) => (
+                  <div
+                    key={period}
+                    className="flex flex-col items-center p-4 bg-base-100 rounded-xl border border-base-300 shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    
+
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                      {period
+                        .split("_")
+                        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                        .join(" ")}
+                    </span>
+
+                    <span
+                      className={`text-xl font-bold mb-1 ${
+                        value && value >= 0
+                          ? "text-emerald-600"
+                          : "text-rose-600"
+                      }`}
+                    >
+                      ₹
+                      {value
+                        ? value.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        : "0.00"}
+                      {value && value >= 0 ? " ↗" : " ↘"}
+
+                    </span>
+
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        value && value >= 0
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-rose-50 text-rose-700"
+                      }`}
+                    >
+                      {value && value >= 0 ? "+ Profit" : "Loss"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* --- Trade Cycles Section --- */}
+          <section>
+            <div className="flex items-center gap-2 mb-6">
+              <h2 className="text-2xl font-semibold">Active Trade Cycles</h2>
+            </div>
+
+            {tradeCycles.length > 0 ? (
+              <Slider>
+                {tradeCycles.map((cycle) => (
+                  <TradeCycleWithPositionsCard
+                    key={cycle.id}
+                    tradeCycle={cycle}
+                  />
+                ))}
+              </Slider>
+            ) : (
+              <div className="text-center py-16 bg-base-100 rounded-lg shadow">
+                <h3 className="text-xl font-semibold mb-2">
+                  No Active Trade Cycles
+                </h3>
+                <p className="text-gray-600">
+                  {`You don’t have any active trade cycles currently.`}
+                </p>
+              </div>
+            )}
+          </section>
         </div>
-      ))}
-    </div>
-  </div>
-)}
-
-
-<br />
-
-      {/* TRADE CYCLES */}
-      <h2 className="text-2xl font-bold mb-6">Trade Cycles</h2>
-      <Slider>
-        {tradeCycles.map((cycle) => (
-          <TradeCycleWithPositionsCard key={cycle.id} tradeCycle={cycle} />
-        ))}
-      </Slider>
+      )}
     </div>
   );
 }

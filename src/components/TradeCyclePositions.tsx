@@ -74,7 +74,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
   };
 
   return (
-     <div className="card bg-base-200 shadow-md w-[90%] md:w-[60%] snap-start shrink-0">
+     <div className="card bg-base-100 rounded-3xl w-[90%] md:w-[60%] snap-start shrink-0">
       <div className="card-body p-4 flex flex-col flex-1">
         {/* Header */}
         <div className="flex justify-between items-start mb-3">
@@ -82,11 +82,17 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
             <h3 className="card-title text-lg">{tradeCycle.name}</h3>
             <p className="text-sm text-gray-500">{tradeCycle.description}</p>
             <div className="flex gap-2 items-center mt-1">
-              <span className="badge gap-1">
+              <span className="badge gap-1 badge-accent">
                 {statusMap[tradeCycle.state]} {tradeCycle.state}
               </span>
             </div>
           </div>
+
+          <div className="text-xs text-gray-500 flex flex-col items-end">
+            <span>ID: {tradeCycle.id}</span>
+            <span>Created: {new Date(tradeCycle.created_at).toLocaleDateString()}</span> 
+          </div>
+
         </div>
 
         {/* POSITIONS */}

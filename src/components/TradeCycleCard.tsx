@@ -83,7 +83,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
   }
 
   return (
-    <div className="card bg-base-100 snap-start shrink-0 w-[85%] sm:w-[60%] md:w-[50%] shadow-md mb-6 flex flex-col">
+    <div className="card bg-base-100 snap-start shrink-0 w-[85%] sm:w-[60%] md:w-[50%] shadow-md rounded-2xl mb-6 flex flex-col">
       <div className="card-body p-4 flex flex-col flex-1">
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
@@ -97,8 +97,9 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
               <span className="badge badge-outline badge-dash">{cycle.sub_state}</span>
             </div>
           </div>
-          <div className="text-xs text-gray-500">
-            Created: {new Date(cycle.created_at).toLocaleDateString()}
+          <div className="text-xs text-gray-500 flex flex-col items-end">
+            <span>ID: {cycle.id}</span>
+            <span>Created: {new Date(cycle.created_at).toLocaleDateString()}</span> 
           </div>
         </div>
 

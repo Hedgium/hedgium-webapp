@@ -125,6 +125,9 @@ export default function TradeCycleDetailPage() {
             </div>
             <div className="text-sm text-gray-500 text-right">
               <div>
+                ID: {trade_cycle.id}
+              </div>
+              <div>
                 Created:{" "}
                 {formatDateOnly(trade_cycle.created_at)}
               </div>
