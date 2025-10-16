@@ -7,7 +7,7 @@ export default function AuthFooter() {
 
     return (
       
-  <footer className="footer sm:footer-horizontal items-center p-4">
+  <footer className="footer sm:footer-horizontal items-center border-t border-t-base-300 p-4 md:px-8">
   <aside className="grid-flow-col items-center">
     <svg
       width="36"

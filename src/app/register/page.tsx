@@ -130,14 +130,14 @@ function Register() {
             <h2 className="text-center text-3xl font-bold text-base-content">
               Sign up for <span className="text-primary">Hedgium</span>
             </h2>
-            <p className="mt-2 text-center text-sm text-base-content/60">
+            <p className="mt-2 text-center text-sm text-base-content/70">
               Start trading with AI-powered strategies today
             </p>
           </div>
 
-          <div className="card bg-base-100 shadow-xl card-hover">
+          <div className="card bg-base-100 border border-base-300 card-hover">
             <div className="card-body">
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* First Name */}
                 <div>
                   <label className="block text-sm font-medium text-base-content">

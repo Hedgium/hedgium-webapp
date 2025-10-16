@@ -35,31 +35,31 @@ const NotificationsPage: NextPage = () => {
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen p-4 md:px-8">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold ">Notifications</h1>
-            <p className=" mt-2">Stay updated with your trading activities and system alerts</p>
+            <p className=" mt-2 text-base-content/60">Stay updated with your trading activities and system alerts</p>
           </div>
           <div className="flex items-center mt-4 md:mt-0">
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="px-4 py-2 bg-base-200 text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 mr-3 cursor-pointer"
+                className="px-4 py-2 text-base-content/60 rounded-lg border border-gray-300 hover:bg-gray-50 mr-3 cursor-pointer"
               >
                 Mark all as read
               </button>
             )}
-            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+            <div className="badge badge-primary badge-outline">
               {unreadCount} unread
             </div>
           </div>
         </div>
 
         {/* Filter Tabs */}
-        <div className="bg-base-200 rounded-xl shadow-sm p-4 mb-6">
+        <div className="bg-base-100 border border-base-300 rounded-box p-4 mb-6">
           <div className="flex flex-wrap gap-2">
             <button
               className={`px-4 py-2 cursor-pointer rounded-lg ${filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
@@ -78,7 +78,7 @@ const NotificationsPage: NextPage = () => {
 
         {/* Notifications List */}
         {filterNotifications?.length === 0 ? (
-          <div className="text-center py-12 rounded-xl shadow">
+          <div className="text-center bg-base-100 py-12 rounded-box border border-base-300">
             <div className="text-2xl  mb-4">
               {filter === 'unread' ? 'No unread notifications' : 'No notifications found'}
             </div>
@@ -93,7 +93,7 @@ const NotificationsPage: NextPage = () => {
             {filterNotifications?.map(notification => (
               <div
                 key={notification.id}
-                className={`bg-white rounded-xl shadow-sm p-5 border-l-4 ${
+                className={`bg-base-100 p-4 rounded-box border-l-4 ${
                   notification.type === 'SUCCESS' ? 'border-green-500' :
                   notification.type === 'WARNING' ? 'border-yellow-500' :
                   notification.type === 'ERROR' ? 'border-red-500' :

@@ -51,14 +51,14 @@ const VerificationPending: React.FC = () => {
   }, [user]);
 
   return (
-    <div className="min-h-screen hero-pattern flex flex-col items-center justify-center bg-base-200 p-6">
+    <div className="min-h-screen hero-pattern flex flex-col items-center justify-center bg-base-200 py-4">
       {/* Stepper showing progress */}
-      <div className="w-full max-w-2xl mb-12">
+      <div className="w-full max-w-2xl mb-4">
         <SignUpStepper currentStepId="broker_profile_added" />
       </div>
 
       {/* Card with pending message */}
-      <div className="card w-full max-w-lg shadow-xl bg-base-100 p-6 text-center">
+      <div className="card w-full max-w-lg bg-base-100 border card-hover border-base-300 p-6 text-center">
         <div className="flex flex-col items-center gap-4">
           <Clock className="w-16 h-16 text-warning animate-pulse" />
           
@@ -66,13 +66,13 @@ const VerificationPending: React.FC = () => {
             Profile Verification Pending
           </h1>
 
-          <p className="text-base text-gray-600">
+          <p className="text-base text-base-content/60">
             Thank you for submitting your details. Your profile is currently under review.
             Please wait for some time while our team verifies your information.
           </p>
 
-          <p className="text-sm text-gray-500 italic">
-            You’ll be notified once the verification is complete.
+          <p className="text-sm text-base-content/80 italic">
+            {`You’ll be notified once the verification is complete.`}
           </p>
 
           <button
@@ -85,6 +85,8 @@ const VerificationPending: React.FC = () => {
           </button>
         </div>
       </div>
+      <br />
+      <br />
     </div>
   );
 };

@@ -15,7 +15,7 @@ const ThemeTab: React.FC<ThemeTabProps> = ({ theme, setTheme }) => {
   ];
 
   return (
-    <div className="card bg-base-100 shadow-xl card-hover p-6">
+    <div className="card bg-base-100 border border-base-300 p-6">
       <h2 className="text-2xl font-bold mb-6">Theme</h2>
       <div className="space-y-4">
         {themes.map((t) => (

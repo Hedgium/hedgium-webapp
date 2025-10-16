@@ -35,18 +35,18 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="bg-base-200 p-4 md:px-8 min-h-screen">
+    <div className="p-4 md:px-8 min-h-screen">
       <MarketHeader />
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pt-2">
               <Target className="w-6 h-6 text-primary" />
               <h1 className="text-2xl md:text-3xl font-semibold">Strategies</h1>
             </div>
-            <p className="text-sm text-gray-500 ">Explore your currently active trade cycles</p>
+            <p className="text-sm text-base-content/50 ">Explore your currently active trade cycles</p>
           </div>
         </div>
 
@@ -63,9 +63,9 @@ export default function Dashboard() {
             ))}
           </Slider>
         ) : (
-          <div className="text-center py-12 bg-base-100 rounded-lg shadow">
+          <div className="text-center py-12 bg-base-100 rounded-box border border-base-300">
             <h3 className="text-xl font-semibold mb-2">No Active Trade Cycles</h3>
-            <p className="text-gray-600">
+            <p className="text-base-content/60">
               {`You don't have any active trade cycles at the moment.`}
             </p>
           </div>

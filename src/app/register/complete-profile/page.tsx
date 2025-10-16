@@ -123,9 +123,9 @@ const formatAadharNumber = (value: string) => {
   return (
     <>
       {/* Hero background wrapper */}
-      <div className="min-h-screen hero-pattern flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen hero-pattern bg-base-200 flex flex-col items-center justify-center py-4 px-4 md:px-8">
         {/* Stepper */}
-        <div className="w-full max-w-2xl mb-10">
+        <div className="w-full max-w-2xl mb-4">
           <SignUpStepper currentStepId="initiated" />
         </div>
 
@@ -137,7 +137,7 @@ const formatAadharNumber = (value: string) => {
 
           <form
             onSubmit={handleSubmit}
-            className="card bg-base-100 shadow-xl card-hover p-6 space-y-4"
+            className="card bg-base-100 border border-base-300 card-hover p-6 space-y-4"
           >
             {/* Mobile */}
             <div>
@@ -221,6 +221,8 @@ const formatAadharNumber = (value: string) => {
             </div>
           </form>
         </div>
+        <br />
+        <br />
       </div>
     </>
   );

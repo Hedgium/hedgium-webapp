@@ -25,7 +25,7 @@ const SettingsPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col px-4 py-8">
+    <div className="min-h-screen flex flex-col px-4 md:px-8 py-8">
       <div className="max-w-6xl mx-auto w-full">
         {/* Header */}
         <div className="flex items-center mb-8">
@@ -41,12 +41,12 @@ const SettingsPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <div className="lg:w-1/4">
-            <div className="card bg-base-100 shadow-xl card-hover p-4 sticky top-24">
+            <div className="card bg-base-100 border border-base-300 card-hover sticky top-24">
               <ul className="menu menu-vertical space-y-2 w-full">
                 {tabs.map((tab) => (
                   <li key={tab.id}>
                     <button
-                      className={activeTab === tab.id ? "active" : ""}
+                      className={activeTab === tab.id ? "text-primary" : ""}
                       onClick={() => setActiveTab(tab.id)}
                     >
                       {tab.icon}

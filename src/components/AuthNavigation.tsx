@@ -47,7 +47,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
         </div> */}
         
         {/* Navigation items */}
-        <nav className="flex-1 overflow-y-auto p-4">
+        <nav className="flex-1 overflow-y-auto px-4">
           <ul className="gap-2 space-y-1">
             {tabs.map((tab, idx) => {
               const active = pathname === tab.href;
@@ -56,7 +56,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
                   <Link
                     href={tab.href}
                     className={`flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all ${
-                      active ? "bg-primary text-primary-content shadow-sm" : "hover:bg-base-300/70"
+                      active ? "bg-base-300 text-primary" : "hover:bg-base-300/70"
                     }`}
                     aria-current={active ? "page" : undefined}
                   >
@@ -85,7 +85,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="btn btn-ghost justify-start normal-case gap-2"
+              className="btn btn-ghost justify-start normal-case gap-2 hover:bg-base-300/70 hover:border-none"
               aria-label="Toggle theme"
             >
               {theme === "dark" ? (
@@ -101,7 +101,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
                 logout();
                 router.push("/login");
               }}
-              className="btn btn-ghost justify-start normal-case gap-2 text-error hover:text-error-content"
+              className="btn btn-ghost justify-start normal-case gap-2 text-error hover:bg-base-300/70 hover:border-none hover:text-error-content"
               aria-label="Logout"
             >
               <LogOut className="h-4 w-4" />

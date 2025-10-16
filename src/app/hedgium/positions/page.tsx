@@ -187,6 +187,9 @@ export default function TradeCyclesPage() {
           </section>
         </div>
       )}
+
+      <br />
+      <br />
     </div>
   );
 }

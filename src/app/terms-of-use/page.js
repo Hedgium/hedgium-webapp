@@ -2,7 +2,8 @@
 "use client";
 
 
-
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 /**
  * Terms of Use component styled with Tailwind + DaisyUI.
@@ -14,6 +15,8 @@ export default function TermsOfUse() {
   
 
   return (
+    <>
+    <Navbar />
     <div
       className={`max-w-4xl mx-auto p-4 md:p-6`}
       aria-live="polite"
@@ -233,5 +236,7 @@ export default function TermsOfUse() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   );
 }

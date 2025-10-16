@@ -106,9 +106,9 @@ export default function TradeCycleDetailPage() {
   const totalSellQty = positions.reduce((acc, pos) => acc + pos.sell_quantity, 0);
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 md:px-8 max-w-6xl mx-auto space-y-6">
       {/* HEADER */}
-      <div className="card bg-base-100 shadow-md">
+      <div className="card bg-base-100 border border-base-300">
         <div className="card-body">
           <div className="flex justify-between items-start">
             <div>
@@ -117,7 +117,7 @@ export default function TradeCycleDetailPage() {
                 {trade_cycle.description}
               </p>
               <div className="flex gap-2 mt-2">
-                <span className="badge">{trade_cycle.sub_state}</span>
+                <span className="badge badge-outline">{trade_cycle.sub_state}</span>
                 <span className="badge gap-1">
                   {statusMap[trade_cycle.state]} {trade_cycle.state}
                 </span>
@@ -182,7 +182,7 @@ export default function TradeCycleDetailPage() {
       </div>
 
       {/* POSITIONS */}
-      <div className="card bg-base-100 shadow-md">
+      <div className="card bg-base-100 border border-base-300">
         <div className="card-body">
           <div className="flex justify-between items-center mb-3">
             <h3 className="card-title text-lg">Positions</h3>
@@ -236,7 +236,7 @@ export default function TradeCycleDetailPage() {
       </div>
 
       {/* UNMAPPED ORDERS */}
-      <div className="card bg-base-100 shadow-md">
+      <div className="card bg-base-100 border border-base-300">
         <div className="card-body">
           <h3 className="card-title text-lg mb-3">Unmapped Orders</h3>
           {unmapped_orders.length === 0 ? (
@@ -287,6 +287,9 @@ export default function TradeCycleDetailPage() {
           Modify
         </Link>
       </div>
+
+      <br />
+      <br />
     </div>
   );
 }

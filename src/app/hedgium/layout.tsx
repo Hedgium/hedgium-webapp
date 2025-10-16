@@ -67,15 +67,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - visible on md+ */}
-        <aside className="hidden md:flex md:flex-col md:w-56 md:shrink-0 bg-base-200 border-r border-base-300">
+        <aside className="hidden md:flex md:flex-col md:w-56 md:shrink-0 bg-base-200 border-r border-base-300 rounded-box">
           <AuthNavigation sidebar />
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 hero-pattern overflow-y-auto flex flex-col">
+        <main className="flex-1 bg-base-200 overflow-y-auto flex flex-col">
 
               {(user && user?.signup_step !== "verified" ) && (
-                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-2 flex justify-between items-center">
+                <div className="bg-warning border-l-4 px-4 py-2 flex justify-between items-center">
                 <p className="text-sm font-medium">
                   Your profile verification is pending. Please complete your KYC to unlock full access.
                 </p>

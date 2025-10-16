@@ -2,7 +2,7 @@
 
 const BillingTab: React.FC = () => {
   return (
-    <div className="card bg-base-100 shadow-xl card-hover p-6">
+    <div className="card bg-base-100 border border-base-300 card-hover p-6">
       <h2 className="text-2xl font-bold mb-6">Billing</h2>
       <p className="text-base-content/70 mb-4">Your billing history will appear here.</p>
       <table className="table w-full">

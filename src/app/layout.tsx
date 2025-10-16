@@ -1,15 +1,17 @@
 'use client'
 
 import './global.css'
-import { Inter } from "next/font/google"
+
+// import { Roboto_Flex } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import NotificationProvider from '@/providers/NotificationProvider'
-
+import { Raleway } from 'next/font/google';
 
 import AuthProvider from "@/providers/AuthProvider";
 import NextTopLoader from 'nextjs-toploader';
 
-const inter = Inter({
+const font = Raleway({
+  weight: ["100", "300", "400", "600", "700"],
   subsets: ["latin"],       // add others if needed
   display: "swap",          // good CLS behavior
 })
@@ -53,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       {/* Apply globally */}
       <body
-      className={inter.className + " min-h-screen flex flex-col"} >
+      className={font.className + " min-h-screen flex flex-col"} >
         <div
           style={{ display: (!isInitializing) ? 'block' : 'none' }}
         >

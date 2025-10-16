@@ -11,7 +11,7 @@ export default function CurrentSubscription() {
   const isLegends = planName === "LEGENDS";
 
   return (
-    <div className="mb-4 p-4 border-b border-b-base-300 hover:shadow-md transition-all duration-200">
+    <div className="mb-4 p-4 border-b border-b-base-300">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-base-content/70 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary/70" />
@@ -34,7 +34,7 @@ export default function CurrentSubscription() {
         {!isLegends && (
           <Link
             href="/hedgium/upgrade"
-            className="btn btn-sm btn-primary btn-outline normal-case rounded-lg shadow-md hover:shadow-lg transition-all"
+            className="btn btn-sm btn-primary btn-outline"
           >
             Upgrade
           </Link>
