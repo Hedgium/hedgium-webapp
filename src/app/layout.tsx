@@ -6,12 +6,15 @@ import './global.css'
 import { ThemeProvider } from 'next-themes'
 import NotificationProvider from '@/providers/NotificationProvider'
 import { Raleway } from 'next/font/google';
+import { Outfit } from 'next/font/google';
+import { Sora } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 
 import AuthProvider from "@/providers/AuthProvider";
 import NextTopLoader from 'nextjs-toploader';
 
-const font = Raleway({
-  weight: ["100", "300", "400", "600", "700"],
+const font = Plus_Jakarta_Sans({
+  weight: ["200", "300", "400", "600", "700"],
   subsets: ["latin"],       // add others if needed
   display: "swap",          // good CLS behavior
 })
