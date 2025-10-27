@@ -42,7 +42,17 @@ export default function TradeCyclesPage() {
         today: data.pnl_summary?.today,
       });
     } catch (error) {
-      console.error("Error fetching PNL summary:", error);
+      console.log("Error fetching PNL summary:", error);
+    }
+  }
+
+  async function getRealtime() {
+    try{
+      const res = await authFetch("positions/pnl/refresh/");
+      const data = await res.json()
+      console.log(data)
+    } catch( error) {
+      console.log(error)
     }
   }
 
@@ -84,6 +94,8 @@ export default function TradeCyclesPage() {
                   <TrendingUp className="w-6 h-6 text-primary" />
                   <h3 className="text-2xl font-semibold">PnL Summary</h3>
                 </div>
+
+                <button onClick={getRealtime}>Realtime</button>
                 <RotateCw
                   className="w-5 h-5 text-gray-400 hover:text-primary cursor-pointer transition-colors"
                   onClick={() => {
