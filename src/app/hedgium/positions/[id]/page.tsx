@@ -19,7 +19,7 @@ import { formatDateOnly } from "@/utils/formatDate";
 
 type Position = {
   id: number;
-  symbol: string;
+  instrument: string;
   buy_quantity: number;
   average_buy_price: number;
   sell_quantity: number;
@@ -61,12 +61,11 @@ export default function TradeCycleDetailPage() {
   const params = useParams<{ id: string }>();
   const { id } = params;
 
-  const [tradeCycleDetail, setTradeCycleDetail] =
-    useState<TradeCycleDetailResponse | null>(null);
+  const [tradeCycleDetail, setTradeCycleDetail] = useState<TradeCycleDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function fetchTradeCycleDetails() {
-    setLoading(true);
+    
     const res = await authFetch(`trade-cycles/${id}/details`);
     const data = await res.json();
     setTradeCycleDetail(data);
@@ -92,6 +91,22 @@ export default function TradeCycleDetailPage() {
         <span className="loading loading-spinner text-primary"></span>
       </div>
     );
+
+  async function getRealtime() {
+      try{
+        const res = await authFetch("positions/pnl/refresh/");
+        const data = await res.json();
+        console.log(data);
+      } catch( error) {
+        console.log(error)
+      }
+  }
+
+  async function refreshPositions(){
+    setLoading(true);
+    await getRealtime();
+    fetchTradeCycleDetails();
+  }
 
   if (!tradeCycleDetail)
     return <p className="text-center mt-10">No trade cycle found.</p>;
@@ -188,9 +203,10 @@ export default function TradeCycleDetailPage() {
             <h3 className="card-title text-lg">Positions</h3>
             <button
               className="btn btn-sm btn-ghost flex items-center gap-1"
-              onClick={fetchTradeCycleDetails}
+              onClick={refreshPositions}
             >
-              <RefreshCw width={14} /> Refresh
+              <RefreshCw width={14}
+              /> Refresh
             </button>
           </div>
 
@@ -206,9 +222,9 @@ export default function TradeCycleDetailPage() {
                     className="flex justify-between items-center bg-base-200 rounded-lg p-3"
                   >
                     <div>
-                      <div className="font-medium">{pos.symbol}</div>
+                      <div className="font-medium">{pos.instrument}</div>
                       <div className="text-xs text-gray-500 mt-1">
-                        Net Qty: {pos.quantity} | Buy: {pos.buy_quantity} @ ₹
+                       Net Qty: {pos.quantity} | Buy: {pos.buy_quantity} @ ₹
                         {pos.average_buy_price} | Sell: {pos.sell_quantity} @ ₹
                         {pos.average_sell_price}
                       </div>
@@ -276,7 +292,7 @@ export default function TradeCycleDetailPage() {
       </div>
 
       {/* ACTIONS */}
-      <div className="mt-6 flex justify-end gap-3">
+      {/* <div className="mt-6 flex justify-end gap-3">
         {trade_cycle.state === "PENDING" && (
           <button className="btn btn-outline btn-error">Close Trade Cycle</button>
         )}
@@ -286,7 +302,7 @@ export default function TradeCycleDetailPage() {
         >
           Modify
         </Link>
-      </div>
+      </div> */}
 
       <br />
       <br />

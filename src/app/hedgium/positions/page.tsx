@@ -95,11 +95,12 @@ export default function TradeCyclesPage() {
                   <h3 className="text-2xl font-semibold">PnL Summary</h3>
                 </div>
 
-                <button onClick={getRealtime}>Realtime</button>
+                {/* <button onClick={getRealtime}>Realtime</button> */}
                 <RotateCw
                   className="w-5 h-5 text-gray-400 hover:text-primary cursor-pointer transition-colors"
-                  onClick={() => {
+                  onClick={async () => {
                     setLoading(true);
+                    await getRealtime();
                     getPNLSummary().finally(() => setLoading(false));
                   }}
                 />
