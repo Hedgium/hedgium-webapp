@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
+import { myFetch } from "@/utils/api";
 
 interface OHLC {
   open: number;
@@ -35,9 +36,8 @@ export default function MarketHeader() {
 
   const fetchMarketData = async () => {
     try {
-      const res = await fetch(
-        "/market/ohlc/?instruments=BSE%3ASENSEX%2CNSE%3ANIFTY%2B50",
-        { cache: "no-store" }
+      const res = await myFetch(
+        "market/ohlc/?instruments=BSE%3ASENSEX%2CNSE%3ANIFTY%2B50",
       );
       const json: ApiResponse = await res.json();
 
