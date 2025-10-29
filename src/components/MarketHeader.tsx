@@ -2,7 +2,24 @@
 
 import { useEffect, useState, useRef } from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
-import { myFetch } from "@/utils/api";
+
+interface OHLC {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
+interface InstrumentData {
+  instrument_token: number;
+  last_price: number;
+  ohlc: OHLC;
+}
+
+interface ApiResponse {
+  status: string;
+  data: Record<string, InstrumentData>;
+}
 
 interface MarketData {
   name: string;
@@ -18,18 +35,18 @@ export default function MarketHeader() {
 
   const fetchMarketData = async () => {
     try {
-      const res = await myFetch(
-        "market/ohlc/?instruments=BSE%3ASENSEX%2CNSE%3ANIFTY%2B50",
+      const res = await fetch(
+        "/market/ohlc/?instruments=BSE%3ASENSEX%2CNSE%3ANIFTY%2B50",
+        { cache: "no-store" }
       );
-      const json = await res.json();
+      const json: ApiResponse = await res.json();
 
       if (json.status === "success" && json.data) {
         const parsed: MarketData[] = Object.entries(json.data).map(
-          ([key, val]: any) => {
+          ([key, val]) => {
             const name = key.replace("NSE:", "").replace("BSE:", "");
-            const ohlc = val.ohlc;
-            const change = val.last_price - ohlc.close;
-            const changePercent = (change / ohlc.close) * 100;
+            const change = val.last_price - val.ohlc.close;
+            const changePercent = (change / val.ohlc.close) * 100;
 
             return {
               name,
@@ -51,7 +68,7 @@ export default function MarketHeader() {
 
   useEffect(() => {
     fetchMarketData();
-    const interval = setInterval(fetchMarketData, 60 * 1000); // every 1 minute
+    const interval = setInterval(fetchMarketData, 60 * 1000); // every 1 min
     return () => clearInterval(interval);
   }, []);
 
