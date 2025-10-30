@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { authFetch } from "@/utils/api";
 import { Eye, EarOff, EyeOff } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
+import { useAuthStore } from "@/store/authStore";
+import { encryptWithPublicKey, decryptPrivateKey, decryptPassword } from "@/utils/crypto";
+
 
 interface PasswordData {
   currentPassword: string;
@@ -67,13 +70,104 @@ const PasswordInput: React.FC<{
   </div>
 );
 
+
+interface BrokerState {
+  loading: boolean;
+  id: Number;
+  loggedIn: boolean;
+  name: string | null;
+  userId?: string | null;
+  margin?: number | null;
+}
+
+
 const PasswordTab: React.FC = () => {
+
+   const [broker, setBroker] = useState<BrokerState>({
+      loading: true,
+      id: null,
+      loggedIn: false,
+      name: null,
+      userId: null,
+      margin: null,
+    });
+    const [error, setError] = useState<string | null>(null);
+  
+    /** 🔍 Fetch active profile + margin info */
+    const fetchActiveProfile = async () => {
+      if (!user) return;
+  
+      setBroker((b) => ({ ...b, loading: true }));
+      setError(null);
+  
+      try {
+        const res = await authFetch("profiles/check-profile/");
+        const data = await res.json();
+        console.log(data);
+  
+        setBroker({
+          loading: false,
+          id: data.id || null,
+          loggedIn: data.logged_in || false,
+          name: data.broker_name || "Unknown Broker",
+          userId: data.broker_user_id || "N/A",
+          margin: data.margin_equity ?? null,
+        });
+      } catch (err) {
+        console.error("Broker check failed:", err);
+      }
+    };
+
+    const handleSetBrokerUserPassword = async () => {
+    console.log("Hello World");
+    console.log(user, keys)
+
+    const p = await encryptWithPublicKey(keys.public_key, "ffdfddf")
+
+    try{
+      const res = await authFetch(`profiles/${broker.id}/`,{
+        method:"PUT",
+        body: JSON.stringify({
+          broker_user_password: p
+        })
+      });
+      const data = await res.json();
+      console.log(data);
+
+      const privateKey = await decryptPrivateKey(keys.encrypted_private_key, keys.iv,"123456");
+      const original = await decryptPassword(privateKey, p)
+      console.log("original", original);
+
+    } catch(e){
+
+    }
+
+    // const res = await authFetch("/users/password/change/", {
+    //     method: "POST",
+    //     body: JSON.stringify({
+    //       old_password: passwordData.currentPassword,
+    //       new_password: passwordData.newPassword,
+    //       confirm_password: passwordData.confirmPassword,
+    //     }),
+    //   });
+
+  }
+
+
+  useEffect(()=>{
+      fetchActiveProfile();
+  },[])
+    
+
+  const {keys, user} = useAuthStore();
   const alert = useAlert();
   const [passwordData, setPasswordData] = useState<PasswordData>({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+
+  const [brokerUserPassword, setBrokerUserPassword] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
 
@@ -142,8 +236,19 @@ const PasswordTab: React.FC = () => {
     }
   };
 
+
+
   return (
     <div className="card bg-base-100 border border-base-300 p-6">
+
+      <input 
+      className="input"
+      
+      onChange={(e)=>setBrokerUserPassword(e.target.value)}
+      />
+
+      <button className="btn" onClick={handleSetBrokerUserPassword}>Submit</button>
+
       <h2 className="text-2xl font-bold mb-6 text-base-content">Change Password</h2>
       <div className="space-y-4">
         <PasswordInput
