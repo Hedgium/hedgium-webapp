@@ -91,12 +91,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loginWithToken: async (token: string) => {
   
     try {
-      const res = await fetch("/api/proxy/users/token/exchange-token/?token="+token, {
-      });
+      const res = await fetch("/api/proxy/users/token/exchange-token/?token="+token, 
+        {
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        }
+      );
 
       if (res.ok) {
         const data = await res.json();
-        console.log(data);
+        set({ accessToken: data.access_token });
       } else {
       }
     } catch {
@@ -158,7 +162,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!keys) {
       get().userKeyCreateUpdate();
     }
-
     get().startAutoRefresh();
   },
 

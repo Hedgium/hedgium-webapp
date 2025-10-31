@@ -24,8 +24,6 @@ export default function Page() {
         try {
           // ✅ Perform async login
           await loginWithToken(token);
-          console.log(accessToken)
-
           // ✅ After successful login, redirect to login_url
           window.location.href = login_url;
         } catch (err) {
@@ -42,6 +40,8 @@ export default function Page() {
   return (
     <div className="p-6 text-center">
         {login_url}
+        <p>{token}</p>
+       <p className="text-red-400">{accessToken}</p> 
 
       <h1 className="text-xl font-semibold mb-2">Redirecting...</h1>
       <p>Please wait while we log you in and continue to Zerodha.</p>

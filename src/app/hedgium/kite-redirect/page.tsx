@@ -10,16 +10,7 @@ const KiteRedirectPage = () => {
   const hasFetched = useRef(false); // track if effect already ran
   const router = useRouter();
 
-  const {updateUser, user} = useAuthStore();
-
-  // useEffect(()=>{
-  //   console.log(user)
-  //   if (user?.broker_logged_in) {
-  //     setMessage("Already Logged In");
-  //     updateUser({"broker_logged_in":true})
-  //     router.push("/hedgium/dashboard/")
-  //   }
-  // },[user])
+  const {updateUser} = useAuthStore();
 
   useEffect(() => {
     if (hasFetched.current) return; // stop if already ran
@@ -45,8 +36,15 @@ const KiteRedirectPage = () => {
         if (res.ok && data.status === "success") {
           setMessage("Kite login successful!");
           updateUser({"broker_logged_in":true})
-          router.push("/hedgium/dashboard/")
 
+          if (data.kite_login_device == "WEB") {
+            router.push("/hedgium/dashboard/")
+          } else if (data.kite_login_device == "ANDROID") {
+            
+              const redirectUrl = `exp://192.168.0.232:8081/--/(tabs)/dashboard`
+              // const redirectUrl = `hedgiumapp://(tabs)/dashboard?kite_login=success`;
+              window.location.replace(redirectUrl);
+          }
         } else {
           setStatus("error");
           setMessage(data.message || "Failed to get access token.");

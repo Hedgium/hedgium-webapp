@@ -3,11 +3,8 @@
 import './global.css'
 
 // import { Roboto_Flex } from 'next/font/google'
-import { ThemeProvider } from 'next-themes'
-import NotificationProvider from '@/providers/NotificationProvider'
-import { Raleway } from 'next/font/google';
-import { Outfit } from 'next/font/google';
-import { Sora } from 'next/font/google';
+import { ThemeProvider } from 'next-themes';
+import NotificationProvider from '@/providers/NotificationProvider';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 
 import AuthProvider from "@/providers/AuthProvider";
@@ -47,7 +44,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           router.push("/register/add-broker")
         } else if (user?.signup_step=="broker_profile_added"){
           router.push("/register/verification")
-        } else if (user?.signup_step=="verified" && !pathname.includes("hedgium")){
+        } 
+        else if (user?.signup_step=="verified" && !pathname.includes("hedgium")){
           router.push("/hedgium/dashboard/")
         }
       } 
