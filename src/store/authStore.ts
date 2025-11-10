@@ -1,7 +1,6 @@
 import { create } from "zustand";
 // import useAlert from "@/hooks/useAlert";
-import { generateKeyPair, encryptPrivateKey } from "@/utils/crypto";
-const base64Encode = (arrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+import { generateKeyPair } from "@/utils/crypto";
 
 export interface SubscriptionPlan {
   id: number;
@@ -81,6 +80,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
     if (res.ok) {
       const data = await res.json();
+      console.log(data);
       set({keys:data})
       // console.log("Existing user key:", data);
       return data;
@@ -110,17 +110,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   userKeyCreateUpdate: async ()=> {
+    console.log("create update ")
     const { publicKey, privateKey } = await generateKeyPair();
-    // console.log(publicKey, privateKey);
-    const { encrypted, iv } = await encryptPrivateKey(privateKey, "123456")
+    console.log(publicKey, privateKey);
 
     try {
       const res = await fetch("/api/proxy/users/userkey/", {
         method: "POST",
         body: JSON.stringify({
-          public_key: base64Encode(publicKey),
-          encrypted_private_key: base64Encode(encrypted),
-          iv: base64Encode(iv),
+          public_key: publicKey,
         }),
 
         headers: { Authorization: `Bearer ${get().accessToken}` },
@@ -128,7 +126,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (res.ok) {
         const data = await res.json();
-        console.log(data)
+        // console.log(data)
+        set({keys:data})
+
       } else {
         
       }
