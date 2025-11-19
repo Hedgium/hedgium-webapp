@@ -1,7 +1,7 @@
 // app/providers/NotificationProvider.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
 
@@ -12,6 +12,44 @@ export default function NotificationProvider({ children }: { children: React.Rea
   const wsRef = useRef<WebSocket | null>(null);
   const retryCountRef = useRef(0);
   const maxRetries = 5;
+
+  // const [tick, setTick] = useState<any | null>(null);
+  // const wsRef1 = useRef<WebSocket | null>(null);
+
+  // useEffect(() => {
+  //   console.log("Connecting to tick websocket...");
+  //   if (!accessToken) return;
+
+  //   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  //   const wsUrl = `${protocol}://${process.env.NEXT_PUBLIC_BACKEND_DOMAIN}/ws/ticks/?token=${accessToken}&instrument_token=408065`;
+  //   console.log("WebSocket URL:", wsUrl);
+  //   const ws1 = new WebSocket(wsUrl);
+
+  //   wsRef1.current = ws1 ;
+
+  //   ws1.onopen = () => {
+  //     console.log("Tick websocket connected");
+  //   };
+
+  //   ws1.onmessage = (event) => {
+  //     try {
+  //       const data = JSON.parse(event.data);
+  //       console.log("Received tick data:", data);
+  //       setTick(data);
+  //     } catch (e) {
+  //       console.log("Failed to parse tick", e);
+  //     }
+  //   };
+
+  //   ws1.onerror = (e) => {
+  //     console.log("Tick websocket error", e);
+  //   };
+
+  //   return () => {
+  //     ws1.close();
+  //   };
+  // }, [accessToken]);
+
 
   useEffect(() => {
     if (!accessToken) return;

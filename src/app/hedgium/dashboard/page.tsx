@@ -7,10 +7,20 @@ import TradeCycleCard from "@/components/TradeCycleCard";
 import MarketHeader from '@/components/MarketHeader';
 import { authFetch } from '@/utils/api';
 
+import { useTickStream } from '@/hooks/useTickStream';
+
 export default function Dashboard() {
   const [activeTradeCycles, setActiveTradeCycles] = useState([]);
   const [nextActiveTradeCycles, setNextActiveTradeCycles] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const { ticks, subscribeToken, unsubscribeToken } = useTickStream(
+     [
+  { token: 408065, mode: "LTP" },
+  { token: 738561, mode: "FULL" },
+]
+  );
+
 
   async function getActiveTradeCycles() {
     setLoading(true);
@@ -36,6 +46,13 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 md:px-8 min-h-screen">
+
+      {Object.values(ticks).map(t => (
+      <div key={t.instrument_token}>
+        {t.instrument_token}: {t.last_price}
+      </div>
+    ))}
+
       <MarketHeader />
       <div className="max-w-7xl mx-auto">
 
