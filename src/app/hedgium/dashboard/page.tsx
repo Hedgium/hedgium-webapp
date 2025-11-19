@@ -16,9 +16,9 @@ export default function Dashboard() {
 
   const { ticks, subscribeToken, unsubscribeToken } = useTickStream(
      [
-  { token: 408065, mode: "LTP" },
-  { token: 738561, mode: "FULL" },
-]
+        { token: 408065, mode: "LTP" },
+        { token: 738561, mode: "FULL" },
+      ]
   );
 
 
