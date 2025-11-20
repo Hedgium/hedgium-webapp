@@ -6,6 +6,7 @@ export function useTickStream(
 ) {
   const wsRef = useRef<WebSocket | null>(null);
   const { accessToken } = useAuthStore();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [ticks, setTicks] = useState<Record<number, any>>({});
 
   useEffect(() => {

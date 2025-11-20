@@ -74,7 +74,7 @@ const PasswordInput: React.FC<{
 
 interface BrokerState {
   loading: boolean;
-  id: Number;
+  id: number | null;
   loggedIn: boolean;
   name: string | null;
   userId?: string | null;
