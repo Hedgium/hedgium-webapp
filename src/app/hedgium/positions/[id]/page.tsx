@@ -11,7 +11,6 @@ import {
   TrendingDown,
   RefreshCw,
 } from "lucide-react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { authFetch } from "@/utils/api";
 

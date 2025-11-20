@@ -40,6 +40,7 @@ export interface User {
   kyc_skipped: boolean;
   active_subscription: UserSubscription | null;
   broker_logged_in: boolean | false;
+  is_staff: boolean | false;
 }
 
 interface AuthState {
@@ -110,9 +111,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   userKeyCreateUpdate: async ()=> {
-    console.log("create update ")
+    // console.log("create update ")
     const { publicKey, privateKey } = await generateKeyPair();
-    console.log(publicKey, privateKey);
+    // console.log(publicKey, privateKey);
+    
 
     try {
       const res = await fetch("/api/proxy/users/userkey/", {
@@ -130,7 +132,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({keys:data})
 
       } else {
-        
       }
     } catch (e){
       console.log(e);
