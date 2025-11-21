@@ -136,7 +136,7 @@ export default function Page() {
                   <td>
                     {strategy.versions.length > 0 ? (
                       strategy.versions.map((adj, i) => (
-                        <div key={i} className="mb-3 border-b pb-2">
+                        <div key={i} className="mb-3 pb-2">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">
                               Adjustment {adj.version}
