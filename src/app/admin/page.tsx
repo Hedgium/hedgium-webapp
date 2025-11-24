@@ -55,59 +55,61 @@ interface Strategy {
 
 
 
-export default function Page() { 
+export default function Page() {
 
 
-    const [strategies, setStrategies] = React.useState<Strategy[]>([]);
-    const [next, setNext] = React.useState<string | null>(null);
-    const [loading, setLoading] = React.useState<boolean>(false);
-    const [isActive, setIsActive] = React.useState<string>("");
+  const [strategies, setStrategies] = React.useState<Strategy[]>([]);
+  const [next, setNext] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState<boolean>(false);
+  const [isActive, setIsActive] = React.useState<string>("");
 
-    async function fetchStrategies() {
-        setLoading(true);
-        const res = await authFetch("myadmin/strategies/?page=1&page_size=20"+ (isActive === "" ? "" : "&is_active=" + isActive));
-        const data = await res.json();
-        if (data.next) {
-          setNext(data.next.split("api/")[1]);
-        }
-        // console.log(data.next)
-        setStrategies(data.results);
-        setLoading(false);
+  async function fetchStrategies() {
+    setLoading(true);
+    const res = await authFetch("myadmin/strategies/?page=1&page_size=20" + (isActive === "" ? "" : "&is_active=" + isActive));
+    const data = await res.json();
+    if (data.next) {
+      setNext(data.next.split("api/")[1]);
+    } else {
+      setNext(null);
     }
+    // console.log(data.next)
+    setStrategies(data.results);
+    setLoading(false);
+  }
 
-    async function loadMoreStrategies() {
-        if (!next) return;
-        setLoading(true);
-        const res = await authFetch(next);
-        const data = await res.json();
-        if (data.next) {
-          setNext(data.next.split("api/")[1]);
-        }
-        setStrategies((prev) => [...prev, ...data.results]);
-        setLoading(false);
+  async function loadMoreStrategies() {
+    if (!next) return;
+    setLoading(true);
+    const res = await authFetch(next);
+    const data = await res.json();
+    if (data.next) {
+      setNext(data.next.split("api/")[1]);
     }
+    setStrategies((prev) => [...prev, ...data.results]);
+    setLoading(false);
+  }
 
-    React.useEffect(() => {
-        fetchStrategies();
-    },[isActive])
+  React.useEffect(() => {
+    fetchStrategies();
+  }, [isActive])
   return (
     <div className="p-6 space-y-6">
 
-        <div className="flex items-center justify-between">
-            
-            <h3 className="text-2xl font-bold">Strategies</h3>
+      <div className="flex items-center justify-between">
 
-            <div className="form-control ">
-                <select onChange={(e)=> setIsActive(e.target.value) } defaultValue={isActive} className="select select-bordered">
-                    <option value="" >All</option>
-                    <option value="true"  >Active</option>
-                    <option value="false"  >Inactive</option>
-                </select>
-            </div>
+        <h3 className="text-2xl font-bold">Strategies</h3>
 
+        <div className="form-control ">
+          <select onChange={(e) => setIsActive(e.target.value)} defaultValue={isActive} className="select select-bordered">
+            <option value="" >All</option>
+            <option value="true"  >Active</option>
+            <option value="false"  >Inactive</option>
+          </select>
         </div>
 
-        
+      </div>
+
+
 
       <div className="overflow-x-auto rounded-xl shadow">
         <table className="table table-zebra w-full">
@@ -142,9 +144,8 @@ export default function Page() {
                               Adjustment {adj.version}
                             </span>
                             <span
-                              className={`badge ${
-                                adj.approved ? "badge-success" : "badge-error"
-                              }`}
+                              className={`badge ${adj.approved ? "badge-success" : "badge-error"
+                                }`}
                             >
                               {adj.approved ? "Approved" : "Not Approved"}
                             </span>
@@ -180,13 +181,13 @@ export default function Page() {
         </table>
       </div>
 
-      {(next && !loading) && 
-      <button onClick={loadMoreStrategies} className="btn btn-sm">
+      {(next && !loading) &&
+        <button onClick={loadMoreStrategies} className="btn btn-sm">
           Load More
-      </button> }
+        </button>}
 
       {loading && <div>Loading strategies...</div>}
-     
+
     </div>
   );
 }

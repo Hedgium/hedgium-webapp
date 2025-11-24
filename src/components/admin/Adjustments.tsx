@@ -4,21 +4,23 @@ import { useState } from "react";
 import StrategyLegs from "./StrategyLegs";
 import { authFetch } from "@/utils/api";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
+import useAlert from "@/hooks/useAlert";
 
 function Adjustment({ adj }) {
   const [open, setOpen] = useState(false);
+  const [adjustment, setAdjustment] = useState(adj);
+
+  const alert = useAlert();
 
   async function approveAdjustment(adjId: number) {
     try {
+      setAdjustment({ ...adjustment, approved: true });
+      alert.success("Adjustment approved successfully.");
       const res = await authFetch(`myadmin/approve-adjustment/${adjId}/`, {
-        method: "POST",
-        body: JSON.stringify({ adjustment_id: adjId }),
-        headers: { "Content-Type": "application/json" },
+        method: "POST"
       });
-
       const data = await res.json();
-      console.log("Approved adjustment:", data);
-
+      // console.log("Approved adjustment:", data);
     } catch (error) {
       console.error("Error approving adjustment:", error);
     }
@@ -26,31 +28,30 @@ function Adjustment({ adj }) {
 
   return (
     <div className="border border-base-300 rounded-xl shadow mb-4 bg-base-100">
-      
+
       {/* COLLAPSE HEADER */}
       <div
         className="flex items-center justify-between p-4 cursor-pointer"
         onClick={() => setOpen(!open)}
       >
         <div className="flex items-center gap-4">
-          <span className="font-bold">v{adj.version}</span>
-          <span className="text-gray-700">{adj.title || "-"}</span>
+          <span className="font-bold">v{adjustment.version}</span>
+          <span className="text-gray-700">{adjustment.title || "-"}</span>
         </div>
 
         <div className="flex items-center gap-4">
           {/* <span className="text-sm opacity-70">Approved: {adj.approved ? "Yes" : "No"}</span> */}
-          <span className="text-sm opacity-70">{formatDateTimeMinutes(adj.created_at)}</span>
+          <span className="text-sm opacity-70">{formatDateTimeMinutes(adjustment.created_at)}</span>
 
           <button
             onClick={(e) => {
               e.stopPropagation(); // prevent dropdown toggle
-              approveAdjustment(adj.id);
+              approveAdjustment(adjustment.id);
             }}
-            className={`btn btn-sm ${
-              adj.approved ? "btn-disabled" : "btn-success"
-            }`}
+            className={`btn btn-sm ${adjustment.approved ? "btn-disabled" : "btn-success"
+              }`}
           >
-            {adj.approved ? "Approved" : "Approve"}
+            {adjustment.approved ? "Approved" : "Approve"}
           </button>
 
           {/* Arrow */}
@@ -87,7 +88,7 @@ function Adjustment({ adj }) {
                 </tr>
               </thead>
               <tbody>
-                <StrategyLegs legs={adj.legs} />
+                <StrategyLegs legs={adjustment.legs} />
               </tbody>
             </table>
           </div>
