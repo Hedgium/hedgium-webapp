@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
+import { RotateCw } from "lucide-react";
 
 
 export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
@@ -10,8 +11,9 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
   const [selectedProfiles, setSelectedProfiles] = useState<number[]>([]);
   const [search, setSearch] = useState("");
   const [profiles, setProfiles] = useState([]); // 🔥 NEW → search results list
-  
-    const alert = useAlert();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const alert = useAlert();
   // Toggle existing cycle selection
   function toggleCycle(cycleId: number) {
     setSelectedCycles((prev) =>
@@ -45,6 +47,13 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
     }
   }
 
+  // Refresh trade cycles
+  async function handleRefresh() {
+    setRefreshing(true);
+    await fetchTradeCycles();
+    setRefreshing(false);
+  }
+
   // Delete selected cycles
   async function deleteTradeCycles() {
     if (selectedCycles.length === 0) {
@@ -74,7 +83,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
     }
 
     try {
-        alert.info("Creating trade cycles...", { duration: 3000 });
+      alert.info("Creating trade cycles...", { duration: 3000 });
       const res = await authFetch(`myadmin/create-trade-cycles/${id}/${selectedProfiles.join(",")}/`);
 
       const data = await res.json();
@@ -82,7 +91,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
       fetchTradeCycles();
       setProfiles([]); // Clear search results
       setSelectedProfiles([]); // Clear selected profiles
-    
+
       alert.success("Trade cycles created!", { duration: 3000 });
 
     } catch (error) {
@@ -95,6 +104,14 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-xl font-semibold">Trade Cycles</h4>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className={`btn btn-ghost btn-sm ${refreshing ? "animate-spin" : ""}`}
+          title="Refresh Trade Cycles"
+        >
+          <RotateCw size={18} />
+        </button>
       </div>
 
       {/* Search */}
@@ -112,7 +129,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
         </button>
       </div>
 
-      
+
       {/* Searched Profiles */}
       {profiles.length > 0 && (
         <div>
@@ -149,9 +166,11 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
             </table>
           </div>
 
-          <button className="btn btn-primary mt-4" onClick={addTradeCycles}>
+          <button className="btn btn-primary btn-sm mt-4" onClick={addTradeCycles}>
             Add Selected Profiles as Trade Cycles
           </button>
+          <br />
+          <br />
         </div>
       )}
 
@@ -159,7 +178,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
 
       {/* Existing Cycles */}
       <div className="mb-8">
-        <h3 className="font-bold mb-2">Existing Trade Cycles</h3>
+        {/* <h3 className="font-bold mb-2">Existing Trade Cycles</h3> */}
 
         <div className="overflow-x-auto shadow rounded-xl">
           <table className="table">
@@ -172,6 +191,9 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                 <th>Risk</th>
                 <th>Margin</th>
                 <th>State</th>
+                <th>Orders</th>
+                <th>Positions</th>
+                <th>PnL</th>
               </tr>
             </thead>
 
@@ -194,11 +216,16 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                     <td>{cycle.profile.risk_profile}</td>
                     <td>{cycle.profile.margin_equity}</td>
                     <td>{cycle.state}</td>
+                    <td>{cycle.no_of_orders || 0}</td>
+                    <td>{cycle.no_of_positions || 0}</td>
+                    <td className={cycle.pnl && cycle.pnl > 0 ? "text-green-400" : cycle.pnl && cycle.pnl < 0 ? "text-red-400" : ""}>
+                      {cycle.pnl !== null && cycle.pnl !== undefined ? `₹${cycle.pnl.toFixed(2)}` : "₹0.00"}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="text-center opacity-60">
+                  <td colSpan={10} className="text-center opacity-60">
                     No trade cycles found
                   </td>
                 </tr>
@@ -209,7 +236,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
       </div>
 
       {/* Delete button */}
-      <button onClick={deleteTradeCycles} className="btn btn-error mt-2">
+      <button onClick={deleteTradeCycles} className="btn btn-error btn-sm ">
         Remove Selected Cycles
       </button>
     </div>

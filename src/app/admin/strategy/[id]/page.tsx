@@ -41,6 +41,8 @@ export default function StrategyDetail() {
       setTradeCyclesLoading(true);
       const res = await authFetch(`myadmin/trade-cycles/${id}/?page=1&page_size=100`);
       const data = await res.json();
+
+      console.log("Fetched trade cycles data:", data);
       // console.log("Fetched trade cycles data:", data);
       setTradeCycles(data.results);
 
@@ -59,7 +61,7 @@ export default function StrategyDetail() {
   }, [id]);
 
 
-  if(loading) return <div className="p-6">Loading strategy details...</div>;
+  if (loading) return <div className="p-6">Loading strategy details...</div>;
 
   return (
     <div className="p-6 space-y-10">
@@ -95,7 +97,7 @@ export default function StrategyDetail() {
       {tradeCyclesLoading ? (
         <div>Loading trade cycles...</div>
       ) : <TradeCycles id={id} trade_cycles={trade_cycles} fetchTradeCycles={fetchTradeCycles} />}
-  
+
     </div>
   );
 }
