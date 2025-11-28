@@ -9,6 +9,8 @@ import LegForm from "@/components/admin/builder/LegForm";
 import useAlert from "@/hooks/useAlert";
 import { Plus } from "lucide-react";
 
+import BuilderTaskControl from "@/components/admin/builder/BuilderTaskControl";
+
 export default function BuilderPage() {
     const [builders, setBuilders] = useState<StrategyBuilder[]>([]);
     const [loading, setLoading] = useState(false);
@@ -189,6 +191,8 @@ export default function BuilderPage() {
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Strategy Builder</h1>
+
+                <BuilderTaskControl />
                 <button
                     onClick={handleAddBuilder}
                     className="btn btn-primary gap-2"

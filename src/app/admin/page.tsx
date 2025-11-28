@@ -1,8 +1,11 @@
 import Link from "next/link";
+import ScheduledTasks from "@/components/admin/ScheduledTasks";
 
 export default function AdminPage() {
-    return <div className="text-center flex flex-col gap-2 p-2">
-        <Link href="/admin/strategy">Strategies</Link>
-        <Link href="/admin/profiles">Profiles</Link>
-    </div>;
+    return (
+        <div className="p-6 space-y-6">
+            <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+            <ScheduledTasks />
+        </div>
+    );
 }
