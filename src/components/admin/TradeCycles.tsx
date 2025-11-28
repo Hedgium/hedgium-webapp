@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
-import { RotateCw } from "lucide-react";
+import { RotateCw, Eye } from "lucide-react";
+
+// Lazy load the modal component
+const TradeCycleDetailsModal = lazy(() => import("./TradeCycleDetailsModal"));
 
 
 export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
@@ -12,6 +15,10 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
   const [search, setSearch] = useState("");
   const [profiles, setProfiles] = useState([]); // 🔥 NEW → search results list
   const [refreshing, setRefreshing] = useState(false);
+
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTradeCycleId, setSelectedTradeCycleId] = useState<number | null>(null);
 
   const alert = useAlert();
   // Toggle existing cycle selection
@@ -97,6 +104,18 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
     } catch (error) {
       console.error("Create error:", error);
     }
+  }
+
+  // Open modal for trade cycle details
+  function handleShowMore(cycleId: number) {
+    setSelectedTradeCycleId(cycleId);
+    setShowModal(true);
+  }
+
+  // Close modal
+  function handleCloseModal() {
+    setShowModal(false);
+    setSelectedTradeCycleId(null);
   }
 
   return (
@@ -194,6 +213,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                 <th>Orders</th>
                 <th>Positions</th>
                 <th>PnL</th>
+                <th>Actions</th>
               </tr>
             </thead>
 
@@ -221,11 +241,21 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                     <td className={cycle.pnl && cycle.pnl > 0 ? "text-green-400" : cycle.pnl && cycle.pnl < 0 ? "text-red-400" : ""}>
                       {cycle.pnl !== null && cycle.pnl !== undefined ? `₹${cycle.pnl.toFixed(2)}` : "₹0.00"}
                     </td>
+                    <td>
+                      <button
+                        onClick={() => handleShowMore(cycle.id)}
+                        className="btn btn-ghost btn-xs"
+                        title="Show More Details"
+                      >
+                        <Eye size={16} />
+                        Show More
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={10} className="text-center opacity-60">
+                  <td colSpan={11} className="text-center opacity-60">
                     No trade cycles found
                   </td>
                 </tr>
@@ -239,6 +269,16 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
       <button onClick={deleteTradeCycles} className="btn btn-error btn-sm ">
         Remove Selected Cycles
       </button>
+
+      {/* Trade Cycle Details Modal */}
+      {showModal && selectedTradeCycleId && (
+        <Suspense fallback={<div className="modal modal-open"><div className="modal-box"><span className="loading loading-spinner loading-lg"></span></div></div>}>
+          <TradeCycleDetailsModal
+            tradeCycleId={selectedTradeCycleId}
+            onClose={handleCloseModal}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

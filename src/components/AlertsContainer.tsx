@@ -2,11 +2,11 @@
 
 "use client"
 
-import useAlertStore, {AlertType} from "@/store/alertStore";
+import useAlertStore, { AlertType } from "@/store/alertStore";
 
 const AlertsContainer = () => {
   const { alerts, removeAlert } = useAlertStore();
-  
+
   if (alerts.length === 0) return null;
 
   const getIcon = (type: AlertType) => {
@@ -37,12 +37,12 @@ const AlertsContainer = () => {
         );
     }
   };
-  
+
   return (
-    <div className="toast toast-top toast-end z-50 mt-16">
+    <div className="toast toast-top toast-end z-1000 mt-16">
       {alerts.map((alert) => (
-        <div 
-          key={alert.id} 
+        <div
+          key={alert.id}
           className={`alert alert-${alert.type} shadow-lg mb-2 flex flex-row items-center justify-between`}
         >
           <div className="flex items-center flex-1">
@@ -52,8 +52,8 @@ const AlertsContainer = () => {
             <span className="ml-2">{alert.message}</span>
           </div>
           {!alert.hideClose && (
-            <button 
-              className="btn btn-ghost btn-sm btn-circle ml-4 flex-shrink-0" 
+            <button
+              className="btn btn-ghost btn-sm btn-circle ml-4 flex-shrink-0"
               onClick={() => removeAlert(alert.id)}
             >
               ✕
