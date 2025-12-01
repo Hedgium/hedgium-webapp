@@ -9,9 +9,9 @@ import Link from "next/link";
 
 const tabs = [
   { name: "Dashboard", href: "/admin", icon: <Home className="h-5 w-5" /> },
+  { name: "Builder", href: "/admin/builder", icon: <Settings className="h-5 w-5" /> },
   { name: "Strategies", href: "/admin/strategy", icon: <Briefcase className="h-5 w-5" /> },
   { name: "Profiles", href: "/admin/profiles", icon: <Bell className="h-5 w-5" /> },
-  { name: "Builder", href: "/admin/builder", icon: <Settings className="h-5 w-5" /> },
 ];
 
 export default function AdminSidebar() {

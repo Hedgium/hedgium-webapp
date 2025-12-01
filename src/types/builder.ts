@@ -29,6 +29,7 @@ export interface StrategyBuilder {
     entry_condition: string;
     created_at: string;
     updated_at: string;
+    calculated_ws: number;
     strategy_template: StrategyTemplate;
     builder_legs: BuilderLeg[];
 }

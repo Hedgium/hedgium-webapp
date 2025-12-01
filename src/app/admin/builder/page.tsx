@@ -19,16 +19,19 @@ export default function BuilderPage() {
     const [editingBuilder, setEditingBuilder] = useState<StrategyBuilder | undefined>(undefined);
     const [editingLeg, setEditingLeg] = useState<BuilderLeg | undefined>(undefined);
     const [selectedBuilderId, setSelectedBuilderId] = useState<number | null>(null);
+    const [statusFilter, setStatusFilter] = useState<string>("");
 
     const alert = useAlert();
 
     const fetchBuilders = async () => {
         setLoading(true);
         try {
-            const response = await authFetch('builder/builders/');
+            const url = statusFilter
+                ? `builder/builders/?status=${statusFilter}`
+                : 'builder/builders/';
+            const response = await authFetch(url);
             const data = await response.json();
 
-            // console.log(data);
             setBuilders(data.results);
         } catch (error) {
             console.error('Error fetching builders:', error);
@@ -40,7 +43,7 @@ export default function BuilderPage() {
 
     useEffect(() => {
         fetchBuilders();
-    }, []);
+    }, [statusFilter]);
 
     // --- Builder Actions ---
 
@@ -82,7 +85,6 @@ export default function BuilderPage() {
                     body: JSON.stringify(data)
                 });
                 const newBuilder = await response.json();
-                // Fetch again to get legs (though empty initially) or just append
                 setBuilders(prev => [newBuilder, ...prev]);
                 alert.success('Strategy builder created successfully');
             }
@@ -94,8 +96,6 @@ export default function BuilderPage() {
     };
 
     const handleRefreshStatus = async (builderId: number) => {
-        // Implement status refresh logic here if there's a specific endpoint
-        // For now, just re-fetching the builder details
         try {
             const response = await authFetch(`builder/builders/${builderId}/`);
             const updatedBuilder = await response.json();
@@ -116,7 +116,6 @@ export default function BuilderPage() {
     };
 
     const handleEditLeg = (leg: BuilderLeg) => {
-        // We need builderId for the form, find it from builders list
         const builder = builders.find(b => b.builder_legs.some(l => l.id === leg.id));
         if (builder) setSelectedBuilderId(builder.id);
 
@@ -128,7 +127,6 @@ export default function BuilderPage() {
         if (!confirm('Are you sure you want to delete this leg?')) return;
         try {
             await authFetch(`builder/legs/${legId}/`, { method: 'DELETE' });
-            // Update local state
             setBuilders(prev => prev.map(b => ({
                 ...b,
                 builder_legs: b.builder_legs.filter(l => l.id !== legId)
@@ -149,7 +147,6 @@ export default function BuilderPage() {
                 });
                 const updatedLeg = await response.json();
 
-                // Update specific leg in the specific builder
                 setBuilders(prev => prev.map(b => {
                     if (b.builder_legs.some(l => l.id === updatedLeg.id)) {
                         return {
@@ -161,14 +158,12 @@ export default function BuilderPage() {
                 }));
                 alert.success('Leg updated successfully');
             } else {
-                console.log('Selected Builder ID:');
                 const response = await authFetch('builder/legs/', {
                     method: 'POST',
                     body: JSON.stringify(data)
                 });
                 const newLeg = await response.json();
 
-                // Add leg to the specific builder
                 setBuilders(prev => prev.map(b => {
                     if (b.id === selectedBuilderId) {
                         return {
@@ -189,16 +184,53 @@ export default function BuilderPage() {
 
     return (
         <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Strategy Builder</h1>
+            {/* Header Section */}
+            <div className="mb-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h1 className="text-2xl font-bold">Strategy Builder</h1>
 
-                <BuilderTaskControl />
-                <button
-                    onClick={handleAddBuilder}
-                    className="btn btn-primary gap-2"
-                >
-                    <Plus size={20} /> Add Builder
-                </button>
+
+                    <button
+                        onClick={handleAddBuilder}
+                        className="btn btn-primary gap-2"
+                    >
+                        <Plus size={20} /> Add Builder
+                    </button>
+                </div>
+
+                <div className="flex justify-between items-center mb-4">
+                    {/* Task Control */}
+                    <BuilderTaskControl />
+
+
+                    {/* Filters */}
+                    <div className="bg-base-200 rounded-lg p-4">
+                        <div className="flex items-center gap-4">
+                            <label className="text-sm font-medium">Filter by Status:</label>
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="select select-bordered select-sm w-48"
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="CHECKING">Checking</option>
+                                <option value="ACTIVE">Active</option>
+                                <option value="EXIT_CHECKING">Exit Checking</option>
+                                <option value="EXITED">Exited</option>
+                                <option value="INACTIVE">Inactive</option>
+                            </select>
+                            {statusFilter && (
+                                <button
+                                    onClick={() => setStatusFilter("")}
+                                    className="btn btn-ghost btn-xs"
+                                >
+                                    Clear Filter
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
             {loading ? (
@@ -220,8 +252,6 @@ export default function BuilderPage() {
                     {builders.length === 0 && (
                         <p className="text-center text-gray-400">No strategy builders found.</p>
                     )}
-
-
                 </div>
             )}
 

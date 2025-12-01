@@ -66,8 +66,8 @@ export default function StrategyDetail() {
   return (
     <div className="p-6 space-y-10">
 
-      <Link href="/admin" className="btn btn-ghost mb-4">
-        {`← Back to Admin Dashboard`}
+      <Link href="/admin/strategy" className="btn btn-ghost mb-4">
+        {`← Back`}
       </Link>
       {/* HEADER */}
       <div>

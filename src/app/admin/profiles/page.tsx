@@ -15,6 +15,11 @@ export default function ProfilesPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
 
+    // Filter states
+    const [brokerFilter, setBrokerFilter] = useState<string>("");
+    const [subscriptionFilter, setSubscriptionFilter] = useState<string>("");
+    const [verifiedFilter, setVerifiedFilter] = useState<string>("");
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
 
@@ -31,11 +36,22 @@ export default function ProfilesPage() {
     const fetchProfiles = async (reset = false) => {
         setLoading(true);
         try {
-            let url = 'profiles/';
+            const params = new URLSearchParams();
+
             if (debouncedSearch) {
-                url += `?search=${encodeURIComponent(debouncedSearch)}`;
+                params.append('search', debouncedSearch);
+            }
+            if (brokerFilter) {
+                params.append('broker_name', brokerFilter);
+            }
+            if (subscriptionFilter) {
+                params.append('subscription_plan', subscriptionFilter);
+            }
+            if (verifiedFilter) {
+                params.append('verified', verifiedFilter);
             }
 
+            const url = `profiles/?${params.toString()}`;
             const response = await authFetch(url);
             const data = await response.json();
 
@@ -55,27 +71,17 @@ export default function ProfilesPage() {
 
     useEffect(() => {
         fetchProfiles(true);
-    }, [debouncedSearch]);
+    }, [debouncedSearch, brokerFilter, subscriptionFilter, verifiedFilter]);
 
     const fetchNextPage = async () => {
         if (!nextPage) return;
         setLoading(true);
         try {
             const url = new URL(nextPage);
-            const searchParams = new URLSearchParams(url.search);
-            const page = searchParams.get('page');
-            const search = searchParams.get('search');
-
-            if (page) {
-                const params: any = { page };
-                if (search) params.search = search;
-
-                const response = await authFetch('profiles', {}, params);
-                const data = await response.json();
-                setProfiles((prev) => [...prev, ...data.results]);
-                setNextPage(data.next);
-            }
-
+            const response = await authFetch(url.pathname + url.search);
+            const data = await response.json();
+            setProfiles((prev) => [...prev, ...data.results]);
+            setNextPage(data.next);
         } catch (error) {
             console.error('Error fetching next page:', error);
         } finally {
@@ -113,6 +119,15 @@ export default function ProfilesPage() {
         }
     };
 
+    const clearAllFilters = () => {
+        setBrokerFilter("");
+        setSubscriptionFilter("");
+        setVerifiedFilter("");
+        setSearchQuery("");
+    };
+
+    const hasActiveFilters = brokerFilter || subscriptionFilter || verifiedFilter || searchQuery;
+
     return (
         <div className="p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -125,10 +140,62 @@ export default function ProfilesPage() {
                     <input
                         type="text"
                         placeholder="Search profiles..."
-                        className="input input-bordered w-full pl-10 "
+                        className="input input-bordered w-full pl-10"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
+                </div>
+            </div>
+
+            {/* Filters Section */}
+            <div className="bg-base-200 rounded-lg p-4 mb-6">
+                <div className="flex flex-wrap items-center gap-4">
+                    <label className="text-sm font-medium">Filters:</label>
+
+                    {/* Broker Filter */}
+                    <select
+                        value={brokerFilter}
+                        onChange={(e) => setBrokerFilter(e.target.value)}
+                        className="select select-bordered select-sm w-40"
+                    >
+                        <option value="">All Brokers</option>
+                        <option value="SHOONYA">Shoonya</option>
+                        <option value="ZERODHA">Zerodha</option>
+                    </select>
+
+                    {/* Subscription Plan Filter */}
+                    <select
+                        value={subscriptionFilter}
+                        onChange={(e) => setSubscriptionFilter(e.target.value)}
+                        className="select select-bordered select-sm w-48"
+                    >
+                        <option value="">All Plans</option>
+                        <option value="FREE">Free</option>
+                        <option value="BASIC">Basic</option>
+                        <option value="MASTERS">Masters</option>
+                        <option value="LEGENDS">Legends</option>
+                    </select>
+
+                    {/* Verified Status Filter */}
+                    <select
+                        value={verifiedFilter}
+                        onChange={(e) => setVerifiedFilter(e.target.value)}
+                        className="select select-bordered select-sm w-40"
+                    >
+                        <option value="">All Status</option>
+                        <option value="true">Verified</option>
+                        <option value="false">Unverified</option>
+                    </select>
+
+                    {/* Clear Filters Button */}
+                    {hasActiveFilters && (
+                        <button
+                            onClick={clearAllFilters}
+                            className="btn btn-ghost btn-sm"
+                        >
+                            Clear All Filters
+                        </button>
+                    )}
                 </div>
             </div>
 

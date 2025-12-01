@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StrategyBuilder, BuilderLeg } from '@/types/builder';
 import { Edit2, Trash2, RotateCw, Plus } from 'lucide-react';
 import BuilderLegItem from './BuilderLegItem';
+import { formatDateTimeMinutes } from '@/utils/formatDate';
 
 interface BuilderItemProps {
     builder: StrategyBuilder;
@@ -47,6 +48,9 @@ export default function BuilderItem({
                         <span>Strike Step: <span className="">{builder?.strike_step}</span></span>
                         <span>Entry WS: <span className="">{builder?.entry_ws}%</span></span>
                         <span>Exit WS: <span className="">{builder?.exit_ws}%</span></span>
+                        <span>Calculated WS: <span className="">{builder?.calculated_ws}%, at {formatDateTimeMinutes(builder?.updated_at)}</span></span>
+
+
                     </div>
                 </div>
 

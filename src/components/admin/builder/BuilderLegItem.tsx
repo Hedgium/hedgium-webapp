@@ -1,6 +1,7 @@
 import React from 'react';
 import { BuilderLeg } from '@/types/builder';
 import { Edit2, Trash2 } from 'lucide-react';
+import { formatDateOnly } from '@/utils/formatDate';
 
 interface BuilderLegItemProps {
     leg: BuilderLeg;
@@ -9,6 +10,7 @@ interface BuilderLegItemProps {
 }
 
 export default function BuilderLegItem({ leg, onEdit, onDelete }: BuilderLegItemProps) {
+
     return (
         <div className="flex items-center justify-between p-3 bg-base-200 rounded-md mb-2 border border-base-300">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 flex-1">
@@ -37,8 +39,8 @@ export default function BuilderLegItem({ leg, onEdit, onDelete }: BuilderLegItem
                     <p className="font-medium">{leg.strike}</p>
                 </div>
                 <div>
-                    <p className="text-xs text-gray-500">Period</p>
-                    <p className="font-medium">{leg.period}</p>
+                    <p className="text-xs text-gray-500">Period, Expiry</p>
+                    <p className="font-medium">{leg.period}, {formatDateOnly(leg.expiry)}</p>
                 </div>
             </div>
 

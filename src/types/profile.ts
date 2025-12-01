@@ -5,6 +5,23 @@ export interface User {
     last_name: string;
 }
 
+export interface SubscriptionPlan {
+    id: number;
+    name: string;
+    description: string | null;
+    price: number;
+    max_strategies: number;
+}
+
+export interface UserSubscription {
+    id: number;
+    plan: SubscriptionPlan;
+    start_date: string;
+    end_date: string;
+    is_active: boolean;
+    is_valid: boolean;
+}
+
 export interface Profile {
     id: number;
     user_id: number;
@@ -18,6 +35,7 @@ export interface Profile {
     updated_at: string;
     user: User;
     broker_logged_in: boolean;
+    subscription?: UserSubscription | null;
 }
 
 export interface ProfileResponse {

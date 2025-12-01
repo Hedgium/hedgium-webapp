@@ -9,6 +9,14 @@ interface LegFormProps {
 }
 
 export default function LegForm({ initialData, builderId, onSubmit, onCancel }: LegFormProps) {
+
+    // Helper function to convert ISO datetime to YYYY-MM-DD format
+    const formatDateForInput = (dateString: string | null | undefined): string => {
+        if (!dateString) return '';
+        // Extract just the date part (YYYY-MM-DD) from ISO format
+        return dateString.split('T')[0];
+    };
+
     const [formData, setFormData] = useState<Partial<BuilderLegCreate>>({
         strategy_builder_id: builderId,
         leg_index: 1,
@@ -31,7 +39,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                 symbol: initialData.symbol,
                 period: initialData.period,
                 strike: initialData.strike,
-                expiry: initialData.expiry,
+                expiry: formatDateForInput(initialData.expiry),
                 option_type: initialData.option_type,
                 action: initialData.action,
                 quantity: initialData.quantity
@@ -77,6 +85,10 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                 <div className="form-control">
                     <label className="label"><span className="label-text">Strike</span></label>
                     <input type="number" name="strike" value={formData.strike} onChange={handleChange} className="input input-bordered w-full" />
+                </div>
+                <div className="form-control">
+                    <label className="label"><span className="label-text">Expiry</span></label>
+                    <input type="date" name="expiry" value={formData.expiry || ''} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Option Type</span></label>
