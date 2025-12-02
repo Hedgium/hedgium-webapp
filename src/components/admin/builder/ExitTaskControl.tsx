@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 
-export default function BuilderTaskControl() {
+export default function ExitTaskControl() {
     const [taskStatus, setTaskStatus] = useState<{ is_running: boolean; task_id: string | null }>({
         is_running: false,
         task_id: null
@@ -14,29 +14,29 @@ export default function BuilderTaskControl() {
 
     const fetchTaskStatus = async () => {
         try {
-            const response = await authFetch('builder/task/status/');
+            const response = await authFetch('builder/exit-task/status/');
             const data = await response.json();
             setTaskStatus(data);
         } catch (error) {
-            console.error('Error fetching task status:', error);
+            console.error('Error fetching exit task status:', error);
         }
     };
 
     const handleStartTask = async () => {
         setTaskLoading(true);
         try {
-            const response = await authFetch('builder/task/start/', { method: 'POST' });
+            const response = await authFetch('builder/exit-task/start/', { method: 'POST' });
             const data = await response.json();
 
             if (data.status === 'started' || data.status === 'already_running') {
-                alert.success(data.message || 'Builder task started');
+                alert.success(data.message || 'Exit task started');
                 await fetchTaskStatus();
             } else {
-                alert.error(data.message || 'Failed to start task');
+                alert.error(data.message || 'Failed to start exit task');
             }
         } catch (error) {
-            console.error('Error starting task:', error);
-            alert.error('Failed to start builder task');
+            console.error('Error starting exit task:', error);
+            alert.error('Failed to start exit task');
         } finally {
             setTaskLoading(false);
         }
@@ -45,18 +45,18 @@ export default function BuilderTaskControl() {
     const handleStopTask = async () => {
         setTaskLoading(true);
         try {
-            const response = await authFetch('builder/task/stop/', { method: 'POST' });
+            const response = await authFetch('builder/exit-task/stop/', { method: 'POST' });
             const data = await response.json();
 
             if (data.status === 'stopping' || data.status === 'not_running') {
-                alert.success(data.message || 'Builder task stopped');
+                alert.success(data.message || 'Exit task stopped');
                 await fetchTaskStatus();
             } else {
-                alert.error(data.message || 'Failed to stop task');
+                alert.error(data.message || 'Failed to stop exit task');
             }
         } catch (error) {
-            console.error('Error stopping task:', error);
-            alert.error('Failed to stop builder task');
+            console.error('Error stopping exit task:', error);
+            alert.error('Failed to stop exit task');
         } finally {
             setTaskLoading(false);
         }
@@ -71,10 +71,10 @@ export default function BuilderTaskControl() {
     }, []);
 
     return (
-        <div className="bg-base-200 rounded-lg py-4">
+        <div className="bg-base-200 rounded-lg p-4 ">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-lg font-semibold">Entry Task</h2>
+                    <h2 className="text-lg font-semibold">Exit Task</h2>
                     <div className="flex items-center gap-2">
                         <div className={`badge ${taskStatus.is_running ? 'badge-success' : 'badge-error'} gap-2`}>
                             <div className={`w-2 h-2 rounded-full ${taskStatus.is_running ? 'bg-green-300 animate-pulse' : 'bg-red-300'}`}></div>

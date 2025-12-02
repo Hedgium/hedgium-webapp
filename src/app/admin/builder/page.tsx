@@ -10,6 +10,7 @@ import useAlert from "@/hooks/useAlert";
 import { Plus } from "lucide-react";
 
 import BuilderTaskControl from "@/components/admin/builder/BuilderTaskControl";
+import ExitTaskControl from "@/components/admin/builder/ExitTaskControl";
 
 export default function BuilderPage() {
     const [builders, setBuilders] = useState<StrategyBuilder[]>([]);
@@ -185,7 +186,7 @@ export default function BuilderPage() {
     return (
         <div className="p-6">
             {/* Header Section */}
-            <div className="mb-6">
+            <div className="mb-0">
                 <div className="flex justify-between items-center mb-4">
                     <h1 className="text-2xl font-bold">Strategy Builder</h1>
 
@@ -198,38 +199,37 @@ export default function BuilderPage() {
                     </button>
                 </div>
 
-                <div className="flex justify-between items-center mb-4">
-                    {/* Task Control */}
+                <div className="flex mb-4">
+                    {/* Task Controls */}
                     <BuilderTaskControl />
+                    <ExitTaskControl />
+                </div>
 
-
-                    {/* Filters */}
-                    <div className="bg-base-200 rounded-lg p-4">
-                        <div className="flex items-center gap-4">
-                            <label className="text-sm font-medium">Filter by Status:</label>
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="select select-bordered select-sm w-48"
+                {/* Filters */}
+                <div className="bg-base-200 rounded-lg py-4 mb-4">
+                    <div className="flex items-center gap-4">
+                        <label className="text-sm font-medium">Filter by Status:</label>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="select select-bordered select-sm w-48"
+                        >
+                            <option value="">All Statuses</option>
+                            <option value="CHECKING">Checking</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="EXIT_CHECKING">Exit Checking</option>
+                            <option value="EXITED">Exited</option>
+                            <option value="INACTIVE">Inactive</option>
+                        </select>
+                        {statusFilter && (
+                            <button
+                                onClick={() => setStatusFilter("")}
+                                className="btn btn-ghost btn-xs"
                             >
-                                <option value="">All Statuses</option>
-                                <option value="CHECKING">Checking</option>
-                                <option value="ACTIVE">Active</option>
-                                <option value="EXIT_CHECKING">Exit Checking</option>
-                                <option value="EXITED">Exited</option>
-                                <option value="INACTIVE">Inactive</option>
-                            </select>
-                            {statusFilter && (
-                                <button
-                                    onClick={() => setStatusFilter("")}
-                                    className="btn btn-ghost btn-xs"
-                                >
-                                    Clear Filter
-                                </button>
-                            )}
-                        </div>
+                                Clear Filter
+                            </button>
+                        )}
                     </div>
-
                 </div>
             </div>
 
