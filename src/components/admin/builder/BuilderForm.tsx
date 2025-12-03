@@ -17,6 +17,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         entry_ws: 0,
         exit_ws: 0,
         entry_condition: 'LESS',
+        exit_pnl: 0,
         strategy_template_id: 1 // Default or fetch from API
     });
 
@@ -31,6 +32,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 entry_ws: initialData.entry_ws,
                 exit_ws: initialData.exit_ws,
                 entry_condition: initialData.entry_condition,
+                exit_pnl: initialData.exit_pnl,
                 strategy_template_id: initialData.strategy_template?.id || 1 // Assuming ID is available or default
             });
         }
@@ -91,6 +93,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     <label className="label"><span className="label-text">Exit WS (%)</span></label>
                     <input type="number" step="0.01" name="exit_ws" value={formData.exit_ws} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
+
                 <div className="form-control">
                     <label className="label"><span className="label-text">Entry Condition</span></label>
                     <select name="entry_condition" value={formData.entry_condition} onChange={handleChange} className="select select-bordered w-full">
@@ -98,6 +101,11 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         <option value="GREATER">GREATER</option>
                     </select>
                 </div>
+                <div className="form-control">
+                    <label className="label"><span className="label-text">Exit PnL (₹)</span></label>
+                    <input type="number" step="0.01" name="exit_pnl" value={formData.exit_pnl} onChange={handleChange} className="input input-bordered w-full" />
+                </div>
+
                 {/* Hidden or default for now as we don't have template selection UI yet */}
                 <input type="hidden" name="strategy_template_id" value={formData.strategy_template_id} />
             </div>

@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { BuilderLeg, BuilderLegCreate, BuilderLegUpdate } from '@/types/builder';
+import AsyncSelect from 'react-select/async';
 
 interface LegFormProps {
     initialData?: BuilderLeg;
     builderId: number;
     onSubmit: (data: BuilderLegCreate | BuilderLegUpdate) => void;
     onCancel: () => void;
+}
+
+interface Option {
+    label: string;
+    value: string;
+    token: string;
+    lot_size: number;
 }
 
 export default function LegForm({ initialData, builderId, onSubmit, onCancel }: LegFormProps) {
@@ -55,6 +63,34 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         }));
     };
 
+    const loadOptions = async (inputValue: string) => {
+        if (!inputValue) return [];
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/market/instruments/search?q=${inputValue}`);
+            const data = await response.json();
+            return data.map((item: any) => ({
+                label: `${item.tradingsymbol} - ${item.name}`,
+                value: item.tradingsymbol,
+                token: item.instrument_token.toString(),
+                lot_size: item.lot_size
+            }));
+        } catch (error) {
+            console.error("Error fetching instruments:", error);
+            return [];
+        }
+    };
+
+    const handleSymbolChange = (option: Option | null) => {
+        if (option) {
+            setFormData(prev => ({
+                ...prev,
+                symbol: option.value,
+                token: option.token,
+                // quantity: option.lot_size // Optional: auto-fill quantity with lot size
+            }));
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSubmit(formData as BuilderLegCreate);
@@ -69,11 +105,20 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                 </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Symbol</span></label>
-                    <input type="text" name="symbol" value={formData.symbol} onChange={handleChange} className="input input-bordered w-full" required />
+                    <AsyncSelect
+                        cacheOptions
+                        defaultOptions
+                        loadOptions={loadOptions}
+                        onChange={handleSymbolChange}
+                        value={formData.symbol ? { label: formData.symbol, value: formData.symbol, token: formData.token, lot_size: 0 } : null}
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                        placeholder="Search Symbol..."
+                    />
                 </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Token</span></label>
-                    <input type="text" name="token" value={formData.token} onChange={handleChange} className="input input-bordered w-full" />
+                    <input type="text" name="token" value={formData.token} onChange={handleChange} className="input input-bordered w-full" readOnly />
                 </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Period</span></label>
