@@ -4,6 +4,22 @@ import { authFetch } from '@/utils/api';
 import useAlert from '@/hooks/useAlert';
 import { RotateCw, Edit2, TrendingUp } from 'lucide-react';
 
+interface Position {
+    tradingsymbol: string;
+    quantity: number;
+    average_price?: number;
+    last_price?: number;
+    pnl?: number;
+    day_pnl?: number;
+}
+
+interface LivePositionsData {
+    status: string;
+    data?: {
+        net: Position[];
+    };
+}
+
 interface ProfileItemProps {
     profile: Profile;
     onEdit?: (profile: Profile) => void;
@@ -15,7 +31,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
     const [equityMargin, setEquityMargin] = useState(profile.margin_equity);
     const [loadingPositions, setLoadingPositions] = useState(false);
     const [showPositionsModal, setShowPositionsModal] = useState(false);
-    const [livePositions, setLivePositions] = useState<any>(null);
+    const [livePositions, setLivePositions] = useState<LivePositionsData | null>(null);
     const alert = useAlert();
 
     const handleRefreshMargin = async () => {
@@ -76,7 +92,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
             console.log(data);
             alert.success("Login reminder sent successfully");
             // alert('Login reminder sent');
-        } catch (error) {
+        } catch {
             alert.error('Error sending login reminder:');
             // alert('Failed to send login reminder');
         } finally {
@@ -197,7 +213,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {livePositions.data.net.map((position: any, index: number) => (
+                                        {livePositions.data.net.map((position: Position, index: number) => (
                                             <tr key={index}>
                                                 <td className="font-medium">{position.tradingsymbol}</td>
                                                 <td>{position.quantity}</td>

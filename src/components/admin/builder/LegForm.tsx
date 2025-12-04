@@ -16,6 +16,13 @@ interface Option {
     lot_size: number;
 }
 
+interface InstrumentSearchResult {
+    tradingsymbol: string;
+    name: string;
+    instrument_token: number;
+    lot_size: number;
+}
+
 export default function LegForm({ initialData, builderId, onSubmit, onCancel }: LegFormProps) {
 
     // Helper function to convert ISO datetime to YYYY-MM-DD format
@@ -150,10 +157,10 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         // Debounce validation
         const timeoutId = setTimeout(validateInstrument, 500);
         return () => clearTimeout(timeoutId);
-    }, [formData.symbol, formData.expiry, formData.strike, formData.option_type, formData.period]);
+    }, [formData.symbol, formData.expiry, formData.strike, formData.option_type, formData.period, noOfLots]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        let { name, value } = e.target;
+        const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
             [name]: name === 'leg_index' || name === 'strike' || name === 'quantity' ? parseInt(value) : value
@@ -165,7 +172,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/market/instruments/search?q=${inputValue}`);
             const data = await response.json();
-            return data.map((item: any) => ({
+            return data.map((item: InstrumentSearchResult) => ({
                 label: `${item.tradingsymbol} - ${item.name}`,
                 value: item.tradingsymbol,
                 token: item.instrument_token.toString(),
