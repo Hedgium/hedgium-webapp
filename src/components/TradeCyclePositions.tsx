@@ -74,7 +74,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
   };
 
   return (
-     <div className="card bg-base-100 rounded-3xl w-[90%] md:w-[60%] snap-start shrink-0">
+     <div className="card bg-base-100 border border-base-300 rounded-3xl w-full snap-start shrink-0">
       <div className="card-body p-4 flex flex-col flex-1">
         {/* Header */}
         <div className="flex justify-between items-start mb-3">

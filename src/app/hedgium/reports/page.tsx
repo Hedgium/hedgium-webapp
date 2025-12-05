@@ -1,0 +1,149 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { Loader2, TrendingUp, RotateCw } from "lucide-react";
+import { authFetch } from "@/utils/api";
+
+type PnlSummary = {
+    all_time?: number;
+    last_year?: number;
+    last_month?: number;
+    last_week?: number;
+    today?: number;
+};
+
+export default function ReportsPage() {
+    const [pnlSummary, setPnlSummary] = useState<PnlSummary | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch PNL summary from backend
+    async function getPNLSummary() {
+        try {
+            const res = await authFetch("positions/pnl/");
+            if (!res.ok) throw new Error("Failed to fetch PNL summary");
+            const data = await res.json();
+            setPnlSummary({
+                all_time: data.pnl_summary?.all_time,
+                last_month: data.pnl_summary?.last_month,
+                last_week: data.pnl_summary?.last_week,
+                today: data.pnl_summary?.today,
+            });
+        } catch (error) {
+            console.log("Error fetching PNL summary:", error);
+        }
+    }
+
+    async function getRealtime() {
+        try {
+            const res = await authFetch("positions/pnl/refresh/");
+            const data = await res.json();
+            console.log(data);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    useEffect(() => {
+        (async () => {
+            setLoading(true);
+            await getPNLSummary();
+            setLoading(false);
+        })();
+    }, []);
+
+    return (
+        <div className="p-4 md:px-8 bg-base-200 min-h-screen">
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-24">
+                    <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+                    <p className="text-gray-600 text-lg">Loading reports data...</p>
+                </div>
+            ) : (
+                <div className="max-w-7xl mx-auto space-y-12">
+                    {/* --- PnL Summary Section --- */}
+                    {pnlSummary && (
+                        <section>
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-2">
+                                    <TrendingUp className="w-6 h-6 text-primary" />
+                                    <h3 className="text-2xl font-semibold">PnL Summary</h3>
+                                </div>
+
+                                <RotateCw
+                                    className="w-5 h-5 text-gray-400 hover:text-primary cursor-pointer transition-colors"
+                                    onClick={async () => {
+                                        setLoading(true);
+                                        await getRealtime();
+                                        getPNLSummary().finally(() => setLoading(false));
+                                    }}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                {Object.entries(pnlSummary).map(([period, value]) => (
+                                    <div
+                                        key={period}
+                                        className="flex flex-col items-center p-4 bg-base-100 rounded-xl border border-base-300 shadow-sm hover:shadow-md transition-all duration-200"
+                                    >
+                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                            {period
+                                                .split("_")
+                                                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                                                .join(" ")}
+                                        </span>
+
+                                        <span
+                                            className={`text-xl font-bold mb-1 ${value !== undefined && value !== null
+                                                    ? value >= 0
+                                                        ? "text-emerald-600"
+                                                        : "text-rose-600"
+                                                    : "text-gray-500"
+                                                }`}
+                                        >
+                                            ₹
+                                            {value !== undefined && value !== null
+                                                ? value.toLocaleString("en-IN", {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2,
+                                                })
+                                                : "0.00"}
+                                            {value !== undefined && value !== null
+                                                ? value > 0
+                                                    ? " ↗"
+                                                    : value < 0
+                                                        ? " ↘"
+                                                        : ""
+                                                : ""}
+                                        </span>
+
+                                        <span
+                                            className={`text-xs font-medium px-2 py-1 rounded-full ${value !== undefined && value !== null
+                                                    ? value > 0
+                                                        ? "bg-emerald-50 text-emerald-700"
+                                                        : value < 0
+                                                            ? "bg-rose-50 text-rose-700"
+                                                            : "bg-gray-50 text-gray-600"
+                                                    : "bg-gray-50 text-gray-600"
+                                                }`}
+                                        >
+                                            {value !== undefined && value !== null
+                                                ? value > 0
+                                                    ? "+ Profit"
+                                                    : value < 0
+                                                        ? "Loss"
+                                                        : "No Change"
+                                                : "No Data"}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+                </div>
+            )}
+
+            <br />
+            <br />
+        </div>
+    );
+}

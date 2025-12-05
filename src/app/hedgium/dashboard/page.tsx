@@ -2,25 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { Loader2, Target } from 'lucide-react';
-import Slider from '@/components/Slider';
 import TradeCycleCard from "@/components/TradeCycleCard";
 import MarketHeader from '@/components/MarketHeader';
 import { authFetch } from '@/utils/api';
-
-import { useTickStream } from '@/hooks/useTickStream';
 
 export default function Dashboard() {
   const [activeTradeCycles, setActiveTradeCycles] = useState([]);
   const [nextActiveTradeCycles, setNextActiveTradeCycles] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const { ticks, subscribeToken, unsubscribeToken } = useTickStream(
-     [
-        { token: 408065, mode: "LTP" },
-        { token: 738561, mode: "FULL" },
-      ]
-  );
-
+  const [loadingMore, setLoadingMore] = useState(false);
 
   async function getActiveTradeCycles() {
     setLoading(true);
@@ -40,18 +30,34 @@ export default function Dashboard() {
     }
   }
 
+  async function loadMoreTradeCycles() {
+    if (!nextActiveTradeCycles) return;
+
+    setLoadingMore(true);
+    try {
+      // Extract the URL path after the domain
+      const url = new URL(nextActiveTradeCycles);
+      const path = url.pathname + url.search;
+
+      const res = await authFetch(path.replace('/api/', ''));
+      if (res.ok) {
+        const data = await res.json();
+        setActiveTradeCycles(prev => [...prev, ...data.results]);
+        setNextActiveTradeCycles(data.next);
+      }
+    } catch (error) {
+      console.error('Error loading more trade cycles:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   useEffect(() => {
     getActiveTradeCycles();
   }, []);
 
   return (
     <div className="p-4 md:px-8 min-h-screen">
-
-      {Object.values(ticks).map(t => (
-      <div key={t.instrument_token}>
-        {t.instrument_token}: {t.last_price}
-      </div>
-    ))}
 
       <MarketHeader />
       <div className="max-w-7xl mx-auto">
@@ -74,11 +80,34 @@ export default function Dashboard() {
             <p className="text-gray-600 text-lg">Loading active trade cycles...</p>
           </div>
         ) : activeTradeCycles.length > 0 ? (
-          <Slider>
-            {activeTradeCycles.map((tc) => (
-              <TradeCycleCard key={tc?.id} tradeCycle={tc} isActive={true} />
-            ))}
-          </Slider>
+          <>
+            {/* Grid Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+              {activeTradeCycles.map((tc) => (
+                <TradeCycleCard key={tc?.id} tradeCycle={tc} isActive={true} />
+              ))}
+            </div>
+
+            {/* Load More Button */}
+            {nextActiveTradeCycles && (
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={loadMoreTradeCycles}
+                  disabled={loadingMore}
+                  className="btn btn-outline btn-primary"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Load More'
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-12 bg-base-100 rounded-box border border-base-300">
             <h3 className="text-xl font-semibold mb-2">No Active Trade Cycles</h3>
