@@ -21,6 +21,7 @@ interface InstrumentSearchResult {
     name: string;
     instrument_token: number;
     lot_size: number;
+    exists: boolean;
 }
 
 export default function LegForm({ initialData, builderId, onSubmit, onCancel }: LegFormProps) {
@@ -44,19 +45,35 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
 
     const [formData, setFormData] = useState<Partial<BuilderLegCreate>>({
         strategy_builder_id: builderId,
-        leg_index: 1,
+        strike_type: 'DYNAMIC',
+        strike_step: 50,
+        atm_strike_multiplier: 0,
+        strike: 0,
         token: '',
         symbol: '',
         period: 'WEEKLY',
-        strike: 0,
         expiry: null,
         option_type: 'CE',
         action: 'BUY',
-        quantity: 0
+        // price: 0,
+        quantity: 0,
+        lot_size: 75
     });
+
+
 
     const [lotSize, setLotSize] = useState<number>(75); // Default lot size
     const [noOfLots, setNoOfLots] = useState<number>(1); // Default number of lots
+    const [instrumentData, setInstrumentData] = useState<InstrumentSearchResult | null>(null);
+    const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+
+    const calculateATMStrike = (currentPrice: number, strikeStep: number, strikeMultiplier: number = 1): number => {
+        const step = strikeStep * strikeMultiplier;
+        if (step === 0) return 0;
+        return Math.round(currentPrice / step) * step;
+    };
+
+
 
     const [validationStatus, setValidationStatus] = useState<{
         isValidating: boolean;
@@ -74,18 +91,34 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         if (initialData) {
             setFormData({
                 strategy_builder_id: builderId,
-                leg_index: initialData.leg_index,
+                strike_type: initialData.strike_type,
+                strike_step: initialData.strike_step,
+                atm_strike_multiplier: initialData.atm_strike_multiplier,
+                strike: initialData.strike,
                 token: initialData.token,
                 symbol: initialData.symbol,
                 period: initialData.period,
-                strike: initialData.strike,
                 expiry: formatDateForInput(initialData.expiry),
                 option_type: initialData.option_type,
                 action: initialData.action,
-                quantity: initialData.quantity
+                price: initialData.price,
+                quantity: initialData.quantity,
+                lot_size: initialData.lot_size
             });
+            setLotSize(initialData.lot_size);
         }
     }, [initialData, builderId]);
+
+
+    useEffect(() => {
+        const atm = calculateATMStrike(currentPrice, formData.strike_step, 1);
+        const atmNew = atm + formData.atm_strike_multiplier*formData.strike_step;
+        setFormData(prev => ({
+            ...prev,
+            strike: atmNew
+        }));
+        
+    }, [formData.strike_type, formData.atm_strike_multiplier, currentPrice]);
 
     // Validate instrument whenever relevant fields change
     useEffect(() => {
@@ -119,13 +152,17 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                 const response = await fetch(url);
                 const data = await response.json();
 
+                setInstrumentData(data);
+
                 if (data.exists) {
                     // Set lot size from API and calculate quantity
                     const apiLotSize = data.lot_size || 75;
+
                     setLotSize(apiLotSize);
 
                     setFormData(prev => ({
                         ...prev,
+                        lot_size: apiLotSize,
                         quantity: apiLotSize * noOfLots // Calculate: lot_size × no_of_lots
                     }));
 
@@ -152,18 +189,75 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                     validatedSymbol: ''
                 });
             }
-        };
-
+        }
         // Debounce validation
         const timeoutId = setTimeout(validateInstrument, 500);
         return () => clearTimeout(timeoutId);
     }, [formData.symbol, formData.expiry, formData.strike, formData.option_type, formData.period, noOfLots]);
 
+    // Fetch price when symbol changes
+
+    async function fetchTokenPrice(token: string) {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/market/quotes/?instruments=${encodeURIComponent(token)}`);
+            const data = await response.json();
+            // console.log(data);
+            return data.data[token];
+        } catch (error) {
+            console.error("Error fetching quote:", error);
+            return null;
+        }
+    }
+
+    // Fetch price when token changes
+    useEffect(() => {
+        const fetchPrice = async () => {
+            if (!formData.token) return;
+            const data = await fetchTokenPrice(formData.token);
+            setCurrentPrice(data.last_price);
+        };
+
+        const timeoutId = setTimeout(fetchPrice, 500);
+        return () => clearTimeout(timeoutId);
+    }, [formData.token]);
+
+
+    async function fetchDepthToken(){
+        const data = await fetchTokenPrice(instrumentData.instrument_token.toString());
+
+        console.log(data)
+
+        if (formData.action=="BUY"){
+            setFormData(prev => ({
+                ...prev,
+                price: data?.depth.sell[0].price
+            }));
+        } else{
+            setFormData(prev => ({
+                ...prev,
+                price: data?.depth.buy[0].price
+            }));
+        }
+    }
+
+    useEffect(() => {
+        console.log("instrumentData", "fddfdf")
+        if (instrumentData?.exists){
+            // console.log("fdfdf")
+        }
+        fetchDepthToken();
+    }, [instrumentData, formData?.action]);
+
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: name === 'leg_index' || name === 'strike' || name === 'quantity' ? parseInt(value) : value
+            [name]: name === 'strike' || name === 'quantity' || name === 'strike_step' || name === 'atm_strike_multiplier' || name === 'lot_size'
+                ? parseInt(value)
+                : name === 'price'
+                    ? parseFloat(value)
+                    : value
         }));
     };
 
@@ -184,7 +278,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         }
     };
 
-    const handleSymbolChange = (option: Option | null) => {
+    const handleSymbolChange = async (option: Option | null) => {
         if (option) {
             // Keep only the first word of the symbol
             const firstWord = option.value.split(' ')[0];
@@ -194,6 +288,22 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                 symbol: firstWord,
                 token: option.token,
             }));
+
+            // Fetch strike step for the selected symbol
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/market/get/${firstWord}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.strike_step) {
+                        setFormData(prev => ({
+                            ...prev,
+                            strike_step: data.strike_step
+                        }));
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching strike step:", error);
+            }
         }
     };
 
@@ -206,13 +316,12 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         onSubmit(formData as BuilderLegCreate);
     };
 
+
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-control">
-                    <label className="label"><span className="label-text">Leg Index</span></label>
-                    <input type="number" name="leg_index" value={formData.leg_index} onChange={handleChange} className="input input-bordered w-full" required />
-                </div>
+
 
                 {/* Symbol (Underlying) - searchable */}
                 <div className="form-control">
@@ -227,11 +336,43 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                         classNamePrefix="react-select"
                         placeholder="Search Symbol (e.g., NIFTY, BANKNIFTY)..."
                     />
-                </div>
+                    
+                    <label className="label"><span className="label-text text-xs">Token: {formData.token}, Price: {currentPrice}</span></label>
 
-                <div className="form-control">
+                </div>
+            
+                {/* <div className="form-control">
                     <label className="label"><span className="label-text">Token</span></label>
                     <input type="text" name="token" value={formData.token} className="input input-bordered w-full bg-gray-100" readOnly />
+                </div> */}
+
+                {/* <div className="form-control">
+                    <label className="label"><span className="label-text">Current Price</span></label>
+                    <input type="number" value={currentPrice !== null ? currentPrice : ''} className="input input-bordered w-full bg-gray-100" readOnly />
+                </div> */}
+
+                {/* Strike Type Selection */}
+                <div className="form-control">
+                    <label className="label"><span className="label-text">Strike Type</span></label>
+                    <select name="strike_type" value={formData.strike_type} onChange={handleChange} className="select select-bordered w-full">
+                        <option value="FIXED">FIXED</option>
+                        <option value="DYNAMIC">DYNAMIC</option>
+                    </select>
+
+                </div>
+
+                
+                <div className="form-control">
+                    <label className="label"><span className="label-text">ATM Strike Multiplier</span></label>
+                    <input type="number" name="atm_strike_multiplier" value={formData.atm_strike_multiplier} onChange={handleChange} className="input input-bordered w-full" />
+                </div>
+
+
+                <div className="form-control">
+                    <label className="label"><span className="label-text">Calculated Strike</span></label>
+                    <input type="number" name="strike" value={formData.strike} onChange={handleChange} className="input input-bordered w-full" required />
+                    <label className="label"><span className="label-text text-xs">Strike Step: {formData.strike_step}</span></label>
+
                 </div>
 
 
@@ -240,10 +381,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                     <input type="date" name="expiry" value={formData.expiry || ''} onChange={handleChange} className="input input-bordered w-full" required />
                 </div>
 
-                <div className="form-control">
-                    <label className="label"><span className="label-text">Strike</span></label>
-                    <input type="number" name="strike" value={formData.strike} onChange={handleChange} className="input input-bordered w-full" required />
-                </div>
+                
 
                 <div className="form-control">
                     <label className="label"><span className="label-text">Option Type</span></label>
@@ -262,7 +400,6 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                 </div>
 
 
-
                 <div className="form-control">
                     <label className="label"><span className="label-text">Action</span></label>
                     <select name="action" value={formData.action} onChange={handleChange} className="select select-bordered w-full">
@@ -271,7 +408,13 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                     </select>
                 </div>
 
+                
                 <div className="form-control">
+                    <label className="label"><span className="label-text">Price (₹)</span></label>
+                    <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} className="input input-bordered w-full" />
+                </div>
+
+                {/* <div className="form-control">
                     <label className="label"><span className="label-text">Lot Size (Auto-filled)</span></label>
                     <input
                         type="number"
@@ -279,7 +422,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                         className="input input-bordered w-full bg-gray-100"
                         readOnly
                     />
-                </div>
+                </div> */}
 
                 <div className="form-control">
                     <label className="label"><span className="label-text">Number of Lots</span></label>
@@ -292,15 +435,18 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                             // Recalculate quantity: lot_size × no_of_lots
                             setFormData(prev => ({
                                 ...prev,
+                                lot_size: lotSize,
                                 quantity: lotSize * newNoOfLots
                             }));
                         }}
                         className="input input-bordered w-full"
                         min="1"
                     />
+
+                    <label className="label"><span className="label-text text-xs">Lot Size: {lotSize}, Quantity: {formData.quantity}</span></label>
                 </div>
 
-                <div className="form-control">
+                {/* <div className="form-control">
                     <label className="label"><span className="label-text">Quantity (Lot Size × No. of Lots)</span></label>
                     <input
                         type="number"
@@ -309,7 +455,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                         className="input input-bordered w-full bg-gray-100"
                         readOnly
                     />
-                </div>
+                </div> */}
             </div>
 
             {/* Validation Status */}

@@ -12,8 +12,6 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         name: '',
         exchange: 'NFO',
         status: 'CHECKING',
-        strike_step: 50,
-        strike_multiplier: 1,
         entry_ws: 0,
         exit_ws: 0,
         entry_condition: 'LESS',
@@ -27,8 +25,6 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 name: initialData.name,
                 exchange: initialData.exchange,
                 status: initialData.status,
-                strike_step: initialData.strike_step,
-                strike_multiplier: initialData.strike_multiplier,
                 entry_ws: initialData.entry_ws,
                 exit_ws: initialData.exit_ws,
                 entry_condition: initialData.entry_condition,
@@ -77,14 +73,14 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         <option value="INACTIVE">INACTIVE</option>
                     </select>
                 </div>
-                <div className="form-control">
+                {/* <div className="form-control">
                     <label className="label"><span className="label-text">Strike Step</span></label>
                     <input type="number" name="strike_step" value={formData.strike_step} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Strike Multiplier</span></label>
                     <input type="number" name="strike_multiplier" value={formData.strike_multiplier} onChange={handleChange} className="input input-bordered w-full" />
-                </div>
+                </div> */}
                 <div className="form-control">
                     <label className="label"><span className="label-text">Entry WS (%)</span></label>
                     <input type="number" step="0.01" name="entry_ws" value={formData.entry_ws} onChange={handleChange} className="input input-bordered w-full" />

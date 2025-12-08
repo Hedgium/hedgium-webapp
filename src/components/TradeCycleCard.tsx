@@ -108,7 +108,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
         </div>
 
         {isLocked && < >
-          <div className="bg-base-100 p-6 text-center max-w-sm mx-4">
+          <div className="bg-base-100 p-6 text-center mx-4">
             <Lock className="w-12 h-12 mx-auto mb-3 text-gray-400" />
             <h3 className="text-lg font-semibold mb-2">Strategy Locked</h3>
             <p className="text-sm text-base-content/70 mb-4">

@@ -45,7 +45,6 @@ export default function BuilderItem({
                     </h3>
                     <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-400">
                         <span>Exch: <span className="">{builder?.exchange}</span></span>
-                        <span>Strike Step: <span className="">{builder?.strike_step}</span></span>
                         <span>Entry WS: <span className="">{builder?.entry_ws}%</span></span>
                         <span>Exit WS: <span className="">{builder?.exit_ws}%</span></span>
                         <span>Calc WS: <span className="">{builder?.calculated_ws}%, at {formatDateTimeMinutes(builder?.updated_at)}</span></span>

@@ -7,14 +7,19 @@ export interface StrategyTemplate {
 export interface BuilderLeg {
     id: number;
     leg_index: number;
+    strike_type: string;
+    strike_step: number;
+    atm_strike_multiplier: number;
+    strike: number;
     token: string;
     symbol: string;
     period: string;
-    strike: number;
     expiry: string | null;
     option_type: string;
     action: string;
+    price: number;
     quantity: number;
+    lot_size: number;
 }
 
 export interface StrategyBuilder {
@@ -63,26 +68,36 @@ export interface StrategyBuilderUpdate {
 export interface BuilderLegCreate {
     strategy_builder_id: number;
     leg_index: number;
+    strike_type: string;
+    strike_step: number;
+    atm_strike_multiplier: number;
+    strike: number;
     token: string;
     symbol: string;
     period: string;
-    strike: number;
     expiry?: string | null;
     option_type: string;
     action: string;
+    price: number;
     quantity: number;
+    lot_size: number;
 }
 
 export interface BuilderLegUpdate {
     leg_index?: number;
+    strike_type?: string;
+    strike_step?: number;
+    atm_strike_multiplier?: number;
+    strike?: number;
     token?: string;
     symbol?: string;
     period?: string;
-    strike?: number;
     expiry?: string | null;
     option_type?: string;
     action?: string;
+    price?: number;
     quantity?: number;
+    lot_size?: number;
 }
 
 export interface StrategyBuilderResponse {
