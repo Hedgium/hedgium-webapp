@@ -47,14 +47,14 @@ export default function BuilderLegItem({ leg, onEdit, onDelete }: BuilderLegItem
             <div className="flex items-center space-x-2 ml-4">
                 <button
                     onClick={() => onEdit(leg)}
-                    className="p-1.5 hover:bg-base-300 rounded-full transition-colors text-blue-400"
+                    className="p-1.5 cursor-pointer hover:bg-base-300 rounded-full transition-colors text-blue-400"
                     title="Edit Leg"
                 >
                     <Edit2 size={16} />
                 </button>
                 <button
                     onClick={() => onDelete(leg.id)}
-                    className="p-1.5 hover:bg-base-300 rounded-full transition-colors text-red-400"
+                    className="p-1.5 cursor-pointer hover:bg-base-300 rounded-full transition-colors text-red-400"
                     title="Delete Leg"
                 >
                     <Trash2 size={16} />

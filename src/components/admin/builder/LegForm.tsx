@@ -42,6 +42,14 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         const day = date.getDate().toString().padStart(2, '0');
         return `${year} ${month} ${day}`;
     };
+    const formatDateDisplay = (dateString: string | null | undefined): string => {
+        if (!dateString) return '';
+        const parts = dateString.split('-');
+        if (parts.length !== 3) return dateString;
+        return `${parts[2]}-${parts[1]}-${parts[0].slice(-2)}`;
+    }
+
+    const [expiryInputType, setExpiryInputType] = useState<string>('text');
 
     const [formData, setFormData] = useState<Partial<BuilderLegCreate>>({
         strategy_builder_id: builderId,
@@ -112,12 +120,12 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
 
     useEffect(() => {
         const atm = calculateATMStrike(currentPrice, formData.strike_step, 1);
-        const atmNew = atm + formData.atm_strike_multiplier*formData.strike_step;
+        const atmNew = atm + formData.atm_strike_multiplier * formData.strike_step;
         setFormData(prev => ({
             ...prev,
             strike: atmNew
         }));
-        
+
     }, [formData.strike_type, formData.atm_strike_multiplier, currentPrice]);
 
     // Validate instrument whenever relevant fields change
@@ -201,7 +209,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/market/quotes/?instruments=${encodeURIComponent(token)}`);
             const data = await response.json();
-            // console.log(data);
+            console.log(data);
             return data.data[token];
         } catch (error) {
             console.error("Error fetching quote:", error);
@@ -222,17 +230,17 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
     }, [formData.token]);
 
 
-    async function fetchDepthToken(){
+    async function fetchDepthToken() {
         const data = await fetchTokenPrice(instrumentData.instrument_token.toString());
 
         console.log(data)
 
-        if (formData.action=="BUY"){
+        if (formData.action == "BUY") {
             setFormData(prev => ({
                 ...prev,
                 price: data?.depth.sell[0].price
             }));
-        } else{
+        } else {
             setFormData(prev => ({
                 ...prev,
                 price: data?.depth.buy[0].price
@@ -242,7 +250,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
 
     useEffect(() => {
         console.log("instrumentData", "fddfdf")
-        if (instrumentData?.exists){
+        if (instrumentData?.exists) {
             // console.log("fdfdf")
         }
         fetchDepthToken();
@@ -336,11 +344,11 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                         classNamePrefix="react-select"
                         placeholder="Search Symbol (e.g., NIFTY, BANKNIFTY)..."
                     />
-                    
+
                     <label className="label"><span className="label-text text-xs">Token: {formData.token}, Price: {currentPrice}</span></label>
 
                 </div>
-            
+
                 {/* <div className="form-control">
                     <label className="label"><span className="label-text">Token</span></label>
                     <input type="text" name="token" value={formData.token} className="input input-bordered w-full bg-gray-100" readOnly />
@@ -361,7 +369,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
 
                 </div>
 
-                
+
                 <div className="form-control">
                     <label className="label"><span className="label-text">ATM Strike Multiplier</span></label>
                     <input type="number" name="atm_strike_multiplier" value={formData.atm_strike_multiplier} onChange={handleChange} className="input input-bordered w-full" />
@@ -378,10 +386,20 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
 
                 <div className="form-control">
                     <label className="label"><span className="label-text">Expiry</span></label>
-                    <input type="date" name="expiry" value={formData.expiry || ''} onChange={handleChange} className="input input-bordered w-full" required />
+                    <input
+                        type={expiryInputType}
+                        name="expiry"
+                        value={expiryInputType === 'date' ? (formData.expiry || '') : formatDateDisplay(formData.expiry)}
+                        onChange={handleChange}
+                        onFocus={() => setExpiryInputType('date')}
+                        onBlur={() => setExpiryInputType('text')}
+                        placeholder="DD-MM-YY"
+                        className="input input-bordered w-full"
+                        required
+                    />
                 </div>
 
-                
+
 
                 <div className="form-control">
                     <label className="label"><span className="label-text">Option Type</span></label>
@@ -408,7 +426,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                     </select>
                 </div>
 
-                
+
                 <div className="form-control">
                     <label className="label"><span className="label-text">Price (₹)</span></label>
                     <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} className="input input-bordered w-full" />

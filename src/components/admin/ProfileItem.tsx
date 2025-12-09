@@ -32,6 +32,13 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
     const [loadingPositions, setLoadingPositions] = useState(false);
     const [showPositionsModal, setShowPositionsModal] = useState(false);
     const [livePositions, setLivePositions] = useState<LivePositionsData | null>(null);
+
+    // Shoonya Login State
+    const [isShoonyaLoginModalOpen, setIsShoonyaLoginModalOpen] = useState(false);
+    const [shoonyaPassword, setShoonyaPassword] = useState("");
+    const [isLoggingInShoonya, setIsLoggingInShoonya] = useState(false);
+    const [brokerLoggedIn, setBrokerLoggedIn] = useState(profile.broker_logged_in);
+
     const alert = useAlert();
 
     const handleRefreshMargin = async () => {
@@ -40,7 +47,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
             // Assuming endpoint structure, can be adjusted
             const response = await authFetch(`profiles/refresh-margin/${profile.id}/`);
             const data = await response.json();
-            console.log(data);
+            // console.log(data);
             setEquityMargin(data.margin_equity);
             alert.success("Margin equity updated successfully");
             // alert('Margin refresh initiated'); // Simple feedback for now
@@ -100,6 +107,48 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
         }
     };
 
+
+    const handleShoonyaLogin = async () => {
+        if (!shoonyaPassword) {
+            alert.error("Please enter a password");
+            return;
+        }
+
+        setIsLoggingInShoonya(true);
+        try {
+            const response = await authFetch("users/shoonya-login/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    "profile_id": String(profile.id),
+                    "pwd": shoonyaPassword
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.status === "success") {
+                alert.success("Shoonya login successful");
+                setIsShoonyaLoginModalOpen(false);
+                setShoonyaPassword("");
+                setBrokerLoggedIn(true);                // Optionally trigger a refresh or update local state to show logged in
+                // For now, we might need to reload or notify parent. 
+                // A full refresh might be needed to update the 'broker_logged_in' status if it comes from backend
+                // window.location.reload()
+            } else {
+                alert.error(`Login failed: ${data.message || JSON.stringify(data)}`);
+            }
+
+        } catch (error) {
+            console.error("Shoonya login error:", error);
+            alert.error("An error occurred during login");
+        } finally {
+            setIsLoggingInShoonya(false);
+        }
+    };
+
     return (
         <div className="bg-base-100 rounded-lg p-4 mb-4 border border-base-300">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -112,20 +161,32 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                 <div>
                     <p className="text-gray-400 text-sm">Broker</p>
                     <p className="font-medium">{profile.broker_name}</p>
-                    <p className="text-xs text-gray-500">{profile.broker_user_id}</p>
+                    <p className="text-xs text-gray-500">HID:{profile.id}, BROKER ID:{profile.broker_user_id}</p>
 
-                    {profile.broker_logged_in ? (
+                    {brokerLoggedIn ? (
                         <span className="ml-auto text-xs text-green-400 flex items-center">
                             ✓ Broker Logged In
                         </span>
                     ) : (
-                        <button
-                            onClick={handleSendLoginReminder}
-                            disabled={sendingReminder}
-                            className="btn btn-secondary btn-xs"
-                        >
-                            {sendingReminder ? 'Sending...' : 'Send Login Reminder'}
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleSendLoginReminder}
+                                disabled={sendingReminder}
+                                className="btn btn-secondary btn-xs"
+                            >
+                                {sendingReminder ? 'Sending...' : 'Send Login Reminder'}
+                            </button>
+
+                            {profile.broker_name === "SHOONYA" && (
+                                <button
+                                    onClick={() => setIsShoonyaLoginModalOpen(true)}
+                                    className="btn btn-primary btn-xs"
+                                >
+                                    Login
+                                </button>
+                            )}
+                        </div>
+
                     )}
 
                 </div>
@@ -133,7 +194,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                     <p className="text-gray-400 text-sm">Margin Equity</p>
                     <p className="font-medium">₹{equityMargin.toLocaleString()}</p>
                     <div className="flex space-x-2 mt-1">
-                        {profile.broker_logged_in && <button
+                        {brokerLoggedIn && <button
                             onClick={handleRefreshMargin}
                             disabled={refreshing}
                             className={`btn btn-ghost btn-xs ${refreshing ? "animate-spin" : ""}`}
@@ -141,7 +202,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                         >
                             <RotateCw size={16} />
                         </button>}
-                        {profile.broker_logged_in && <button
+                        {brokerLoggedIn && <button
                             onClick={handleViewLivePositions}
                             disabled={loadingPositions}
                             className="btn btn-ghost btn-xs text-green-400"
@@ -219,10 +280,10 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                                                 <td>{position.quantity}</td>
                                                 <td>₹{position.average_price?.toFixed(2)}</td>
                                                 <td>₹{position.last_price?.toFixed(2)}</td>
-                                                <td className={position.pnl >= 0 ? 'text-green-400' : 'text-red-400'}>
+                                                <td className={position.pnl && position.pnl >= 0 ? 'text-green-400' : 'text-red-400'}>
                                                     ₹{position.pnl?.toFixed(2)}
                                                 </td>
-                                                <td className={position.day_pnl >= 0 ? 'text-green-400' : 'text-red-400'}>
+                                                <td className={position.day_pnl && position.day_pnl >= 0 ? 'text-green-400' : 'text-red-400'}>
                                                     ₹{position.day_pnl?.toFixed(2)}
                                                 </td>
                                             </tr>
@@ -236,6 +297,47 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                     </div>
                 </div>
             )}
+
+            {/* Shoonya Login Modal */}
+            {isShoonyaLoginModalOpen && (
+                <div className="modal modal-open">
+                    <div className="modal-box">
+                        <h3 className="font-bold text-lg mb-4">Login to Shoonya</h3>
+                        <div className="form-control w-full">
+                            <label className="label">
+                                <span className="label-text">Password</span>
+                            </label>
+                            <input
+                                type="password"
+                                placeholder="Enter Shoonya Password"
+                                className="input input-bordered w-full"
+                                value={shoonyaPassword}
+                                onChange={(e) => setShoonyaPassword(e.target.value)}
+                            />
+                        </div>
+                        <div className="modal-action">
+                            <button
+                                className="btn"
+                                onClick={() => {
+                                    setIsShoonyaLoginModalOpen(false);
+                                    setShoonyaPassword("");
+                                }}
+                                disabled={isLoggingInShoonya}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleShoonyaLogin}
+                                disabled={isLoggingInShoonya}
+                            >
+                                {isLoggingInShoonya ? <span className="loading loading-spinner"></span> : "Login"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
+
 }
