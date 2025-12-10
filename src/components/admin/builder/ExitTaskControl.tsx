@@ -1,42 +1,65 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { authFetch } from "@/utils/api";
+import { useEffect, useState } from "react";
 import useAlert from "@/hooks/useAlert";
+import { authFetch } from "@/utils/api";
+
+type TaskState = {
+    is_running: boolean;
+    task_id: string | null;
+    status?: string | null;
+};
+
+const TASK_NAME = "builder.run_strategy_exit";
 
 export default function ExitTaskControl() {
-    const [taskStatus, setTaskStatus] = useState<{ is_running: boolean; task_id: string | null }>({
+    const [taskStatus, setTaskStatus] = useState<TaskState>({
         is_running: false,
-        task_id: null
+        task_id: null,
+        status: null
     });
     const [taskLoading, setTaskLoading] = useState(false);
     const alert = useAlert();
 
     const fetchTaskStatus = async () => {
         try {
-            const response = await authFetch('builder/exit-task/status/');
+            const response = await authFetch("tasks/running");
             const data = await response.json();
-            setTaskStatus(data);
+
+            const runningStatuses = ["PENDING", "STARTED", "RETRY", "RECEIVED"];
+            const exitTask = (data as any[]).find(
+                (t) => t.name === TASK_NAME && runningStatuses.includes(t.status)
+            );
+
+            setTaskStatus({
+                is_running: !!exitTask,
+                task_id: exitTask?.task_id ?? null,
+                status: exitTask?.status ?? null
+            });
         } catch (error) {
-            console.error('Error fetching exit task status:', error);
+            console.error("Error fetching exit task status:", error);
         }
     };
 
     const handleStartTask = async () => {
         setTaskLoading(true);
         try {
-            const response = await authFetch('builder/exit-task/start/', { method: 'POST' });
+            const response = await authFetch("tasks/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ task_name: TASK_NAME })
+            });
             const data = await response.json();
 
-            if (data.status === 'started' || data.status === 'already_running') {
-                alert.success(data.message || 'Exit task started');
+            if (response.ok) {
+                alert.success(data.message || "Exit task started");
                 await fetchTaskStatus();
             } else {
-                alert.error(data.message || 'Failed to start exit task');
+                alert.error(data.message || "Failed to start exit task");
             }
         } catch (error) {
-            console.error('Error starting exit task:', error);
-            alert.error('Failed to start exit task');
+            console.error("Error starting exit task:", error);
+            alert.error("Failed to start exit task");
         } finally {
             setTaskLoading(false);
         }
@@ -45,18 +68,26 @@ export default function ExitTaskControl() {
     const handleStopTask = async () => {
         setTaskLoading(true);
         try {
-            const response = await authFetch('builder/exit-task/stop/', { method: 'POST' });
+            // Ensure we have the latest task id before stopping
+            await fetchTaskStatus();
+            const activeTaskId = taskStatus.task_id;
+
+            const response = await authFetch("tasks/stop", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ task_id: activeTaskId, terminate: false })
+            });
             const data = await response.json();
 
-            if (data.status === 'stopping' || data.status === 'not_running') {
-                alert.success(data.message || 'Exit task stopped');
+            if (response.ok) {
+                alert.success(data.message || "Exit task stopped");
                 await fetchTaskStatus();
             } else {
-                alert.error(data.message || 'Failed to stop exit task');
+                alert.error(data.message || "Failed to stop exit task");
             }
         } catch (error) {
-            console.error('Error stopping exit task:', error);
-            alert.error('Failed to stop exit task');
+            console.error("Error stopping exit task:", error);
+            alert.error("Failed to stop exit task");
         } finally {
             setTaskLoading(false);
         }
@@ -76,9 +107,13 @@ export default function ExitTaskControl() {
                 <div className="flex items-center gap-4">
                     <h2 className="text-lg font-semibold">Exit Task</h2>
                     <div className="flex items-center gap-2">
-                        <div className={`badge ${taskStatus.is_running ? 'badge-success' : 'badge-error'} gap-2`}>
-                            <div className={`w-2 h-2 rounded-full ${taskStatus.is_running ? 'bg-green-300 animate-pulse' : 'bg-red-300'}`}></div>
-                            {taskStatus.is_running ? 'Running' : 'Stopped'}
+                        <div className={`badge ${taskStatus.is_running ? "badge-success" : "badge-error"} gap-2`}>
+                            <div
+                                className={`w-2 h-2 rounded-full ${
+                                    taskStatus.is_running ? "bg-green-300 animate-pulse" : "bg-red-300"
+                                }`}
+                            ></div>
+                            {taskStatus.is_running ? "Running" : "Stopped"}
                         </div>
                         {taskStatus.task_id && (
                             <span className="text-xs opacity-60">
@@ -93,14 +128,14 @@ export default function ExitTaskControl() {
                         disabled={taskStatus.is_running || taskLoading}
                         className="btn btn-success btn-sm"
                     >
-                        {taskLoading ? <span className="loading loading-spinner loading-xs"></span> : 'Start'}
+                        {taskLoading ? <span className="loading loading-spinner loading-xs"></span> : "Start"}
                     </button>
                     <button
                         onClick={handleStopTask}
                         disabled={!taskStatus.is_running || taskLoading}
                         className="btn btn-error btn-sm"
                     >
-                        {taskLoading ? <span className="loading loading-spinner loading-xs"></span> : 'Stop'}
+                        {taskLoading ? <span className="loading loading-spinner loading-xs"></span> : "Stop"}
                     </button>
                 </div>
             </div>
