@@ -3,24 +3,19 @@ import { authFetch } from "@/utils/api";
 import Link from "next/link";
 import React from "react";
 
-interface Leg {
-  leg_index: number;
-  action: string;
-  quantity: number;
-  instrument: string;
-  price?: number | null;
-}
-
-interface Adjustment {
-  version: number;
-  approved: boolean;
-  legs: Leg[];
+interface Version {
+  version: number,
+  approved: boolean,
 }
 
 interface Strategy {
   id: number;
   name: string;
-  versions: Adjustment[];
+  adjustment_count: number;
+  trade_cycle_count: number;
+  leg_count: number;
+  total_pnl: number | null;
+  versions: Version[]
 }
 
 // ---- SAMPLE DATA ----
@@ -117,8 +112,11 @@ export default function Page() {
             <tr>
               <th>ID</th>
               <th>Name</th>
-              <th>Legs</th>
-              <th></th>
+              <th>Allocated</th>
+              <th>Total Adjustments</th>
+              <th>Total Legs</th>
+              <th>Total PnL</th>
+              <th>Action</th>
             </tr>
           </thead>
 
@@ -134,14 +132,15 @@ export default function Page() {
                 <tr key={strategy.id}>
                   <td>{strategy.id}</td>
                   <td className="font-semibold">{strategy.name}</td>
-
+                  <td>{strategy.trade_cycle_count}</td>
                   <td>
-                    {strategy.versions.length > 0 ? (
-                      strategy.versions.map((adj, i) => (
+                    {/* {strategy.adjustment_count ?? 0} */}
+
+
+                      {strategy.versions.map((adj, i) => 
                         <div key={i} className="mb-3 pb-2">
-                          <div className="flex items-center gap-2">
                             <span className="font-semibold">
-                              Adjustment {adj.version}
+                              v{adj.version}_
                             </span>
                             <span
                               className={`badge ${adj.approved ? "badge-success" : "badge-error"
@@ -149,26 +148,13 @@ export default function Page() {
                             >
                               {adj.approved ? "Approved" : "Not Approved"}
                             </span>
-                          </div>
-
-                          <div className="ml-3 mt-1 text-sm">
-                            {adj.legs.length > 0 ? (
-                              adj.legs.map((leg, j) => (
-                                <div key={j}>
-                                  {leg.leg_index}: {leg.action} {leg.quantity}{" "}
-                                  {leg.instrument} @{" "}
-                                  {leg.price ? leg.price : "MKT"}
-                                </div>
-                              ))
-                            ) : (
-                              <div>No legs</div>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-sm opacity-70">No adjustments</div>
-                    )}
+                        </div>)}
+                  </td>
+                  <td>{strategy.leg_count ?? 0}</td>
+                  <td>
+                    {strategy.total_pnl !== null
+                      ? Number(strategy.total_pnl).toFixed(2)
+                      : "—"}
                   </td>
 
                   <td>

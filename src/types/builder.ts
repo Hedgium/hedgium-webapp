@@ -38,6 +38,7 @@ export interface StrategyBuilder {
     exit_pnl: number;
     strategy_template: StrategyTemplate;
     builder_legs: BuilderLeg[];
+    supergroup_ids: number[];
 }
 
 export interface StrategyBuilderCreate {

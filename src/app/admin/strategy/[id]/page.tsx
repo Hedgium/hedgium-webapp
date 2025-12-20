@@ -70,16 +70,43 @@ export default function StrategyDetail() {
         {`← Back`}
       </Link>
       {/* HEADER */}
-      <div>
-        <h3 className="text-3xl font-bold">{strategy.name}</h3>
-        <p className="mt-1 opacity-80">{strategy.description}</p>
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-3xl font-bold">{strategy.name}</h3>
+          <p className="mt-1 opacity-80">{strategy.description}</p>
 
-        <p className="text-sm mt-2">
-          <b>Valid:</b> {strategy.validity_start} → {strategy.validity_end}
-        </p>
-        {strategy.source && (
-          <p className="text-sm opacity-70">Source: {strategy.source}</p>
-        )}
+          <p className="text-sm mt-2">
+            <b>Valid:</b> {strategy.validity_start} → {strategy.validity_end}
+          </p>
+          {strategy.source && (
+            <p className="text-sm opacity-70">Source: {strategy.source}</p>
+          )}
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border border-base-200">
+          <table className="table table-sm">
+            <thead>
+              <tr className="bg-base-200">
+                <th>Adjustments</th>
+                <th>Legs</th>
+                <th>Trade Cycles</th>
+                <th>Total PnL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{strategy.adjustment_count ?? 0}</td>
+                <td>{strategy.leg_count ?? 0}</td>
+                <td>{strategy.trade_cycle_count ?? 0}</td>
+                <td>
+                  {strategy.total_pnl !== null && strategy.total_pnl !== undefined
+                    ? Number(strategy.total_pnl).toFixed(2)
+                    : "—"}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <hr className="border-base-300" />

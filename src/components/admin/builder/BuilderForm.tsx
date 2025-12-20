@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { StrategyBuilder, StrategyBuilderCreate, StrategyBuilderUpdate } from '@/types/builder';
+import { authFetch } from '@/utils/api';
+
+interface SuperGroup {
+    id: number;
+    name: string;
+    description?: string;
+    plan_id?: number;
+    risk_profile?: string;
+}
 
 interface BuilderFormProps {
     initialData?: StrategyBuilder;
@@ -16,8 +25,11 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         exit_ws: 0,
         entry_condition: 'LESS',
         exit_pnl: 0,
-        strategy_template_id: 1 // Default or fetch from API
+        strategy_template_id: 1, // Default or fetch from API
+        supergroup_ids: []
     });
+    const [supergroups, setSupergroups] = useState<SuperGroup[]>([]);
+    const [loadingSupergroups, setLoadingSupergroups] = useState(false);
 
     useEffect(() => {
         if (initialData) {
@@ -29,10 +41,31 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 exit_ws: initialData.exit_ws,
                 entry_condition: initialData.entry_condition,
                 exit_pnl: initialData.exit_pnl,
-                strategy_template_id: initialData.strategy_template?.id || 1 // Assuming ID is available or default
+                strategy_template_id: initialData.strategy_template?.id || 1, // Assuming ID is available or default
+                supergroup_ids: initialData.supergroup_ids || []
             });
         }
     }, [initialData]);
+
+    useEffect(() => {
+        const fetchSupergroups = async () => {
+            setLoadingSupergroups(true);
+            try {
+                const response = await authFetch('subscriptions/supergroups/', {
+                    method: 'GET',
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setSupergroups(data.results || []);
+                }
+            } catch (error) {
+                console.error('Error fetching supergroups:', error);
+            } finally {
+                setLoadingSupergroups(false);
+            }
+        };
+        fetchSupergroups();
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -40,6 +73,14 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             ...prev,
             [name]: name === 'strike_step' || name === 'strike_multiplier' || name === 'strategy_template_id' ? parseInt(value) :
                 name === 'entry_ws' || name === 'exit_ws' ? parseFloat(value) : value
+        }));
+    };
+
+    const handleSupergroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedOptions = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+        setFormData(prev => ({
+            ...prev,
+            supergroup_ids: selectedOptions
         }));
     };
 
@@ -100,6 +141,27 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 <div className="form-control">
                     <label className="label"><span className="label-text">Exit PnL (₹)</span></label>
                     <input type="number" step="0.01" name="exit_pnl" value={formData.exit_pnl} onChange={handleChange} className="input input-bordered w-full" />
+                </div>
+
+                <div className="form-control md:col-span-2">
+                    <label className="label"><span className="label-text">Supergroups</span></label>
+                    <select 
+                        name="supergroup_ids" 
+                        multiple
+                        value={formData.supergroup_ids?.map(id => id.toString()) || []} 
+                        onChange={handleSupergroupChange} 
+                        className="select select-bordered w-full h-32"
+                        disabled={loadingSupergroups}
+                    >
+                        {supergroups.map(sg => (
+                            <option key={sg.id} value={sg.id.toString()}>
+                                {sg.name} {sg.risk_profile ? `(${sg.risk_profile})` : ''}
+                            </option>
+                        ))}
+                    </select>
+                    <label className="label">
+                        <span className="label-text-alt">Hold Ctrl/Cmd to select multiple supergroups</span>
+                    </label>
                 </div>
 
                 {/* Hidden or default for now as we don't have template selection UI yet */}

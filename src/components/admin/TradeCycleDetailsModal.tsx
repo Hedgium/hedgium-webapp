@@ -202,81 +202,42 @@ export default function TradeCycleDetailsModal({
                             {data.positions.length === 0 ? (
                                 <div className="text-center py-8 opacity-60">No positions found</div>
                             ) : (
-                                <div className="space-y-4">
-                                    {data.positions.map((position) => (
-                                        <div key={position.id} className="border border-base-300 rounded-lg p-4">
-                                            {/* Position Header */}
-                                            <div className="flex items-center justify-between mb-3">
-                                                <div>
-                                                    <h5 className="font-semibold text-lg">{position.instrument}</h5>
-                                                    <div className="text-sm opacity-70">
-                                                        Qty: {position.quantity} (Buy: {position.buy_quantity}, Sell: {position.sell_quantity})
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className={`text-xl font-bold ${getPnLColor(position.pnl)}`}>
-                                                        ₹{position.pnl.toFixed(2)}
-                                                    </div>
-                                                    <div className="text-xs opacity-70">
-                                                        Unrealised: ₹{position.unrealised.toFixed(2)}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Position Details */}
-                                            <div className="grid grid-cols-2 gap-2 text-sm mb-3 bg-base-200 rounded p-2">
-                                                <div>
-                                                    <span className="opacity-70">Avg Buy:</span> ₹{position.average_buy_price.toFixed(2)}
-                                                </div>
-                                                <div>
-                                                    <span className="opacity-70">Avg Sell:</span> ₹{position.average_sell_price.toFixed(2)}
-                                                </div>
-                                                <div className="col-span-2">
-                                                    <span className="opacity-70">Realised Total:</span> ₹{position.realised_total.toFixed(2)}
-                                                </div>
-                                            </div>
-
-                                            {/* Orders for this Position */}
-                                            {position.orders.length > 0 && (
-                                                <div>
-                                                    <h6 className="font-semibold text-sm mb-2 opacity-80">Orders ({position.orders.length})</h6>
-                                                    <div className="overflow-x-auto">
-                                                        <table className="table table-xs">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Action</th>
-                                                                    <th>Qty</th>
-                                                                    <th>Price</th>
-                                                                    <th>Type</th>
-                                                                    <th>Status</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {position.orders.map((order) => (
-                                                                    <tr key={order.id}>
-                                                                        <td>
-                                                                            <span className={order.action === "BUY" ? "text-green-500" : "text-red-500"}>
-                                                                                {order.action}
-                                                                            </span>
-                                                                        </td>
-                                                                        <td>{order.quantity}</td>
-                                                                        <td>{order.price ? `₹${order.price.toFixed(2)}` : "Market"}</td>
-                                                                        <td>{order.order_type}</td>
-                                                                        <td>
-                                                                            <span className={`badge badge-xs ${getStatusColor(order.status)}`}>
-                                                                                {order.status}
-                                                                            </span>
-                                                                        </td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+                                <>
+                                    <div className="overflow-x-auto mb-4 rounded-lg border border-base-300">
+                                        <table className="table table-sm">
+                                            <thead>
+                                                <tr className="bg-base-200">
+                                                    <th>Instrument</th>
+                                                    <th className="text-right">Qty (B/S)</th>
+                                                    <th className="text-right">Avg Buy</th>
+                                                    <th className="text-right">Avg Sell</th>
+                                                    <th className="text-right">Realised</th>
+                                                    <th className="text-right">Unrealised</th>
+                                                    <th className="text-right">PnL</th>
+                                                    <th className="text-right">Orders</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {data.positions.map((position) => (
+                                                    <tr key={position.id}>
+                                                        <td>{position.instrument}</td>
+                                                        <td className="text-right">
+                                                            {position.quantity} ({position.buy_quantity}/{position.sell_quantity})
+                                                        </td>
+                                                        <td className="text-right">₹{position.average_buy_price.toFixed(2)}</td>
+                                                        <td className="text-right">₹{position.average_sell_price.toFixed(2)}</td>
+                                                        <td className="text-right">₹{position.realised_total.toFixed(2)}</td>
+                                                        <td className="text-right">₹{position.unrealised.toFixed(2)}</td>
+                                                        <td className={`text-right font-semibold ${getPnLColor(position.pnl)}`}>
+                                                            ₹{position.pnl.toFixed(2)}
+                                                        </td>
+                                                        <td className="text-right">{position.orders.length}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </>
                             )}
                         </div>
 
