@@ -121,7 +121,7 @@ export default function Page() {
           </thead>
 
           <tbody>
-            {strategies.length === 0 ? (
+            {(strategies.length === 0) ? (
               <tr>
                 <td colSpan={4} className="text-center py-6">
                   No strategies available.

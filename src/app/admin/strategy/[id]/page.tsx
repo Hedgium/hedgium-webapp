@@ -42,7 +42,7 @@ export default function StrategyDetail() {
       const res = await authFetch(`myadmin/trade-cycles/${id}/?page=1&page_size=100`);
       const data = await res.json();
 
-      console.log("Fetched trade cycles data:", data);
+      // console.log("Fetched trade cycles data:", data);
       // console.log("Fetched trade cycles data:", data);
       setTradeCycles(data.results);
 
@@ -61,30 +61,30 @@ export default function StrategyDetail() {
   }, [id]);
 
 
-  if (loading) return <div className="p-6">Loading strategy details...</div>;
+  if (loading) return <div className="p-4">Loading strategy details...</div>;
 
   return (
-    <div className="p-6 space-y-10">
+    <div className="p-4 space-y-4">
 
-      <Link href="/admin/strategy" className="btn btn-ghost mb-4">
+      <Link href="/admin/strategy" className="btn btn-sm btn-outline btn-ghost mb-2">
         {`← Back`}
       </Link>
       {/* HEADER */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div>
-          <h3 className="text-3xl font-bold">{strategy.name}</h3>
-          <p className="mt-1 opacity-80">{strategy.description}</p>
+          <h3 className="text-2xl font-bold">{strategy.name}</h3>
+          <p className="mt-1 text-sm opacity-80">{strategy.description}</p>
 
-          <p className="text-sm mt-2">
+          <p className="text-xs mt-1">
             <b>Valid:</b> {strategy.validity_start} → {strategy.validity_end}
           </p>
           {strategy.source && (
-            <p className="text-sm opacity-70">Source: {strategy.source}</p>
+            <p className="text-xs opacity-70">Source: {strategy.source}</p>
           )}
         </div>
 
         <div className="overflow-x-auto rounded-lg border border-base-200">
-          <table className="table table-sm">
+          <table className="table table-xs">
             <thead>
               <tr className="bg-base-200">
                 <th>Adjustments</th>
@@ -113,7 +113,7 @@ export default function StrategyDetail() {
 
       {/* LEGS TABLE */}
       <div>
-        <h4 className="text-xl font-semibold mb-3">Strategy Adjustments</h4>
+        <h4 className="text-lg font-semibold mb-2">Strategy Adjustments</h4>
         <Adjustments adjustments={strategy.versions} />
       </div>
 
@@ -122,7 +122,7 @@ export default function StrategyDetail() {
 
       {/* TRADE CYCLES TABLE */}
       {tradeCyclesLoading ? (
-        <div>Loading trade cycles...</div>
+        <div className="text-sm">Loading trade cycles...</div>
       ) : <TradeCycles id={id} trade_cycles={trade_cycles} fetchTradeCycles={fetchTradeCycles} />}
 
     </div>
