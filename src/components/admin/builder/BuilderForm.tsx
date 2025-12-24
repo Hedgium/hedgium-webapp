@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StrategyBuilder, StrategyBuilderCreate, StrategyBuilderUpdate } from '@/types/builder';
+import { StrategyBuilder, StrategyBuilderCreate, StrategyBuilderUpdate, StrategyTemplate } from '@/types/builder';
 import { authFetch } from '@/utils/api';
 
 interface SuperGroup {
@@ -26,10 +26,13 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         entry_condition: 'LESS',
         exit_pnl: 0,
         strategy_template_id: 1, // Default or fetch from API
+        margin_required: 0,
         supergroup_ids: []
     });
     const [supergroups, setSupergroups] = useState<SuperGroup[]>([]);
     const [loadingSupergroups, setLoadingSupergroups] = useState(false);
+    const [strategyTemplates, setStrategyTemplates] = useState<StrategyTemplate[]>([]);
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
 
     useEffect(() => {
         if (initialData) {
@@ -41,11 +44,32 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 exit_ws: initialData.exit_ws,
                 entry_condition: initialData.entry_condition,
                 exit_pnl: initialData.exit_pnl,
-                strategy_template_id: initialData.strategy_template?.id || 1, // Assuming ID is available or default
+                strategy_template_id: initialData.strategy_template?.id || 1,
+                margin_required: initialData.margin_required || 0,
                 supergroup_ids: initialData.supergroup_ids || []
             });
         }
     }, [initialData]);
+
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            setLoadingTemplates(true);
+            try {
+                const response = await authFetch('strategies/templates/', {
+                    method: 'GET',
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setStrategyTemplates(data.results || []);
+                }
+            } catch (error) {
+                console.error('Error fetching templates:', error);
+            } finally {
+                setLoadingTemplates(false);
+            }
+        };
+        fetchTemplates();
+    }, []);
 
     useEffect(() => {
         const fetchSupergroups = async () => {
@@ -69,10 +93,23 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
+        
+        // Handle strategy_template_id change - auto-populate margin_required
+        if (name === 'strategy_template_id') {
+            const templateId = parseInt(value);
+            const selectedTemplate = strategyTemplates.find(t => t.id === templateId);
+            setFormData(prev => ({
+                ...prev,
+                [name]: templateId,
+                margin_required: selectedTemplate?.minimum_capital || prev.margin_required || 0
+            }));
+            return;
+        }
+        
         setFormData(prev => ({
             ...prev,
             [name]: name === 'strike_step' || name === 'strike_multiplier' || name === 'strategy_template_id' ? parseInt(value) :
-                name === 'entry_ws' || name === 'exit_ws' ? parseFloat(value) : value
+                name === 'entry_ws' || name === 'exit_ws' || name === 'margin_required' ? parseFloat(value) : value
         }));
     };
 
@@ -92,6 +129,24 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div className="form-control">
+                    <label className="label"><span className="label-text">Strategy Template</span></label>
+                    <select 
+                        name="strategy_template_id" 
+                        value={formData.strategy_template_id} 
+                        onChange={handleChange} 
+                        className="select select-bordered w-full"
+                        disabled={loadingTemplates}
+                    >
+                        {strategyTemplates.map(template => (
+                            <option key={template.id} value={template.id}>
+                                {template.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                
                 <div className="form-control">
                     <label className="label"><span className="label-text">Name</span></label>
                     <input type="text" name="name" value={formData.name} onChange={handleChange} className="input input-bordered w-full" required />
@@ -143,6 +198,23 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     <input type="number" step="0.01" name="exit_pnl" value={formData.exit_pnl} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
 
+                
+
+                <div className="form-control">
+                    <label className="label"><span className="label-text">Margin Required (₹)</span></label>
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        name="margin_required" 
+                        value={formData.margin_required || 0} 
+                        onChange={handleChange} 
+                        className="input input-bordered w-full" 
+                    />
+                    <label className="label">
+                        <span className="label-text-alt">Auto-populated from template, but editable</span>
+                    </label>
+                </div>
+
                 <div className="form-control md:col-span-2">
                     <label className="label"><span className="label-text">Supergroups</span></label>
                     <select 
@@ -164,8 +236,6 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     </label>
                 </div>
 
-                {/* Hidden or default for now as we don't have template selection UI yet */}
-                <input type="hidden" name="strategy_template_id" value={formData.strategy_template_id} />
             </div>
 
             <div className="flex justify-end space-x-2 mt-6">

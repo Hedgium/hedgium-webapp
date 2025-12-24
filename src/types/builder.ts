@@ -2,6 +2,7 @@ export interface StrategyTemplate {
     id: number;
     name: string;
     description: string;
+    minimum_capital: number;
 }
 
 export interface BuilderLeg {
@@ -36,6 +37,7 @@ export interface StrategyBuilder {
     updated_at: string;
     calculated_ws: number;
     exit_pnl: number;
+    margin_required: number;
     strategy_template: StrategyTemplate;
     builder_legs: BuilderLeg[];
     supergroup_ids: number[];
@@ -52,6 +54,8 @@ export interface StrategyBuilderCreate {
     entry_condition: string;
     exit_pnl: number;
     strategy_template_id: number;
+    margin_required?: number;
+    supergroup_ids?: number[];
 }
 
 export interface StrategyBuilderUpdate {
@@ -64,6 +68,8 @@ export interface StrategyBuilderUpdate {
     exit_ws?: number;
     entry_condition?: string;
     strategy_template_id?: number;
+    margin_required?: number;
+    supergroup_ids?: number[];
 }
 
 export interface BuilderLegCreate {

@@ -15,6 +15,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
   const [search, setSearch] = useState("");
   const [profiles, setProfiles] = useState([]); // 🔥 NEW → search results list
   const [refreshing, setRefreshing] = useState(false);
+  const [validatingCycleId, setValidatingCycleId] = useState<number | null>(null);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -116,6 +117,38 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
   function handleCloseModal() {
     setShowModal(false);
     setSelectedTradeCycleId(null);
+  }
+
+  // Validate and activate trade cycle
+  async function handleValidateAndActivate(cycleId: number) {
+    if (validatingCycleId) return; // Prevent multiple clicks
+    
+    setValidatingCycleId(cycleId);
+    try {
+      alert.info("Validating and activating trade cycle...", { duration: 3000 });
+      
+      const res = await authFetch(`myadmin/validate-and-activate-trade-cycle/${cycleId}/`, {
+        method: "POST",
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok && data.status === "success") {
+        alert.success("Validation task started! Check status shortly.", { duration: 3000 });
+        // Refresh after a short delay
+        setTimeout(() => {
+          fetchTradeCycles();
+        }, 2000);
+      } else {
+        alert.error(data.error || "Failed to trigger validation", { duration: 3000 });
+      }
+    } catch (error: any) {
+      console.error("Validation error:", error);
+      const errorMsg = error.message || "Failed to trigger validation";
+      alert.error(errorMsg, { duration: 3000 });
+    } finally {
+      setValidatingCycleId(null);
+    }
   }
 
   return (
@@ -242,14 +275,30 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                       {cycle.pnl !== null && cycle.pnl !== undefined ? `₹${cycle.pnl.toFixed(2)}` : "₹0.00"}
                     </td>
                     <td>
-                      <button
-                        onClick={() => handleShowMore(cycle.id)}
-                        className="btn btn-ghost btn-xs"
-                        title="Show More Details"
-                      >
-                        <Eye size={16} />
-                        Show More
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleShowMore(cycle.id)}
+                          className="btn btn-ghost btn-xs"
+                          title="Show More Details"
+                        >
+                          <Eye size={16} />
+                          Show More
+                        </button>
+                        {cycle.state === "LOCKED" && (
+                          <button
+                            onClick={() => handleValidateAndActivate(cycle.id)}
+                            disabled={validatingCycleId === cycle.id}
+                            className="btn btn-primary btn-xs"
+                            title="Validate and Activate"
+                          >
+                            {validatingCycleId === cycle.id ? (
+                              <span className="loading loading-spinner loading-xs"></span>
+                            ) : (
+                              "Activate"
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
