@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Loader2, TrendingUp, RotateCw } from "lucide-react";
+import { Loader2, TrendingUp, RotateCw, Briefcase } from "lucide-react";
 import { authFetch } from "@/utils/api";
 
 type PnlSummary = {
@@ -12,8 +12,17 @@ type PnlSummary = {
     today?: number;
 };
 
+type AllocationSummary = {
+    all_time?: number;
+    // last_year?: number;
+    last_month?: number;
+    last_week?: number;
+    today?: number;
+};
+
 export default function ReportsPage() {
     const [pnlSummary, setPnlSummary] = useState<PnlSummary | null>(null);
+    const [allocationSummary, setAllocationSummary] = useState<AllocationSummary | null>(null);
     const [loading, setLoading] = useState(true);
 
     // Fetch PNL summary from backend
@@ -33,6 +42,24 @@ export default function ReportsPage() {
         }
     }
 
+    // Fetch Allocation summary from backend
+    async function getAllocationSummary() {
+        try {
+            const res = await authFetch("trade-cycles/allocation-summary/");
+            if (!res.ok) throw new Error("Failed to fetch allocation summary");
+            const data = await res.json();
+            setAllocationSummary({
+                all_time: data.allocation_summary?.all_time,
+                // last_year: data.allocation_summary?.last_year,
+                last_month: data.allocation_summary?.last_month,
+                last_week: data.allocation_summary?.last_week,
+                today: data.allocation_summary?.today,
+            });
+        } catch (error) {
+            console.log("Error fetching allocation summary:", error);
+        }
+    }
+
     async function getRealtime() {
         try {
             const res = await authFetch("positions/pnl/refresh/");
@@ -46,7 +73,7 @@ export default function ReportsPage() {
     useEffect(() => {
         (async () => {
             setLoading(true);
-            await getPNLSummary();
+            await Promise.all([getPNLSummary(), getAllocationSummary()]);
             setLoading(false);
         })();
     }, []);
@@ -133,6 +160,46 @@ export default function ReportsPage() {
                                                         ? "Loss"
                                                         : "No Change"
                                                 : "No Data"}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* --- Allocation Summary Section --- */}
+                    {allocationSummary && (
+                        <section>
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-2">
+                                    <Briefcase className="w-6 h-6 text-primary" />
+                                    <h3 className="text-2xl font-semibold">Allocated Trade Cycles</h3>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {Object.entries(allocationSummary).map(([period, value]) => (
+                                    <div
+                                        key={period}
+                                        className="flex flex-col items-center p-4 bg-base-100 rounded-xl border border-base-300 shadow-sm hover:shadow-md transition-all duration-200"
+                                    >
+                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                            {period
+                                                .split("_")
+                                                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                                                .join(" ")}
+                                        </span>
+
+                                        <span className="text-2xl font-bold mb-1 text-primary">
+                                            {value !== undefined && value !== null
+                                                ? value.toLocaleString("en-IN")
+                                                : "0"}
+                                        </span>
+
+                                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-50 text-blue-700">
+                                            {value !== undefined && value !== null && value > 0
+                                                ? `${value} ${value === 1 ? "Cycle" : "Cycles"}`
+                                                : "No Cycles"}
                                         </span>
                                     </div>
                                 ))}
