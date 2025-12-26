@@ -37,8 +37,8 @@ export default function MarketHeader() {
         const res = await authFetch("trade-cycles/active-underlyings/");
         if (res.ok) {
           const data = await res.json();
-          console.log(data);
-          setActiveUnderlyings(data);
+          // console.log(data);
+          // setActiveUnderlyings(data);
         }
       } catch (error) {
         console.error("Error fetching active underlyings:", error);
