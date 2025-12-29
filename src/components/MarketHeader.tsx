@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { useTickStream } from "@/hooks/useTickStream";
 import { authFetch } from "@/utils/api";
+import MarketDataCardSkeleton from "./skeletons/MarketDataCardSkeleton";
 
 interface MarketData {
   name: string;
@@ -101,46 +102,47 @@ export default function MarketHeader() {
         ref={scrollRef}
         className="flex flex-nowrap overflow-x-auto md:flex-wrap gap-4 justify-between scrollbar-hide snap-x snap-mandatory"
       >
-        {loading && (
-          <div className="p-4 text-center w-full text-gray-500">
-            Loading instruments...
-          </div>
-        )}
-        {!loading && marketData.length === 0 && (
-          <div className="p-4 text-center w-full text-gray-500">
-            Loading market data...
-          </div>
-        )}
-
-        {marketData.map((item, index) => (
-          <div key={index} className="flex-1 min-w-[200px] snap-center">
-            <div className="bg-base-100 p-4 border border-base-300 rounded-lg">
-              <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
-              <div className="flex items-center justify-between">
-                <span className="text-xl font-bold">
-                  {item.value.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </span>
-                <div
-                  className={`flex items-center ${item.change >= 0 ? "text-success" : "text-error"
-                    }`}
-                >
-                  {item.change >= 0 ? (
-                    <TrendingUp width={18} height={18} className="mr-1" />
-                  ) : (
-                    <TrendingDown width={18} height={18} className="mr-1" />
-                  )}
-                  <span>
-                    {item.change >= 0 ? "+" : ""}
-                    {item.change.toFixed(2)} ({item.changePercent.toFixed(2)}%)
+        {loading ? (
+          <>
+            {[...Array(3)].map((_, i) => (
+              <MarketDataCardSkeleton key={i} />
+            ))}
+          </>
+        ) : marketData.length > 0 ? (
+          marketData.map((item, index) => (
+            <div key={index} className="flex-1 min-w-[200px] snap-center">
+              <div className="bg-base-100 p-4 border border-base-300 rounded-lg">
+                <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-xl font-bold">
+                    {item.value.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </span>
+                  <div
+                    className={`flex items-center ${item.change >= 0 ? "text-success" : "text-error"
+                      }`}
+                  >
+                    {item.change >= 0 ? (
+                      <TrendingUp width={18} height={18} className="mr-1" />
+                    ) : (
+                      <TrendingDown width={18} height={18} className="mr-1" />
+                    )}
+                    <span>
+                      {item.change >= 0 ? "+" : ""}
+                      {item.change.toFixed(2)} ({item.changePercent.toFixed(2)}%)
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="p-4 text-center w-full text-gray-500">
+            No market data available
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

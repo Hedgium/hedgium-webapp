@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, Target } from 'lucide-react';
 import TradeCycleCard from "@/components/TradeCycleCard";
+import TradeCycleCardSkeleton from "@/components/skeletons/TradeCycleCardSkeleton";
 import MarketHeader from '@/components/MarketHeader';
 import { authFetch } from '@/utils/api';
 
@@ -75,9 +76,10 @@ export default function Dashboard() {
 
         {/* Strategy Cards */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16 bg-base-100 rounded-lg shadow">
-            <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-            <p className="text-gray-600 text-lg">Loading active trade cycles...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <TradeCycleCardSkeleton key={i} />
+            ))}
           </div>
         ) : activeTradeCycles.length > 0 ? (
           <>

@@ -159,10 +159,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     get().fetchUser();
 
-    const keys = await get().userKeyGet();
-    if (!keys) {
-      get().userKeyCreateUpdate();
-    }
+    // const keys = await get().userKeyGet();
+    // if (!keys) {
+    //   get().userKeyCreateUpdate();
+    // }
     get().startAutoRefresh();
   },
 
@@ -230,10 +230,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isInitializing: false });
     await get().fetchUser();
 
-    const keys = await get().userKeyGet();
-    if (!keys) {
-      get().userKeyCreateUpdate();
-    }
+    // const keys = await get().userKeyGet();
+    // if (!keys) {
+    //   get().userKeyCreateUpdate();
+    // }
     
     if (ok) get().startAutoRefresh();
     
