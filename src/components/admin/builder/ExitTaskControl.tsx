@@ -10,6 +10,12 @@ type TaskState = {
     status?: string | null;
 };
 
+type TaskData = {
+    name: string;
+    task_id: string;
+    status: string;
+};
+
 const TASK_NAME = "builder.run_strategy_exit";
 
 export default function ExitTaskControl() {
@@ -27,7 +33,7 @@ export default function ExitTaskControl() {
             const data = await response.json();
 
             const runningStatuses = ["PENDING", "STARTED", "RETRY", "RECEIVED"];
-            const exitTask = (data as any[]).find(
+            const exitTask = (data as TaskData[]).find(
                 (t) => t.name === TASK_NAME && runningStatuses.includes(t.status)
             );
 

@@ -63,10 +63,13 @@ const ProfileTab: React.FC = () => {
           ? "Auto trading enabled" 
           : "Auto trading disabled"
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Auto trade toggle failed:", err);
-      setError(err?.message || "Failed to update auto trade setting.");
-      alert.error(err?.message || "Failed to update auto trade setting.");
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : "Failed to update auto trade setting.";
+      setError(errorMessage);
+      alert.error(errorMessage);
     }
   };
 

@@ -2,8 +2,8 @@
 
 // components/TradeCycleWithPositionsCard.tsx
 
-import React, { JSX, useState, useEffect } from "react";
-import { Clock, CheckCircle, XCircle, TrendingUp, TrendingDown, ChevronUp, ChevronDown, RotateCw } from "lucide-react";
+import React, { JSX, useState, useEffect, useCallback } from "react";
+import { Clock, CheckCircle, XCircle, TrendingUp, TrendingDown, RotateCw } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import TradeCyclePositionsSkeleton from "./skeletons/TradeCyclePositionsSkeleton";
@@ -49,7 +49,6 @@ interface Props {
 
 const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
   const alert = useAlert();
-  const [expanded, setExpanded] = useState(false);
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -59,7 +58,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
   const [hasMoreOrders, setHasMoreOrders] = useState(false);
   const [allLoaded, setAllLoaded] = useState(false);
 
-  async function getTradeCyclePositions(id: string, loadAll: boolean = false) {
+  const getTradeCyclePositions = useCallback(async (id: string, loadAll: boolean = false) => {
     if (loadAll) {
       setLoadingMore(true);
     } else {
@@ -84,7 +83,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }
+  }, [tradeCycle.id]);
 
   async function loadAllPositions() {
     await getTradeCyclePositions(tradeCycle.id, true);
@@ -105,9 +104,12 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
       
       // Refetch positions after refresh
       await getTradeCyclePositions(tradeCycle.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error refreshing positions:", err);
-      alert.error(err?.message || "Failed to refresh positions");
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : "Failed to refresh positions";
+      alert.error(errorMessage);
     } finally {
       setRefreshing(false);
     }
@@ -115,7 +117,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
 
   useEffect(() => {
     if (tradeCycle) getTradeCyclePositions(tradeCycle?.id);
-  }, [tradeCycle]);
+  }, [tradeCycle, getTradeCyclePositions]);
 
   const statusMap: Record<string, JSX.Element> = {
     NEW: <Clock width={14} className="text-warning" />,

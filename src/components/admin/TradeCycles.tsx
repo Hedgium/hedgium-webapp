@@ -143,9 +143,11 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
       } else {
         alert.error(data.error || "Failed to trigger validation", { duration: 3000 });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Validation error:", error);
-      const errorMsg = error.message || "Failed to trigger validation";
+      const errorMsg = error instanceof Error 
+        ? error.message 
+        : "Failed to trigger validation";
       alert.error(errorMsg, { duration: 3000 });
     } finally {
       setValidatingCycleId(null);
@@ -178,9 +180,12 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
         const data = await res.json();
         alert.error(data.detail || "Failed to update master status", { duration: 3000 });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Toggle master error:", error);
-      alert.error(error?.message || "Failed to update master status", { duration: 3000 });
+      const errorMsg = error instanceof Error 
+        ? error.message 
+        : "Failed to update master status";
+      alert.error(errorMsg, { duration: 3000 });
     } finally {
       setUpdatingMaster(null);
     }

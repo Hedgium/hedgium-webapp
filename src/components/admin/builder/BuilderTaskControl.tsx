@@ -10,6 +10,12 @@ type TaskState = {
     status?: string | null;
 };
 
+type TaskData = {
+    name: string;
+    task_id: string;
+    status: string;
+};
+
 const TASK_NAME = "builder.run_strategy_builder";
 
 export default function BuilderTaskControl() {
@@ -27,7 +33,7 @@ export default function BuilderTaskControl() {
             const data = await response.json();
 
             const runningStatuses = ["PENDING", "STARTED", "RETRY", "RECEIVED"];
-            const builderTask = (data as any[]).find(
+            const builderTask = (data as TaskData[]).find(
                 (t) => t.name === TASK_NAME && runningStatuses.includes(t.status)
             );
 
