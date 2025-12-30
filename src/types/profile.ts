@@ -31,6 +31,7 @@ export interface Profile {
     verified: boolean;
     is_active: boolean;
     kite_login_device: string;
+    auto_trade_allowed?: boolean;
     created_at: string;
     updated_at: string;
     user: User;

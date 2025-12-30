@@ -48,7 +48,11 @@ export default function BrokerLoginStatus() {
       });
     } catch (err) {
       console.error("Broker check failed:", err);
-      setBroker({ loading: false, loggedIn: false, name: null });
+      setBroker({ 
+        loading: false, 
+        loggedIn: false, 
+        name: null,
+      });
     }
   };
 
@@ -126,26 +130,23 @@ export default function BrokerLoginStatus() {
               )}
             </div>
 
-            <div>
-              {broker.margin != null && (
-                <p className="flex items-center gap-2">
-                  <span className="font-medium">Margin:</span>₹{" "}
-                  {broker.margin.toLocaleString()}
-                  <button
-                    onClick={refreshMargin}
-                    disabled={refreshing}
-                    className={`btn btn-ghost btn-xs ${refreshing ? "animate-spin" : ""}`}
-                  >
-                    <RotateCw size={16} />
-                  </button>
-                </p>
-              )}
-            </div>
+            {broker.margin != null && (
+              <p className="flex items-center gap-2">
+                <span className="font-medium">Margin:</span>₹{" "}
+                {broker.margin.toLocaleString()}
+                <button
+                  onClick={refreshMargin}
+                  disabled={refreshing}
+                  className={`btn btn-ghost btn-xs ${refreshing ? "animate-spin" : ""}`}
+                >
+                  <RotateCw size={16} />
+                </button>
+              </p>
+            )}
           </>
         )}
-
-        {error && <p className="text-error text-sm mt-1">{error}</p>}
       </div>
+      {error && <p className="text-error text-sm mt-2">{error}</p>}
     </div>
   );
 }

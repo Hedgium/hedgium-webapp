@@ -3,7 +3,10 @@
 import React, { useEffect, useState } from "react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import TradeCyclePositionsSkeleton from "@/components/skeletons/TradeCyclePositionsSkeleton";
+import LivePositionsModal, { LivePositionsData } from "@/components/LivePositionsModal";
 import { authFetch } from "@/utils/api";
+import useAlert from "@/hooks/useAlert";
+import { TrendingUp } from "lucide-react";
 
 type TradeCycle = {
   id: string;
@@ -16,8 +19,12 @@ type TradeCycle = {
 };
 
 export default function TradeCyclesPage() {
+  const alert = useAlert();
   const [tradeCycles, setTradeCycles] = useState<TradeCycle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showLivePositionsModal, setShowLivePositionsModal] = useState(false);
+  const [livePositions, setLivePositions] = useState<LivePositionsData | null>(null);
+  const [loadingLivePositions, setLoadingLivePositions] = useState(false);
 
   // Fetch trade cycles
   async function getAllTradeCycles() {
@@ -28,6 +35,28 @@ export default function TradeCyclesPage() {
       setTradeCycles(data.results);
     } catch (error) {
       console.error("Error fetching trade cycles:", error);
+    }
+  }
+
+  // Fetch live positions from broker
+  async function fetchLivePositions() {
+    setLoadingLivePositions(true);
+    try {
+      const response = await authFetch("positions/live/positions");
+      const data = await response.json();
+
+      if (data.status === "success") {
+        setLivePositions(data);
+        setShowLivePositionsModal(true);
+        alert.success("Live positions fetched successfully");
+      } else {
+        alert.error("Failed to fetch live positions");
+      }
+    } catch (error) {
+      console.error("Error fetching live positions:", error);
+      alert.error("Error fetching live positions");
+    } finally {
+      setLoadingLivePositions(false);
     }
   }
 
@@ -44,8 +73,17 @@ export default function TradeCyclesPage() {
       <div className="mx-auto space-y-12">
         {/* --- Trade Cycles Section --- */}
         <section>
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold">Strategy Positions</h2>
+            
+            <button
+              onClick={fetchLivePositions}
+              disabled={loadingLivePositions}
+              className={`btn btn-primary btn-outline btn-sm ${loadingLivePositions ? "loading" : ""}`}
+            >
+              {!loadingLivePositions && <TrendingUp size={16} className="mr-2" />}
+              Live Positions
+            </button>
           </div>
 
           {loading ? (
@@ -78,6 +116,14 @@ export default function TradeCyclesPage() {
 
       <br />
       <br />
+
+      {/* Live Positions Modal */}
+      <LivePositionsModal
+        isOpen={showLivePositionsModal}
+        onClose={() => setShowLivePositionsModal(false)}
+        positions={livePositions}
+        title="Live Positions"
+      />
     </div>
   );
 }

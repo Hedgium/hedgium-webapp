@@ -3,22 +3,7 @@ import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
 import useAlert from '@/hooks/useAlert';
 import { RotateCw, Edit2, TrendingUp } from 'lucide-react';
-
-interface Position {
-    tradingsymbol: string;
-    quantity: number;
-    average_price?: number;
-    last_price?: number;
-    pnl?: number;
-    day_pnl?: number;
-}
-
-interface LivePositionsData {
-    status: string;
-    data?: {
-        net: Position[];
-    };
-}
+import LivePositionsModal, { LivePositionsData } from '@/components/LivePositionsModal';
 
 interface ProfileItemProps {
     profile: Profile;
@@ -192,7 +177,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                 </div>
                 <div>
                     <p className="text-gray-400 text-sm">Margin Equity</p>
-                    <p className="font-medium">₹{equityMargin.toLocaleString()}</p>
+                    <p className="font-medium">₹{equityMargin?.toLocaleString()}</p>
                     <div className="flex space-x-2 mt-1">
                         {brokerLoggedIn && <button
                             onClick={handleRefreshMargin}
@@ -225,12 +210,15 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                 <div>
                     <p className="text-gray-400 text-sm">Status</p>
                     <div className="flex flex-col gap-2">
-                        <div className="flex items-center space-x-2">
-                            <span className={`px-2 py-1 rounded text-xs ${profile.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
+                        <div className="flex items-center space-x-2 flex-wrap">
+                            <span className={`px-2 my-1 py-1 rounded text-xs ${profile.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
                                 {profile.verified ? 'Verified' : 'Unverified'}
                             </span>
-                            <span className={`px-2 py-1 rounded text-xs ${profile.is_active ? 'bg-blue-900 text-blue-300' : 'bg-gray-700 text-gray-300'}`}>
+                            <span className={`px-2 my-1 py-1 rounded text-xs ${profile.is_active ? 'bg-blue-900 text-blue-300' : 'bg-gray-700 text-gray-300'}`}>
                                 {profile.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                            <span className={`px-2 my-1 py-1 rounded text-xs ${profile.auto_trade_allowed ? 'bg-purple-900 text-purple-300' : 'bg-gray-700 text-gray-300'}`}>
+                                {profile.auto_trade_allowed ? 'Auto Trade ON' : 'Auto Trade OFF'}
                             </span>
                         </div>
                         {profile.subscription && (
@@ -252,51 +240,12 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
             </div>
 
             {/* Live Positions Modal */}
-            {showPositionsModal && livePositions && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowPositionsModal(false)}>
-                    <div className="bg-base-200 rounded-lg p-6 max-w-6xl w-full max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold">Live Positions - {profile.broker_name}</h3>
-                            <button onClick={() => setShowPositionsModal(false)} className="btn btn-sm btn-circle">✕</button>
-                        </div>
-
-                        {livePositions.data?.net && livePositions.data.net.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="table table-zebra w-full">
-                                    <thead>
-                                        <tr>
-                                            <th>Instrument</th>
-                                            <th>Qty</th>
-                                            <th>Avg Price</th>
-                                            <th>LTP</th>
-                                            <th>P&L</th>
-                                            <th>Day P&L</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {livePositions.data.net.map((position: Position, index: number) => (
-                                            <tr key={index}>
-                                                <td className="font-medium">{position.tradingsymbol}</td>
-                                                <td>{position.quantity}</td>
-                                                <td>₹{position.average_price?.toFixed(2)}</td>
-                                                <td>₹{position.last_price?.toFixed(2)}</td>
-                                                <td className={position.pnl && position.pnl >= 0 ? 'text-green-400' : 'text-red-400'}>
-                                                    ₹{position.pnl?.toFixed(2)}
-                                                </td>
-                                                <td className={position.day_pnl && position.day_pnl >= 0 ? 'text-green-400' : 'text-red-400'}>
-                                                    ₹{position.day_pnl?.toFixed(2)}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <p className="text-center text-gray-400 py-8">No positions found</p>
-                        )}
-                    </div>
-                </div>
-            )}
+            <LivePositionsModal
+                isOpen={showPositionsModal}
+                onClose={() => setShowPositionsModal(false)}
+                positions={livePositions}
+                brokerName={profile.broker_name}
+            />
 
             {/* Shoonya Login Modal */}
             {isShoonyaLoginModalOpen && (

@@ -14,6 +14,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         margin_equity: 0,
         is_active: false,
         verified: false,
+        auto_trade_allowed: false,
     });
 
     useEffect(() => {
@@ -24,6 +25,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                 margin_equity: initialData.margin_equity,
                 is_active: initialData.is_active,
                 verified: initialData.verified,
+                auto_trade_allowed: initialData.auto_trade_allowed ?? false,
             });
         }
     }, [initialData]);
@@ -69,6 +71,13 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                     <label className="label cursor-pointer justify-start gap-4">
                         <span className="label-text">Verified</span>
                         <input type="checkbox" name="verified" checked={formData.verified} onChange={handleChange} className="checkbox" />
+                    </label>
+                </div>
+
+                <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-4">
+                        <span className="label-text">Auto Trade Allowed</span>
+                        <input type="checkbox" name="auto_trade_allowed" checked={formData.auto_trade_allowed ?? false} onChange={handleChange} className="checkbox checkbox-primary" />
                     </label>
                 </div>
             </div>

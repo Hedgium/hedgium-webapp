@@ -198,7 +198,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (res.ok) {
         const user: User = await res.json();
-        console.log(user);
+        // console.log(user);
         set({ user });
       } else {
         set({ user: null });
@@ -209,7 +209,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    console.log("Logout Called");
+    // console.log("Logout Called");
     get().stopAutoRefresh();
     const accessT =  get().accessToken
     set({ accessToken: null, user: null });

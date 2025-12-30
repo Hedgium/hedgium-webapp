@@ -16,6 +16,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
   const [profiles, setProfiles] = useState([]); // 🔥 NEW → search results list
   const [refreshing, setRefreshing] = useState(false);
   const [validatingCycleId, setValidatingCycleId] = useState<number | null>(null);
+  const [updatingMaster, setUpdatingMaster] = useState<number | null>(null);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -151,6 +152,40 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
     }
   }
 
+  // Toggle master trade cycle
+  async function handleToggleMaster(cycleId: number, currentValue: boolean) {
+    if (updatingMaster === cycleId) return; // Prevent multiple clicks
+    
+    setUpdatingMaster(cycleId);
+    try {
+      const res = await authFetch(`trade-cycles/${cycleId}/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ is_master: !currentValue }),
+      });
+
+      if (res.ok) {
+        alert.success(
+          !currentValue 
+            ? "Trade cycle set as master" 
+            : "Trade cycle unset as master",
+          { duration: 3000 }
+        );
+        fetchTradeCycles();
+      } else {
+        const data = await res.json();
+        alert.error(data.detail || "Failed to update master status", { duration: 3000 });
+      }
+    } catch (error: any) {
+      console.error("Toggle master error:", error);
+      alert.error(error?.message || "Failed to update master status", { duration: 3000 });
+    } finally {
+      setUpdatingMaster(null);
+    }
+  }
+
   return (
     <div>
       {/* Header */}
@@ -243,6 +278,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                 <th>Risk</th>
                 <th>Margin</th>
                 <th>State</th>
+                <th>Master</th>
                 <th>Orders</th>
                 <th>Positions</th>
                 <th>PnL</th>
@@ -269,6 +305,20 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                     <td>{cycle.profile.risk_profile}</td>
                     <td>{cycle.profile.margin_equity}</td>
                     <td>{cycle.state}</td>
+                    <td>
+                      <label className="label cursor-pointer justify-start gap-2">
+                        <input
+                          type="checkbox"
+                          className="toggle toggle-primary toggle-sm"
+                          checked={cycle.is_master || false}
+                          onChange={() => handleToggleMaster(cycle.id, cycle.is_master || false)}
+                          disabled={updatingMaster === cycle.id}
+                        />
+                        {updatingMaster === cycle.id && (
+                          <span className="loading loading-spinner loading-xs"></span>
+                        )}
+                      </label>
+                    </td>
                     <td>{cycle.no_of_orders || 0}</td>
                     <td>{cycle.no_of_positions || 0}</td>
                     <td className={cycle.pnl && cycle.pnl > 0 ? "text-green-400" : cycle.pnl && cycle.pnl < 0 ? "text-red-400" : ""}>
@@ -304,7 +354,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={11} className="text-center opacity-60">
+                  <td colSpan={12} className="text-center opacity-60">
                     No trade cycles found
                   </td>
                 </tr>

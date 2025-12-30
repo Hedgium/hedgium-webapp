@@ -3,8 +3,9 @@
 // components/TradeCycleWithPositionsCard.tsx
 
 import React, { JSX, useState, useEffect } from "react";
-import { Clock, CheckCircle, XCircle, TrendingUp, TrendingDown, ChevronUp, ChevronDown } from "lucide-react";
+import { Clock, CheckCircle, XCircle, TrendingUp, TrendingDown, ChevronUp, ChevronDown, RotateCw } from "lucide-react";
 import { authFetch } from "@/utils/api";
+import useAlert from "@/hooks/useAlert";
 import TradeCyclePositionsSkeleton from "./skeletons/TradeCyclePositionsSkeleton";
 
 
@@ -37,7 +38,7 @@ interface TradeCycle {
   id: string;
   name: string;
   description: string;
-  state: "NEW" | "PENDING" | "COMPLETED" | "STOPPED";
+  state: "NEW" | "ACTIVATED" | "ADJUSTED" | "PENDING" | "COMPLETED" | "STOPPED";
   sub_state: string;
   created_at: string;
 }
@@ -47,10 +48,12 @@ interface Props {
 }
 
 const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
+  const alert = useAlert();
   const [expanded, setExpanded] = useState(false);
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [unmappedOrders, setUnmappedOrders] = useState<UnmappedOrder[]>([])
   const [hasMorePositions, setHasMorePositions] = useState(false);
   const [hasMoreOrders, setHasMoreOrders] = useState(false);
@@ -85,6 +88,29 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
 
   async function loadAllPositions() {
     await getTradeCyclePositions(tradeCycle.id, true);
+  }
+
+  /** 🔄 Refresh positions from broker */
+  async function refreshPositions() {
+    setRefreshing(true);
+    try {
+      const res = await authFetch(`positions/pnl/refresh/${tradeCycle.id}/`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to refresh positions");
+      }
+
+      alert.success("Positions refreshed successfully");
+      
+      // Refetch positions after refresh
+      await getTradeCyclePositions(tradeCycle.id);
+    } catch (err: any) {
+      console.error("Error refreshing positions:", err);
+      alert.error(err?.message || "Failed to refresh positions");
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   useEffect(() => {
@@ -123,9 +149,20 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
               {statusMap[tradeCycle.state]} {tradeCycle.state}
             </span>
           </div>
-          <div className="text-xs text-gray-500 flex flex-col items-end">
-            <span>ID: {tradeCycle.id}</span>
-            <span>Created: {new Date(tradeCycle.created_at).toLocaleDateString()}</span>
+          <div className="flex items-center gap-3">
+            {(tradeCycle?.state === "ACTIVATED" || tradeCycle?.state === "ADJUSTED") && <button
+              onClick={refreshPositions}
+              disabled={refreshing}
+              className={`btn btn-ghost btn-sm ${refreshing ? "animate-spin" : ""}`}
+              title="Refresh positions from broker"
+            >
+              <RotateCw size={16} />
+            </button>}
+
+            <div className="text-xs text-gray-500 flex flex-col items-end">
+              <span>ID: {tradeCycle.id}</span>
+              <span>Created: {new Date(tradeCycle.created_at).toLocaleDateString()}</span>
+            </div>
           </div>
         </div>
 
