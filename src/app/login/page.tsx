@@ -18,10 +18,10 @@ const Login: React.FC = () => {
 
   const [loginError, setLoginError] = useState(""); // Add this
 
-  const { login, accessToken, isLoading } = useAuthStore();
+  const { login, accessToken, isLoading, isInitializing } = useAuthStore();
   const router = useRouter();
 
-  // read ?next= param from URL
+  // read ?next= param from URL (for use after login, not for redirect if already logged in)
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -35,12 +35,14 @@ const Login: React.FC = () => {
       .catch(console.error);
   }, []);
 
-  // redirect if already logged in
+  // redirect if already logged in - always go to hedgium dashboard
   useEffect(() => {
-    if (accessToken) {
-      router.push(nextPath);
+    console.log("isInitializing", isInitializing);
+    console.log("accessToken", accessToken);
+    if (!isInitializing && accessToken) {
+      router.push("/hedgium/dashboard");
     }
-  }, [accessToken, router, nextPath]);
+  }, [accessToken, isInitializing, router]);
 
   const handleLogin = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();

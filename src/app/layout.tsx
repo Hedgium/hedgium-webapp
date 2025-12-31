@@ -4,11 +4,9 @@ import './global.css'
 
 // import { Roboto_Flex } from 'next/font/google'
 import { ThemeProvider } from 'next-themes';
-import NotificationProvider from '@/providers/NotificationProvider';
 import { Plus_Jakarta_Sans } from 'next/font/google';
-
-import AuthProvider from "@/providers/AuthProvider";
 import NextTopLoader from 'nextjs-toploader';
+import AuthProvider from "@/providers/AuthProvider";
 
 const font = Plus_Jakarta_Sans({
   weight: ["200", "300", "400", "600", "700"],
@@ -25,12 +23,11 @@ import { usePathname } from 'next/navigation'
 
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-
     const { accessToken, isInitializing, user } = useAuthStore()
     const router = useRouter()
     const pathname = usePathname()
   
-   useEffect(() => {
+    useEffect(() => {
       if (!isInitializing && accessToken){
         if (user?.kyc_skipped) {
           if (!pathname.includes("hedgium")) {
@@ -49,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         //   router.push("/hedgium/dashboard/")
         // }
       } 
-    }, [accessToken, isInitializing, router, pathname]);
+    }, [accessToken, isInitializing, router, pathname, user]);
 
 
   return (
@@ -57,9 +54,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* Apply globally */}
       <body
       className={font.className + " min-h-screen flex flex-col"} >
-        <div
-          style={{ display: (!isInitializing) ? 'block' : 'none' }}
-        >
         <NextTopLoader 
           color="#2299DD"
           showSpinner={true}
@@ -67,21 +61,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
 
         <AuthProvider>
-        <NotificationProvider>
           <ThemeProvider>
-              {children}
+            {children}
           </ThemeProvider>
-        </NotificationProvider>
+          <AlertsContainer />
         </AuthProvider>
-        <AlertsContainer />
-
-        </div>
-
-        {(isInitializing) && (
-        <div className="min-h-screen flex items-center justify-center">
-          <span className="loading loading-dots loading-md"></span>
-        </div>
-        )}
         </body>
     </html>
   )

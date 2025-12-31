@@ -1,30 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import AuthNav from "@/components/AuthNav";
 import AuthFooter from "@/components/AuthFooter";
 import AuthNavigation from "@/components/AuthNavigation";
 import { useAuthStore } from "@/store/authStore";
 import { authFetch } from "@/utils/api";
+import NotificationProvider from '@/providers/NotificationProvider';
+import AuthInitializingProvider from "@/components/AuthInitializing";
 
 import BrokerConnect from "@/components/BrokerConnect";
 
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { accessToken, isInitializing, user, updateUser } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const router = useRouter();
-  const pathname = usePathname();
-
-  // Redirect if user is not logged in
-  useEffect(() => {
-    if (!isInitializing && !accessToken) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-    }
-  }, [isInitializing, accessToken, router, pathname]);
-
-    
-
 
   // Determine KYC route
   const kycRoute = async () => {
@@ -60,10 +50,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
-  if (!accessToken) return null; // Show nothing until auth is ready
-
   return (
-    <div className="flex flex-col h-screen">
+    <NotificationProvider>
+      <AuthInitializingProvider requireAuth={true}>
+        <div className="flex flex-col h-screen">
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - visible on md+ */}
@@ -102,6 +92,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="md:hidden">
         <AuthNavigation />
       </div>
-    </div>
+        </div>
+      </AuthInitializingProvider>
+    </NotificationProvider>
   );
 }

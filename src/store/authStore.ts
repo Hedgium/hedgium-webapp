@@ -228,7 +228,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isInitializing: true });
     const ok = await get().refreshAccessToken();
     set({ isInitializing: false });
-    await get().fetchUser();
+    if (ok) await get().fetchUser();
 
     // const keys = await get().userKeyGet();
     // if (!keys) {
