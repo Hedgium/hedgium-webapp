@@ -60,7 +60,7 @@ export default function Page() {
 
   async function fetchStrategies() {
     setLoading(true);
-    const res = await authFetch("myadmin/strategies/?page=1&page_size=20" + (isActive === "" ? "" : "&is_active=" + isActive));
+    const res = await authFetch("myadmin/strategies/?page=1&page_size=10" + (isActive === "" ? "" : "&is_active=" + isActive));
     const data = await res.json();
     if (data.next) {
       setNext(data.next.split("api/")[1]);
@@ -79,6 +79,8 @@ export default function Page() {
     const data = await res.json();
     if (data.next) {
       setNext(data.next.split("api/")[1]);
+    } else {
+      setNext(null);
     }
     setStrategies((prev) => [...prev, ...data.results]);
     setLoading(false);
@@ -121,9 +123,9 @@ export default function Page() {
           </thead>
 
           <tbody>
-            {(strategies.length === 0) ? (
+            {strategies.length === 0 ? (
               <tr>
-                <td colSpan={4} className="text-center py-6">
+                <td colSpan={7} className="text-center py-6">
                   No strategies available.
                 </td>
               </tr>
@@ -163,6 +165,38 @@ export default function Page() {
                 </tr>
               ))
             )}
+
+            {loading &&
+              <>
+                {[1, 2, 3].map((i) => (
+                  <tr key={i}>
+                    <td>
+                      <div className="h-4 w-8 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-32 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-16 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-8 w-16 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                  </tr>
+                ))}
+              </>
+            }
+
+
           </tbody>
         </table>
       </div>
@@ -171,8 +205,6 @@ export default function Page() {
         <button onClick={loadMoreStrategies} className="btn btn-sm">
           Load More
         </button>}
-
-      {loading && <div>Loading strategies...</div>}
 
     </div>
   );
