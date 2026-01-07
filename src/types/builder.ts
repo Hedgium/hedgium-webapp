@@ -14,7 +14,7 @@ export interface BuilderLeg {
     strike: number;
     token: string;
     symbol: string;
-    period: string;
+    // period: string;
     expiry: string | null;
     option_type: string;
     action: string;
@@ -81,7 +81,7 @@ export interface BuilderLegCreate {
     strike: number;
     token: string;
     symbol: string;
-    period: string;
+    // period: string;
     expiry?: string | null;
     option_type: string;
     action: string;
@@ -98,7 +98,7 @@ export interface BuilderLegUpdate {
     strike?: number;
     token?: string;
     symbol?: string;
-    period?: string;
+    // period?: string;
     expiry?: string | null;
     option_type?: string;
     action?: string;

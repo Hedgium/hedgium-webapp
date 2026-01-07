@@ -59,7 +59,6 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         strike: 0,
         token: '',
         symbol: '',
-        period: 'WEEKLY',
         expiry: null,
         option_type: 'CE',
         action: 'BUY',
@@ -105,7 +104,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                 strike: initialData.strike,
                 token: initialData.token,
                 symbol: initialData.symbol,
-                period: initialData.period,
+                // period: initialData.period,
                 expiry: formatDateForInput(initialData.expiry),
                 option_type: initialData.option_type,
                 action: initialData.action,
@@ -132,7 +131,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
     useEffect(() => {
         const validateInstrument = async () => {
             // Check if all required fields are filled
-            if (!formData.symbol || !formData.expiry || !formData.strike || !formData.option_type || !formData.period) {
+            if (!formData.symbol || !formData.expiry || !formData.strike || !formData.option_type) {
                 setValidationStatus({
                     isValidating: false,
                     isValid: false,
@@ -154,8 +153,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                     `security=${encodeURIComponent(formData.symbol)}` +
                     `&date=${encodeURIComponent(dateFormatted)}` +
                     `&strike=${formData.strike}` +
-                    `&option=${formData.option_type}` +
-                    `&period=${formData.period}`;
+                    `&option=${formData.option_type}`;
 
                 const response = await fetch(url);
                 const data = await response.json();
@@ -189,7 +187,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                     });
                 }
             } catch (error) {
-                console.error('Error validating instrument:', error);
+                // console.error('Error validating instrument:', error);
                 setValidationStatus({
                     isValidating: false,
                     isValid: false,
@@ -201,7 +199,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         // Debounce validation
         const timeoutId = setTimeout(validateInstrument, 500);
         return () => clearTimeout(timeoutId);
-    }, [formData.symbol, formData.expiry, formData.strike, formData.option_type, formData.period, noOfLots]);
+    }, [formData.symbol, formData.expiry, formData.strike, formData.option_type, noOfLots]);
 
     // Fetch price when symbol changes
 
@@ -209,7 +207,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/market/quotes/?instruments=${encodeURIComponent(token)}`);
             const data = await response.json();
-            console.log(data);
+            // console.log(data);
             return data.data[token];
         } catch (error) {
             console.error("Error fetching quote:", error);
@@ -231,9 +229,9 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
 
 
     async function fetchDepthToken() {
-        const data = await fetchTokenPrice(instrumentData.instrument_token.toString());
+        const data = await fetchTokenPrice(instrumentData?.instrument_token.toString());
 
-        console.log(data)
+        // console.log(data)
 
         if (formData.action == "BUY") {
             setFormData(prev => ({
@@ -249,7 +247,6 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
     }
 
     useEffect(() => {
-        console.log("instrumentData", "fddfdf")
         if (instrumentData?.exists) {
             // console.log("fdfdf")
         }
@@ -409,13 +406,13 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                     </select>
                 </div>
 
-                <div className="form-control">
+                {/* <div className="form-control">
                     <label className="label"><span className="label-text">Period</span></label>
                     <select name="period" value={formData.period} onChange={handleChange} className="select select-bordered w-full">
                         <option value="WEEKLY">WEEKLY</option>
                         <option value="MONTHLY">MONTHLY</option>
                     </select>
-                </div>
+                </div> */}
 
 
                 <div className="form-control">

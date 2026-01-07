@@ -40,7 +40,7 @@ export default function BuilderLegItem({ leg, onEdit, onDelete }: BuilderLegItem
                 </div>
                 <div>
                     <p className="text-xs text-gray-500">Period, Expiry</p>
-                    <p className="font-medium">{leg.period}, {formatDateOnly(leg.expiry)}</p>
+                    <p className="font-medium">{formatDateOnly(leg.expiry)}</p>
                 </div>
             </div>
 

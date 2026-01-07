@@ -179,11 +179,11 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div> */}
                 <div className="form-control">
                     <label className="label"><span className="label-text">Entry WS (%)</span></label>
-                    <input type="number" step="0.01" name="entry_ws" value={formData.entry_ws} onChange={handleChange} className="input input-bordered w-full" />
+                    <input type="number" step="0.01" required name="entry_ws" value={formData.entry_ws} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Exit WS (%)</span></label>
-                    <input type="number" step="0.01" name="exit_ws" value={formData.exit_ws} onChange={handleChange} className="input input-bordered w-full" />
+                    <input type="number" step="0.01" required name="exit_ws" value={formData.exit_ws} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
 
                 <div className="form-control">
@@ -195,7 +195,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Exit PnL (₹)</span></label>
-                    <input type="number" step="0.01" name="exit_pnl" value={formData.exit_pnl} onChange={handleChange} className="input input-bordered w-full" />
+                    <input type="number" required step="0.01" name="exit_pnl" value={formData.exit_pnl} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
 
                 
@@ -206,9 +206,10 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         type="number" 
                         step="0.01" 
                         name="margin_required" 
-                        value={formData.margin_required || 0} 
+                        value={formData.margin_required} 
                         onChange={handleChange} 
                         className="input input-bordered w-full" 
+                        required
                     />
                     <label className="label">
                         <span className="label-text-alt">Auto-populated from template, but editable</span>
