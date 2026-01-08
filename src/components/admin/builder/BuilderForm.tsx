@@ -157,6 +157,8 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         <option value="NSE">NSE</option>
                         <option value="BSE">BSE</option>
                         <option value="NFO">NFO</option>
+                        <option value="BFO">BFO</option>
+                        <option value="MCX">MCX</option>
                     </select>
                 </div>
                 <div className="form-control">

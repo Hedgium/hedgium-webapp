@@ -9,6 +9,7 @@ import { authFetch } from "@/utils/api";
 import Adjustments from "@/components/admin/Adjustments";
 import Link from "next/link";
 import TradeCycles from "@/components/admin/TradeCycles";
+import { formatDateOnly } from "@/utils/formatDate";
 
 
 export default function StrategyDetail() {
@@ -71,45 +72,55 @@ export default function StrategyDetail() {
       </Link>
       {/* HEADER */}
       <div className="space-y-2">
-        <div>
+        <div className="py-2">
           <h3 className="text-2xl font-bold">{strategy.name}</h3>
           <p className="mt-1 text-sm opacity-80">{strategy.description}</p>
 
           <p className="text-xs mt-1">
-            <b>Valid:</b> {strategy.validity_start} → {strategy.validity_end}
-          </p>
-          {strategy.source && (
-            <p className="text-xs opacity-70">Source: {strategy.source}</p>
+            <b>Validity:</b> {formatDateOnly(strategy.validity_start)}
+
+            {strategy.source && (
+            <span className="text-xs opacity-70">Source: {strategy.source}</span>
           )}
+
+          </p>
+          
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-base-200">
-          <table className="table table-xs">
-            <thead>
-              <tr className="bg-base-200">
-                <th>Adjustments</th>
-                <th>Legs</th>
-                <th>Trade Cycles</th>
-                <th>Total PnL</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>{strategy.adjustment_count ?? 0}</td>
-                <td>{strategy.leg_count ?? 0}</td>
-                <td>{strategy.trade_cycle_count ?? 0}</td>
-                <td>
-                  {strategy.total_pnl !== null && strategy.total_pnl !== undefined
-                    ? Number(strategy.total_pnl).toFixed(2)
-                    : "—"}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+          <div className="stat bg-base-200 rounded-lg shadow">
+            <div className="stat-title">Adjustments</div>
+            <div className="stat-value text-2xl">{strategy.adjustment_count ?? 0}</div>
+          </div>
+          
+          <div className="stat bg-base-200 rounded-lg shadow">
+            <div className="stat-title">Legs</div>
+            <div className="stat-value text-2xl">{strategy.leg_count ?? 0}</div>
+          </div>
+          
+          <div className="stat bg-base-200 rounded-lg shadow">
+            <div className="stat-title">Trade Cycles</div>
+            <div className="stat-value text-2xl">{strategy.trade_cycle_count ?? 0}</div>
+          </div>
+          
+          <div className="stat bg-base-200 rounded-lg shadow">
+            <div className="stat-title">Total PnL</div>
+            <div className={`stat-value text-2xl ${
+              strategy.total_pnl !== null && strategy.total_pnl !== undefined
+                ? strategy.total_pnl > 0 
+                  ? "text-green-400" 
+                  : strategy.total_pnl < 0 
+                    ? "text-red-400" 
+                    : ""
+                : ""
+            }`}>
+              {strategy.total_pnl !== null && strategy.total_pnl !== undefined
+                ? `₹${Number(strategy.total_pnl).toFixed(2)}`
+                : "—"}
+            </div>
+          </div>
         </div>
       </div>
-
-      <hr className="border-base-300" />
 
       {/* LEGS TABLE */}
       <div>

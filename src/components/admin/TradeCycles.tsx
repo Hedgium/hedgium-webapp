@@ -4,6 +4,7 @@ import { useState, lazy, Suspense } from "react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import { RotateCw, Eye } from "lucide-react";
+import Link from "next/link";
 
 // Lazy load the modal component
 const TradeCycleDetailsModal = lazy(() => import("./TradeCycleDetailsModal"));
@@ -304,7 +305,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                       />
                     </td>
 
-                    <td>{cycle.name}</td>
+                    <td>{cycle.id}</td>
                     <td>{cycle.client.username}</td>
                     <td>{cycle.profile.broker_name}</td>
                     <td>{cycle.profile.risk_profile}</td>
@@ -330,20 +331,28 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                       {cycle.pnl !== null && cycle.pnl !== undefined ? `₹${cycle.pnl.toFixed(2)}` : "₹0.00"}
                     </td>
                     <td>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-1 w-full">
+                        <Link href={`/admin/profiles/${cycle.profile.id}/live`} className="w-full">
+                          <button
+                            className="btn btn-outline btn-sm w-full"
+                            title="View Live Positions & Orders"
+                          >ViewLive
+                          </button>
+                        </Link>
+                        
                         <button
                           onClick={() => handleShowMore(cycle.id)}
-                          className="btn btn-ghost btn-xs"
-                          title="Show More Details"
+                          className="btn btn-sm w-full"
+                          title="View Trade Cycle Positions"
                         >
-                          <Eye size={16} />
-                          Show More
+                          Positions
                         </button>
+                        
                         {cycle.state === "LOCKED" && (
                           <button
                             onClick={() => handleValidateAndActivate(cycle.id)}
                             disabled={validatingCycleId === cycle.id}
-                            className="btn btn-primary btn-xs"
+                            className="btn btn-primary btn-sm w-full"
                             title="Validate and Activate"
                           >
                             {validatingCycleId === cycle.id ? (

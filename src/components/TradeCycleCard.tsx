@@ -192,7 +192,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
         {!isLocked && (
           <div className="card-actions justify-end mt-4">
             {cycle.state !== "NEW" && (
-              <Link href={`/hedgium/positions/${cycle.id}`} className="btn btn-outline btn-sm">
+              <Link href={`/hedgium/positions`} className="btn btn-outline btn-sm">
                 View Positions
               </Link>
             )}

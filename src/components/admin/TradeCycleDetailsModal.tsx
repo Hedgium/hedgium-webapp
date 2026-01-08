@@ -137,19 +137,7 @@ export default function TradeCycleDetailsModal({
     return (
         <div className="modal modal-open">
             <div className="modal-box w-11/12 max-w-6xl max-h-[90vh] overflow-y-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-2xl font-bold">Trade Cycle Details</h3>
-                    <button
-                        onClick={onClose}
-                        className="btn btn-ghost btn-sm btn-circle"
-                        aria-label="Close"
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
 
-                {/* Loading State */}
                 {loading && (
                     <div className="flex justify-center items-center py-12">
                         <span className="loading loading-spinner loading-lg"></span>
@@ -166,25 +154,6 @@ export default function TradeCycleDetailsModal({
                 {/* Content */}
                 {!loading && data && (
                     <>
-                        {/* Trade Cycle Info */}
-                        <div className="bg-base-200 rounded-lg p-4 mb-6">
-                            <h4 className="text-lg font-semibold mb-2">{data.trade_cycle.name}</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                                <div>
-                                    <span className="opacity-70">State:</span>{" "}
-                                    <span className="badge badge-primary">{data.trade_cycle.state}</span>
-                                </div>
-                                <div>
-                                    <span className="opacity-70">Sub-State:</span>{" "}
-                                    <span className="badge badge-secondary">{data.trade_cycle.sub_state}</span>
-                                </div>
-                                <div className="col-span-2">
-                                    <span className="opacity-70">Description:</span>{" "}
-                                    {data.trade_cycle.description || "N/A"}
-                                </div>
-                            </div>
-                        </div>
-
                         {/* Positions Section */}
                         <div className="mb-6">
                             <div className="flex items-center justify-between mb-3">

@@ -3,7 +3,8 @@ import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
 import useAlert from '@/hooks/useAlert';
 import { RotateCw, Edit2, TrendingUp } from 'lucide-react';
-import LivePositionsModal, { LivePositionsData } from '@/components/LivePositionsModal';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface ProfileItemProps {
     profile: Profile;
@@ -11,12 +12,10 @@ interface ProfileItemProps {
 }
 
 export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
+    const router = useRouter();
     const [refreshing, setRefreshing] = useState(false);
     const [sendingReminder, setSendingReminder] = useState(false);
     const [equityMargin, setEquityMargin] = useState(profile.margin_equity);
-    const [loadingPositions, setLoadingPositions] = useState(false);
-    const [showPositionsModal, setShowPositionsModal] = useState(false);
-    const [livePositions, setLivePositions] = useState<LivePositionsData | null>(null);
 
     // Shoonya Login State
     const [isShoonyaLoginModalOpen, setIsShoonyaLoginModalOpen] = useState(false);
@@ -44,26 +43,9 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
         }
     };
 
-    const handleViewLivePositions = async () => {
-        setLoadingPositions(true);
-        try {
-            const response = await authFetch(`positions/live/positions/${profile.id}/`);
-            const data = await response.json();
-
-            if (data.status === 'success') {
-                setLivePositions(data);
-                setShowPositionsModal(true);
-                alert.success("Live positions fetched successfully");
-            } else {
-                alert.error("Failed to fetch live positions");
-            }
-        } catch (error) {
-            console.error('Error fetching live positions:', error);
-            alert.error('Error fetching live positions');
-        } finally {
-            setLoadingPositions(false);
-        }
-    };
+    // const handleViewLivePositions = () => {
+    //     router.push(`/admin/profiles/${profile.id}/live`);
+    // };
 
     const handleSendLoginReminder = async () => {
         setSendingReminder(true);
@@ -187,14 +169,13 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                         >
                             <RotateCw size={16} />
                         </button>}
-                        {brokerLoggedIn && <button
-                            onClick={handleViewLivePositions}
-                            disabled={loadingPositions}
+                        {brokerLoggedIn && <Link
+                            href={`/admin/profiles/${profile.id}/live`}
                             className="btn btn-ghost btn-xs text-green-400"
                             title="View Live Positions"
                         >
-                            {loadingPositions ? '...' : <TrendingUp size={16} />}
-                        </button>}
+                            <TrendingUp size={16} />
+                        </Link>}
                         {onEdit && (
                             <button
                                 onClick={() => onEdit(profile)}
@@ -238,14 +219,6 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                     </div>
                 </div>
             </div>
-
-            {/* Live Positions Modal */}
-            <LivePositionsModal
-                isOpen={showPositionsModal}
-                onClose={() => setShowPositionsModal(false)}
-                positions={livePositions}
-                brokerName={profile.broker_name}
-            />
 
             {/* Shoonya Login Modal */}
             {isShoonyaLoginModalOpen && (

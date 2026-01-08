@@ -27,7 +27,7 @@ function Adjustment({ adj }) {
   }
 
   return (
-    <div className="border border-base-300 rounded-xl shadow mb-4 bg-base-100">
+    <div className="border border-base-300 rounded-xl shadow mb-2 bg-base-100">
 
       {/* COLLAPSE HEADER */}
       <div
@@ -101,7 +101,7 @@ function Adjustment({ adj }) {
 
 export default function Adjustments({ adjustments }) {
   return (
-    <div className="mt-4">
+    <div className="mt-2">
       {adjustments.map((adj) => (
         <Adjustment key={adj.id} adj={adj} />
       ))}

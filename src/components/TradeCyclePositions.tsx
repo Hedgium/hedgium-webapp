@@ -141,7 +141,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
   }
 
   return (
-     <div className="card bg-base-100 border border-base-300 rounded-xl w-full hover:shadow-sm transition-shadow">
+     <div id={tradeCycle.id} className="card bg-base-100 border border-base-300 rounded-xl w-full hover:shadow-sm transition-shadow">
       <div className="card-body p-4 flex flex-col flex-1">
         {/* Header */}
         <div className="flex justify-between items-start mb-3 pb-3 border-b border-base-300">

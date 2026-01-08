@@ -20,6 +20,7 @@ export default function BuilderPage() {
     const [editingBuilder, setEditingBuilder] = useState<StrategyBuilder | undefined>(undefined);
     const [editingLeg, setEditingLeg] = useState<BuilderLeg | undefined>(undefined);
     const [selectedBuilderId, setSelectedBuilderId] = useState<number | null>(null);
+    const [selectedStrategyBuilder, setSelectedStrategyBuilder] = useState<StrategyBuilder | undefined>(undefined);
     const [statusFilter, setStatusFilter] = useState<string>("");
 
     const alert = useAlert();
@@ -112,6 +113,7 @@ export default function BuilderPage() {
 
     const handleAddLeg = (builderId: number) => {
         setSelectedBuilderId(builderId);
+        setSelectedStrategyBuilder(builders.find(b => b.id === builderId));
         setEditingLeg(undefined);
         setIsLegModalOpen(true);
     };
@@ -119,7 +121,7 @@ export default function BuilderPage() {
     const handleEditLeg = (leg: BuilderLeg) => {
         const builder = builders.find(b => b.builder_legs.some(l => l.id === leg.id));
         if (builder) setSelectedBuilderId(builder.id);
-
+        setSelectedStrategyBuilder(builder);
         setEditingLeg(leg);
         setIsLegModalOpen(true);
     };
@@ -279,6 +281,7 @@ export default function BuilderPage() {
                             builderId={selectedBuilderId}
                             onSubmit={handleLegSubmit}
                             onCancel={() => setIsLegModalOpen(false)}
+                            exchange={selectedStrategyBuilder?.exchange || 'NFO'}
                         />
                     </div>
                 </div>

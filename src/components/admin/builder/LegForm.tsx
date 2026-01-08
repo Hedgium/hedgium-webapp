@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { BuilderLeg, BuilderLegCreate, BuilderLegUpdate } from '@/types/builder';
 import AsyncSelect from 'react-select/async';
+import { authFetch } from '@/utils/api';
 
 interface LegFormProps {
     initialData?: BuilderLeg;
     builderId: number;
     onSubmit: (data: BuilderLegCreate | BuilderLegUpdate) => void;
     onCancel: () => void;
+    exchange: string;
 }
 
 interface Option {
@@ -24,7 +26,7 @@ interface InstrumentSearchResult {
     exists: boolean;
 }
 
-export default function LegForm({ initialData, builderId, onSubmit, onCancel }: LegFormProps) {
+export default function LegForm({ initialData, builderId, onSubmit, onCancel, exchange }: LegFormProps) {
 
     // Helper function to convert ISO datetime to YYYY-MM-DD format
     const formatDateForInput = (dateString: string | null | undefined): string => {
@@ -63,13 +65,11 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         option_type: 'CE',
         action: 'BUY',
         // price: 0,
-        quantity: 0,
+        quantity: 75,
         lot_size: 75
     });
 
 
-
-    const [lotSize, setLotSize] = useState<number>(75); // Default lot size
     const [noOfLots, setNoOfLots] = useState<number>(1); // Default number of lots
     const [instrumentData, setInstrumentData] = useState<InstrumentSearchResult | null>(null);
     const [currentPrice, setCurrentPrice] = useState<number | null>(null);
@@ -112,7 +112,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                 quantity: initialData.quantity,
                 lot_size: initialData.lot_size
             });
-            setLotSize(initialData.lot_size);
+            // setLotSize(initialData.lot_size);
         }
     }, [initialData, builderId]);
 
@@ -149,13 +149,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
 
             try {
                 const dateFormatted = formatDateForAPI(formData.expiry);
-                const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/market/instruments/validate?` +
-                    `security=${encodeURIComponent(formData.symbol)}` +
-                    `&date=${encodeURIComponent(dateFormatted)}` +
-                    `&strike=${formData.strike}` +
-                    `&option=${formData.option_type}`;
-
-                const response = await fetch(url);
+                const response = await authFetch('market/instruments/validate?security=' + formData.symbol + '&date=' + dateFormatted + '&strike=' + formData.strike.toString() + '&option=' + formData.option_type + '&exchange=' + exchange);
                 const data = await response.json();
 
                 setInstrumentData(data);
@@ -164,7 +158,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                     // Set lot size from API and calculate quantity
                     const apiLotSize = data.lot_size || 75;
 
-                    setLotSize(apiLotSize);
+                    // setLotSize(apiLotSize);
 
                     setFormData(prev => ({
                         ...prev,
@@ -199,13 +193,15 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
         // Debounce validation
         const timeoutId = setTimeout(validateInstrument, 500);
         return () => clearTimeout(timeoutId);
-    }, [formData.symbol, formData.expiry, formData.strike, formData.option_type, noOfLots]);
+    }, [formData.symbol, formData.expiry, formData.strike, formData.option_type]);
 
     // Fetch price when symbol changes
 
     async function fetchTokenPrice(token: string) {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/market/quotes/?instruments=${encodeURIComponent(token)}`);
+            const response = await authFetch('market/quotes/', {}, {
+                instruments: token
+            });
             const data = await response.json();
             // console.log(data);
             return data.data[token];
@@ -269,7 +265,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
     const loadOptions = async (inputValue: string) => {
         if (!inputValue) return [];
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/market/instruments/search?q=${inputValue}`);
+            const response = await authFetch('market/instruments/search/?q=' + encodeURIComponent(inputValue));
             const data = await response.json();
             return data.map((item: InstrumentSearchResult) => ({
                 label: `${item.tradingsymbol} - ${item.name}`,
@@ -286,17 +282,25 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
     const handleSymbolChange = async (option: Option | null) => {
         if (option) {
             // Keep only the first word of the symbol
+
+           // this one for nifty and banknifty
             const firstWord = option.value.split(' ')[0];
 
+            const parts = option.label.split(" ");
+            const lastWord = parts[parts.length - 1];
+
+            let symbol = '';
+            if (exchange == "MCX") { symbol = lastWord; } else { symbol = firstWord; }
+            
             setFormData(prev => ({
                 ...prev,
-                symbol: firstWord,
+                symbol: symbol,
                 token: option.token,
             }));
 
             // Fetch strike step for the selected symbol
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/market/get/${firstWord}`);
+                const response = await authFetch(`market/get/${symbol}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.strike_step) {
@@ -429,15 +433,22 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                     <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
 
-                {/* <div className="form-control">
+                <div className="form-control">
                     <label className="label"><span className="label-text">Lot Size (Auto-filled)</span></label>
                     <input
                         type="number"
-                        value={lotSize}
+                        name="lot_size"
+                        value={formData.lot_size}
+                        onChange={(e)=>{
+                            setFormData(prev => ({
+                                ...prev,
+                                lot_size: parseInt(e.target.value),
+                                quantity: parseInt(e.target.value) * noOfLots
+                            }));
+                        }}
                         className="input input-bordered w-full bg-gray-100"
-                        readOnly
                     />
-                </div> */}
+                </div>
 
                 <div className="form-control">
                     <label className="label"><span className="label-text">Number of Lots</span></label>
@@ -450,15 +461,14 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel }: 
                             // Recalculate quantity: lot_size × no_of_lots
                             setFormData(prev => ({
                                 ...prev,
-                                lot_size: lotSize,
-                                quantity: lotSize * newNoOfLots
+                                quantity: formData.lot_size * newNoOfLots
                             }));
                         }}
                         className="input input-bordered w-full"
                         min="1"
                     />
 
-                    <label className="label"><span className="label-text text-xs">Lot Size: {lotSize}, Quantity: {formData.quantity}</span></label>
+                    <label className="label"><span className="label-text text-xs">Lot Size: {formData.lot_size}, Quantity: {formData.quantity}</span></label>
                 </div>
 
                 {/* <div className="form-control">

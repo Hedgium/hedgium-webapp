@@ -140,12 +140,12 @@ export default function Page() {
 
 
                       {strategy.versions.map((adj, i) => 
-                        <div key={i} className="mb-3 pb-2">
+                        <div key={i} className="mb-1 pb-0">
                             <span className="font-semibold">
                               v{adj.version}_
                             </span>
                             <span
-                              className={`badge ${adj.approved ? "badge-success" : "badge-error"
+                              className={`badge badge-sm badge-outline ${adj.approved ? "badge-success" : "badge-error"
                                 }`}
                             >
                               {adj.approved ? "Approved" : "Not Approved"}
@@ -160,7 +160,7 @@ export default function Page() {
                   </td>
 
                   <td>
-                    <Link href={`/admin/strategy/${strategy.id}`} className="btn btn-sm btn-primary">View</Link>
+                    <Link href={`/admin/strategy/${strategy.id}`} className="btn btn-sm btn-outline">View</Link>
                   </td>
                 </tr>
               ))
