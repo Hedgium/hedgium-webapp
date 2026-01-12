@@ -21,6 +21,12 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
     const [isShoonyaLoginModalOpen, setIsShoonyaLoginModalOpen] = useState(false);
     const [shoonyaPassword, setShoonyaPassword] = useState("");
     const [isLoggingInShoonya, setIsLoggingInShoonya] = useState(false);
+    
+    // Broker Token Set State (for all brokers)
+    const [isBrokerTokenModalOpen, setIsBrokerTokenModalOpen] = useState(false);
+    const [brokerAccessToken, setBrokerAccessToken] = useState("");
+    const [isSettingBrokerToken, setIsSettingBrokerToken] = useState(false);
+    
     const [brokerLoggedIn, setBrokerLoggedIn] = useState(profile.broker_logged_in);
 
     const alert = useAlert();
@@ -116,6 +122,51 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
         }
     };
 
+    const handleSetBrokerToken = async () => {
+        if (!brokerAccessToken) {
+            alert.error("Please enter broker access token");
+            return;
+        }
+
+        setIsSettingBrokerToken(true);
+        try {
+            const response = await authFetch("users/set-broker-token/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    profile_id: profile.id,
+                    broker_access_token: brokerAccessToken
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.status === "success") {
+                alert.success(data.message || `${profile.broker_name} access token validated and set successfully`);
+                setIsBrokerTokenModalOpen(false);
+                setBrokerAccessToken("");
+                setBrokerLoggedIn(true);
+                // Update margin equity if returned in response
+                if (data.margin_equity !== undefined) {
+                    setEquityMargin(data.margin_equity);
+                }
+            } else {
+                // Handle error response
+                const errorMsg = data.message || data.detail || `Failed to set token: ${JSON.stringify(data)}`;
+                alert.error(errorMsg);
+            }
+
+        } catch (error: any) {
+            console.error("Set broker token error:", error);
+            const errorMessage = error?.detail || error?.message || "An error occurred";
+            alert.error(`Error: ${errorMessage}`);
+        } finally {
+            setIsSettingBrokerToken(false);
+        }
+    };
+
     return (
         <div className="bg-base-100 rounded-lg p-4 mb-4 border border-base-300">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -135,7 +186,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                             ✓ Broker Logged In
                         </span>
                     ) : (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
                             <button
                                 onClick={handleSendLoginReminder}
                                 disabled={sendingReminder}
@@ -152,6 +203,15 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                                     Login
                                 </button>
                             )}
+                            
+                            {/* Set Broker Token Button - Available for all brokers */}
+                            <button
+                                onClick={() => setIsBrokerTokenModalOpen(true)}
+                                className="btn btn-outline btn-xs"
+                                title="Set broker access token directly"
+                            >
+                                Set Token
+                            </button>
                         </div>
 
                     )}
@@ -254,6 +314,51 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                                 disabled={isLoggingInShoonya}
                             >
                                 {isLoggingInShoonya ? <span className="loading loading-spinner"></span> : "Login"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Set Broker Token Modal - Available for all brokers */}
+            {isBrokerTokenModalOpen && (
+                <div className="modal modal-open">
+                    <div className="modal-box">
+                        <h3 className="font-bold text-lg mb-4">Set {profile.broker_name} Access Token</h3>
+                        <div className="form-control w-full mb-4">
+                            <label className="label">
+                                <span className="label-text">Broker Access Token</span>
+                            </label>
+                            <input
+                                type="password"
+                                placeholder={`Enter ${profile.broker_name} access token`}
+                                className="input input-bordered w-full"
+                                value={brokerAccessToken}
+                                onChange={(e) => setBrokerAccessToken(e.target.value)}
+                            />
+                            <label className="label">
+                                <span className="label-text-alt">
+                                    Provide the broker access token directly. This will update the profile's access token.
+                                </span>
+                            </label>
+                        </div>
+                        <div className="modal-action">
+                            <button
+                                className="btn"
+                                onClick={() => {
+                                    setIsBrokerTokenModalOpen(false);
+                                    setBrokerAccessToken("");
+                                }}
+                                disabled={isSettingBrokerToken}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleSetBrokerToken}
+                                disabled={isSettingBrokerToken}
+                            >
+                                {isSettingBrokerToken ? <span className="loading loading-spinner"></span> : "Set Token"}
                             </button>
                         </div>
                     </div>
