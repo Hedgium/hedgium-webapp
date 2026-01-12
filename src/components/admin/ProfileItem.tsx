@@ -3,7 +3,6 @@ import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
 import useAlert from '@/hooks/useAlert';
 import { RotateCw, Edit2, TrendingUp } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface ProfileItemProps {
@@ -12,7 +11,6 @@ interface ProfileItemProps {
 }
 
 export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
-    const router = useRouter();
     const [refreshing, setRefreshing] = useState(false);
     const [sendingReminder, setSendingReminder] = useState(false);
     const [equityMargin, setEquityMargin] = useState(profile.margin_equity);
@@ -57,8 +55,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
         setSendingReminder(true);
         try {
             // Assuming endpoint structure, can be adjusted
-            const response = await authFetch(`notifications/`,
-
+            await authFetch(`notifications/`,
                 {
                     method: 'POST',
                     body: JSON.stringify({
@@ -68,8 +65,6 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                         message: 'Please login to your account to continue'
                     })
                 });
-            const data = await response.json();
-            // console.log(data);
             alert.success("Login reminder sent successfully");
             // alert('Login reminder sent');
         } catch {
@@ -158,9 +153,11 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                 alert.error(errorMsg);
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Set broker token error:", error);
-            const errorMessage = error?.detail || error?.message || "An error occurred";
+            const errorMessage = (error as { detail?: string; message?: string })?.detail || 
+                                 (error as { detail?: string; message?: string })?.message || 
+                                 "An error occurred";
             alert.error(`Error: ${errorMessage}`);
         } finally {
             setIsSettingBrokerToken(false);
@@ -338,7 +335,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                             />
                             <label className="label">
                                 <span className="label-text-alt">
-                                    Provide the broker access token directly. This will update the profile's access token.
+                                    {`Provide the broker access token directly. This will update the profile's access token.`}
                                 </span>
                             </label>
                         </div>
