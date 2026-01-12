@@ -10,6 +10,8 @@ import Adjustments from "@/components/admin/Adjustments";
 import Link from "next/link";
 import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateOnly } from "@/utils/formatDate";
+import useAlert from "@/hooks/useAlert";
+import { CheckCircle } from "lucide-react";
 
 
 export default function StrategyDetail() {
@@ -18,6 +20,8 @@ export default function StrategyDetail() {
   const [trade_cycles, setTradeCycles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tradeCyclesLoading, setTradeCyclesLoading] = useState(false);
+  const [completingStrategy, setCompletingStrategy] = useState(false);
+  const alert = useAlert();
 
   const params = useParams<{ id: string }>();
   const { id } = params;
@@ -28,7 +32,6 @@ export default function StrategyDetail() {
     try {
       const res = await authFetch(`myadmin/strategies/${id}/`);
       const data = await res.json();
-      // console.log("Fetched strategy data:", data);
       setStrategy(data);
     } catch (error) {
       console.error("Error fetching strategy data:", error);
@@ -55,6 +58,34 @@ export default function StrategyDetail() {
   }
 
 
+  async function completeStrategy() {
+    if (!confirm("Are you sure you want to mark this strategy as completed? This will close all associated trade cycles.")) {
+      return;
+    }
+
+    setCompletingStrategy(true);
+    try {
+      const res = await authFetch(`myadmin/strategies/${id}/complete/`, {
+        method: "POST",
+      });
+      const data = await res.json();
+
+      if (res.ok && data.status === "success") {
+        alert.success(data.message || "Strategy marked as completed successfully");
+        // Refresh strategy data
+        await fetchStrategyData();
+        await fetchTradeCycles();
+      } else {
+        alert.error(data.message || "Failed to complete strategy");
+      }
+    } catch (error) {
+      console.error("Error completing strategy:", error);
+      alert.error("Error completing strategy");
+    } finally {
+      setCompletingStrategy(false);
+    }
+  }
+
   React.useEffect(() => {
     // Reset selections when strategy changes (if applicable)
     fetchStrategyData();
@@ -73,17 +104,44 @@ export default function StrategyDetail() {
       {/* HEADER */}
       <div className="space-y-2">
         <div className="py-2">
-          <h3 className="text-2xl font-bold">{strategy.name}</h3>
-          <p className="mt-1 text-sm opacity-80">{strategy.description}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-2xl font-bold">{strategy.name}</h3>
+              <p className="mt-1 text-sm opacity-80">{strategy.description}</p>
 
-          <p className="text-xs mt-1">
-            <b>Validity:</b> {formatDateOnly(strategy.validity_start)}
+              <p className="text-xs mt-1">
+                <b>Validity:</b> {formatDateOnly(strategy.validity_start)}
 
-            {strategy.source && (
-            <span className="text-xs opacity-70">Source: {strategy.source}</span>
-          )}
+                {strategy.source && (
+                <span className="text-xs opacity-70">Source: {strategy.source}</span>
+              )}
 
-          </p>
+              </p>
+            </div>
+            {!strategy.completed && (
+              <button
+                onClick={completeStrategy}
+                disabled={completingStrategy}
+                className="btn btn-primary btn-sm"
+                title="Mark strategy as completed and close all trade cycles"
+              >
+                {completingStrategy ? (
+                  <span className="loading loading-spinner"></span>
+                ) : (
+                  <>
+                    <CheckCircle size={16} />
+                    Mark As Complete
+                  </>
+                )}
+              </button>
+            )}
+            {strategy.completed && (
+              <div className="badge badge-success badge-lg gap-2">
+                <CheckCircle size={16} />
+                Completed
+              </div>
+            )}
+          </div>
           
         </div>
 
@@ -125,7 +183,7 @@ export default function StrategyDetail() {
       {/* LEGS TABLE */}
       <div>
         <h4 className="text-lg font-semibold mb-2">Strategy Adjustments</h4>
-        <Adjustments adjustments={strategy.versions} />
+        <Adjustments adjustments={strategy.versions} onRefresh={fetchStrategyData} />
       </div>
 
       <hr className="border-base-300" />

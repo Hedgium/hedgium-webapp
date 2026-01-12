@@ -5,10 +5,12 @@ import StrategyLegs from "./StrategyLegs";
 import { authFetch } from "@/utils/api";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import useAlert from "@/hooks/useAlert";
+import { Trash2 } from "lucide-react";
 
-function Adjustment({ adj }) {
+function Adjustment({ adj, onDelete }) {
   const [open, setOpen] = useState(false);
   const [adjustment, setAdjustment] = useState(adj);
+  const [deleting, setDeleting] = useState(false);
 
   const alert = useAlert();
 
@@ -23,6 +25,35 @@ function Adjustment({ adj }) {
       // console.log("Approved adjustment:", data);
     } catch (error) {
       console.error("Error approving adjustment:", error);
+    }
+  }
+
+  async function deleteAdjustment(adjId: number) {
+    if (!confirm(`Are you sure you want to delete adjustment v${adjustment.version}? This will also delete all associated legs.`)) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const res = await authFetch(`strategies/adjustments/${adjId}/`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        alert.success(`Adjustment v${adjustment.version} deleted successfully`);
+        // Call parent callback to refresh strategy data
+        if (onDelete) {
+          onDelete();
+        }
+      } else {
+        alert.error("Failed to delete adjustment");
+      }
+    } catch (error) {
+      console.error("Error deleting adjustment:", error);
+      alert.error("Error deleting adjustment");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -52,6 +83,22 @@ function Adjustment({ adj }) {
               }`}
           >
             {adjustment.approved ? "Approved" : "Approve"}
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // prevent dropdown toggle
+              deleteAdjustment(adjustment.id);
+            }}
+            disabled={deleting}
+            className="btn btn-sm btn-error btn-ghost"
+            title="Delete adjustment and all its legs"
+          >
+            {deleting ? (
+              <span className="loading loading-spinner loading-xs"></span>
+            ) : (
+              <Trash2 size={14} />
+            )}
           </button>
 
           {/* Arrow */}
@@ -99,11 +146,11 @@ function Adjustment({ adj }) {
   );
 }
 
-export default function Adjustments({ adjustments }) {
+export default function Adjustments({ adjustments, onRefresh }) {
   return (
     <div className="mt-2">
       {adjustments.map((adj) => (
-        <Adjustment key={adj.id} adj={adj} />
+        <Adjustment key={adj.id} adj={adj} onDelete={onRefresh} />
       ))}
     </div>
   );

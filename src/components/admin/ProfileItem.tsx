@@ -63,7 +63,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                     })
                 });
             const data = await response.json();
-            console.log(data);
+            // console.log(data);
             alert.success("Login reminder sent successfully");
             // alert('Login reminder sent');
         } catch {

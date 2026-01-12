@@ -2,6 +2,7 @@
 import { authFetch } from "@/utils/api";
 import Link from "next/link";
 import React from "react";
+import { CheckCircle } from "lucide-react";
 
 interface Version {
   version: number,
@@ -15,6 +16,8 @@ interface Strategy {
   trade_cycle_count: number;
   leg_count: number;
   total_pnl: number | null;
+  completed: boolean;
+  completed_at: string | null;
   versions: Version[]
 }
 
@@ -114,6 +117,7 @@ export default function Page() {
             <tr>
               <th>ID</th>
               <th>Name</th>
+              <th>Status</th>
               <th>Allocated</th>
               <th>Total Adjustments</th>
               <th>Total Legs</th>
@@ -125,7 +129,7 @@ export default function Page() {
           <tbody>
             {strategies.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-6">
+                <td colSpan={8} className="text-center py-6">
                   No strategies available.
                 </td>
               </tr>
@@ -134,6 +138,16 @@ export default function Page() {
                 <tr key={strategy.id}>
                   <td>{strategy.id}</td>
                   <td className="font-semibold">{strategy.name}</td>
+                  <td>
+                    {strategy.completed ? (
+                      <div className="badge badge-success badge-sm gap-1">
+                        <CheckCircle size={12} />
+                        Completed
+                      </div>
+                    ) : (
+                      <div className="badge badge-outline badge-sm">Active</div>
+                    )}
+                  </td>
                   <td>{strategy.trade_cycle_count}</td>
                   <td>
                     {/* {strategy.adjustment_count ?? 0} */}
@@ -175,6 +189,9 @@ export default function Page() {
                     </td>
                     <td>
                       <div className="h-4 w-32 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
                     </td>
                     <td>
                       <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>

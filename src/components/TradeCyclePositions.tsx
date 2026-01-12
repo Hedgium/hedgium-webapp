@@ -57,6 +57,16 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
   const [hasMorePositions, setHasMorePositions] = useState(false);
   const [hasMoreOrders, setHasMoreOrders] = useState(false);
   const [allLoaded, setAllLoaded] = useState(false);
+  const [totals, setTotals] = useState<{
+    total_pnl: number;
+    realised_total: number;
+    realised_today: number;
+    unrealised_total: number;
+    unrealised_today: number;
+    unrealised: number;
+    total_buy_qty: number;
+    total_sell_qty: number;
+  } | null>(null);
 
   const getTradeCyclePositions = useCallback(async (id: string, loadAll: boolean = false) => {
     if (loadAll) {
@@ -70,10 +80,12 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
         : `trade-cycles/${tradeCycle.id}/details`;
       const res = await authFetch(url);
       const data = await res.json();
+      console.log("data", data);
       setUnmappedOrders(data.unmapped_orders)
       setPositions(data.positions);
       setHasMorePositions(data.has_more_positions || false);
       setHasMoreOrders(data.has_more_orders || false);
+      setTotals(data.totals || null);
       if (loadAll) {
         setAllLoaded(true);
       }
@@ -96,11 +108,16 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
       const res = await authFetch(`positions/pnl/refresh/${tradeCycle.id}/`);
       const data = await res.json();
 
+      console.log("data", data);
+
       if (!res.ok) {
         throw new Error(data.detail || "Failed to refresh positions");
       }
 
       alert.success("Positions refreshed successfully");
+      
+      // Reset allLoaded since we're refreshing and might have new positions
+      setAllLoaded(false);
       
       // Refetch positions after refresh
       await getTradeCyclePositions(tradeCycle.id);
@@ -126,13 +143,13 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
     STOPPED: <XCircle width={14} className="text-error" />,
   };
 
-  // Calculate totals
-  const totalPnl = positions.reduce((acc, pos) => acc + pos.pnl, 0);
-  const realisedPnl = positions.reduce((acc, pos) => acc + pos.realised_total, 0);
-  const realisedToday = positions.reduce((acc, pos) => acc + pos.realised_today, 0);
-  const unrealisedPnl = positions.reduce((acc, pos) => acc + pos.unrealised, 0);
-  const totalBuyQty = positions.reduce((acc, pos) => acc + pos.buy_quantity, 0);
-  const totalSellQty = positions.reduce((acc, pos) => acc + pos.sell_quantity, 0);
+  // Use backend totals if available, otherwise calculate from displayed positions (fallback)
+  const totalPnl = totals?.total_pnl ?? positions.reduce((acc, pos) => acc + pos.pnl, 0);
+  const realisedPnl = totals?.realised_total ?? positions.reduce((acc, pos) => acc + pos.realised_total, 0);
+  const realisedToday = totals?.realised_today ?? positions.reduce((acc, pos) => acc + pos.realised_today, 0);
+  const unrealisedPnl = totals?.unrealised ?? positions.reduce((acc, pos) => acc + pos.unrealised, 0);
+  const totalBuyQty = totals?.total_buy_qty ?? positions.reduce((acc, pos) => acc + pos.buy_quantity, 0);
+  const totalSellQty = totals?.total_sell_qty ?? positions.reduce((acc, pos) => acc + pos.sell_quantity, 0);
 
   const totalPnlColor = totalPnl >= 0 ? "text-success" : "text-error";
 

@@ -4,6 +4,7 @@ import React from "react";
 
 export interface LivePosition {
   tradingsymbol: string;
+  exchange?: string;
   quantity: number;
   average_price?: number;
   last_price?: number;

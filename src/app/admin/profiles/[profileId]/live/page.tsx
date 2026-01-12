@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
-import { ArrowLeft, RefreshCw, Plus, Edit2, X } from "lucide-react";
+import { ArrowLeft, RefreshCw, Plus, Edit2, X, LogOut } from "lucide-react";
 import { LivePosition } from "@/components/LivePositionsModal";
 import { Profile } from "@/types/profile";
 
@@ -58,9 +58,13 @@ export default function LivePositionsPage() {
 
   const [showPlaceOrderForm, setShowPlaceOrderForm] = useState(false);
   const [showModifyOrderForm, setShowModifyOrderForm] = useState(false);
+  const [showExitPositionForm, setShowExitPositionForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<LiveOrder | null>(null);
+  const [selectedPosition, setSelectedPosition] = useState<LivePosition | null>(null);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [modifyingOrder, setModifyingOrder] = useState(false);
+  const [exitingPosition, setExitingPosition] = useState(false);
+  const [exitQuantity, setExitQuantity] = useState<number>(0);
 
   const [orderForm, setOrderForm] = useState<OrderFormData>({
     exchange: "NSE",
@@ -108,7 +112,7 @@ export default function LivePositionsPage() {
     } finally {
       setLoadingPositions(false);
     }
-  }, [profileId, alert]);
+  }, [profileId]);
 
   const fetchOrders = useCallback(async () => {
     setLoadingOrders(true);
@@ -127,7 +131,7 @@ export default function LivePositionsPage() {
     } finally {
       setLoadingOrders(false);
     }
-  }, [profileId, alert]);
+  }, [profileId]);
 
   useEffect(() => {
     fetchProfile();
@@ -262,6 +266,69 @@ export default function LivePositionsPage() {
     setShowModifyOrderForm(true);
   };
 
+  const handleExitPosition = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPosition) return;
+
+    // Prevent exit if quantity is zero
+    if (selectedPosition.quantity === 0) {
+      alert.error("Cannot exit position with zero quantity");
+      return;
+    }
+
+    setExitingPosition(true);
+    try {
+      // Determine exit action based on position quantity
+      // If quantity > 0 (long position), we need to SELL to exit
+      // If quantity < 0 (short position), we need to BUY to exit
+      const exitAction = selectedPosition.quantity > 0 ? "SELL" : "BUY";
+      const exitQty = Math.abs(exitQuantity);
+      
+      // Determine exchange - default to NSE if not available
+      const exchange = selectedPosition.exchange || "NSE";
+
+      const payload = {
+        exchange: exchange,
+        tradingsymbol: selectedPosition.tradingsymbol,
+        transaction_type: exitAction,
+        quantity: exitQty,
+        order_type: "MARKET", // Use MARKET for exits
+        product: exchange === "NSE" || exchange === "BSE" ? "CNC" : "NRML",
+        price: 0, // MARKET order
+      };
+
+      const response = await authFetch(`orders/live/orders/${profileId}/place/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        alert.success(
+          exitQty === Math.abs(selectedPosition.quantity)
+            ? "Position exited successfully"
+            : `Partial exit of ${exitQty} units completed`
+        );
+        setShowExitPositionForm(false);
+        setSelectedPosition(null);
+        setExitQuantity(0);
+        fetchPositions();
+        fetchOrders();
+      } else {
+        alert.error(data.message || "Failed to exit position");
+      }
+    } catch (error) {
+      console.error("Error exiting position:", error);
+      alert.error("Error exiting position");
+    } finally {
+      setExitingPosition(false);
+    }
+  };
+
   return (
     <div className="p-6 bg-base-200 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -318,7 +385,12 @@ export default function LivePositionsPage() {
 
         {/* Live Positions Section */}
         <div className="bg-base-100 rounded-lg p-6 mb-6 shadow">
-          <h2 className="text-xl font-semibold mb-4">Live Positions</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Live Positions</h2>
+            <span className="badge badge-primary badge-lg">
+              {positions.length} {positions.length === 1 ? 'Position' : 'Positions'}
+            </span>
+          </div>
           {loadingPositions ? (
             <div className="text-center py-8">
               <span className="loading loading-spinner loading-lg"></span>
@@ -334,6 +406,7 @@ export default function LivePositionsPage() {
                     <th>LTP</th>
                     <th>P&L</th>
                     <th>Day P&L</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -373,6 +446,23 @@ export default function LivePositionsPage() {
                           ? `₹${position.day_pnl.toFixed(2)}`
                           : "-"}
                       </td>
+                      <td>
+                        {position.quantity !== 0 && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedPosition(position);
+                                setExitQuantity(Math.abs(position.quantity));
+                                setShowExitPositionForm(true);
+                              }}
+                              className="btn btn-ghost btn-xs"
+                              title="Exit Position"
+                            >
+                              <LogOut size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -385,7 +475,12 @@ export default function LivePositionsPage() {
 
         {/* Live Orders Section */}
         <div className="bg-base-100 rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-4">Live Orders</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Live Orders</h2>
+            <span className="badge badge-primary badge-lg">
+              {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
+            </span>
+          </div>
           {loadingOrders ? (
             <div className="text-center py-8">
               <span className="loading loading-spinner loading-lg"></span>
@@ -633,6 +728,98 @@ export default function LivePositionsPage() {
                     <span className="loading loading-spinner"></span>
                   ) : (
                     "Place Order"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Exit Position Modal */}
+      {showExitPositionForm && selectedPosition && selectedPosition.quantity !== 0 && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Exit Position</h3>
+            <form onSubmit={handleExitPosition}>
+              <div className="mb-4">
+                <p className="text-sm text-gray-400">
+                  Instrument: {selectedPosition.tradingsymbol}
+                </p>
+                <p className="text-sm text-gray-400">
+                  Current Quantity: {selectedPosition.quantity}
+                </p>
+                <p className="text-sm text-gray-400">
+                  Exit Action: {selectedPosition.quantity > 0 ? "SELL" : "BUY"}
+                </p>
+              </div>
+
+              <div className="form-control mb-4">
+                <label className="label">
+                  <span className="label-text">Exit Quantity</span>
+                </label>
+                <input
+                  type="number"
+                  className="input input-bordered w-full"
+                  value={exitQuantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    const maxQty = Math.abs(selectedPosition.quantity);
+                    setExitQuantity(Math.min(val, maxQty));
+                  }}
+                  min="1"
+                  max={Math.abs(selectedPosition.quantity)}
+                  required
+                />
+                <label className="label">
+                  <span className="label-text-alt">
+                    Max: {Math.abs(selectedPosition.quantity)} units
+                  </span>
+                </label>
+              </div>
+
+              <div className="form-control mb-4">
+                <label className="label">
+                  <span className="label-text">Order Type</span>
+                </label>
+                <select
+                  className="select select-bordered w-full"
+                  defaultValue="MARKET"
+                  disabled
+                >
+                  <option value="MARKET">MARKET</option>
+                </select>
+                <label className="label">
+                  <span className="label-text-alt">
+                    Exit orders are placed as MARKET orders
+                  </span>
+                </label>
+              </div>
+
+              <div className="modal-action">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setShowExitPositionForm(false);
+                    setSelectedPosition(null);
+                    setExitQuantity(0);
+                  }}
+                  disabled={exitingPosition}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={exitingPosition || exitQuantity <= 0}
+                >
+                  {exitingPosition ? (
+                    <span className="loading loading-spinner"></span>
+                  ) : exitQuantity === Math.abs(selectedPosition.quantity) ? (
+                    "Exit Full Position"
+                  ) : (
+                    "Exit Partial Position"
                   )}
                 </button>
               </div>
