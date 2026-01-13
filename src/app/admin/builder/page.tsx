@@ -11,6 +11,7 @@ import { Plus } from "lucide-react";
 
 import BuilderTaskControl from "@/components/admin/builder/BuilderTaskControl";
 import ExitTaskControl from "@/components/admin/builder/ExitTaskControl";
+import BuilderItemSkeleton from "@/components/skeletons/BuilderItemSkeleton";
 
 export default function BuilderPage() {
     const [builders, setBuilders] = useState<StrategyBuilder[]>([]);
@@ -236,7 +237,7 @@ export default function BuilderPage() {
             </div>
 
             {loading ? (
-                <p className="text-center text-gray-400 mt-4">Loading...</p>
+                <BuilderItemSkeleton />
             ) : (
                 <div className="space-y-4">
                     {builders.map(builder => (

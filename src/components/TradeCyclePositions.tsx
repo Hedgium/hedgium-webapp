@@ -182,12 +182,12 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
         />
 
         {/* Footer */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-base-300">
+        {/* <div className="flex items-center justify-between mt-3 pt-3 border-base-300">
           <div className="flex-1"></div>
           {tradeCycle.state === "PENDING" && (
             <button className="btn btn-error btn-sm">Close Cycle</button>
           )}
-        </div>
+        </div> */}
       </div>
     </div>
 

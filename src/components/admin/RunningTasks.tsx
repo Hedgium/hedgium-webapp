@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Activity, RefreshCw, StopCircle } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
+import RunningTasksSkeleton from "@/components/skeletons/RunningTasksSkeleton";
 
 interface RunningTask {
   task_id: string;
@@ -82,61 +83,65 @@ export default function RunningTasks() {
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th>Task</th>
-              <th>Status</th>
-              <th>Queue</th>
-              <th>Started</th>
-              <th className="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tasks.map((task) => (
-              <tr key={task.task_id} className="hover">
-                <td>
-                  <div className="font-medium">{task.name || task.task_id}</div>
-                  <div className="text-xs opacity-60">
-                    ID: {task.task_id.slice(0, 8)}...
-                  </div>
-                </td>
-                <td>
-                  <div className="badge badge-outline">{task.status}</div>
-                </td>
-                <td>{task.queue || "-"}</td>
-                <td>
-                  {task.started_at
-                    ? new Date(task.started_at).toLocaleString()
-                    : "-"}
-                </td>
-                <td className="text-right">
-                  <button
-                    onClick={() => handleStopTask(task.task_id)}
-                    disabled={stoppingTaskId === task.task_id}
-                    className="btn btn-sm btn-error gap-2"
-                  >
-                    {stoppingTaskId === task.task_id ? (
-                      <span className="loading loading-spinner loading-xs"></span>
-                    ) : (
-                      <StopCircle className="w-4 h-4" />
-                    )}
-                    Stop
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {tasks.length === 0 && !loading && (
+      {loading ? (
+        <RunningTasksSkeleton />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead>
               <tr>
-                <td colSpan={5} className="text-center text-gray-500 py-4">
-                  No running tasks.
-                </td>
+                <th>Task</th>
+                <th>Status</th>
+                <th>Queue</th>
+                <th>Started</th>
+                <th className="text-right">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {tasks.map((task) => (
+                <tr key={task.task_id} className="hover">
+                  <td>
+                    <div className="font-medium">{task.name || task.task_id}</div>
+                    <div className="text-xs opacity-60">
+                      ID: {task.task_id.slice(0, 8)}...
+                    </div>
+                  </td>
+                  <td>
+                    <div className="badge badge-outline">{task.status}</div>
+                  </td>
+                  <td>{task.queue || "-"}</td>
+                  <td>
+                    {task.started_at
+                      ? new Date(task.started_at).toLocaleString()
+                      : "-"}
+                  </td>
+                  <td className="text-right">
+                    <button
+                      onClick={() => handleStopTask(task.task_id)}
+                      disabled={stoppingTaskId === task.task_id}
+                      className="btn btn-sm btn-error gap-2"
+                    >
+                      {stoppingTaskId === task.task_id ? (
+                        <span className="loading loading-spinner loading-xs"></span>
+                      ) : (
+                        <StopCircle className="w-4 h-4" />
+                      )}
+                      Stop
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {tasks.length === 0 && !loading && (
+                <tr>
+                  <td colSpan={5} className="text-center text-gray-500 py-4">
+                    No running tasks.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

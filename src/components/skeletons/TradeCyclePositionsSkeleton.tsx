@@ -17,10 +17,10 @@ export default function TradeCyclePositionsSkeleton() {
         <div className="h-48 bg-base-200 rounded-lg"></div>
 
         {/* Footer Skeleton */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-base-300">
+        {/* <div className="flex items-center justify-between mt-3 pt-3 border-t border-base-300">
           <div className="h-8 bg-base-300 rounded w-24"></div>
           <div className="h-8 bg-base-300 rounded w-24"></div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

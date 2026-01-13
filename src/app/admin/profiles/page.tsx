@@ -7,6 +7,7 @@ import ProfileItem from "@/components/admin/ProfileItem";
 import ProfileForm from "@/components/admin/profiles/ProfileForm";
 import useAlert from "@/hooks/useAlert";
 import { Search } from "lucide-react";
+import ProfileItemSkeleton from "@/components/skeletons/ProfileItemSkeleton";
 
 export default function ProfilesPage() {
     const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -199,17 +200,19 @@ export default function ProfilesPage() {
                 </div>
             </div>
 
-            <div className="space-y-4">
-                {profiles.map((profile) => (
-                    <ProfileItem
-                        key={profile.id}
-                        profile={profile}
-                        onEdit={handleEdit}
-                    />
-                ))}
-            </div>
-
-            {loading && <p className="text-center text-gray-400 mt-4">Loading...</p>}
+            {loading ? (
+                <ProfileItemSkeleton />
+            ) : (
+                <div className="space-y-4">
+                    {profiles.map((profile) => (
+                        <ProfileItem
+                            key={profile.id}
+                            profile={profile}
+                            onEdit={handleEdit}
+                        />
+                    ))}
+                </div>
+            )}
 
             {!loading && nextPage && (
                 <div className="flex justify-center mt-6">

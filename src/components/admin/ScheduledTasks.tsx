@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import { Play, Clock, RefreshCw } from "lucide-react";
+import ScheduledTasksSkeleton from "@/components/skeletons/ScheduledTasksSkeleton";
 
 interface ScheduledTask {
     name: string;
@@ -79,54 +80,58 @@ export default function ScheduledTasks() {
                 </button>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="table w-full">
-                    <thead>
-                        <tr>
-                            <th>Task Name</th>
-                            <th>Schedule</th>
-                            <th className="text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {tasks.map((task) => (
-                            <tr key={task.name} className="hover">
-                                <td>
-                                    <div className="font-medium">{task.name}</div>
-                                    <div className="text-xs opacity-50">{task.task}</div>
-                                </td>
-                                <td>
-                                    <div className="badge badge-ghost gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        {task.schedule}
-                                    </div>
-                                </td>
-                                <td className="text-right">
-                                    <button
-                                        onClick={() => handleRunTask(task.name)}
-                                        disabled={runningTask === task.name}
-                                        className="btn btn-sm btn-primary gap-2"
-                                    >
-                                        {runningTask === task.name ? (
-                                            <span className="loading loading-spinner loading-xs"></span>
-                                        ) : (
-                                            <Play className="w-3 h-3" />
-                                        )}
-                                        Run Now
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                        {tasks.length === 0 && !loading && (
+            {loading ? (
+                <ScheduledTasksSkeleton />
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="table w-full">
+                        <thead>
                             <tr>
-                                <td colSpan={3} className="text-center text-gray-500 py-4">
-                                    No scheduled tasks found.
-                                </td>
+                                <th>Task Name</th>
+                                <th>Schedule</th>
+                                <th className="text-right">Actions</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {tasks.map((task) => (
+                                <tr key={task.name} className="hover">
+                                    <td>
+                                        <div className="font-medium">{task.name}</div>
+                                        <div className="text-xs opacity-50">{task.task}</div>
+                                    </td>
+                                    <td>
+                                        <div className="badge badge-ghost gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {task.schedule}
+                                        </div>
+                                    </td>
+                                    <td className="text-right">
+                                        <button
+                                            onClick={() => handleRunTask(task.name)}
+                                            disabled={runningTask === task.name}
+                                            className="btn btn-sm btn-primary gap-2"
+                                        >
+                                            {runningTask === task.name ? (
+                                                <span className="loading loading-spinner loading-xs"></span>
+                                            ) : (
+                                                <Play className="w-3 h-3" />
+                                            )}
+                                            Run Now
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {tasks.length === 0 && !loading && (
+                                <tr>
+                                    <td colSpan={3} className="text-center text-gray-500 py-4">
+                                        No scheduled tasks found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 }

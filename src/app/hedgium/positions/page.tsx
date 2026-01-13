@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from "react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import TradeCyclePositionsSkeleton from "@/components/skeletons/TradeCyclePositionsSkeleton";
-import LivePositionsModal from "@/components/LivePositionsModal";
+// import LivePositionsModal from "@/components/LivePositionsModal";
 import { LivePositionsData } from "@/types/positions";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
-import { TrendingUp } from "lucide-react";
+// import { TrendingUp } from "lucide-react";
 
 type TradeCycle = {
   id: string;
@@ -23,9 +23,9 @@ export default function TradeCyclesPage() {
   const alert = useAlert();
   const [tradeCycles, setTradeCycles] = useState<TradeCycle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showLivePositionsModal, setShowLivePositionsModal] = useState(false);
-  const [livePositions, setLivePositions] = useState<LivePositionsData | null>(null);
-  const [loadingLivePositions, setLoadingLivePositions] = useState(false);
+  // const [showLivePositionsModal, setShowLivePositionsModal] = useState(false);
+  // const [livePositions, setLivePositions] = useState<LivePositionsData | null>(null);
+  // const [loadingLivePositions, setLoadingLivePositions] = useState(false);
 
   // Fetch trade cycles
   async function getAllTradeCycles() {
@@ -40,27 +40,27 @@ export default function TradeCyclesPage() {
   }
 
   // Fetch live positions from broker
-  async function fetchLivePositions() {
-    setLoadingLivePositions(true);
-    try {
-      const response = await authFetch("positions/live/positions");
-      const data = await response.json();
+  // async function fetchLivePositions() {
+  //   setLoadingLivePositions(true);
+  //   try {
+  //     const response = await authFetch("positions/live/positions");
+  //     const data = await response.json();
 
-      // console.log("data", data);
-      if (data.status === "success") {
-        setLivePositions(data);
-        setShowLivePositionsModal(true);
-        alert.success("Live positions fetched successfully");
-      } else {
-        alert.error("Failed to fetch live positions");
-      }
-    } catch (error) {
-      console.error("Error fetching live positions:", error);
-      alert.error("Error fetching live positions");
-    } finally {
-      setLoadingLivePositions(false);
-    }
-  }
+  //     // console.log("data", data);
+  //     if (data.status === "success") {
+  //       setLivePositions(data);
+  //       setShowLivePositionsModal(true);
+  //       alert.success("Live positions fetched successfully");
+  //     } else {
+  //       alert.error("Failed to fetch live positions");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching live positions:", error);
+  //     alert.error("Error fetching live positions");
+  //   } finally {
+  //     setLoadingLivePositions(false);
+  //   }
+  // }
 
   useEffect(() => {
     (async () => {
@@ -78,14 +78,14 @@ export default function TradeCyclesPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold">Strategy Positions</h2>
             
-            <button
+            {/* <button
               onClick={fetchLivePositions}
               disabled={loadingLivePositions}
               className={`btn btn-primary btn-outline btn-sm ${loadingLivePositions ? "loading" : ""}`}
             >
               {!loadingLivePositions && <TrendingUp size={16} className="mr-2" />}
               Live Positions
-            </button>
+            </button> */}
           </div>
 
           {loading ? (
@@ -120,12 +120,12 @@ export default function TradeCyclesPage() {
       <br />
 
       {/* Live Positions Modal */}
-      <LivePositionsModal
+      {/* <LivePositionsModal
         isOpen={showLivePositionsModal}
         onClose={() => setShowLivePositionsModal(false)}
         positions={livePositions}
         title="Live Positions"
-      />
+      /> */}
     </div>
   );
 }
