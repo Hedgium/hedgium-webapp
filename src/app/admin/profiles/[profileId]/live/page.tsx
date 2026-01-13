@@ -4,9 +4,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
-import { ArrowLeft, RefreshCw, Plus, Edit2, X, LogOut } from "lucide-react";
-import { LivePosition } from "@/components/LivePositionsModal";
+import { ArrowLeft, RefreshCw, Plus, Edit2, X, LogOut, TrendingUp, TrendingDown } from "lucide-react";
 import { Profile } from "@/types/profile";
+import { LivePosition } from "@/types/positions";
 
 interface LiveOrder {
   order_id: string;
@@ -99,7 +99,7 @@ export default function LivePositionsPage() {
       const response = await authFetch(`positions/live/positions/${profileId}/`);
       const data = await response.json();
 
-      console.log(data);
+      // console.log(data);
 
       if (data.status === "success") {
         setPositions(data.data?.net || []);
@@ -241,7 +241,7 @@ export default function LivePositionsPage() {
       );
 
       const data = await response.json();
-      console.log(data);
+      // console.log(data);
 
       if (data.status === "success" || response.ok) {
         alert.success("Order cancelled successfully");
@@ -351,28 +351,8 @@ export default function LivePositionsPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={fetchPositions}
-              disabled={loadingPositions}
-              className="btn btn-outline btn-sm"
-            >
-              <RefreshCw
-                size={16}
-                className={loadingPositions ? "animate-spin" : ""}
-              />
-              Refresh Positions
-            </button>
-            <button
-              onClick={fetchOrders}
-              disabled={loadingOrders}
-              className="btn btn-outline btn-sm"
-            >
-              <RefreshCw
-                size={16}
-                className={loadingOrders ? "animate-spin" : ""}
-              />
-              Refresh Orders
-            </button>
+        
+            
             <button
               onClick={() => setShowPlaceOrderForm(true)}
               className="btn btn-primary btn-sm"
@@ -384,28 +364,88 @@ export default function LivePositionsPage() {
         </div>
 
         {/* Live Positions Section */}
-        <div className="bg-base-100 rounded-lg p-6 mb-6 shadow">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-base-100 rounded-lg p-6 mb-6 ">
+          <div className="flex items-center gap-2 justify-between mb-4">
             <h2 className="text-xl font-semibold">Live Positions</h2>
-            <span className="badge badge-primary badge-lg">
+            <div>
+
+            <span className="badge badge-md badge-outline">
               {positions.length} {positions.length === 1 ? 'Position' : 'Positions'}
             </span>
+
+            <button
+              onClick={fetchPositions}
+              disabled={loadingPositions}
+              className="btn btn-ghost btn-sm"
+            >
+              <RefreshCw
+                size={16}
+                className={loadingPositions ? "animate-spin" : ""}
+              />
+              
+            </button>
+            </div>
+            
           </div>
           {loadingPositions ? (
             <div className="text-center py-8">
               <span className="loading loading-spinner loading-lg"></span>
             </div>
           ) : positions.length > 0 ? (
-            <div className="overflow-x-auto">
+            <>
+              {/* Totals Summary */}
+              {(() => {
+                const totalPnl = positions.reduce((sum, pos) => sum + (pos.pnl || 0), 0);
+                const totalRealised = positions.reduce((sum, pos) => sum + (pos.realised || pos.realised_total || 0), 0);
+                const totalUnrealised = positions.reduce((sum, pos) => sum + (pos.unrealised || pos.unrealised_total || 0), 0);
+                const totalPnlColor = totalPnl >= 0 ? "text-green-400" : "text-red-400";
+                
+                return (
+                  <div className="grid grid-cols-3 gap-4 mb-4 p-4 bg-base-200 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                        Total P&L
+                      </div>
+                      <div className={`text-lg font-bold flex items-center justify-center gap-1 ${totalPnlColor}`}>
+                        {totalPnl >= 0 ? (
+                          <TrendingUp width={16} />
+                        ) : (
+                          <TrendingDown width={16} />
+                        )}
+                        ₹{totalPnl.toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                        Total Realised
+                      </div>
+                      <div className="text-lg font-semibold">
+                        ₹{totalRealised.toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                        Total Unrealised
+                      </div>
+                      <div className="text-lg font-semibold">
+                        ₹{totalUnrealised.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+              
+              <div className="overflow-x-auto">
               <table className="table table-zebra w-full">
                 <thead>
                   <tr>
                     <th>Instrument</th>
-                    <th>Qty</th>
+                    <th>Qty(B/S)</th>
                     <th>Avg Price</th>
                     <th>LTP</th>
                     <th>P&L</th>
-                    <th>Day P&L</th>
+                    <th>Realised</th>
+                    <th>Unrealised</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -413,7 +453,7 @@ export default function LivePositionsPage() {
                   {positions.map((position: LivePosition, index: number) => (
                     <tr key={index}>
                       <td className="font-medium">{position.tradingsymbol}</td>
-                      <td>{position.quantity}</td>
+                      <td>{position.quantity} ({position.buy_quantity}/{position.sell_quantity})</td>
                       <td>
                         {position.average_price
                           ? `₹${position.average_price.toFixed(2)}`
@@ -435,15 +475,15 @@ export default function LivePositionsPage() {
                           ? `₹${position.pnl.toFixed(2)}`
                           : "-"}
                       </td>
-                      <td
-                        className={
-                          position.day_pnl && position.day_pnl >= 0
-                            ? "text-green-400"
-                            : "text-red-400"
-                        }
-                      >
-                        {position.day_pnl !== undefined
-                          ? `₹${position.day_pnl.toFixed(2)}`
+
+                      <td>
+                        {position.realised !== undefined || position.realised_total !== undefined
+                          ? `₹${(position.realised ?? position.realised_total ?? 0).toFixed(2)}`
+                          : "-"}
+                      </td>
+                      <td>
+                        {position.unrealised !== undefined || position.unrealised_total !== undefined
+                          ? `₹${(position.unrealised ?? position.unrealised_total ?? 0).toFixed(2)}`
                           : "-"}
                       </td>
                       <td>
@@ -467,19 +507,38 @@ export default function LivePositionsPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           ) : (
             <p className="text-center text-gray-400 py-8">No positions found</p>
           )}
         </div>
 
         {/* Live Orders Section */}
-        <div className="bg-base-100 rounded-lg p-6 shadow">
+        <div className="bg-base-100 rounded-lg p-6 ">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Live Orders</h2>
-            <span className="badge badge-primary badge-lg">
+
+            <div>
+
+            <span className="badge badge-md badge-outline">
               {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
             </span>
+
+            <button
+              onClick={fetchOrders}
+              disabled={loadingOrders}
+                className="btn btn-ghost btn-sm"
+            >
+              <RefreshCw
+                size={16}
+                className={loadingOrders ? "animate-spin" : ""}
+              />
+              
+            </button>
+
+            </div>
+            
           </div>
           {loadingOrders ? (
             <div className="text-center py-8">

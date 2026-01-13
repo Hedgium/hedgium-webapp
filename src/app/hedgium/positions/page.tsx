@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from "react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import TradeCyclePositionsSkeleton from "@/components/skeletons/TradeCyclePositionsSkeleton";
-import LivePositionsModal, { LivePositionsData } from "@/components/LivePositionsModal";
+import LivePositionsModal from "@/components/LivePositionsModal";
+import { LivePositionsData } from "@/types/positions";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import { TrendingUp } from "lucide-react";

@@ -1,23 +1,7 @@
 "use client";
 
 import React from "react";
-
-export interface LivePosition {
-  tradingsymbol: string;
-  exchange?: string;
-  quantity: number;
-  average_price?: number;
-  last_price?: number;
-  pnl?: number;
-  day_pnl?: number;
-}
-
-export interface LivePositionsData {
-  status: string;
-  data?: {
-    net: LivePosition[];
-  };
-}
+import { LivePosition, LivePositionsData } from "@/types/positions";
 
 interface LivePositionsModalProps {
   isOpen: boolean;
@@ -67,10 +51,13 @@ export default function LivePositionsModal({
                 <tr>
                   <th>Instrument</th>
                   <th>Qty</th>
+                  <th>Buy Qty</th>
+                  <th>Sell Qty</th>
                   <th>Avg Price</th>
                   <th>LTP</th>
+                  <th>Realised Total</th>
+                  <th>Unrealised Total</th>
                   <th>P&L</th>
-                  <th>Day P&L</th>
                 </tr>
               </thead>
               <tbody>
@@ -78,6 +65,8 @@ export default function LivePositionsModal({
                   <tr key={index}>
                     <td className="font-medium">{position.tradingsymbol}</td>
                     <td>{position.quantity}</td>
+                    <td>{position.buy_quantity ?? "-"}</td>
+                    <td>{position.sell_quantity ?? "-"}</td>
                     <td>
                       {position.average_price
                         ? `₹${position.average_price.toFixed(2)}`
@@ -86,6 +75,16 @@ export default function LivePositionsModal({
                     <td>
                       {position.last_price
                         ? `₹${position.last_price.toFixed(2)}`
+                        : "-"}
+                    </td>
+                    <td>
+                      {position.realised_total !== undefined
+                        ? `₹${position.realised_total.toFixed(2)}`
+                        : "-"}
+                    </td>
+                    <td>
+                      {position.unrealised_total !== undefined
+                        ? `₹${position.unrealised_total.toFixed(2)}`
                         : "-"}
                     </td>
                     <td
@@ -97,17 +96,6 @@ export default function LivePositionsModal({
                     >
                       {position.pnl !== undefined
                         ? `₹${position.pnl.toFixed(2)}`
-                        : "-"}
-                    </td>
-                    <td
-                      className={
-                        position.day_pnl && position.day_pnl >= 0
-                          ? "text-green-400"
-                          : "text-red-400"
-                      }
-                    >
-                      {position.day_pnl !== undefined
-                        ? `₹${position.day_pnl.toFixed(2)}`
                         : "-"}
                     </td>
                   </tr>
