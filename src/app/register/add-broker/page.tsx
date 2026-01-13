@@ -122,8 +122,8 @@ const BrokerSetup: React.FC = () => {
           >
             <option value="">Select Broker</option>
             <option value="ZERODHA">Zerodha</option>
-            <option value="ANGELONE">Upstox</option>
-            <option value="UPSTOX">AngelOne</option>
+            {/* <option value="ANGELONE">Upstox</option> */}
+            {/* <option value="UPSTOX">AngelOne</option> */}
             <option value="SHOONYA">Shoonya</option>
           </select>
         </div>
@@ -155,28 +155,28 @@ const BrokerSetup: React.FC = () => {
         </div>
 
         {/* Access Token */}
-        <div>
-          <label className="block text-sm font-medium">Access Token</label>
+        {brokerName === "ZERODHA" && <div>
+          <label className="block text-sm font-medium">Secret Key</label>
           <input
             type="text"
             value={secretKey}
             onChange={(e) => setSecretKey(e.target.value)}
             className="input input-bordered w-full"
-            placeholder="Enter Access Token"
+            placeholder="Enter Secret Key"
           />
-        </div>
+        </div>}
 
         {/* Broker 2FA */}
-        {/* <div>
+        {brokerName === "SHOONYA" && <div>
           <label className="block text-sm font-medium">Broker 2FA</label>
           <input
             type="text"
             value={brokerTwofa}
             onChange={(e) => setBrokerTwofa(e.target.value)}
             className="input input-bordered w-full"
-            placeholder="Enter 2FA Code / PIN"
+            placeholder="Enter 2FA Code"
           />
-        </div> */}
+        </div> }
 
         {/* Submit */}
         <div className="flex justify-between gap-2">

@@ -111,7 +111,7 @@ export default function BuilderTaskControl() {
     return (
         <div className="bg-base-200 rounded-lg py-4">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold">Entry Task</h2>
                     <div className="flex items-center gap-2">
                         <div className={`badge ${taskStatus.is_running ? "badge-success" : "badge-error"} gap-2`}>
@@ -126,8 +126,7 @@ export default function BuilderTaskControl() {
                             <span className="text-xs opacity-60">ID: {taskStatus.task_id.substring(0, 8)}...</span>
                         )}
                     </div>
-                </div>
-                <div className="flex gap-2">
+
                     <button
                         onClick={handleStartTask}
                         disabled={taskStatus.is_running || taskLoading}
@@ -143,6 +142,7 @@ export default function BuilderTaskControl() {
                         {taskLoading ? <span className="loading loading-spinner loading-xs"></span> : "Stop"}
                     </button>
                 </div>
+               
             </div>
         </div>
     );

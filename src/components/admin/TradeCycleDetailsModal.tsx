@@ -65,7 +65,7 @@ export default function TradeCycleDetailsModal({
             setLoading(true);
             setError(null);
 
-            const res = await authFetch(`trade-cycles/${tradeCycleId}/details/`);
+            const res = await authFetch(`trade-cycles/${tradeCycleId}/details/?load_all=true`);
             if (!res.ok) {
                 throw new Error("Failed to fetch trade cycle details");
             }

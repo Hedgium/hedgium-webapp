@@ -97,8 +97,10 @@ function Adjustment({ adj, onDelete }) {
             {deleting ? (
               <span className="loading loading-spinner loading-xs"></span>
             ) : (
-              <Trash2 size={14} />
-            )}
+              !adjustment.approved && (
+                <Trash2 size={14} />
+              ))
+              }
           </button>
 
           {/* Arrow */}

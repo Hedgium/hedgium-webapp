@@ -110,7 +110,7 @@ export default function ExitTaskControl() {
     return (
         <div className="bg-base-200 rounded-lg p-4 ">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold">Exit Task</h2>
                     <div className="flex items-center gap-2">
                         <div className={`badge ${taskStatus.is_running ? "badge-success" : "badge-error"} gap-2`}>
@@ -127,8 +127,7 @@ export default function ExitTaskControl() {
                             </span>
                         )}
                     </div>
-                </div>
-                <div className="flex gap-2">
+
                     <button
                         onClick={handleStartTask}
                         disabled={taskStatus.is_running || taskLoading}
@@ -143,7 +142,9 @@ export default function ExitTaskControl() {
                     >
                         {taskLoading ? <span className="loading loading-spinner loading-xs"></span> : "Stop"}
                     </button>
+
                 </div>
+                
             </div>
         </div>
     );

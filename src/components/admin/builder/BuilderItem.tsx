@@ -32,7 +32,7 @@ export default function BuilderItem({
     };
 
     return (
-        <div className="bg-base-100 rounded-lg p-4 mb-6 border border-base-300 shadow-sm">
+        <div className="bg-base-100 rounded-lg p-4 mb-6 border border-base-300">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 pb-4 border-b border-base-200">
                 <div>
                     <h3 className="text-lg font-bold text-primary flex items-center gap-2">
