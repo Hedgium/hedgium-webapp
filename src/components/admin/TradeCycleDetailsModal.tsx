@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { authFetch } from "@/utils/api";
 import { X, RefreshCw } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
+import PositionsTable, { Position } from "../positions/PositionsTable";
+import UnmappedOrdersTable, { UnmappedOrder } from "../positions/UnmappedOrdersTable";
+import PositionsSummary from "../positions/PositionsSummary";
 
 interface Order {
     id: number;
@@ -13,20 +16,6 @@ interface Order {
     price: number | null;
     status: string;
     order_type: string;
-}
-
-interface Position {
-    id: number;
-    instrument: string;
-    pnl: number;
-    average_buy_price: number;
-    average_sell_price: number;
-    quantity: number;
-    buy_quantity: number;
-    sell_quantity: number;
-    unrealised: number;
-    realised_total: number;
-    orders: Order[];
 }
 
 interface TradeCycleDetails {
@@ -40,7 +29,17 @@ interface TradeCycleDetails {
         updated_at: string;
     };
     positions: Position[];
-    unmapped_orders: Order[];
+    unmapped_orders: UnmappedOrder[];
+    totals?: {
+        total_pnl: number;
+        realised_total: number;
+        realised_today: number;
+        unrealised_total: number;
+        unrealised_today: number;
+        unrealised: number;
+        total_buy_qty: number;
+        total_sell_qty: number;
+    } | null;
 }
 
 interface TradeCycleDetailsModalProps {
@@ -111,28 +110,6 @@ export default function TradeCycleDetailsModal({
         fetchDetails();
     }, [tradeCycleId]);
 
-    // Get status badge color
-    function getStatusColor(status: string) {
-        switch (status.toUpperCase()) {
-            case "COMPLETE":
-            case "EXECUTED":
-                return "badge-success";
-            case "PENDING":
-                return "badge-warning";
-            case "FAILED":
-            case "REJECTED":
-                return "badge-error";
-            default:
-                return "badge-ghost";
-        }
-    }
-
-    // Get PnL color
-    function getPnLColor(pnl: number) {
-        if (pnl > 0) return "text-green-500";
-        if (pnl < 0) return "text-red-500";
-        return "";
-    }
 
     return (
         <div className="modal modal-open">
@@ -168,88 +145,26 @@ export default function TradeCycleDetailsModal({
                                 </button>
                             </div>
 
-                            {data.positions.length === 0 ? (
-                                <div className="text-center py-8 opacity-60">No positions found</div>
-                            ) : (
-                                <>
-                                    <div className="overflow-x-auto mb-4 rounded-lg border border-base-300">
-                                        <table className="table table-sm">
-                                            <thead>
-                                                <tr className="bg-base-200">
-                                                    <th>Instrument</th>
-                                                    <th className="text-right">Qty (B/S)</th>
-                                                    <th className="text-right">Avg Buy</th>
-                                                    <th className="text-right">Avg Sell</th>
-                                                    <th className="text-right">Realised</th>
-                                                    <th className="text-right">Unrealised</th>
-                                                    <th className="text-right">PnL</th>
-                                                    <th className="text-right">Orders</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {data.positions.map((position) => (
-                                                    <tr key={position.id}>
-                                                        <td>{position.instrument}</td>
-                                                        <td className="text-right">
-                                                            {position.quantity} ({position.buy_quantity}/{position.sell_quantity})
-                                                        </td>
-                                                        <td className="text-right">₹{position.average_buy_price.toFixed(2)}</td>
-                                                        <td className="text-right">₹{position.average_sell_price.toFixed(2)}</td>
-                                                        <td className="text-right">₹{position.realised_total.toFixed(2)}</td>
-                                                        <td className="text-right">₹{position.unrealised.toFixed(2)}</td>
-                                                        <td className={`text-right font-semibold ${getPnLColor(position.pnl)}`}>
-                                                            ₹{position.pnl.toFixed(2)}
-                                                        </td>
-                                                        <td className="text-right">{position.orders.length}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </>
-                            )}
+                            {/* Totals Summary */}
+                            <PositionsSummary 
+                                positions={data.positions} 
+                                totals={data.totals || null}
+                                className="mb-4"
+                            />
+
+                            <div className="mb-4 rounded-lg border border-base-300">
+                                <PositionsTable
+                                    positions={data.positions}
+                                    showOrdersCount={true}
+                                />
+                            </div>
                         </div>
 
                         {/* Unmapped Orders Section */}
-                        {data.unmapped_orders.length > 0 && (
-                            <div>
-                                <h4 className="text-xl font-semibold mb-3">Unmapped Orders</h4>
-                                <div className="overflow-x-auto">
-                                    <table className="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Instrument</th>
-                                                <th>Action</th>
-                                                <th>Qty</th>
-                                                <th>Price</th>
-                                                <th>Type</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {data.unmapped_orders.map((order) => (
-                                                <tr key={order.id}>
-                                                    <td>{order.instrument}</td>
-                                                    <td>
-                                                        <span className={order.action === "BUY" ? "text-green-500" : "text-red-500"}>
-                                                            {order.action}
-                                                        </span>
-                                                    </td>
-                                                    <td>{order.quantity}</td>
-                                                    <td>{order.price ? `₹${order.price.toFixed(2)}` : "Market"}</td>
-                                                    <td>{order.order_type}</td>
-                                                    <td>
-                                                        <span className={`badge badge-sm ${getStatusColor(order.status)}`}>
-                                                            {order.status}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )}
+                        <UnmappedOrdersTable
+                            orders={data.unmapped_orders}
+                            variant="table"
+                        />
                     </>
                 )}
 

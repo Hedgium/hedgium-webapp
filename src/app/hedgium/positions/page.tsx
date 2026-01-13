@@ -45,7 +45,7 @@ export default function TradeCyclesPage() {
       const response = await authFetch("positions/live/positions");
       const data = await response.json();
 
-      console.log("data", data);
+      // console.log("data", data);
       if (data.status === "success") {
         setLivePositions(data);
         setShowLivePositionsModal(true);
