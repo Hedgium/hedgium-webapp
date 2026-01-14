@@ -7,7 +7,7 @@ import TradeCyclePositionsSkeleton from "@/components/skeletons/TradeCyclePositi
 import { LivePositionsData } from "@/types/positions";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
-// import { TrendingUp } from "lucide-react";
+import { RotateCw } from "lucide-react";
 
 type TradeCycle = {
   id: string;
@@ -23,6 +23,7 @@ export default function TradeCyclesPage() {
   const alert = useAlert();
   const [tradeCycles, setTradeCycles] = useState<TradeCycle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   // const [showLivePositionsModal, setShowLivePositionsModal] = useState(false);
   // const [livePositions, setLivePositions] = useState<LivePositionsData | null>(null);
   // const [loadingLivePositions, setLoadingLivePositions] = useState(false);
@@ -36,6 +37,32 @@ export default function TradeCyclesPage() {
       setTradeCycles(data.results);
     } catch (error) {
       console.error("Error fetching trade cycles:", error);
+    }
+  }
+
+  // Global refresh positions from broker
+  async function refreshAllPositions() {
+    setRefreshing(true);
+    try {
+      const res = await authFetch("positions/pnl/refresh/");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to refresh positions");
+      }
+
+      alert.success("Positions refreshed successfully");
+      
+      // Refetch all trade cycles to update positions
+      await getAllTradeCycles();
+    } catch (err: unknown) {
+      console.error("Error refreshing positions:", err);
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : "Failed to refresh positions";
+      alert.error(errorMessage);
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -78,14 +105,14 @@ export default function TradeCyclesPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold">Strategy Positions</h2>
             
-            {/* <button
-              onClick={fetchLivePositions}
-              disabled={loadingLivePositions}
-              className={`btn btn-primary btn-outline btn-sm ${loadingLivePositions ? "loading" : ""}`}
+            <button
+              onClick={refreshAllPositions}
+              disabled={refreshing}
+              className={`btn btn-ghost btn-sm ${refreshing ? "animate-spin" : ""}`}
+              title="Refresh all positions from broker"
             >
-              {!loadingLivePositions && <TrendingUp size={16} className="mr-2" />}
-              Live Positions
-            </button> */}
+              <RotateCw size={16} />
+            </button>
           </div>
 
           {loading ? (

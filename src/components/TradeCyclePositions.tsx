@@ -3,7 +3,7 @@
 // components/TradeCycleWithPositionsCard.tsx
 
 import React, { JSX, useState, useEffect, useCallback } from "react";
-import { Clock, CheckCircle, XCircle, RotateCw } from "lucide-react";
+import { Clock, CheckCircle, XCircle } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import TradeCyclePositionsSkeleton from "./skeletons/TradeCyclePositionsSkeleton";
@@ -79,37 +79,6 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
     await getTradeCyclePositions(tradeCycle.id, true);
   }
 
-  /** 🔄 Refresh positions from broker */
-  async function refreshPositions() {
-    setRefreshing(true);
-    try {
-      const res = await authFetch(`positions/pnl/refresh/${tradeCycle.id}/`);
-      const data = await res.json();
-
-      // console.log("data", data);
-
-      if (!res.ok) {
-        throw new Error(data.detail || "Failed to refresh positions");
-      }
-
-      alert.success("Positions refreshed successfully");
-      
-      // Reset allLoaded since we're refreshing and might have new positions
-      setAllLoaded(false);
-      
-      // Refetch positions after refresh
-      await getTradeCyclePositions(tradeCycle.id);
-    } catch (err: unknown) {
-      console.error("Error refreshing positions:", err);
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : "Failed to refresh positions";
-      alert.error(errorMessage);
-    } finally {
-      setRefreshing(false);
-    }
-  }
-
   useEffect(() => {
     if (tradeCycle) getTradeCyclePositions(tradeCycle?.id);
   }, [tradeCycle, getTradeCyclePositions]);
@@ -137,15 +106,6 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            {(tradeCycle?.state === "ACTIVATED" || tradeCycle?.state === "ADJUSTED") && <button
-              onClick={refreshPositions}
-              disabled={refreshing}
-              className={`btn btn-ghost btn-sm ${refreshing ? "animate-spin" : ""}`}
-              title="Refresh positions from broker"
-            >
-              <RotateCw size={16} />
-            </button>}
-
             <div className="text-xs text-gray-500 flex flex-col items-end">
               <span>ID: {tradeCycle.id}</span>
               <span>Created: {new Date(tradeCycle.created_at).toLocaleDateString()}</span>
