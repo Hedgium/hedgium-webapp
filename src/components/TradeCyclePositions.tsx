@@ -51,6 +51,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
       setLoadingMore(true);
     } else {
       setLoading(true);
+      setAllLoaded(false);
     }
     try {
       const url = loadAll 
