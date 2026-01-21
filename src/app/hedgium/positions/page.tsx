@@ -42,9 +42,10 @@ export default function TradeCyclesPage() {
 
   // Global refresh positions from broker
   async function refreshAllPositions() {
-    setRefreshing(true);
+    
     try {
-      const res = await authFetch("positions/pnl/refresh/");
+      alert.success("Positions refresh started");
+      const res = await authFetch("positions/pnl/refresh/trades/", { method: "POST" });
       const data = await res.json();
 
       if (!res.ok) {
@@ -54,6 +55,7 @@ export default function TradeCyclesPage() {
       alert.success("Positions refreshed successfully");
       
       // Refetch all trade cycles to update positions
+      setRefreshing(true);
       await getAllTradeCycles();
     } catch (err: unknown) {
       console.error("Error refreshing positions:", err);

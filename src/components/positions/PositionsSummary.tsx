@@ -32,7 +32,7 @@ export default function PositionsSummary({
   const realisedToday =
     totals?.realised_today ?? positions.reduce((acc, pos) => acc + (pos.realised_today ?? 0), 0);
   const unrealisedPnl =
-    totals?.unrealised ?? positions.reduce((acc, pos) => acc + (pos.unrealised ?? pos.unrealised_total ?? 0), 0);
+    totals?.unrealised_total ?? positions.reduce((acc, pos) => acc + (pos.unrealised_total ?? 0), 0);
   const totalBuyQty =
     totals?.total_buy_qty ?? positions.reduce((acc, pos) => acc + pos.buy_quantity, 0);
   const totalSellQty =
@@ -46,7 +46,7 @@ export default function PositionsSummary({
 
   return (
     <div
-      className={`grid grid-cols-3 md:grid-cols-6 gap-3 mb-3 p-3 bg-base-200 rounded-lg ${className}`}
+      className={`grid grid-cols-3 md:grid-cols-5 gap-3 mb-3 p-3 bg-base-200 rounded-lg ${className}`}
     >
       <div className="text-center">
         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
@@ -65,18 +65,13 @@ export default function PositionsSummary({
       </div>
       <div className="text-center">
         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-          Realised Total
+          Realised
         </div>
         <div className="text-base font-semibold">
-          ₹{(realisedPnl + realisedToday).toFixed(2)}
+          ₹{(realisedPnl).toFixed(2)}
         </div>
       </div>
-      <div className="text-center">
-        <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-          Realised Today
-        </div>
-        <div className="text-base font-semibold">₹{realisedToday.toFixed(2)}</div>
-      </div>
+    
       <div className="text-center">
         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
           Unrealised

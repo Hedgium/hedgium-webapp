@@ -87,7 +87,7 @@ export default function TradeCycleDetailsModal({
             setRefreshing(true);
             setError(null);
 
-            const res = await authFetch(`positions/pnl/refresh/${tradeCycleId}/`)
+            const res = await authFetch(`positions/pnl/refresh/`)
             console.log(await res.json())
 
             if (!res.ok) {

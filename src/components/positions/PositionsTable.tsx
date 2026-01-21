@@ -58,8 +58,8 @@ export default function PositionsTable({
         <tbody>
           {positions.map((pos) => {
             const pnlColor = getPnLColor(pos.pnl);
-            const unrealisedValue = pos.unrealised_total ?? pos.unrealised ?? 0;
-            const realisedValue = pos.realised_total + (pos.realised_today ?? 0);
+            const unrealisedValue = pos.unrealised_total ?? 0;
+            const realisedValue = pos.realised_total ?? 0;
 
             return (
               <tr key={pos.id} className="hover:bg-base-200">
