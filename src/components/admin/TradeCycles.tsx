@@ -1,13 +1,22 @@
 "use client";
 
 import { useState, lazy, Suspense } from "react";
+import type { ComponentType, LazyExoticComponent } from "react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import { RotateCw, Eye } from "lucide-react";
 import Link from "next/link";
 
 // Lazy load the modal component
-const TradeCycleDetailsModal = lazy(() => import("./TradeCycleDetailsModal"));
+const TradeCycleDetailsModal = lazy(
+  () => import("./TradeCycleDetailsModal")
+) as LazyExoticComponent<
+  ComponentType<{
+    tradeCycleId: number;
+    tradeCycle?: { id: number; profile_id?: number } | null;
+    onClose: () => void;
+  }>
+>;
 
 
 export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
@@ -22,6 +31,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [selectedTradeCycleId, setSelectedTradeCycleId] = useState<number | null>(null);
+  const [selectedTradeCycle, setSelectedTradeCycle] = useState<{ id: number; profile_id?: number } | null>(null);
 
   const alert = useAlert();
   // Toggle existing cycle selection
@@ -110,8 +120,12 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
   }
 
   // Open modal for trade cycle details
-  function handleShowMore(cycleId: number) {
-    setSelectedTradeCycleId(cycleId);
+  function handleShowMore(cycle: any) {
+    setSelectedTradeCycle({
+      id: cycle.id,
+      profile_id: cycle.profile?.id,
+    });
+    setSelectedTradeCycleId(cycle.id);
     setShowModal(true);
   }
 
@@ -341,7 +355,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
                         </Link>
                         
                         <button
-                          onClick={() => handleShowMore(cycle.id)}
+                          onClick={() => handleShowMore(cycle)}
                           className="btn btn-sm w-full"
                           title="View Trade Cycle Positions"
                         >
@@ -388,6 +402,8 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
         <Suspense fallback={<div className="modal modal-open"><div className="modal-box"><span className="loading loading-spinner loading-lg"></span></div></div>}>
           <TradeCycleDetailsModal
             tradeCycleId={selectedTradeCycleId}
+            tradeCycle={selectedTradeCycle}
+            
             onClose={handleCloseModal}
           />
         </Suspense>

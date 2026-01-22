@@ -12,7 +12,6 @@ interface PositionsSummaryProps {
     realised_today?: number;
     unrealised_total?: number;
     unrealised_today?: number;
-    unrealised?: number;
     total_buy_qty?: number;
     total_sell_qty?: number;
   } | null;

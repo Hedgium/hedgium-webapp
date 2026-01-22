@@ -42,20 +42,49 @@ export default function TradeCyclesPage() {
 
   // Global refresh positions from broker
   async function refreshAllPositions() {
-    
+    setRefreshing(true);
     try {
       alert.success("Positions refresh started");
-      const res = await authFetch("positions/pnl/refresh/trades/", { method: "POST" });
+      const res = await authFetch("positions/pnl/refresh/trades/async/", { method: "POST" });
       const data = await res.json();
 
       if (!res.ok) {
         throw new Error(data.detail || "Failed to refresh positions");
       }
 
+      const taskId = data.task_id as string | undefined;
+      if (!taskId) {
+        throw new Error("Refresh task not started");
+      }
+
+      const maxAttempts = 30;
+      let completed = false;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const statusRes = await authFetch(`tasks/status/${taskId}/`);
+        const statusData = await statusRes.json();
+
+        if (!statusRes.ok) {
+          throw new Error(statusData.detail || "Failed to check refresh status");
+        }
+
+        if (statusData.status === "SUCCESS") {
+          completed = true;
+          break;
+        }
+        if (statusData.status === "FAILURE") {
+          throw new Error(statusData.result || "Refresh failed");
+        }
+      }
+
+      if (!completed) {
+        alert.success("Refresh running in background");
+        return;
+      }
+
       alert.success("Positions refreshed successfully");
-      
+
       // Refetch all trade cycles to update positions
-      setRefreshing(true);
       await getAllTradeCycles();
     } catch (err: unknown) {
       console.error("Error refreshing positions:", err);
@@ -68,30 +97,15 @@ export default function TradeCyclesPage() {
     }
   }
 
-  // Fetch live positions from broker
-  // async function fetchLivePositions() {
-  //   setLoadingLivePositions(true);
-  //   try {
-  //     const response = await authFetch("positions/live/positions");
-  //     const data = await response.json();
-
-  //     // console.log("data", data);
-  //     if (data.status === "success") {
-  //       setLivePositions(data);
-  //       setShowLivePositionsModal(true);
-  //       alert.success("Live positions fetched successfully");
-  //     } else {
-  //       alert.error("Failed to fetch live positions");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching live positions:", error);
-  //     alert.error("Error fetching live positions");
-  //   } finally {
-  //     setLoadingLivePositions(false);
-  //   }
-  // }
+  useEffect(() => {
+    
+    (async () => {
+      await refreshAllPositions();
+    })();
+  }, []);
 
   useEffect(() => {
+    
     (async () => {
       setLoading(true);
       await getAllTradeCycles();

@@ -8,7 +8,6 @@ export interface LivePosition {
   buy_quantity?: number;
   sell_quantity?: number;
   realised?: number;
-  unrealised?: number;
   realised_total?: number;
   unrealised_total?: number;
 }

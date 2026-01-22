@@ -21,6 +21,7 @@ interface Order {
 interface TradeCycleDetails {
     trade_cycle: {
         id: number;
+        profile_id?: number;
         name: string;
         state: string;
         sub_state: string;
@@ -36,7 +37,6 @@ interface TradeCycleDetails {
         realised_today: number;
         unrealised_total: number;
         unrealised_today: number;
-        unrealised: number;
         total_buy_qty: number;
         total_sell_qty: number;
     } | null;
@@ -44,11 +44,13 @@ interface TradeCycleDetails {
 
 interface TradeCycleDetailsModalProps {
     tradeCycleId: number;
+    tradeCycle?: { id: number; profile_id?: number } | null;
     onClose: () => void;
 }
 
 export default function TradeCycleDetailsModal({
     tradeCycleId,
+    tradeCycle,
     onClose,
 }: TradeCycleDetailsModalProps) {
     const [data, setData] = useState<TradeCycleDetails | null>(null);
@@ -87,12 +89,46 @@ export default function TradeCycleDetailsModal({
             setRefreshing(true);
             setError(null);
 
-            const res = await authFetch(`positions/pnl/refresh/`)
-            console.log(await res.json())
+            const profileId = tradeCycle?.profile_id ?? data?.trade_cycle?.profile_id;
+            if (!profileId) {
+                throw new Error("Missing profile id for this trade cycle");
+            }
+
+            const res = await authFetch(`positions/pnl/refresh/trades/async/${profileId}/`, { method: "POST" });
+            const startData = await res.json();
 
             if (!res.ok) {
-                // throw new Error("Failed to refresh positions");
-                alert.error("Failed to refresh positions");
+                throw new Error(startData.detail || "Failed to refresh positions");
+            }
+
+            const taskId = startData.task_id as string | undefined;
+            if (!taskId) {
+                throw new Error("Refresh task not started");
+            }
+
+            const maxAttempts = 30;
+            let completed = false;
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                const statusRes = await authFetch(`tasks/status/${taskId}/`);
+                const statusData = await statusRes.json();
+
+                if (!statusRes.ok) {
+                    throw new Error(statusData.detail || "Failed to check refresh status");
+                }
+
+                if (statusData.status === "SUCCESS") {
+                    completed = true;
+                    break;
+                }
+                if (statusData.status === "FAILURE") {
+                    throw new Error(statusData.result || "Refresh failed");
+                }
+            }
+
+            if (!completed) {
+                alert.success("Refresh running in background");
+                return;
             }
 
             // Refetch the details after refresh

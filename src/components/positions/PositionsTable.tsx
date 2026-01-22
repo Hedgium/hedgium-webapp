@@ -13,7 +13,6 @@ export interface Position {
   quantity: number;
   realised_total: number;
   realised_today?: number;
-  unrealised?: number;
   unrealised_total?: number;
   pnl: number;
   orders?: Array<{ id: number }>;

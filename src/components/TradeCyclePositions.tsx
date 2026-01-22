@@ -41,7 +41,6 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
     realised_today: number;
     unrealised_total: number;
     unrealised_today: number;
-    unrealised: number;
     total_buy_qty: number;
     total_sell_qty: number;
   } | null>(null);
@@ -59,7 +58,6 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
         : `trade-cycles/${tradeCycle.id}/details`;
       const res = await authFetch(url);
       const data = await res.json();
-      console.log("data", data);
       setUnmappedOrders(data.unmapped_orders)
       setPositions(data.positions);
       setHasMorePositions(data.has_more_positions || false);
