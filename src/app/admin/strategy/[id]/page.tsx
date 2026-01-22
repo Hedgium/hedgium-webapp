@@ -25,6 +25,7 @@ export default function StrategyDetail() {
 
   const params = useParams<{ id: string }>();
   const { id } = params;
+  const strategyId = Number(id);
 
 
   async function fetchStrategyData() {
@@ -192,7 +193,13 @@ export default function StrategyDetail() {
       {/* TRADE CYCLES TABLE */}
       {tradeCyclesLoading ? (
         <div className="text-sm">Loading trade cycles...</div>
-      ) : <TradeCycles id={id} trade_cycles={trade_cycles} fetchTradeCycles={fetchTradeCycles} />}
+      ) : (
+        <TradeCycles
+          id={strategyId}
+          trade_cycles={trade_cycles}
+          fetchTradeCycles={fetchTradeCycles}
+        />
+      )}
 
     </div>
   );

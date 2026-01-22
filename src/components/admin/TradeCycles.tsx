@@ -18,12 +18,50 @@ const TradeCycleDetailsModal = lazy(
   }>
 >;
 
+type TradeCycleProfile = {
+  id: number;
+  broker_name?: string | null;
+  risk_profile?: string | null;
+  margin_equity?: number | null;
+};
 
-export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
+type TradeCycleClient = {
+  username: string;
+};
+
+type TradeCycle = {
+  id: number;
+  client: TradeCycleClient;
+  profile: TradeCycleProfile;
+  state: string;
+  is_master?: boolean | null;
+  no_of_orders?: number | null;
+  no_of_positions?: number | null;
+  pnl?: number | null;
+};
+
+type SearchProfile = {
+  id: number;
+  user: { email: string };
+  broker_name?: string | null;
+  margin_equity?: number | null;
+};
+
+type TradeCyclesProps = {
+  id: number;
+  trade_cycles: TradeCycle[];
+  fetchTradeCycles: () => Promise<void> | void;
+};
+
+export default function TradeCycles({
+  id,
+  trade_cycles,
+  fetchTradeCycles,
+}: TradeCyclesProps) {
   const [selectedCycles, setSelectedCycles] = useState<number[]>([]);
   const [selectedProfiles, setSelectedProfiles] = useState<number[]>([]);
   const [search, setSearch] = useState("");
-  const [profiles, setProfiles] = useState([]); // 🔥 NEW → search results list
+  const [profiles, setProfiles] = useState<SearchProfile[]>([]); // 🔥 NEW → search results list
   const [refreshing, setRefreshing] = useState(false);
   const [validatingCycleId, setValidatingCycleId] = useState<number | null>(null);
   const [updatingMaster, setUpdatingMaster] = useState<number | null>(null);
@@ -120,7 +158,7 @@ export default function TradeCycles({ id, trade_cycles, fetchTradeCycles }) {
   }
 
   // Open modal for trade cycle details
-  function handleShowMore(cycle: any) {
+  function handleShowMore(cycle: TradeCycle) {
     setSelectedTradeCycle({
       id: cycle.id,
       profile_id: cycle.profile?.id,
