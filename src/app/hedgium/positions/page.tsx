@@ -32,7 +32,7 @@ export default function TradeCyclesPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [monthlySummary, setMonthlySummary] = useState<MonthlyPnlSummary | null>(null);
-  const [loadingMonthlySummary, setLoadingMonthlySummary] = useState(false);
+  const [loadingMonthlySummary, setLoadingMonthlySummary] = useState(true);
   // const [showLivePositionsModal, setShowLivePositionsModal] = useState(false);
   // const [livePositions, setLivePositions] = useState<LivePositionsData | null>(null);
   // const [loadingLivePositions, setLoadingLivePositions] = useState(false);
