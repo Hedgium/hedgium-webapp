@@ -3,6 +3,7 @@
 import { useState, lazy, Suspense } from "react";
 import type { ComponentType, LazyExoticComponent } from "react";
 import { authFetch } from "@/utils/api";
+import { placeOrder } from "@/services/liveTradingActions";
 import useAlert from "@/hooks/useAlert";
 import { RotateCw, Eye } from "lucide-react";
 import Link from "next/link";
@@ -40,6 +41,33 @@ type TradeCycle = {
   pnl?: number | null;
 };
 
+type CompareResult = {
+  matched_count: number;
+  missing_in_trade_cycle: number;
+  extra_in_trade_cycle: number;
+  buy_quantity_mismatches: number;
+  sell_quantity_mismatches: number;
+  missing_instruments?: string[];
+  extra_instruments?: string[];
+  missing_details?: {
+    instrument: string;
+    master_buy_quantity: number;
+    master_sell_quantity: number;
+  }[];
+  extra_details?: {
+    instrument: string;
+    trade_cycle_buy_quantity: number;
+    trade_cycle_sell_quantity: number;
+  }[];
+  quantity_mismatch_details?: {
+    instrument: string;
+    master_buy_quantity: number;
+    trade_cycle_buy_quantity: number;
+    master_sell_quantity: number;
+    trade_cycle_sell_quantity: number;
+  }[];
+};
+
 type SearchProfile = {
   id: number;
   user: { email: string };
@@ -65,6 +93,11 @@ export default function TradeCycles({
   const [refreshing, setRefreshing] = useState(false);
   const [validatingCycleId, setValidatingCycleId] = useState<number | null>(null);
   const [updatingMaster, setUpdatingMaster] = useState<number | null>(null);
+  const [comparingCycleId, setComparingCycleId] = useState<number | null>(null);
+  const [compareResults, setCompareResults] = useState<Record<number, CompareResult>>({});
+  const [compareErrors, setCompareErrors] = useState<Record<number, string>>({});
+  const [compareModalCycleId, setCompareModalCycleId] = useState<number | null>(null);
+  const [placingCompareOrder, setPlacingCompareOrder] = useState<string | null>(null);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -244,6 +277,76 @@ export default function TradeCycles({
     }
   }
 
+  async function handleCompareMaster(cycleId: number) {
+    if (comparingCycleId === cycleId) return;
+    setComparingCycleId(cycleId);
+    setCompareErrors((prev) => {
+      const next = { ...prev };
+      delete next[cycleId];
+      return next;
+    });
+    try {
+      const res = await authFetch(`trade-cycles/${cycleId}/match-master-positions/`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok && data.status === "success") {
+        setCompareResults((prev) => ({ ...prev, [cycleId]: data }));
+        setCompareModalCycleId(cycleId);
+        alert.success("Comparison completed", { duration: 2000 });
+      } else {
+        const message = data.detail || "Failed to compare with master";
+        setCompareErrors((prev) => ({ ...prev, [cycleId]: message }));
+        alert.error(message, { duration: 3000 });
+      }
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : "Failed to compare with master";
+      setCompareErrors((prev) => ({ ...prev, [cycleId]: errorMsg }));
+      alert.error(errorMsg, { duration: 3000 });
+    } finally {
+      setComparingCycleId(null);
+    }
+  }
+
+  async function handlePlaceCompareOrder(
+    cycle: TradeCycle,
+    instrument: string,
+    transactionType: "BUY" | "SELL",
+    quantity: number
+  ) {
+    if (quantity <= 0) {
+      alert.error("Quantity must be greater than 0");
+      return;
+    }
+
+    const requestKey = `${cycle.id}-${instrument}-${transactionType}`;
+    setPlacingCompareOrder(requestKey);
+    try {
+      const exchange = "NSE";
+      const payload = {
+        exchange,
+        tradingsymbol: instrument,
+        transaction_type: transactionType,
+        quantity,
+        order_type: "MARKET",
+        product: exchange === "NSE" || exchange === "BSE" ? "CNC" : "NRML",
+        price: 0,
+      };
+
+      const { data } = await placeOrder(cycle.profile.id, payload);
+      if (data.status === "success") {
+        alert.success("Order placed successfully");
+      } else {
+        alert.error(data.message || "Failed to place order");
+      }
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : "Failed to place order";
+      alert.error(errorMsg);
+    } finally {
+      setPlacingCompareOrder(null);
+    }
+  }
+
   return (
     <div>
       {/* Header */}
@@ -414,6 +517,25 @@ export default function TradeCycles({
                             )}
                           </button>
                         )}
+
+                        <button
+                          onClick={() => handleCompareMaster(cycle.id)}
+                          disabled={cycle.is_master || comparingCycleId === cycle.id}
+                          className="btn btn-outline btn-sm w-full"
+                          title={
+                            cycle.is_master
+                              ? "Master trade cycle cannot be compared to itself"
+                              : "Compare positions with master trade cycle"
+                          }
+                        >
+                          {comparingCycleId === cycle.id ? (
+                            <span className="loading loading-spinner loading-xs"></span>
+                          ) : (
+                            "Compare Master"
+                          )}
+                        </button>
+
+                      
                       </div>
                     </td>
                   </tr>
@@ -445,6 +567,135 @@ export default function TradeCycles({
             onClose={handleCloseModal}
           />
         </Suspense>
+      )}
+
+      {compareModalCycleId !== null && compareResults[compareModalCycleId] && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-semibold text-lg mb-2">Compare With Master</h3>
+            <div className="text-sm mb-4">
+              <div>
+                Missing: {compareResults[compareModalCycleId].missing_in_trade_cycle},{" "}
+                Extra: {compareResults[compareModalCycleId].extra_in_trade_cycle},{" "}
+                Buy: {compareResults[compareModalCycleId].buy_quantity_mismatches},{" "}
+                Sell: {compareResults[compareModalCycleId].sell_quantity_mismatches}
+              </div>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div>
+                <div className="font-medium mb-1">Missing Instruments</div>
+                {compareResults[compareModalCycleId].missing_details &&
+                compareResults[compareModalCycleId].missing_details.length > 0 ? (
+                  <div className="space-y-2">
+                    {compareResults[compareModalCycleId].missing_details?.map((item) => {
+                      const cycle = trade_cycles.find((c) => c.id === compareModalCycleId);
+                      if (!cycle) {
+                        return null;
+                      }
+                      const buyKey = `${cycle.id}-${item.instrument}-BUY`;
+                      const sellKey = `${cycle.id}-${item.instrument}-SELL`;
+                      return (
+                        <div
+                          key={`missing-${item.instrument}`}
+                          className="flex flex-wrap items-center justify-between gap-2"
+                        >
+                          <span className="badge badge-warning badge-outline">{item.instrument}</span>
+                          <div className="flex flex-wrap gap-2">
+                            {item.master_buy_quantity > 0 && (
+                              <button
+                                className="btn btn-xs btn-primary"
+                                onClick={() =>
+                                  handlePlaceCompareOrder(
+                                    cycle,
+                                    item.instrument,
+                                    "BUY",
+                                    item.master_buy_quantity
+                                  )
+                                }
+                                disabled={placingCompareOrder === buyKey}
+                              >
+                                {placingCompareOrder === buyKey ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : (
+                                  `Buy ${item.master_buy_quantity}`
+                                )}
+                              </button>
+                            )}
+                            {item.master_sell_quantity > 0 && (
+                              <button
+                                className="btn btn-xs btn-secondary"
+                                onClick={() =>
+                                  handlePlaceCompareOrder(
+                                    cycle,
+                                    item.instrument,
+                                    "SELL",
+                                    item.master_sell_quantity
+                                  )
+                                }
+                                disabled={placingCompareOrder === sellKey}
+                              >
+                                {placingCompareOrder === sellKey ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : (
+                                  `Sell ${item.master_sell_quantity}`
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="opacity-60">None</div>
+                )}
+              </div>
+
+              <div>
+                <div className="font-medium mb-1">Extra Instruments</div>
+                {compareResults[compareModalCycleId].extra_instruments &&
+                compareResults[compareModalCycleId].extra_instruments.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {compareResults[compareModalCycleId].extra_instruments?.map((name) => (
+                      <span key={`extra-${name}`} className="badge badge-error badge-outline">
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="opacity-60">None</div>
+                )}
+              </div>
+
+              <div>
+                <div className="font-medium mb-1">Buy/Sell Quantity Mismatches</div>
+                {compareResults[compareModalCycleId].quantity_mismatch_details &&
+                compareResults[compareModalCycleId].quantity_mismatch_details.length > 0 ? (
+                  <div className="space-y-1">
+                    {compareResults[compareModalCycleId].quantity_mismatch_details?.map((item) => (
+                      <div key={`qty-${item.instrument}`} className="flex justify-between">
+                        <span>{item.instrument}</span>
+                        <span className="opacity-70">
+                          B {item.trade_cycle_buy_quantity}/{item.master_buy_quantity} • S{" "}
+                          {item.trade_cycle_sell_quantity}/{item.master_sell_quantity}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="opacity-60">None</div>
+                )}
+              </div>
+            </div>
+
+            <div className="modal-action">
+              <button className="btn" onClick={() => setCompareModalCycleId(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

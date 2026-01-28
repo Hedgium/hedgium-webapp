@@ -19,11 +19,20 @@ type TradeCycle = {
   updated_at: string;
 };
 
+type MonthlyPnlSummary = {
+  month: string;
+  m2m: number;
+  realised: number;
+  pnl: number;
+};
+
 export default function TradeCyclesPage() {
   const alert = useAlert();
   const [tradeCycles, setTradeCycles] = useState<TradeCycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [monthlySummary, setMonthlySummary] = useState<MonthlyPnlSummary | null>(null);
+  const [loadingMonthlySummary, setLoadingMonthlySummary] = useState(false);
   // const [showLivePositionsModal, setShowLivePositionsModal] = useState(false);
   // const [livePositions, setLivePositions] = useState<LivePositionsData | null>(null);
   // const [loadingLivePositions, setLoadingLivePositions] = useState(false);
@@ -37,6 +46,22 @@ export default function TradeCyclesPage() {
       setTradeCycles(data.results);
     } catch (error) {
       console.error("Error fetching trade cycles:", error);
+    }
+  }
+
+  async function fetchMonthlySummary() {
+    setLoadingMonthlySummary(true);
+    try {
+      const res = await authFetch("positions/pnl/monthly-summary/");
+      if (!res.ok) {
+        throw new Error("Failed to fetch monthly summary");
+      }
+      const data = await res.json();
+      setMonthlySummary(data);
+    } catch (error) {
+      console.error("Error fetching monthly summary:", error);
+    } finally {
+      setLoadingMonthlySummary(false);
     }
   }
 
@@ -86,6 +111,7 @@ export default function TradeCyclesPage() {
 
       // Refetch all trade cycles to update positions
       await getAllTradeCycles();
+      await fetchMonthlySummary();
     } catch (err: unknown) {
       console.error("Error refreshing positions:", err);
       const errorMessage = err instanceof Error 
@@ -115,11 +141,31 @@ export default function TradeCyclesPage() {
 
   return (
     <div className="p-4 md:px-8 bg-base-200 min-h-screen">
-      <div className="mx-auto space-y-12">
+      <div className="mx-auto space-y-8">
         {/* --- Trade Cycles Section --- */}
+
+        
         <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold">Strategy Positions</h2>
+          <div className="bg-base-100 rounded-lg shadow p-4">
+            <h3 className="text-lg font-semibold mb-2">Current Month Summary</h3>
+            {loadingMonthlySummary ? (
+              <div className="text-sm opacity-60">Loading monthly summary...</div>
+            ) : monthlySummary ? (
+              <div className="text-sm opacity-80">
+                {monthlySummary.month} · PnL ₹{monthlySummary.pnl.toFixed(2)} · Realised ₹
+                {monthlySummary.realised.toFixed(2)} · M2M ₹{monthlySummary.m2m.toFixed(2)}
+              </div>
+            ) : (
+              <div className="text-sm opacity-60">Monthly summary unavailable</div>
+            )}
+          </div>
+        </section>
+
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-semibold">Positions</h2>
+            </div>
             
             <button
               onClick={refreshAllPositions}
@@ -157,6 +203,7 @@ export default function TradeCyclesPage() {
             </div>
           )}
         </section>
+
       </div>
 
       <br />

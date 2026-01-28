@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authFetch } from "@/utils/api";
+import { placeOrder, modifyOrder, cancelOrder } from "@/services/liveTradingActions";
 import useAlert from "@/hooks/useAlert";
 import { ArrowLeft, RefreshCw, Plus, Edit2, X, LogOut, TrendingUp, TrendingDown } from "lucide-react";
 import { Profile } from "@/types/profile";
@@ -153,15 +154,7 @@ export default function LivePositionsPage() {
         price: orderForm.order_type === "MARKET" ? 0 : orderForm.price,
       };
 
-      const response = await authFetch(`orders/live/orders/${profileId}/place/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
+      const { data } = await placeOrder(profileId, payload);
 
       if (data.status === "success") {
         alert.success("Order placed successfully");
@@ -200,18 +193,7 @@ export default function LivePositionsPage() {
         exchange: modifyForm.exchange,
       };
 
-      const response = await authFetch(
-        `orders/live/orders/${profileId}/modify/${selectedOrder.order_id}/`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      const data = await response.json();
+      const { data } = await modifyOrder(profileId, selectedOrder.order_id, payload);
 
       if (data.status === "success") {
         alert.success("Order modified successfully");
@@ -233,17 +215,10 @@ export default function LivePositionsPage() {
     if (!confirm("Are you sure you want to cancel this order?")) return;
 
     try {
-      const response = await authFetch(
-        `orders/live/orders/${profileId}/cancel/${orderId}/`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      const data = await response.json();
+      const { ok, data } = await cancelOrder(profileId, orderId);
       // console.log(data);
 
-      if (data.status === "success" || response.ok) {
+      if (data.status === "success" || ok) {
         alert.success("Order cancelled successfully");
         fetchOrders();
       } else {
@@ -297,15 +272,7 @@ export default function LivePositionsPage() {
         price: 0, // MARKET order
       };
 
-      const response = await authFetch(`orders/live/orders/${profileId}/place/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
+      const { data } = await placeOrder(profileId, payload);
 
       if (data.status === "success") {
         alert.success(
