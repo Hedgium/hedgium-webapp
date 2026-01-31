@@ -57,7 +57,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         strategy_builder_id: builderId,
         strike_type: 'DYNAMIC',
         strike_step: 50,
-        atm_strike_multiplier: 0,
+        strike_distance: 0,
         strike: 0,
         token: '',
         symbol: '',
@@ -100,7 +100,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                 strategy_builder_id: builderId,
                 strike_type: initialData.strike_type,
                 strike_step: initialData.strike_step,
-                atm_strike_multiplier: initialData.atm_strike_multiplier,
+                strike_distance: initialData.strike_distance,
                 strike: initialData.strike,
                 token: initialData.token,
                 symbol: initialData.symbol,
@@ -119,13 +119,13 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
     useEffect(() => {
         const atm = calculateATMStrike(currentPrice, formData.strike_step, 1);
-        const atmNew = atm + formData.atm_strike_multiplier * formData.strike_step;
+        const atmNew = atm + formData.strike_distance * formData.strike_step;
         setFormData(prev => ({
             ...prev,
             strike: atmNew
         }));
 
-    }, [formData.strike_type, formData.atm_strike_multiplier, currentPrice]);
+    }, [formData.strike_type, formData.strike_distance, currentPrice]);
 
     // Validate instrument whenever relevant fields change
     useEffect(() => {
@@ -254,7 +254,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: name === 'strike' || name === 'quantity' || name === 'strike_step' || name === 'atm_strike_multiplier' || name === 'lot_size'
+            [name]: name === 'strike' || name === 'quantity' || name === 'strike_step' || name === 'strike_distance' || name === 'lot_size'
                 ? parseInt(value)
                 : name === 'price'
                     ? parseFloat(value)
@@ -373,7 +373,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
                 <div className="form-control">
                     <label className="label"><span className="label-text">ATM Strike Multiplier</span></label>
-                    <input type="number" name="atm_strike_multiplier" value={formData.atm_strike_multiplier} onChange={handleChange} className="input input-bordered w-full" />
+                    <input type="number" name="strike_distance" value={formData.strike_distance} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
 
 

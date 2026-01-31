@@ -10,7 +10,7 @@ export interface BuilderLeg {
     leg_index: number;
     strike_type: string;
     strike_step: number;
-    atm_strike_multiplier: number;
+    strike_distance: number;
     strike: number;
     token: string;
     symbol: string;
@@ -77,7 +77,7 @@ export interface BuilderLegCreate {
     leg_index: number;
     strike_type: string;
     strike_step: number;
-    atm_strike_multiplier: number;
+    strike_distance: number;
     strike: number;
     token: string;
     symbol: string;
@@ -94,7 +94,7 @@ export interface BuilderLegUpdate {
     leg_index?: number;
     strike_type?: string;
     strike_step?: number;
-    atm_strike_multiplier?: number;
+    strike_distance?: number;
     strike?: number;
     token?: string;
     symbol?: string;
