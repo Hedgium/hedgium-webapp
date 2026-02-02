@@ -15,10 +15,10 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
     const [sendingReminder, setSendingReminder] = useState(false);
     const [equityMargin, setEquityMargin] = useState(profile.margin_equity);
 
-    // Shoonya Login State
-    const [isShoonyaLoginModalOpen, setIsShoonyaLoginModalOpen] = useState(false);
-    const [shoonyaPassword, setShoonyaPassword] = useState("");
-    const [isLoggingInShoonya, setIsLoggingInShoonya] = useState(false);
+    // Broker Login State (generic for SHOONYA, ZERODHA, etc.)
+    const [isBrokerLoginModalOpen, setIsBrokerLoginModalOpen] = useState(false);
+    const [brokerPassword, setBrokerPassword] = useState("");
+    const [isLoggingInBroker, setIsLoggingInBroker] = useState(false);
     
     // Broker Token Set State (for all brokers)
     const [isBrokerTokenModalOpen, setIsBrokerTokenModalOpen] = useState(false);
@@ -76,44 +76,53 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
     };
 
 
-    const handleShoonyaLogin = async () => {
-        if (!shoonyaPassword) {
+    const handleBrokerLogin = async () => {
+        if (!brokerPassword) {
             alert.error("Please enter a password");
             return;
         }
 
-        setIsLoggingInShoonya(true);
+        // Determine API endpoint based on broker name
+        const brokerEndpoints: Record<string, string> = {
+            "SHOONYA": "users/shoonya-login/",
+            "ZERODHA": "users/zerodha-login/",
+        };
+
+        const endpoint = brokerEndpoints[profile.broker_name];
+        if (!endpoint) {
+            alert.error(`Login not supported for ${profile.broker_name}`);
+            return;
+        }
+
+        setIsLoggingInBroker(true);
         try {
-            const response = await authFetch("users/shoonya-login/", {
+            const response = await authFetch(endpoint, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
                     "profile_id": String(profile.id),
-                    "pwd": shoonyaPassword
+                    "pwd": brokerPassword
                 }),
             });
 
             const data = await response.json();
 
             if (data.status === "success") {
-                alert.success("Shoonya login successful");
-                setIsShoonyaLoginModalOpen(false);
-                setShoonyaPassword("");
-                setBrokerLoggedIn(true);                // Optionally trigger a refresh or update local state to show logged in
-                // For now, we might need to reload or notify parent. 
-                // A full refresh might be needed to update the 'broker_logged_in' status if it comes from backend
-                // window.location.reload()
+                alert.success(`${profile.broker_name} login successful`);
+                setIsBrokerLoginModalOpen(false);
+                setBrokerPassword("");
+                setBrokerLoggedIn(true);
             } else {
                 alert.error(`Login failed: ${data.message || JSON.stringify(data)}`);
             }
 
         } catch (error) {
-            console.error("Shoonya login error:", error);
+            console.error(`${profile.broker_name} login error:`, error);
             alert.error("An error occurred during login");
         } finally {
-            setIsLoggingInShoonya(false);
+            setIsLoggingInBroker(false);
         }
     };
 
@@ -192,9 +201,9 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                                 {sendingReminder ? 'Sending...' : 'Send Login Reminder'}
                             </button>
 
-                            {profile.broker_name === "SHOONYA" && (
+                            {(profile.broker_name === "SHOONYA" || profile.broker_name === "ZERODHA") && (
                                 <button
-                                    onClick={() => setIsShoonyaLoginModalOpen(true)}
+                                    onClick={() => setIsBrokerLoginModalOpen(true)}
                                     className="btn btn-primary btn-xs"
                                 >
                                     Login
@@ -277,40 +286,40 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                 </div>
             </div>
 
-            {/* Shoonya Login Modal */}
-            {isShoonyaLoginModalOpen && (
+            {/* Broker Login Modal (SHOONYA, ZERODHA) */}
+            {isBrokerLoginModalOpen && (
                 <div className="modal modal-open">
                     <div className="modal-box">
-                        <h3 className="font-bold text-lg mb-4">Login to Shoonya</h3>
+                        <h3 className="font-bold text-lg mb-4">Login to {profile.broker_name}</h3>
                         <div className="form-control w-full">
                             <label className="label">
                                 <span className="label-text">Password</span>
                             </label>
                             <input
                                 type="password"
-                                placeholder="Enter Shoonya Password"
+                                placeholder={`Enter ${profile.broker_name} Password`}
                                 className="input input-bordered w-full"
-                                value={shoonyaPassword}
-                                onChange={(e) => setShoonyaPassword(e.target.value)}
+                                value={brokerPassword}
+                                onChange={(e) => setBrokerPassword(e.target.value)}
                             />
                         </div>
                         <div className="modal-action">
                             <button
                                 className="btn"
                                 onClick={() => {
-                                    setIsShoonyaLoginModalOpen(false);
-                                    setShoonyaPassword("");
+                                    setIsBrokerLoginModalOpen(false);
+                                    setBrokerPassword("");
                                 }}
-                                disabled={isLoggingInShoonya}
+                                disabled={isLoggingInBroker}
                             >
                                 Cancel
                             </button>
                             <button
                                 className="btn btn-primary"
-                                onClick={handleShoonyaLogin}
-                                disabled={isLoggingInShoonya}
+                                onClick={handleBrokerLogin}
+                                disabled={isLoggingInBroker}
                             >
-                                {isLoggingInShoonya ? <span className="loading loading-spinner"></span> : "Login"}
+                                {isLoggingInBroker ? <span className="loading loading-spinner"></span> : "Login"}
                             </button>
                         </div>
                     </div>
