@@ -3,7 +3,6 @@
 import { useState, lazy, Suspense } from "react";
 import type { ComponentType, LazyExoticComponent } from "react";
 import { authFetch } from "@/utils/api";
-import { placeOrder } from "@/services/liveTradingActions";
 import useAlert from "@/hooks/useAlert";
 import { RotateCw, Eye } from "lucide-react";
 import Link from "next/link";
@@ -50,17 +49,22 @@ type CompareResult = {
   missing_instruments?: string[];
   extra_instruments?: string[];
   missing_details?: {
-    instrument: string;
+    instrument: string;  // Master format (used for placing orders)
+    exchange?: string | null;
     master_buy_quantity: number;
     master_sell_quantity: number;
   }[];
   extra_details?: {
-    instrument: string;
+    instrument: string;  // User's format
+    master_instrument?: string;  // Master format for reference
+    exchange?: string | null;
     trade_cycle_buy_quantity: number;
     trade_cycle_sell_quantity: number;
   }[];
   quantity_mismatch_details?: {
-    instrument: string;
+    instrument: string;  // Master format (used for placing orders)
+    user_instrument?: string;  // User's format for display
+    exchange?: string | null;
     master_buy_quantity: number;
     trade_cycle_buy_quantity: number;
     master_sell_quantity: number;
@@ -98,6 +102,7 @@ export default function TradeCycles({
   const [compareErrors, setCompareErrors] = useState<Record<number, string>>({});
   const [compareModalCycleId, setCompareModalCycleId] = useState<number | null>(null);
   const [placingCompareOrder, setPlacingCompareOrder] = useState<string | null>(null);
+  const [completedOrders, setCompletedOrders] = useState<Set<string>>(new Set());
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -285,6 +290,8 @@ export default function TradeCycles({
       delete next[cycleId];
       return next;
     });
+    // Clear completed orders for fresh comparison
+    setCompletedOrders(new Set());
     try {
       const res = await authFetch(`trade-cycles/${cycleId}/match-master-positions/`, {
         method: "POST",
@@ -312,30 +319,42 @@ export default function TradeCycles({
     cycle: TradeCycle,
     instrument: string,
     transactionType: "BUY" | "SELL",
-    quantity: number
+    quantity: number,
+    exchange?: string | null
   ) {
     if (quantity <= 0) {
       alert.error("Quantity must be greater than 0");
       return;
     }
 
+    // Use exchange from position, fallback to NFO for derivatives (contains digits), else NSE
+    const resolvedExchange = exchange || (instrument.match(/\d/) ? "NFO" : "NSE");
+    
     const requestKey = `${cycle.id}-${instrument}-${transactionType}`;
     setPlacingCompareOrder(requestKey);
     try {
-      const exchange = "NSE";
       const payload = {
-        exchange,
-        tradingsymbol: instrument,
+        instrument,
+        exchange: resolvedExchange,
         transaction_type: transactionType,
         quantity,
-        order_type: "MARKET",
-        product: exchange === "NSE" || exchange === "BSE" ? "CNC" : "NRML",
-        price: 0,
       };
 
-      const { data } = await placeOrder(cycle.profile.id, payload);
+      // Use the new match order API that handles broker conversion and LIMIT orders
+      const res = await authFetch(`trade-cycles/${cycle.id}/place-match-order/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
       if (data.status === "success") {
-        alert.success("Order placed successfully");
+        const orderInfo = data.data;
+        alert.success(
+          `Order placed: ${orderInfo.action} ${orderInfo.quantity} ${orderInfo.instrument} @ ₹${orderInfo.price}`
+        );
+        // Mark this order as completed to disable the button
+        setCompletedOrders((prev) => new Set(prev).add(requestKey));
       } else {
         alert.error(data.message || "Failed to place order");
       }
@@ -610,13 +629,16 @@ export default function TradeCycles({
                                     cycle,
                                     item.instrument,
                                     "BUY",
-                                    item.master_buy_quantity
+                                    item.master_buy_quantity,
+                                    item.exchange
                                   )
                                 }
-                                disabled={placingCompareOrder === buyKey}
+                                disabled={placingCompareOrder === buyKey || completedOrders.has(buyKey)}
                               >
                                 {placingCompareOrder === buyKey ? (
                                   <span className="loading loading-spinner loading-xs"></span>
+                                ) : completedOrders.has(buyKey) ? (
+                                  "✓ Placed"
                                 ) : (
                                   `Buy ${item.master_buy_quantity}`
                                 )}
@@ -630,13 +652,16 @@ export default function TradeCycles({
                                     cycle,
                                     item.instrument,
                                     "SELL",
-                                    item.master_sell_quantity
+                                    item.master_sell_quantity,
+                                    item.exchange
                                   )
                                 }
-                                disabled={placingCompareOrder === sellKey}
+                                disabled={placingCompareOrder === sellKey || completedOrders.has(sellKey)}
                               >
                                 {placingCompareOrder === sellKey ? (
                                   <span className="loading loading-spinner loading-xs"></span>
+                                ) : completedOrders.has(sellKey) ? (
+                                  "✓ Placed"
                                 ) : (
                                   `Sell ${item.master_sell_quantity}`
                                 )}
@@ -672,16 +697,133 @@ export default function TradeCycles({
                 <div className="font-medium mb-1">Buy/Sell Quantity Mismatches</div>
                 {compareResults[compareModalCycleId].quantity_mismatch_details &&
                 compareResults[compareModalCycleId].quantity_mismatch_details.length > 0 ? (
-                  <div className="space-y-1">
-                    {compareResults[compareModalCycleId].quantity_mismatch_details?.map((item) => (
-                      <div key={`qty-${item.instrument}`} className="flex justify-between">
-                        <span>{item.instrument}</span>
-                        <span className="opacity-70">
-                          B {item.trade_cycle_buy_quantity}/{item.master_buy_quantity} • S{" "}
-                          {item.trade_cycle_sell_quantity}/{item.master_sell_quantity}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="space-y-2">
+                    {compareResults[compareModalCycleId].quantity_mismatch_details?.map((item) => {
+                      const cycle = trade_cycles.find((c) => c.id === compareModalCycleId);
+                      if (!cycle) return null;
+
+                      // Calculate differences
+                      const buyDiff = item.master_buy_quantity - item.trade_cycle_buy_quantity;
+                      const sellDiff = item.master_sell_quantity - item.trade_cycle_sell_quantity;
+
+                      const buyKey = `${cycle.id}-${item.instrument}-BUY`;
+                      const sellKey = `${cycle.id}-${item.instrument}-SELL`;
+
+                      return (
+                        <div
+                          key={`qty-${item.instrument}`}
+                          className="flex flex-wrap items-center justify-between gap-2"
+                        >
+                          <div className="flex flex-col">
+                            <span className="badge badge-info badge-outline">
+                              {item.user_instrument || item.instrument}
+                            </span>
+                            <span className="text-xs opacity-70 mt-1">
+                              B: {item.trade_cycle_buy_quantity}/{item.master_buy_quantity} • S:{" "}
+                              {item.trade_cycle_sell_quantity}/{item.master_sell_quantity}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {/* Need to BUY more */}
+                            {buyDiff > 0 && (
+                              <button
+                                className="btn btn-xs btn-primary"
+                                onClick={() =>
+                                  handlePlaceCompareOrder(
+                                    cycle,
+                                    item.instrument,
+                                    "BUY",
+                                    buyDiff,
+                                    item.exchange
+                                  )
+                                }
+                                disabled={placingCompareOrder === buyKey || completedOrders.has(buyKey)}
+                              >
+                                {placingCompareOrder === buyKey ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : completedOrders.has(buyKey) ? (
+                                  "✓ Placed"
+                                ) : (
+                                  `Buy ${buyDiff}`
+                                )}
+                              </button>
+                            )}
+                            {/* Need to SELL excess */}
+                            {buyDiff < 0 && (
+                              <button
+                                className="btn btn-xs btn-warning"
+                                onClick={() =>
+                                  handlePlaceCompareOrder(
+                                    cycle,
+                                    item.instrument,
+                                    "SELL",
+                                    Math.abs(buyDiff),
+                                    item.exchange
+                                  )
+                                }
+                                disabled={placingCompareOrder === sellKey || completedOrders.has(sellKey)}
+                              >
+                                {placingCompareOrder === sellKey ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : completedOrders.has(sellKey) ? (
+                                  "✓ Placed"
+                                ) : (
+                                  `Sell ${Math.abs(buyDiff)} (excess)`
+                                )}
+                              </button>
+                            )}
+                            {/* Need to SELL more */}
+                            {sellDiff > 0 && (
+                              <button
+                                className="btn btn-xs btn-secondary"
+                                onClick={() =>
+                                  handlePlaceCompareOrder(
+                                    cycle,
+                                    item.instrument,
+                                    "SELL",
+                                    sellDiff,
+                                    item.exchange
+                                  )
+                                }
+                                disabled={placingCompareOrder === sellKey || completedOrders.has(sellKey)}
+                              >
+                                {placingCompareOrder === sellKey ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : completedOrders.has(sellKey) ? (
+                                  "✓ Placed"
+                                ) : (
+                                  `Sell ${sellDiff}`
+                                )}
+                              </button>
+                            )}
+                            {/* Need to BUY back excess sells */}
+                            {sellDiff < 0 && (
+                              <button
+                                className="btn btn-xs btn-warning"
+                                onClick={() =>
+                                  handlePlaceCompareOrder(
+                                    cycle,
+                                    item.instrument,
+                                    "BUY",
+                                    Math.abs(sellDiff),
+                                    item.exchange
+                                  )
+                                }
+                                disabled={placingCompareOrder === buyKey || completedOrders.has(buyKey)}
+                              >
+                                {placingCompareOrder === buyKey ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : completedOrders.has(buyKey) ? (
+                                  "✓ Placed"
+                                ) : (
+                                  `Buy ${Math.abs(sellDiff)} (cover)`
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="opacity-60">None</div>
