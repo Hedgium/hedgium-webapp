@@ -95,7 +95,7 @@ export default function ProfilesPage() {
         setIsEditModalOpen(true);
     };
 
-    const handleUpdate = async (data: Partial<Profile>) => {
+    const handleUpdate = async (data: Partial<Profile> & { mobile?: string | null; signup_step?: string | null; user_verified?: boolean }) => {
         if (!editingProfile) return;
 
         try {

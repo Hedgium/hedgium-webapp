@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { BuilderLeg, BuilderLegCreate, BuilderLegUpdate } from '@/types/builder';
 import AsyncSelect from 'react-select/async';
 import { authFetch } from '@/utils/api';
+import { Loader2 } from 'lucide-react';
 
 interface LegFormProps {
     initialData?: BuilderLeg;
     builderId: number;
-    onSubmit: (data: BuilderLegCreate | BuilderLegUpdate) => void;
+    onSubmit: (data: BuilderLegCreate | BuilderLegUpdate) => void | Promise<void>;
     onCancel: () => void;
     exchange: string;
 }
@@ -81,6 +82,8 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
     };
 
 
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [validationStatus, setValidationStatus] = useState<{
         isValidating: boolean;
@@ -316,13 +319,18 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validationStatus.isValid) {
             alert('Please ensure the instrument is valid before submitting');
             return;
         }
-        onSubmit(formData as BuilderLegCreate);
+        setIsSubmitting(true);
+        try {
+            await Promise.resolve(onSubmit(formData as BuilderLegCreate));
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
 
@@ -492,9 +500,16 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
 
             <div className="flex justify-end space-x-2 mt-6">
-                <button type="button" onClick={onCancel} className="btn btn-ghost">Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={!validationStatus.isValid}>
-                    {initialData ? 'Update' : 'Add Leg'}
+                <button type="button" onClick={onCancel} className="btn btn-ghost" disabled={isSubmitting}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={!validationStatus.isValid || isSubmitting}>
+                    {isSubmitting ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            {initialData ? 'Updating...' : 'Adding leg...'}
+                        </>
+                    ) : (
+                        initialData ? 'Update' : 'Add Leg'
+                    )}
                 </button>
             </div>
         </form>

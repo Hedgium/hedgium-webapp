@@ -100,6 +100,7 @@ export default function TradeCycles({
   const [comparingCycleId, setComparingCycleId] = useState<number | null>(null);
   const [compareResults, setCompareResults] = useState<Record<number, CompareResult>>({});
   const [compareErrors, setCompareErrors] = useState<Record<number, string>>({});
+  const [compareStepMessage, setCompareStepMessage] = useState<string | null>(null);
   const [compareModalCycleId, setCompareModalCycleId] = useState<number | null>(null);
   const [placingCompareOrder, setPlacingCompareOrder] = useState<string | null>(null);
   const [completedOrders, setCompletedOrders] = useState<Set<string>>(new Set());
@@ -282,17 +283,71 @@ export default function TradeCycles({
     }
   }
 
+  // Poll until refresh task completes (like TradeCycleDetailsModal)
+  async function refreshProfilePositionsAndWait(profileId: number): Promise<void> {
+    const res = await authFetch(`positions/pnl/refresh/trades/async/${profileId}/`, {
+      method: "POST",
+    });
+    const startData = await res.json();
+    if (!res.ok) {
+      throw new Error(startData.detail || "Failed to start refresh");
+    }
+    const taskId = startData.task_id as string | undefined;
+    if (!taskId) {
+      throw new Error("Refresh task not started");
+    }
+    const maxAttempts = 30;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const statusRes = await authFetch(`tasks/status/${taskId}/`);
+      const statusData = await statusRes.json();
+      if (!statusRes.ok) {
+        throw new Error(statusData.detail || "Failed to check refresh status");
+      }
+      if (statusData.status === "SUCCESS") {
+        return;
+      }
+      if (statusData.status === "FAILURE") {
+        throw new Error(statusData.result || "Refresh failed");
+      }
+    }
+    throw new Error("Refresh timed out");
+  }
+
   async function handleCompareMaster(cycleId: number) {
     if (comparingCycleId === cycleId) return;
+    const cycle = trade_cycles.find((c) => c.id === cycleId);
+    if (!cycle?.profile?.id) {
+      alert.error("Trade cycle or profile not found");
+      return;
+    }
     setComparingCycleId(cycleId);
+    setCompareStepMessage(null);
     setCompareErrors((prev) => {
       const next = { ...prev };
       delete next[cycleId];
       return next;
     });
-    // Clear completed orders for fresh comparison
     setCompletedOrders(new Set());
     try {
+      setCompareStepMessage("Loading master info…");
+      const infoRes = await authFetch(`trade-cycles/${cycleId}/master-info/`);
+      const info = await infoRes.json();
+      if (!infoRes.ok) {
+        throw new Error(info.detail || "Failed to get master info");
+      }
+      const { master_profile_id, trade_cycle_profile_id } = info as {
+        master_profile_id: number;
+        trade_cycle_profile_id: number;
+      };
+
+      setCompareStepMessage("Refreshing master position…");
+      await refreshProfilePositionsAndWait(master_profile_id);
+
+      setCompareStepMessage("Refreshing trade cycle position…");
+      await refreshProfilePositionsAndWait(trade_cycle_profile_id);
+
+      setCompareStepMessage("Comparing with master…");
       const res = await authFetch(`trade-cycles/${cycleId}/match-master-positions/`, {
         method: "POST",
       });
@@ -307,11 +362,13 @@ export default function TradeCycles({
         alert.error(message, { duration: 3000 });
       }
     } catch (error: unknown) {
-      const errorMsg = error instanceof Error ? error.message : "Failed to compare with master";
+      const errorMsg =
+        error instanceof Error ? error.message : "Failed to compare with master";
       setCompareErrors((prev) => ({ ...prev, [cycleId]: errorMsg }));
       alert.error(errorMsg, { duration: 3000 });
     } finally {
       setComparingCycleId(null);
+      setCompareStepMessage(null);
     }
   }
 
@@ -537,22 +594,29 @@ export default function TradeCycles({
                           </button>
                         )}
 
-                        <button
-                          onClick={() => handleCompareMaster(cycle.id)}
-                          disabled={cycle.is_master || comparingCycleId === cycle.id}
-                          className="btn btn-outline btn-sm w-full"
-                          title={
-                            cycle.is_master
-                              ? "Master trade cycle cannot be compared to itself"
-                              : "Compare positions with master trade cycle"
-                          }
-                        >
-                          {comparingCycleId === cycle.id ? (
-                            <span className="loading loading-spinner loading-xs"></span>
-                          ) : (
-                            "Compare Master"
+                        <div className="flex flex-col gap-0.5 w-full">
+                          <button
+                            onClick={() => handleCompareMaster(cycle.id)}
+                            disabled={cycle.is_master || comparingCycleId === cycle.id}
+                            className="btn btn-outline btn-sm w-full"
+                            title={
+                              cycle.is_master
+                                ? "Master trade cycle cannot be compared to itself"
+                                : "Compare positions with master trade cycle"
+                            }
+                          >
+                            {comparingCycleId === cycle.id ? (
+                              <span className="loading loading-spinner loading-xs"></span>
+                            ) : (
+                              "Compare Master"
+                            )}
+                          </button>
+                          {comparingCycleId === cycle.id && compareStepMessage && (
+                            <span className="text-xs opacity-80 text-center">
+                              {compareStepMessage}
+                            </span>
                           )}
-                        </button>
+                        </div>
 
                       
                       </div>
@@ -614,12 +678,16 @@ export default function TradeCycles({
                       }
                       const buyKey = `${cycle.id}-${item.instrument}-BUY`;
                       const sellKey = `${cycle.id}-${item.instrument}-SELL`;
+                      const qtyText = [item.master_buy_quantity > 0 && `Buy: ${item.master_buy_quantity}`, item.master_sell_quantity > 0 && `Sell: ${item.master_sell_quantity}`].filter(Boolean).join(", ") || "—";
                       return (
                         <div
                           key={`missing-${item.instrument}`}
                           className="flex flex-wrap items-center justify-between gap-2"
                         >
-                          <span className="badge badge-warning badge-outline">{item.instrument}</span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="badge badge-warning badge-outline">{item.instrument}</span>
+                            <span className="opacity-80 text-xs">({qtyText})</span>
+                          </div>
                           <div className="flex flex-wrap gap-2">
                             {item.master_buy_quantity > 0 && (
                               <button
@@ -679,14 +747,18 @@ export default function TradeCycles({
 
               <div>
                 <div className="font-medium mb-1">Extra Instruments</div>
-                {compareResults[compareModalCycleId].extra_instruments &&
-                compareResults[compareModalCycleId].extra_instruments.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {compareResults[compareModalCycleId].extra_instruments?.map((name) => (
-                      <span key={`extra-${name}`} className="badge badge-error badge-outline">
-                        {name}
-                      </span>
-                    ))}
+                {compareResults[compareModalCycleId].extra_details &&
+                compareResults[compareModalCycleId].extra_details.length > 0 ? (
+                  <div className="space-y-2">
+                    {compareResults[compareModalCycleId].extra_details?.map((item) => {
+                      const qtyText = [item.trade_cycle_buy_quantity > 0 && `Buy: ${item.trade_cycle_buy_quantity}`, item.trade_cycle_sell_quantity > 0 && `Sell: ${item.trade_cycle_sell_quantity}`].filter(Boolean).join(", ") || "—";
+                      return (
+                        <div key={`extra-${item.instrument}`} className="flex flex-wrap items-center gap-2">
+                          <span className="badge badge-error badge-outline">{item.instrument}</span>
+                          <span className="opacity-80 text-xs">({qtyText})</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="opacity-60">None</div>

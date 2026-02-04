@@ -1,24 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { Profile } from '@/types/profile';
 
+type ProfileFormPayload = Partial<Profile> & {
+    mobile?: string | null;
+    signup_step?: string | null;
+    user_verified?: boolean;
+};
+
 interface ProfileFormProps {
     initialData: Profile;
-    onSubmit: (data: Partial<Profile>) => void;
+    onSubmit: (data: ProfileFormPayload) => void;
     onCancel: () => void;
 }
 
+const SIGNUP_STEPS = [
+    { value: 'initiated', label: 'Initiated' },
+    { value: 'documents_uploaded', label: 'Documents Uploaded' },
+    { value: 'broker_profile_added', label: 'Broker Profile Added' },
+    { value: 'verified', label: 'Verified' },
+];
+
 export default function ProfileForm({ initialData, onSubmit, onCancel }: ProfileFormProps) {
-    const [formData, setFormData] = useState<Partial<Profile>>({
+    const [formData, setFormData] = useState<ProfileFormPayload>({
         broker_name: '',
         broker_user_id: '',
         margin_equity: 0,
         is_active: false,
         verified: false,
         auto_trade_allowed: false,
+        mobile: '',
+        signup_step: 'initiated',
+        user_verified: false,
     });
 
     useEffect(() => {
         if (initialData) {
+            const u = initialData.user;
             setFormData({
                 broker_name: initialData.broker_name,
                 broker_user_id: initialData.broker_user_id,
@@ -26,6 +43,9 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                 is_active: initialData.is_active,
                 verified: initialData.verified,
                 auto_trade_allowed: initialData.auto_trade_allowed ?? false,
+                mobile: u?.mobile ?? '',
+                signup_step: u?.signup_step ?? 'initiated',
+                user_verified: u?.verified ?? false,
             });
         }
     }, [initialData]);
@@ -47,6 +67,29 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-control md:col-span-2">
+                    <h3 className="font-medium text-base opacity-80 mb-1">User (admin)</h3>
+                </div>
+                <div className="form-control">
+                    <label className="label"><span className="label-text">Mobile</span></label>
+                    <input type="text" name="mobile" value={formData.mobile ?? ''} onChange={handleChange} className="input input-bordered w-full" placeholder="User mobile" />
+                </div>
+                <div className="form-control">
+                    <label className="label"><span className="label-text">Verification step</span></label>
+                    <select name="signup_step" value={formData.signup_step ?? 'initiated'} onChange={handleChange} className="select select-bordered w-full">
+                        {SIGNUP_STEPS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                </div>
+                <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-4">
+                        <span className="label-text">User verified</span>
+                        <input type="checkbox" name="user_verified" checked={formData.user_verified ?? false} onChange={handleChange} className="checkbox" />
+                    </label>
+                </div>
+
+                <div className="form-control md:col-span-2">
+                    <h3 className="font-medium text-base opacity-80 mb-1 mt-2">Profile</h3>
+                </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Broker Name</span></label>
                     <input type="text" name="broker_name" value={formData.broker_name} onChange={handleChange} className="input input-bordered w-full" />
@@ -69,7 +112,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
 
                 <div className="form-control">
                     <label className="label cursor-pointer justify-start gap-4">
-                        <span className="label-text">Verified</span>
+                        <span className="label-text">Verified (profile)</span>
                         <input type="checkbox" name="verified" checked={formData.verified} onChange={handleChange} className="checkbox" />
                     </label>
                 </div>

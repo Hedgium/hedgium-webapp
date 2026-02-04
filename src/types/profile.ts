@@ -3,6 +3,9 @@ export interface User {
     email: string;
     first_name: string;
     last_name: string;
+    mobile?: string | null;
+    signup_step?: string | null;
+    verified?: boolean | null;
 }
 
 export interface SubscriptionPlan {
