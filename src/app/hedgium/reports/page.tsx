@@ -64,7 +64,8 @@ type MarginSnapshot = {
   utilised?: number;
 };
 
-type PnlSeriesPoint = { date: string; pnl: number };
+/** From DailyPnlSnapshot API: level (total PnL as of date), not flow */
+type PnlSnapshotPoint = { snapshot_date: string; total_pnl: number };
 
 type ChartPeriod = "daily" | "weekly" | "monthly";
 
@@ -135,25 +136,21 @@ function aggregateMarginSnapshots(
     .sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
 }
 
-function aggregatePnlSeries(
-  data: PnlSeriesPoint[],
+/** Aggregate DailyPnlSnapshot (level series): daily = as-is; weekly/monthly = last value in each period */
+function aggregatePnlLevelSeries(
+  data: PnlSnapshotPoint[],
   period: ChartPeriod
 ): { time: string; value: number }[] {
-  const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
-  let cumulative = 0;
-  const daily: { time: string; value: number }[] = sorted.map((p) => {
-    cumulative += p.pnl;
-    return { time: p.date, value: cumulative };
-  });
-  if (period === "daily") return daily;
-  const byKey = new Map<string, number>();
-  for (const p of daily) {
-    const key = period === "weekly" ? getWeekKey(p.time) : getMonthKey(p.time);
-    byKey.set(key, p.value);
+  const sorted = [...data].sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
+  if (period === "daily") {
+    return sorted.map((d) => ({ time: d.snapshot_date, value: d.total_pnl }));
   }
-  return Array.from(byKey.entries())
-    .map(([key, value]) => ({ time: period === "weekly" ? key : `${key}-01`, value }))
-    .sort((a, b) => a.time.localeCompare(b.time));
+  const byKey = new Map<string, { time: string; value: number }>();
+  for (const d of sorted) {
+    const key = period === "weekly" ? getWeekKey(d.snapshot_date) : getMonthKey(d.snapshot_date);
+    byKey.set(key, { time: period === "weekly" ? key : `${key}-01`, value: d.total_pnl });
+  }
+  return Array.from(byKey.values()).sort((a, b) => a.time.localeCompare(b.time));
 }
 
 export default function ReportsPage() {
@@ -165,7 +162,8 @@ export default function ReportsPage() {
   const [reportsData, setReportsData] = useState<ReportsResponse | null>(null);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("daily");
   const [marginSnapshots, setMarginSnapshots] = useState<MarginSnapshot[]>([]);
-  const [pnlSeries, setPnlSeries] = useState<PnlSeriesPoint[]>([]);
+  const [pnlSnapshots, setPnlSnapshots] = useState<PnlSnapshotPoint[]>([]);
+  const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingReports, setLoadingReports] = useState(true);
   const [loadingCharts, setLoadingCharts] = useState(true);
@@ -192,7 +190,21 @@ export default function ReportsPage() {
     }
   }, [page]);
 
-  const chartRange = getChartDateRange(chartPeriod);
+  const allowedPeriods = ((): ChartPeriod[] => {
+    if (!accountCreatedAt) return ["daily"];
+    const created = new Date(accountCreatedAt);
+    const now = new Date();
+    const sixMonthsAgo = new Date(now);
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const twoYearsAgo = new Date(now);
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    const periods: ChartPeriod[] = ["daily"];
+    if (created <= sixMonthsAgo) periods.push("weekly");
+    if (created <= twoYearsAgo) periods.push("monthly");
+    return periods;
+  })();
+  const effectivePeriod = allowedPeriods.includes(chartPeriod) ? chartPeriod : "daily";
+  const chartRange = getChartDateRange(effectivePeriod);
 
   const fetchChartsData = useCallback(async () => {
     setLoadingCharts(true);
@@ -202,7 +214,7 @@ export default function ReportsPage() {
       params.set("date_to", chartRange.to);
       const [marginRes, pnlRes] = await Promise.all([
         authFetch(`profiles/margin-snapshots/?${params}`),
-        authFetch(`trade-cycles/pnl-series/?${params}`),
+        authFetch(`profiles/pnl-snapshots/?${params}`),
       ]);
       if (marginRes.ok) {
         const data = await marginRes.json();
@@ -212,18 +224,21 @@ export default function ReportsPage() {
       }
       if (pnlRes.ok) {
         const data = await pnlRes.json();
-        setPnlSeries(data.results || []);
+        setPnlSnapshots(data.results || []);
       } else {
-        setPnlSeries([]);
+        setPnlSnapshots([]);
       }
     } catch (e) {
       console.error("Error fetching chart data:", e);
       setMarginSnapshots([]);
-      setPnlSeries([]);
+      setPnlSnapshots([]);
     } finally {
       setLoadingCharts(false);
     }
   }, [chartRange.from, chartRange.to]);
+
+  const marginChartData = aggregateMarginSnapshots(marginSnapshots, effectivePeriod);
+  const pnlChartData = aggregatePnlLevelSeries(pnlSnapshots, effectivePeriod);
 
   useEffect(() => {
     fetchReports();
@@ -233,17 +248,21 @@ export default function ReportsPage() {
     fetchChartsData();
   }, [fetchChartsData]);
 
-  const marginChartData = aggregateMarginSnapshots(marginSnapshots, chartPeriod);
-  const pnlChartData = aggregatePnlSeries(pnlSeries, chartPeriod);
+  useEffect(() => {
+    if (accountCreatedAt != null && !allowedPeriods.includes(chartPeriod)) {
+      setChartPeriod("daily");
+    }
+  }, [accountCreatedAt, allowedPeriods, chartPeriod]);
 
-  // Initial load: PnL and allocation summary (once)
+  // Initial load: PnL and allocation summary + account_created_at (once)
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const [pnlRes, allocRes] = await Promise.all([
+        const [pnlRes, allocRes, meRes] = await Promise.all([
           authFetch("positions/pnl/"),
           authFetch("trade-cycles/allocation-summary/"),
+          authFetch("users/auth/me/"),
         ]);
         if (pnlRes.ok) {
           const pnlData = await pnlRes.json();
@@ -262,6 +281,10 @@ export default function ReportsPage() {
             last_week: allocData.allocation_summary?.last_week,
             today: allocData.allocation_summary?.today,
           });
+        }
+        if (meRes?.ok) {
+          const me = await meRes.json();
+          if (me.account_created_at) setAccountCreatedAt(me.account_created_at);
         }
       } catch (e) {
         console.error("Error fetching summaries:", e);
@@ -388,7 +411,7 @@ export default function ReportsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-base-content/70">Chart view:</span>
             <div className="join">
-              {(["daily", "weekly", "monthly"] as const).map((p) => (
+              {allowedPeriods.map((p) => (
                 <button
                   key={p}
                   type="button"
@@ -407,9 +430,9 @@ export default function ReportsPage() {
                 <Wallet className="w-5 h-5 text-primary" />
                 <h3 className="text-lg font-semibold">
                   Margin
-                  {chartPeriod === "daily" && " (1 month)"}
-                  {chartPeriod === "weekly" && " (6 months, weekly avg)"}
-                  {chartPeriod === "monthly" && " (2 years, monthly avg)"}
+                  {effectivePeriod === "daily" && " (1 month)"}
+                  {effectivePeriod === "weekly" && " (6 months, weekly avg)"}
+                  {effectivePeriod === "monthly" && " (2 years, monthly avg)"}
                 </h3>
               </div>
               {loadingCharts ? (
@@ -422,7 +445,7 @@ export default function ReportsPage() {
                 </div>
               ) : (
                 <div className="h-64">
-                  <MarginLineChart data={marginChartData} period={chartPeriod} />
+                  <MarginLineChart data={marginChartData} period={effectivePeriod} />
                 </div>
               )}
             </div>
@@ -431,10 +454,10 @@ export default function ReportsPage() {
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-5 h-5 text-primary" />
                 <h3 className="text-lg font-semibold">
-                  Cumulative PnL
-                  {chartPeriod === "daily" && " (1 month)"}
-                  {chartPeriod === "weekly" && " (6 months, weekly)"}
-                  {chartPeriod === "monthly" && " (2 years, monthly)"}
+                  PnL
+                  {effectivePeriod === "daily" && " (1 month)"}
+                  {effectivePeriod === "weekly" && " (6 months, weekly)"}
+                  {effectivePeriod === "monthly" && " (2 years, monthly)"}
                 </h3>
               </div>
               {loadingCharts ? (
@@ -447,7 +470,7 @@ export default function ReportsPage() {
                 </div>
               ) : (
                 <div className="h-64">
-                  <PnlLineChart data={pnlChartData} period={chartPeriod} />
+                  <PnlLineChart data={pnlChartData} period={effectivePeriod} />
                 </div>
               )}
             </div>
