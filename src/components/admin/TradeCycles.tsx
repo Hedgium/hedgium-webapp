@@ -676,8 +676,12 @@ export default function TradeCycles({
                       if (!cycle) {
                         return null;
                       }
-                      const buyKey = `${cycle.id}-${item.instrument}-BUY`;
-                      const sellKey = `${cycle.id}-${item.instrument}-SELL`;
+                      const netQty = item.master_buy_quantity - item.master_sell_quantity;
+                      const actionKey = netQty > 0
+                        ? `${cycle.id}-${item.instrument}-BUY`
+                        : netQty < 0
+                          ? `${cycle.id}-${item.instrument}-SELL`
+                          : null;
                       const qtyText = [item.master_buy_quantity > 0 && `Buy: ${item.master_buy_quantity}`, item.master_sell_quantity > 0 && `Sell: ${item.master_sell_quantity}`].filter(Boolean).join(", ") || "—";
                       return (
                         <div
@@ -689,7 +693,7 @@ export default function TradeCycles({
                             <span className="opacity-80 text-xs">({qtyText})</span>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            {item.master_buy_quantity > 0 && (
+                            {netQty > 0 && (
                               <button
                                 className="btn btn-xs btn-primary"
                                 onClick={() =>
@@ -697,22 +701,22 @@ export default function TradeCycles({
                                     cycle,
                                     item.instrument,
                                     "BUY",
-                                    item.master_buy_quantity,
+                                    netQty,
                                     item.exchange
                                   )
                                 }
-                                disabled={placingCompareOrder === buyKey || completedOrders.has(buyKey)}
+                                disabled={placingCompareOrder === actionKey || completedOrders.has(actionKey!)}
                               >
-                                {placingCompareOrder === buyKey ? (
+                                {placingCompareOrder === actionKey ? (
                                   <span className="loading loading-spinner loading-xs"></span>
-                                ) : completedOrders.has(buyKey) ? (
+                                ) : completedOrders.has(actionKey!) ? (
                                   "✓ Placed"
                                 ) : (
-                                  `Buy ${item.master_buy_quantity}`
+                                  `Buy ${netQty}`
                                 )}
                               </button>
                             )}
-                            {item.master_sell_quantity > 0 && (
+                            {netQty < 0 && (
                               <button
                                 className="btn btn-xs btn-secondary"
                                 onClick={() =>
@@ -720,20 +724,23 @@ export default function TradeCycles({
                                     cycle,
                                     item.instrument,
                                     "SELL",
-                                    item.master_sell_quantity,
+                                    Math.abs(netQty),
                                     item.exchange
                                   )
                                 }
-                                disabled={placingCompareOrder === sellKey || completedOrders.has(sellKey)}
+                                disabled={placingCompareOrder === actionKey || completedOrders.has(actionKey!)}
                               >
-                                {placingCompareOrder === sellKey ? (
+                                {placingCompareOrder === actionKey ? (
                                   <span className="loading loading-spinner loading-xs"></span>
-                                ) : completedOrders.has(sellKey) ? (
+                                ) : completedOrders.has(actionKey!) ? (
                                   "✓ Placed"
                                 ) : (
-                                  `Sell ${item.master_sell_quantity}`
+                                  `Sell ${Math.abs(netQty)}`
                                 )}
                               </button>
+                            )}
+                            {netQty === 0 && (
+                              <span className="text-xs opacity-60">No action (net 0)</span>
                             )}
                           </div>
                         </div>
