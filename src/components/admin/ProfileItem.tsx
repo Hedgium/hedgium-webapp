@@ -78,7 +78,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
 
     const handleBrokerLogin = async () => {
         if (!brokerPassword) {
-            alert.error("Please enter a password");
+            alert.error("Please enter a password / mpin");
             return;
         }
 
@@ -86,6 +86,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
         const brokerEndpoints: Record<string, string> = {
             "SHOONYA": "users/shoonya-login/",
             "ZERODHA": "users/zerodha-login/",
+            "KOTAKNEO": "users/kotakneo-login/",
         };
 
         const endpoint = brokerEndpoints[profile.broker_name];
@@ -103,7 +104,9 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                 },
                 body: JSON.stringify({
                     "profile_id": String(profile.id),
-                    "pwd": brokerPassword
+                    ...(profile.broker_name === "KOTAKNEO"
+                        ? { "mpin": brokerPassword }
+                        : { "pwd": brokerPassword })
                 }),
             });
 
@@ -201,7 +204,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                                 {sendingReminder ? 'Sending...' : 'Send Login Reminder'}
                             </button>
 
-                            {(profile.broker_name === "SHOONYA" || profile.broker_name === "ZERODHA") && (
+                            {(profile.broker_name === "SHOONYA" || profile.broker_name === "ZERODHA" || profile.broker_name === "KOTAKNEO") && (
                                 <button
                                     onClick={() => setIsBrokerLoginModalOpen(true)}
                                     className="btn btn-primary btn-xs"
