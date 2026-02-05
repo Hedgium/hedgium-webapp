@@ -25,6 +25,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         broker_name: '',
         broker_user_id: '',
         margin_equity: 0,
+        order_value_factor: 1,
         is_active: false,
         verified: false,
         auto_trade_allowed: false,
@@ -40,6 +41,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                 broker_name: initialData.broker_name,
                 broker_user_id: initialData.broker_user_id,
                 margin_equity: initialData.margin_equity,
+                order_value_factor: initialData.order_value_factor ?? 1,
                 is_active: initialData.is_active,
                 verified: initialData.verified,
                 auto_trade_allowed: initialData.auto_trade_allowed ?? false,
@@ -54,8 +56,11 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         const { name, value, type } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
-                name === 'margin_equity' ? parseFloat(value) : value
+            [name]: type === 'checkbox'
+                ? (e.target as HTMLInputElement).checked
+                : (name === 'margin_equity' || name === 'order_value_factor')
+                    ? parseFloat(value)
+                    : value
         }));
     };
 
@@ -101,6 +106,10 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                 <div className="form-control">
                     <label className="label"><span className="label-text">Margin Equity</span></label>
                     <input type="number" step="0.01" name="margin_equity" value={formData.margin_equity} onChange={handleChange} className="input input-bordered w-full" />
+                </div>
+                <div className="form-control">
+                    <label className="label"><span className="label-text">Order Value Factor</span></label>
+                    <input type="number" step="0.01" name="order_value_factor" value={formData.order_value_factor ?? 1} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
 
                 <div className="form-control">
