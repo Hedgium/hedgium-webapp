@@ -56,16 +56,50 @@ const BrokerSetup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation
+    if (!brokerName) {
+      alert.error("Please select a broker", { duration: 3000 });
+      return;
+    }
+
+    if (!brokerUserId) {
+      alert.error("Please enter Broker User ID", { duration: 3000 });
+      return;
+    }
+
+    if (!apiKey) {
+      alert.error("Please enter API Key", { duration: 3000 });
+      return;
+    }
+
+    if (brokerName === "ZERODHA" && !secretKey) {
+      alert.error("Please enter Secret Key", { duration: 3000 });
+      return;
+    }
+
+    if ((brokerName === "SHOONYA" || brokerName === "KOTAKNEO") && !brokerTwofa) {
+      alert.error(`Please enter ${brokerName === "KOTAKNEO" ? "TOTP Secret" : "2FA Code"}`, { duration: 3000 });
+      return;
+    }
+
     try {
         setSubmitting(true);
-        const formData = {
+        const formData: any = {
             "user_id": user.id,
             "broker_name": brokerName,
             "broker_user_id": brokerUserId,
             "broker_api_key": apiKey,
-            "broker_secret_key": secretKey,
-            "broker_twofa": brokerTwofa
         }
+
+        // Only include fields that are relevant for the selected broker
+        if (brokerName === "ZERODHA") {
+          formData["broker_secret_key"] = secretKey;
+        }
+
+        if (brokerName === "SHOONYA" || brokerName === "KOTAKNEO") {
+          formData["broker_twofa"] = brokerTwofa;
+        }
+
         const url = "profiles/"
 
         const res = await authFetch(url, {
@@ -74,14 +108,15 @@ const BrokerSetup: React.FC = () => {
         })
 
         if (res.ok){
-
-        // console.log(data);
           updateUser({ signup_step: "broker_profile_added" })
           alert.success("Broker added successfully", {duration:3000})
           router.push("/register/verification/")
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          alert.error(errorData.message || "Failed to add broker", {duration:4000})
         }
-    } catch (e) {
-
+    } catch (e: any) {
+      alert.error(e.message || "Something went wrong", {duration:4000})
     } finally {
         setSubmitting(false)
     }
@@ -125,6 +160,7 @@ const BrokerSetup: React.FC = () => {
             {/* <option value="ANGELONE">Upstox</option> */}
             {/* <option value="UPSTOX">AngelOne</option> */}
             <option value="SHOONYA">Shoonya</option>
+            <option value="KOTAKNEO">Kotak Neo</option>
           </select>
         </div>
 
@@ -166,15 +202,17 @@ const BrokerSetup: React.FC = () => {
           />
         </div>}
 
-        {/* Broker 2FA */}
-        {brokerName === "SHOONYA" && <div>
-          <label className="block text-sm font-medium">Broker 2FA</label>
+        {/* Broker 2FA / TOTP */}
+        {(brokerName === "SHOONYA" || brokerName === "KOTAKNEO") && <div>
+          <label className="block text-sm font-medium">
+            {brokerName === "KOTAKNEO" ? "TOTP Secret" : "Broker 2FA"}
+          </label>
           <input
             type="text"
             value={brokerTwofa}
             onChange={(e) => setBrokerTwofa(e.target.value)}
             className="input input-bordered w-full"
-            placeholder="Enter 2FA Code"
+            placeholder={brokerName === "KOTAKNEO" ? "Enter TOTP Secret" : "Enter 2FA Code"}
           />
         </div> }
 

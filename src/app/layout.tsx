@@ -61,7 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
 
         <AuthProvider>
-          <ThemeProvider>
+          <ThemeProvider defaultTheme="light">
             {children}
           </ThemeProvider>
           <AlertsContainer />

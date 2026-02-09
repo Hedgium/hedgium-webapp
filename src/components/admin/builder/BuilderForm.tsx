@@ -121,8 +121,10 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = (e?: React.FormEvent | React.KeyboardEvent) => {
+        if (e) {
+            e.preventDefault();
+        }
         onSubmit(formData as StrategyBuilderCreate);
     };
 
@@ -149,7 +151,19 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 
                 <div className="form-control">
                     <label className="label"><span className="label-text">Name</span></label>
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} className="input input-bordered w-full" required />
+                    <input 
+                        type="text" 
+                        name="name" 
+                        value={formData.name} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
+                        className="input input-bordered w-full" 
+                        required 
+                    />
                 </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Exchange</span></label>
@@ -181,11 +195,37 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div> */}
                 <div className="form-control">
                     <label className="label"><span className="label-text">Entry WS (%)</span></label>
-                    <input type="number" step="0.01" required name="entry_ws" value={formData.entry_ws} onChange={handleChange} className="input input-bordered w-full" />
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        required 
+                        name="entry_ws" 
+                        value={formData.entry_ws} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
+                        className="input input-bordered w-full" 
+                    />
                 </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Exit WS (%)</span></label>
-                    <input type="number" step="0.01" required name="exit_ws" value={formData.exit_ws} onChange={handleChange} className="input input-bordered w-full" />
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        required 
+                        name="exit_ws" 
+                        value={formData.exit_ws} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
+                        className="input input-bordered w-full" 
+                    />
                 </div>
 
                 <div className="form-control">
@@ -197,7 +237,20 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div>
                 <div className="form-control">
                     <label className="label"><span className="label-text">Exit PnL (₹)</span></label>
-                    <input type="number" required step="0.01" name="exit_pnl" value={formData.exit_pnl} onChange={handleChange} className="input input-bordered w-full" />
+                    <input 
+                        type="number" 
+                        required 
+                        step="0.01" 
+                        name="exit_pnl" 
+                        value={formData.exit_pnl} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
+                        className="input input-bordered w-full" 
+                    />
                 </div>
 
                 
@@ -209,7 +262,12 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         step="0.01" 
                         name="margin_required" 
                         value={formData.margin_required} 
-                        onChange={handleChange} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
                         className="input input-bordered w-full" 
                         required
                     />

@@ -319,8 +319,10 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
+        if (e) {
+            e.preventDefault();
+        }
         if (!validationStatus.isValid) {
             alert('Please ensure the instrument is valid before submitting');
             return;
@@ -381,13 +383,36 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
                 <div className="form-control">
                     <label className="label"><span className="label-text">ATM Strike Multiplier</span></label>
-                    <input type="number" name="strike_distance" value={formData.strike_distance} onChange={handleChange} className="input input-bordered w-full" />
+                    <input 
+                        type="number" 
+                        name="strike_distance" 
+                        value={formData.strike_distance} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
+                        className="input input-bordered w-full" 
+                    />
                 </div>
 
 
                 <div className="form-control">
                     <label className="label"><span className="label-text">Calculated Strike</span></label>
-                    <input type="number" name="strike" value={formData.strike} onChange={handleChange} className="input input-bordered w-full" required />
+                    <input 
+                        type="number" 
+                        name="strike" 
+                        value={formData.strike} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
+                        className="input input-bordered w-full" 
+                        required 
+                    />
                     <label className="label"><span className="label-text text-xs">Strike Step: {formData.strike_step}</span></label>
 
                 </div>
@@ -402,6 +427,11 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                         onChange={handleChange}
                         onFocus={() => setExpiryInputType('date')}
                         onBlur={() => setExpiryInputType('text')}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
                         placeholder="DD-MM-YY"
                         className="input input-bordered w-full"
                         required
@@ -438,7 +468,19 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
                 <div className="form-control">
                     <label className="label"><span className="label-text">Price (₹)</span></label>
-                    <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} className="input input-bordered w-full" />
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        name="price" 
+                        value={formData.price} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
+                        className="input input-bordered w-full" 
+                    />
                 </div>
 
                 <div className="form-control">
@@ -453,6 +495,11 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                                 lot_size: parseInt(e.target.value),
                                 quantity: parseInt(e.target.value) * noOfLots
                             }));
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
                         }}
                         className="input input-bordered w-full bg-gray-100"
                     />
@@ -471,6 +518,11 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                                 ...prev,
                                 quantity: formData.lot_size * newNoOfLots
                             }));
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
                         }}
                         className="input input-bordered w-full"
                         min="1"

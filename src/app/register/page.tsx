@@ -33,8 +33,10 @@ function Register() {
   const validateEmail = (email: string): boolean =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  async function handleRegister(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
+  async function handleRegister(e?: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent) {
+    if (e) {
+      e.preventDefault();
+    }
     setRegistering(true);
     let valid = true;
 
@@ -154,6 +156,11 @@ function Register() {
                       }`}
                       value={first_name}
                       onChange={(e) => setFirstName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleRegister(e);
+                        }
+                      }}
                       placeholder="Enter your first name"
                     />
                   </div>
@@ -178,6 +185,11 @@ function Register() {
                       }`}
                       value={last_name}
                       onChange={(e) => setLastName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleRegister(e);
+                        }
+                      }}
                       placeholder="Enter your last name"
                     />
                   </div>
@@ -202,6 +214,11 @@ function Register() {
                       }`}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleRegister(e);
+                        }
+                      }}
                       placeholder="Enter your email"
                     />
                   </div>
@@ -226,6 +243,11 @@ function Register() {
                       }`}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleRegister(e);
+                        }
+                      }}
                       placeholder="Enter your password"
                     />
                   </div>
@@ -250,6 +272,11 @@ function Register() {
                       }`}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleRegister(e);
+                        }
+                      }}
                       placeholder="Confirm your password"
                     />
                   </div>

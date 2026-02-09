@@ -296,14 +296,19 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                         <h3 className="font-bold text-lg mb-4">Login to {profile.broker_name}</h3>
                         <div className="form-control w-full">
                             <label className="label">
-                                <span className="label-text">Password</span>
+                                <span className="label-text">{profile.broker_name === "KOTAKNEO" ? "MPIN" : "Password"}</span>
                             </label>
                             <input
                                 type="password"
-                                placeholder={`Enter ${profile.broker_name} Password`}
+                                placeholder={`Enter ${profile.broker_name === "KOTAKNEO" ? "MPIN" : "Password"}`}
                                 className="input input-bordered w-full"
                                 value={brokerPassword}
                                 onChange={(e) => setBrokerPassword(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !isLoggingInBroker && brokerPassword) {
+                                        handleBrokerLogin();
+                                    }
+                                }}
                             />
                         </div>
                         <div className="modal-action">
@@ -344,6 +349,11 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                                 className="input input-bordered w-full"
                                 value={brokerAccessToken}
                                 onChange={(e) => setBrokerAccessToken(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !isSettingBrokerToken && brokerAccessToken) {
+                                        handleSetBrokerToken();
+                                    }
+                                }}
                             />
                             <label className="label">
                                 <span className="label-text-alt">

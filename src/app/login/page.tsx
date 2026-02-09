@@ -32,8 +32,10 @@ const Login: React.FC = () => {
     }
   }, [accessToken, isInitializing, router]);
 
-  const handleLogin = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+  const handleLogin = async (e?: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     let valid = true;
 
     if (!email) {
@@ -102,6 +104,11 @@ const Login: React.FC = () => {
                         }`}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleLogin(e);
+                          }
+                        }}
                         placeholder="Enter your email"
                       />
                     </div>
@@ -127,6 +134,11 @@ const Login: React.FC = () => {
                         }`}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleLogin(e);
+                          }
+                        }}
                         placeholder="Enter your password"
                       />
                     </div>
