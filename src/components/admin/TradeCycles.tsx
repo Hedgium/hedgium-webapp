@@ -103,6 +103,7 @@ export default function TradeCycles({
   const [compareStepMessage, setCompareStepMessage] = useState<string | null>(null);
   const [compareModalCycleId, setCompareModalCycleId] = useState<number | null>(null);
   const [placingCompareOrder, setPlacingCompareOrder] = useState<string | null>(null);
+  const [placingMatchAllCycleId, setPlacingMatchAllCycleId] = useState<number | null>(null);
   const [completedOrders, setCompletedOrders] = useState<Set<string>>(new Set());
 
   // Modal state
@@ -420,6 +421,89 @@ export default function TradeCycles({
       alert.error(errorMsg);
     } finally {
       setPlacingCompareOrder(null);
+    }
+  }
+
+  /** Build list of match-order items from compare result (missing + quantity mismatches) for batch API */
+  function getMatchAllItems(cycleId: number): { instrument: string; exchange: string; transaction_type: "BUY" | "SELL"; quantity: number }[] {
+    const result = compareResults[cycleId];
+    if (!result) return [];
+    const items: { instrument: string; exchange: string; transaction_type: "BUY" | "SELL"; quantity: number }[] = [];
+    const resolvedEx = (instrument: string, exchange?: string | null) =>
+      exchange || (instrument.match(/\d/) ? "NFO" : "NSE");
+
+    if (result.missing_details) {
+      for (const item of result.missing_details) {
+        const netQty = item.master_buy_quantity - item.master_sell_quantity;
+        if (netQty > 0) {
+          items.push({
+            instrument: item.instrument,
+            exchange: resolvedEx(item.instrument, item.exchange),
+            transaction_type: "BUY",
+            quantity: netQty,
+          });
+        } else if (netQty < 0) {
+          items.push({
+            instrument: item.instrument,
+            exchange: resolvedEx(item.instrument, item.exchange),
+            transaction_type: "SELL",
+            quantity: Math.abs(netQty),
+          });
+        }
+      }
+    }
+    if (result.quantity_mismatch_details) {
+      for (const item of result.quantity_mismatch_details) {
+        const buyDiff = item.master_buy_quantity - item.trade_cycle_buy_quantity;
+        const sellDiff = item.master_sell_quantity - item.trade_cycle_sell_quantity;
+        const ex = resolvedEx(item.instrument, item.exchange);
+        if (buyDiff > 0) {
+          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "BUY", quantity: buyDiff });
+        } else if (buyDiff < 0) {
+          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "SELL", quantity: Math.abs(buyDiff) });
+        }
+        if (sellDiff > 0) {
+          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "SELL", quantity: sellDiff });
+        } else if (sellDiff < 0) {
+          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "BUY", quantity: Math.abs(sellDiff) });
+        }
+      }
+    }
+    return items;
+  }
+
+  async function handlePlaceMatchAll(cycle: TradeCycle) {
+    const items = getMatchAllItems(cycle.id);
+    if (items.length === 0) {
+      alert.error("No orders to place for Match All");
+      return;
+    }
+    setPlacingMatchAllCycleId(cycle.id);
+    try {
+      const res = await authFetch(`trade-cycles/${cycle.id}/place-match-orders-batch/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      const data = await res.json();
+
+      if (data.status === "success") {
+        const { orders_created, batches } = data.data || {};
+        alert.success(
+          `Match All: ${orders_created} order(s) created in ${batches} batch(es)`,
+          { duration: 4000 }
+        );
+        setCompareModalCycleId(null);
+        setCompareResults((prev) => ({ ...prev, [cycle.id]: { ...prev[cycle.id], matched_count: (prev[cycle.id]?.matched_count ?? 0) + (orders_created || 0) } }));
+        fetchTradeCycles();
+      } else {
+        alert.error(data.message || "Match All failed");
+      }
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : "Match All failed";
+      alert.error(errorMsg);
+    } finally {
+      setPlacingMatchAllCycleId(null);
     }
   }
 
@@ -911,9 +995,30 @@ export default function TradeCycles({
             </div>
 
             <div className="modal-action">
-              <button className="btn" onClick={() => setCompareModalCycleId(null)}>
-                Close
-              </button>
+              {(() => {
+                const cycle = trade_cycles.find((c) => c.id === compareModalCycleId);
+                const matchAllItems = cycle ? getMatchAllItems(cycle.id) : [];
+                return (
+                  <>
+                    {matchAllItems.length > 0 && (
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => cycle && handlePlaceMatchAll(cycle)}
+                        disabled={placingMatchAllCycleId === compareModalCycleId}
+                      >
+                        {placingMatchAllCycleId === compareModalCycleId ? (
+                          <span className="loading loading-spinner loading-sm"></span>
+                        ) : (
+                          `Match All (${matchAllItems.length} order${matchAllItems.length !== 1 ? "s" : ""})`
+                        )}
+                      </button>
+                    )}
+                    <button className="btn" onClick={() => setCompareModalCycleId(null)}>
+                      Close
+                    </button>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
