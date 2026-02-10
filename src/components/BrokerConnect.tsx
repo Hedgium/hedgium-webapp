@@ -115,7 +115,7 @@ export default function BrokerLoginStatus() {
         throw new Error(`Login not supported for ${broker.name}`);
       }
 
-      const payload: any = {
+      const payload: { profile_id: string; mpin?: string; pwd?: string } = {
         profile_id: String(broker.profileId),
       };
 
@@ -149,9 +149,10 @@ export default function BrokerLoginStatus() {
       } else {
         throw new Error(data.message || "Login failed");
       }
-    } catch (err: any) {
-      setError(err?.message || "An unexpected error occurred.");
-      alert.error(err?.message || "Login failed");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setError(message);
+      alert.error(message);
     } finally {
       setLoggingIn(false);
     }
@@ -170,8 +171,8 @@ export default function BrokerLoginStatus() {
 
       if (!res.ok || !data.login_url) throw new Error("Failed to get login URL.");
       window.location.href = data.login_url;
-    } catch (err: any) {
-      setError(err?.message || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
       setLoading(false);
     }
   };

@@ -28,7 +28,7 @@ const BrokerSetup: React.FC = () => {
 
     e.preventDefault();
     const formData = {"kyc_skipped":true}; // optional, if you added this field
-    const res = await authFetch("users/me/", {
+    await authFetch("users/me/", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -41,7 +41,7 @@ const BrokerSetup: React.FC = () => {
   alert.success("Broker profile skipped", {
     duration: 3000,
   }); 
-  } catch(e){
+  } catch {
     alert.error("Something went wrong!!", {duration:4000})
   }
   
@@ -84,20 +84,27 @@ const BrokerSetup: React.FC = () => {
 
     try {
         setSubmitting(true);
-        const formData: any = {
-            "user_id": user.id,
-            "broker_name": brokerName,
-            "broker_user_id": brokerUserId,
-            "broker_api_key": apiKey,
-        }
+        const formData: {
+          user_id: number;
+          broker_name: string;
+          broker_user_id: string;
+          broker_api_key: string;
+          broker_secret_key?: string;
+          broker_twofa?: string;
+        } = {
+          user_id: user.id,
+          broker_name: brokerName,
+          broker_user_id: brokerUserId,
+          broker_api_key: apiKey,
+        };
 
         // Only include fields that are relevant for the selected broker
         if (brokerName === "ZERODHA") {
-          formData["broker_secret_key"] = secretKey;
+          formData.broker_secret_key = secretKey;
         }
 
         if (brokerName === "SHOONYA" || brokerName === "KOTAKNEO") {
-          formData["broker_twofa"] = brokerTwofa;
+          formData.broker_twofa = brokerTwofa;
         }
 
         const url = "profiles/"
@@ -115,8 +122,8 @@ const BrokerSetup: React.FC = () => {
           const errorData = await res.json().catch(() => ({}));
           alert.error(errorData.message || "Failed to add broker", {duration:4000})
         }
-    } catch (e: any) {
-      alert.error(e.message || "Something went wrong", {duration:4000})
+    } catch (e: unknown) {
+      alert.error(e instanceof Error ? e.message : "Something went wrong", {duration:4000})
     } finally {
         setSubmitting(false)
     }
