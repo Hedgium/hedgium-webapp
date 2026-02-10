@@ -21,7 +21,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     try{
         const formData = {"kyc_skipped": false}; // optional, if you added this field
-        await authFetch("users/" + (user?.id ?? "") + "/", {
+        await authFetch("users/me/", {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",

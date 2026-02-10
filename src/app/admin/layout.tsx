@@ -1,18 +1,48 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import AdminSidebar from "@/components/admin/Sidebar";
 import NotificationProvider from '@/providers/NotificationProvider';
 import AuthInitializingProvider from "@/components/AuthInitializing";
+import { ShieldX, LogOut } from "lucide-react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuthStore();
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
+  };
 
   return (
     <NotificationProvider>
       <AuthInitializingProvider requireAuth={true}>
         {!user?.is_staff ? (
-          <div className="p-4">Access Denied: Admins Only</div>
+          <div className="min-h-screen flex items-center justify-center bg-base-200 p-4">
+            <div className="card bg-base-100 shadow-xl border border-base-300 max-w-md w-full">
+              <div className="card-body items-center text-center">
+                <div className="rounded-full bg-error/10 p-4">
+                  <ShieldX className="size-10 text-error" aria-hidden />
+                </div>
+                <h1 className="card-title text-2xl">Access Denied</h1>
+                <p className="text-base-content/70">
+                  This area is restricted to administrators. If you believe this is an error, contact support.
+                </p>
+                <div className="w-full flex justify-center pt-4">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="btn btn-primary gap-2 min-w-[10rem]"
+                  >
+                    <LogOut className="size-4" />
+                    Log out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="flex flex-col h-screen">
             <div className="flex flex-1 overflow-hidden">

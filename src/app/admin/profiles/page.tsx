@@ -162,6 +162,7 @@ export default function ProfilesPage() {
                         <option value="">All Brokers</option>
                         <option value="SHOONYA">Shoonya</option>
                         <option value="ZERODHA">Zerodha</option>
+                        <option value="KOTAKNEO">Kotak Neo</option>
                     </select>
 
                     {/* Subscription Plan Filter */}

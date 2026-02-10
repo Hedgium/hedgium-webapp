@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { authFetch } from "@/utils/api";
-import { Eye, EarOff, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import { useAuthStore } from "@/store/authStore";
-import { encryptWithPublicKey, decryptPassword } from "@/utils/crypto";
 
 
 
@@ -120,48 +119,12 @@ const PasswordTab: React.FC = () => {
         console.error("Broker check failed:", err);
       }
     };
-    
-  const handleSetBrokerUserPassword = async () => {
-  // console.log("Hello World");
-  console.log("user", keys);
-
-  try {
-    // 🔹 Step 1: Encrypt password with broker's public key
-    const encryptedPassword = await encryptWithPublicKey(keys.public_key, brokerUserPassword);
-
-    // 🔹 Step 2: Send encrypted password to API
-    const res = await authFetch(`profiles/${broker.id}/`, {
-      method: "PUT",
-      body: JSON.stringify({
-        broker_user_password: encryptedPassword,
-      }),
-    });
-
-    const data = await res.json();
-    console.log("API response:", data);
-
-    // 🔹 Step 3: Decrypt password locally using private key from localStorage
-    const decryptedPassword = await decryptPassword(encryptedPassword);
-    console.log("Decrypted back:", decryptedPassword);
-  } catch (error) {
-    console.error("Error in handleSetBrokerUserPassword:", error);
-  }
-};
-
-
-
 
   useEffect(()=>{
       fetchActiveProfile();
-  },[])
+  },[]);
 
-
-  const handleCreateKeys = ()=>{
-    userKeyCreateUpdate();      
-  }
-    
-
-  const {keys, user, userKeyCreateUpdate} = useAuthStore();
+  const { user } = useAuthStore();
   const alert = useAlert();
   const [passwordData, setPasswordData] = useState<PasswordData>({
     currentPassword: "",
@@ -169,7 +132,6 @@ const PasswordTab: React.FC = () => {
     confirmPassword: "",
   });
 
-  const [brokerUserPassword, setBrokerUserPassword] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
 
@@ -242,15 +204,6 @@ const PasswordTab: React.FC = () => {
 
   return (
     <div className="card bg-base-100 border border-base-300 p-6">
-      {/* <button onClick={handleCreateKeys} className="btn">Create keys</button>
-      <input 
-      className="input"
-      
-      onChange={(e)=>setBrokerUserPassword(e.target.value)}
-      />
-
-      <button className="btn" onClick={handleSetBrokerUserPassword}>Submit</button> */}
-
       <h2 className="text-2xl font-bold mb-6 text-base-content">Change Password</h2>
       <div className="space-y-4">
         <PasswordInput

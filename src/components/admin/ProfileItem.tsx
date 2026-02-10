@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
 import useAlert from '@/hooks/useAlert';
-import { RotateCw, Edit2, TrendingUp } from 'lucide-react';
+import { RotateCw, Edit2, TrendingUp, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProfileItemProps {
@@ -245,6 +245,15 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                         >
                             <TrendingUp size={16} />
                         </Link>}
+                        {brokerLoggedIn && (
+                            <button
+                                onClick={() => setIsBrokerTokenModalOpen(true)}
+                                className="btn btn-ghost btn-xs text-amber-400"
+                                title="Update Token"
+                            >
+                                <KeyRound size={16} />
+                            </button>
+                        )}
                         {onEdit && (
                             <button
                                 onClick={() => onEdit(profile)}
@@ -334,11 +343,13 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                 </div>
             )}
 
-            {/* Set Broker Token Modal - Available for all brokers */}
+            {/* Set / Update Broker Token Modal - Available for all brokers */}
             {isBrokerTokenModalOpen && (
                 <div className="modal modal-open">
                     <div className="modal-box">
-                        <h3 className="font-bold text-lg mb-4">Set {profile.broker_name} Access Token</h3>
+                        <h3 className="font-bold text-lg mb-4">
+                            {brokerLoggedIn ? "Update" : "Set"} {profile.broker_name} Access Token
+                        </h3>
                         <div className="form-control w-full mb-4">
                             <label className="label">
                                 <span className="label-text">Broker Access Token</span>
@@ -357,7 +368,9 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                             />
                             <label className="label">
                                 <span className="label-text-alt">
-                                    {`Provide the broker access token directly. This will update the profile's access token.`}
+                                    {brokerLoggedIn
+                                        ? "Enter the new access token to replace the current one."
+                                        : "Provide the broker access token directly. This will update the profile's access token."}
                                 </span>
                             </label>
                         </div>
@@ -377,7 +390,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                                 onClick={handleSetBrokerToken}
                                 disabled={isSettingBrokerToken}
                             >
-                                {isSettingBrokerToken ? <span className="loading loading-spinner"></span> : "Set Token"}
+                                {isSettingBrokerToken ? <span className="loading loading-spinner"></span> : (brokerLoggedIn ? "Update Token" : "Set Token")}
                             </button>
                         </div>
                     </div>

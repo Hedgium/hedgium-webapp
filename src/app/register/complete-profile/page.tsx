@@ -52,7 +52,7 @@ const CompleteProfile: React.FC = () => {
     }
 
     console.log("Sending user details:", userDetails); // Debug log
-    const detailsRes = await authFetch(`users/${user?.id ?? ""}/`, {
+    const detailsRes = await authFetch("users/me/", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -84,7 +84,7 @@ const CompleteProfile: React.FC = () => {
         console.log(`FormData ${key}: ${value}`);
       }
 
-      const documentsRes = await authFetch(`users/${user?.id ?? ""}/uploads/`, {
+      const documentsRes = await authFetch("users/me/uploads/", {
         method: "PUT",
         body: formData,
       });

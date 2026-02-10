@@ -23,7 +23,7 @@ const VerificationPending: React.FC = () => {
   
       e.preventDefault();
       const formData = {"kyc_skipped": true}; // optional, if you added this field
-      const res = await authFetch("users/" + (user?.id ?? "") + "/", {
+      const res = await authFetch("users/me/", {
         method: "PUT",
         headers: {
         "Content-Type": "application/json",

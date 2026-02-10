@@ -42,6 +42,7 @@ export default function BrokerLoginStatus() {
     try {
       const res = await authFetch("profiles/check-profile/");
       const data = await res.json();
+      console.log(data);
 
       setBroker({
         loading: false,

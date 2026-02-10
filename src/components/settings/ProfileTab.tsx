@@ -38,13 +38,13 @@ const ProfileTab: React.FC = () => {
 
   /** 🔄 Toggle auto trade allowed */
   const toggleAutoTrade = async () => {
-    if (!user || !profileId) return;
+    if (!user || profileId == null) return;
     setError(null);
 
     const newValue = !autoTradeAllowed;
 
     try {
-      const res = await authFetch(`profiles/${profileId}/`, {
+      const res = await authFetch("profiles/me/", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

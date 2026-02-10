@@ -552,11 +552,9 @@ export default function LivePositionsPage() {
                       <td>
                         <span
                           className={`badge ${
-                            order.status === "COMPLETE" ||
-                            order.status === "FILLED"
+                            ["COMPLETE", "FILLED"].includes((order.status || "").toUpperCase())
                               ? "badge-success"
-                              : order.status === "CANCELLED" ||
-                                order.status === "REJECTED"
+                              : ["CANCELLED", "CANCELED", "REJECTED"].includes((order.status || "").toUpperCase())
                               ? "badge-error"
                               : "badge-warning"
                           }`}
@@ -566,10 +564,7 @@ export default function LivePositionsPage() {
                       </td>
                       <td>
                         <div className="flex gap-2">
-                          {order.status !== "COMPLETE" &&
-                            order.status !== "FILLED" &&
-                            order.status !== "CANCELED" &&
-                            order.status !== "REJECTED" && (
+                          {!["COMPLETE", "FILLED", "CANCELED", "CANCELLED", "REJECTED"].includes((order.status || "").toUpperCase()) && (
                               <>
                                 <button
                                   onClick={() => openModifyForm(order)}
