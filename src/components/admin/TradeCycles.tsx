@@ -454,18 +454,15 @@ export default function TradeCycles({
     }
     if (result.quantity_mismatch_details) {
       for (const item of result.quantity_mismatch_details) {
-        const buyDiff = item.master_buy_quantity - item.trade_cycle_buy_quantity;
-        const sellDiff = item.master_sell_quantity - item.trade_cycle_sell_quantity;
+        const masterNet = (item.master_buy_quantity ?? 0) - (item.master_sell_quantity ?? 0);
+        const tcNet = (item.trade_cycle_buy_quantity ?? 0) - (item.trade_cycle_sell_quantity ?? 0);
+        if (masterNet === tcNet) continue;
         const ex = resolvedEx(item.instrument, item.exchange);
-        if (buyDiff > 0) {
-          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "BUY", quantity: buyDiff });
-        } else if (buyDiff < 0) {
-          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "SELL", quantity: Math.abs(buyDiff) });
-        }
-        if (sellDiff > 0) {
-          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "SELL", quantity: sellDiff });
-        } else if (sellDiff < 0) {
-          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "BUY", quantity: Math.abs(sellDiff) });
+        const netDiff = masterNet - tcNet;
+        if (netDiff > 0) {
+          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "BUY", quantity: netDiff });
+        } else {
+          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "SELL", quantity: Math.abs(netDiff) });
         }
       }
     }
@@ -865,12 +862,32 @@ export default function TradeCycles({
                       const cycle = trade_cycles.find((c) => c.id === compareModalCycleId);
                       if (!cycle) return null;
 
-                      // Calculate differences
-                      const buyDiff = item.master_buy_quantity - item.trade_cycle_buy_quantity;
-                      const sellDiff = item.master_sell_quantity - item.trade_cycle_sell_quantity;
+                      const masterNet = (item.master_buy_quantity ?? 0) - (item.master_sell_quantity ?? 0);
+                      const tcNet = (item.trade_cycle_buy_quantity ?? 0) - (item.trade_cycle_sell_quantity ?? 0);
+                      if (masterNet === tcNet) {
+                        return (
+                          <div
+                            key={`qty-${item.instrument}`}
+                            className="flex flex-wrap items-center justify-between gap-2"
+                          >
+                            <div className="flex flex-col">
+                              <span className="badge badge-info badge-outline">
+                                {item.user_instrument || item.instrument}
+                              </span>
+                              <span className="text-xs opacity-70 mt-1">
+                                B: {item.trade_cycle_buy_quantity}/{item.master_buy_quantity} • S:{" "}
+                                {item.trade_cycle_sell_quantity}/{item.master_sell_quantity} (Net equal)
+                              </span>
+                            </div>
+                            <span className="text-xs opacity-60">No action</span>
+                          </div>
+                        );
+                      }
 
-                      const buyKey = `${cycle.id}-${item.instrument}-BUY`;
-                      const sellKey = `${cycle.id}-${item.instrument}-SELL`;
+                      const netDiff = masterNet - tcNet;
+                      const actionKey = netDiff > 0
+                        ? `${cycle.id}-${item.instrument}-BUY`
+                        : `${cycle.id}-${item.instrument}-SELL`;
 
                       return (
                         <div
@@ -883,12 +900,11 @@ export default function TradeCycles({
                             </span>
                             <span className="text-xs opacity-70 mt-1">
                               B: {item.trade_cycle_buy_quantity}/{item.master_buy_quantity} • S:{" "}
-                              {item.trade_cycle_sell_quantity}/{item.master_sell_quantity}
+                              {item.trade_cycle_sell_quantity}/{item.master_sell_quantity} (Net: {tcNet} → {masterNet})
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            {/* Need to BUY more */}
-                            {buyDiff > 0 && (
+                            {netDiff > 0 ? (
                               <button
                                 className="btn btn-xs btn-primary"
                                 onClick={() =>
@@ -896,47 +912,21 @@ export default function TradeCycles({
                                     cycle,
                                     item.instrument,
                                     "BUY",
-                                    buyDiff,
+                                    netDiff,
                                     item.exchange
                                   )
                                 }
-                                disabled={placingCompareOrder === buyKey || completedOrders.has(buyKey)}
+                                disabled={placingCompareOrder === actionKey || completedOrders.has(actionKey)}
                               >
-                                {placingCompareOrder === buyKey ? (
+                                {placingCompareOrder === actionKey ? (
                                   <span className="loading loading-spinner loading-xs"></span>
-                                ) : completedOrders.has(buyKey) ? (
+                                ) : completedOrders.has(actionKey) ? (
                                   "✓ Placed"
                                 ) : (
-                                  `Buy ${buyDiff}`
+                                  `Buy ${netDiff}`
                                 )}
                               </button>
-                            )}
-                            {/* Need to SELL excess */}
-                            {buyDiff < 0 && (
-                              <button
-                                className="btn btn-xs btn-warning"
-                                onClick={() =>
-                                  handlePlaceCompareOrder(
-                                    cycle,
-                                    item.instrument,
-                                    "SELL",
-                                    Math.abs(buyDiff),
-                                    item.exchange
-                                  )
-                                }
-                                disabled={placingCompareOrder === sellKey || completedOrders.has(sellKey)}
-                              >
-                                {placingCompareOrder === sellKey ? (
-                                  <span className="loading loading-spinner loading-xs"></span>
-                                ) : completedOrders.has(sellKey) ? (
-                                  "✓ Placed"
-                                ) : (
-                                  `Sell ${Math.abs(buyDiff)} (excess)`
-                                )}
-                              </button>
-                            )}
-                            {/* Need to SELL more */}
-                            {sellDiff > 0 && (
+                            ) : (
                               <button
                                 className="btn btn-xs btn-secondary"
                                 onClick={() =>
@@ -944,42 +934,18 @@ export default function TradeCycles({
                                     cycle,
                                     item.instrument,
                                     "SELL",
-                                    sellDiff,
+                                    Math.abs(netDiff),
                                     item.exchange
                                   )
                                 }
-                                disabled={placingCompareOrder === sellKey || completedOrders.has(sellKey)}
+                                disabled={placingCompareOrder === actionKey || completedOrders.has(actionKey)}
                               >
-                                {placingCompareOrder === sellKey ? (
+                                {placingCompareOrder === actionKey ? (
                                   <span className="loading loading-spinner loading-xs"></span>
-                                ) : completedOrders.has(sellKey) ? (
+                                ) : completedOrders.has(actionKey) ? (
                                   "✓ Placed"
                                 ) : (
-                                  `Sell ${sellDiff}`
-                                )}
-                              </button>
-                            )}
-                            {/* Need to BUY back excess sells */}
-                            {sellDiff < 0 && (
-                              <button
-                                className="btn btn-xs btn-warning"
-                                onClick={() =>
-                                  handlePlaceCompareOrder(
-                                    cycle,
-                                    item.instrument,
-                                    "BUY",
-                                    Math.abs(sellDiff),
-                                    item.exchange
-                                  )
-                                }
-                                disabled={placingCompareOrder === buyKey || completedOrders.has(buyKey)}
-                              >
-                                {placingCompareOrder === buyKey ? (
-                                  <span className="loading loading-spinner loading-xs"></span>
-                                ) : completedOrders.has(buyKey) ? (
-                                  "✓ Placed"
-                                ) : (
-                                  `Buy ${Math.abs(sellDiff)} (cover)`
+                                  `Sell ${Math.abs(netDiff)}`
                                 )}
                               </button>
                             )}
