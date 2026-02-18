@@ -466,6 +466,19 @@ export default function TradeCycles({
         }
       }
     }
+    if (result.extra_details) {
+      for (const item of result.extra_details) {
+        const net = (item.trade_cycle_buy_quantity ?? 0) - (item.trade_cycle_sell_quantity ?? 0);
+        if (net === 0) continue;
+        const ex = resolvedEx(item.instrument, item.exchange);
+        const instrumentForOrder = item.master_instrument ?? item.instrument;
+        if (net > 0) {
+          items.push({ instrument: instrumentForOrder, exchange: ex, transaction_type: "SELL", quantity: net });
+        } else {
+          items.push({ instrument: instrumentForOrder, exchange: ex, transaction_type: "BUY", quantity: Math.abs(net) });
+        }
+      }
+    }
     return items;
   }
 
@@ -839,11 +852,59 @@ export default function TradeCycles({
                 compareResults[compareModalCycleId].extra_details.length > 0 ? (
                   <div className="space-y-2">
                     {compareResults[compareModalCycleId].extra_details?.map((item) => {
+                      const cycle = trade_cycles.find((c) => c.id === compareModalCycleId);
+                      const net = (item.trade_cycle_buy_quantity ?? 0) - (item.trade_cycle_sell_quantity ?? 0);
                       const qtyText = [item.trade_cycle_buy_quantity > 0 && `Buy: ${item.trade_cycle_buy_quantity}`, item.trade_cycle_sell_quantity > 0 && `Sell: ${item.trade_cycle_sell_quantity}`].filter(Boolean).join(", ") || "—";
+                      const instrumentForOrder = item.master_instrument ?? item.instrument;
+                      const actionKey = net > 0 ? `${cycle?.id}-${instrumentForOrder}-SELL` : `${cycle?.id}-${instrumentForOrder}-BUY`;
                       return (
-                        <div key={`extra-${item.instrument}`} className="flex flex-wrap items-center gap-2">
-                          <span className="badge badge-error badge-outline">{item.instrument}</span>
-                          <span className="opacity-80 text-xs">({qtyText})</span>
+                        <div
+                          key={`extra-${item.instrument}`}
+                          className="flex flex-wrap items-center justify-between gap-2"
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="badge badge-error badge-outline">{item.instrument}</span>
+                            <span className="opacity-80 text-xs">({qtyText})</span>
+                          </div>
+                          {cycle && (
+                            <div className="flex flex-wrap gap-2">
+                              {net > 0 ? (
+                                <button
+                                  className="btn btn-xs btn-secondary"
+                                  onClick={() =>
+                                    handlePlaceCompareOrder(cycle, instrumentForOrder, "SELL", net, item.exchange)
+                                  }
+                                  disabled={placingCompareOrder === actionKey || completedOrders.has(actionKey)}
+                                >
+                                  {placingCompareOrder === actionKey ? (
+                                    <span className="loading loading-spinner loading-xs"></span>
+                                  ) : completedOrders.has(actionKey) ? (
+                                    "✓ Placed"
+                                  ) : (
+                                    `Sell ${net}`
+                                  )}
+                                </button>
+                              ) : net < 0 ? (
+                                <button
+                                  className="btn btn-xs btn-primary"
+                                  onClick={() =>
+                                    handlePlaceCompareOrder(cycle, instrumentForOrder, "BUY", Math.abs(net), item.exchange)
+                                  }
+                                  disabled={placingCompareOrder === actionKey || completedOrders.has(actionKey)}
+                                >
+                                  {placingCompareOrder === actionKey ? (
+                                    <span className="loading loading-spinner loading-xs"></span>
+                                  ) : completedOrders.has(actionKey) ? (
+                                    "✓ Placed"
+                                  ) : (
+                                    `Buy ${Math.abs(net)}`
+                                  )}
+                                </button>
+                              ) : (
+                                <span className="text-xs opacity-60">No action (net 0)</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
