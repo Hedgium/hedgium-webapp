@@ -103,6 +103,8 @@ export default function TradeCycles({
   const [compareErrors, setCompareErrors] = useState<Record<number, string>>({});
   const [compareStepMessage, setCompareStepMessage] = useState<string | null>(null);
   const [compareModalCycleId, setCompareModalCycleId] = useState<number | null>(null);
+  const [comparingAll, setComparingAll] = useState(false);
+  const [compareAllStatus, setCompareAllStatus] = useState<Record<number, "running" | "action_required" | "no_action" | "error">>({});
   const [placingCompareOrder, setPlacingCompareOrder] = useState<string | null>(null);
   const [placingMatchAllCycleId, setPlacingMatchAllCycleId] = useState<number | null>(null);
   const [completedOrders, setCompletedOrders] = useState<Set<string>>(new Set());
@@ -316,6 +318,71 @@ export default function TradeCycles({
     throw new Error("Refresh timed out");
   }
 
+  function hasActionRequired(result: CompareResult): boolean {
+    return (
+      result.missing_in_trade_cycle > 0 ||
+      result.extra_in_trade_cycle > 0 ||
+      result.buy_quantity_mismatches > 0 ||
+      result.sell_quantity_mismatches > 0
+    );
+  }
+
+  /** Runs the full compare flow for one cycle. Returns the result or null on failure.
+   *  Does NOT open the modal or touch comparingCycleId/compareStepMessage. */
+  async function runSingleCompare(cycleId: number): Promise<CompareResult | null> {
+    const cycle = trade_cycles.find((c) => c.id === cycleId);
+    if (!cycle?.profile?.id) return null;
+    try {
+      const infoRes = await authFetch(`trade-cycles/${cycleId}/master-info/`);
+      const info = await infoRes.json();
+      if (!infoRes.ok) return null;
+      const { master_profile_id, trade_cycle_profile_id } = info as {
+        master_profile_id: number;
+        trade_cycle_profile_id: number;
+      };
+      await refreshProfilePositionsAndWait(master_profile_id);
+      await refreshProfilePositionsAndWait(trade_cycle_profile_id);
+      const res = await authFetch(`trade-cycles/${cycleId}/match-master-positions/`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok && data.status === "success") {
+        setCompareResults((prev) => ({ ...prev, [cycleId]: data }));
+        return data as CompareResult;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function handleCompareAll() {
+    const nonMasterCycles = trade_cycles.filter(
+      (c) => !c.is_master
+    );
+    if (nonMasterCycles.length === 0) {
+      alert.error("No active non-master cycles to compare");
+      return;
+    }
+    setComparingAll(true);
+    // Mark all as running
+    setCompareAllStatus(
+      Object.fromEntries(nonMasterCycles.map((c) => [c.id, "running"]))
+    );
+    for (const cycle of nonMasterCycles) {
+      const result = await runSingleCompare(cycle.id);
+      setCompareAllStatus((prev) => ({
+        ...prev,
+        [cycle.id]: result === null
+          ? "error"
+          : hasActionRequired(result)
+          ? "action_required"
+          : "no_action",
+      }));
+    }
+    setComparingAll(false);
+  }
+
   async function handleCompareMaster(cycleId: number) {
     if (comparingCycleId === cycleId) return;
     const cycle = trade_cycles.find((c) => c.id === cycleId);
@@ -324,48 +391,21 @@ export default function TradeCycles({
       return;
     }
     setComparingCycleId(cycleId);
-    setCompareStepMessage(null);
-    setCompareErrors((prev) => {
-      const next = { ...prev };
-      delete next[cycleId];
-      return next;
-    });
+    setCompareStepMessage("Comparing with master…");
+    setCompareErrors((prev) => { const next = { ...prev }; delete next[cycleId]; return next; });
     setCompletedOrders(new Set());
     try {
-      setCompareStepMessage("Loading master info…");
-      const infoRes = await authFetch(`trade-cycles/${cycleId}/master-info/`);
-      const info = await infoRes.json();
-      if (!infoRes.ok) {
-        throw new Error(info.detail || "Failed to get master info");
-      }
-      const { master_profile_id, trade_cycle_profile_id } = info as {
-        master_profile_id: number;
-        trade_cycle_profile_id: number;
-      };
-
-      setCompareStepMessage("Refreshing master position…");
-      await refreshProfilePositionsAndWait(master_profile_id);
-
-      setCompareStepMessage("Refreshing trade cycle position…");
-      await refreshProfilePositionsAndWait(trade_cycle_profile_id);
-
-      setCompareStepMessage("Comparing with master…");
-      const res = await authFetch(`trade-cycles/${cycleId}/match-master-positions/`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (res.ok && data.status === "success") {
-        setCompareResults((prev) => ({ ...prev, [cycleId]: data }));
+      const result = await runSingleCompare(cycleId);
+      if (result) {
         setCompareModalCycleId(cycleId);
         alert.success("Comparison completed", { duration: 2000 });
       } else {
-        const message = data.detail || "Failed to compare with master";
+        const message = "Failed to compare with master";
         setCompareErrors((prev) => ({ ...prev, [cycleId]: message }));
         alert.error(message, { duration: 3000 });
       }
     } catch (error: unknown) {
-      const errorMsg =
-        error instanceof Error ? error.message : "Failed to compare with master";
+      const errorMsg = error instanceof Error ? error.message : "Failed to compare with master";
       setCompareErrors((prev) => ({ ...prev, [cycleId]: errorMsg }));
       alert.error(errorMsg, { duration: 3000 });
     } finally {
@@ -523,14 +563,28 @@ export default function TradeCycles({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-xl font-semibold">Trade Cycles</h4>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className={`btn btn-ghost btn-sm ${refreshing ? "animate-spin" : ""}`}
-          title="Refresh Trade Cycles"
-        >
-          <RotateCw size={18} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCompareAll}
+            disabled={comparingAll}
+            className="btn btn-outline btn-sm"
+            title="Compare all non-master active cycles with master"
+          >
+            {comparingAll ? (
+              <><span className="loading loading-spinner loading-xs"></span> Comparing All…</>
+            ) : (
+              "Compare All"
+            )}
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className={`btn btn-ghost btn-sm ${refreshing ? "animate-spin" : ""}`}
+            title="Refresh Trade Cycles"
+          >
+            <RotateCw size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -719,6 +773,33 @@ export default function TradeCycles({
                             <span className="text-xs opacity-80 text-center">
                               {compareStepMessage}
                             </span>
+                          )}
+                          {!cycle.is_master && compareAllStatus[cycle.id] && (
+                            <>
+                              {compareAllStatus[cycle.id] === "running" && (
+                                <span className="flex items-center justify-center gap-1 text-xs opacity-70">
+                                  <span className="loading loading-spinner loading-xs"></span> Checking…
+                                </span>
+                              )}
+                              {compareAllStatus[cycle.id] === "action_required" && (
+                                <button
+                                  className="btn btn-xs btn-error w-full"
+                                  onClick={() => setCompareModalCycleId(cycle.id)}
+                                >
+                                  ⚠ Action Required
+                                </button>
+                              )}
+                              {compareAllStatus[cycle.id] === "no_action" && (
+                                <span className="badge badge-success badge-sm w-full justify-center">
+                                  ✓ No Action
+                                </span>
+                              )}
+                              {compareAllStatus[cycle.id] === "error" && (
+                                <span className="badge badge-error badge-outline badge-sm w-full justify-center">
+                                  Error
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
 
