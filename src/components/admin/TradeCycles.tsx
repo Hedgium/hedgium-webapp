@@ -34,6 +34,7 @@ type TradeCycle = {
   client: TradeCycleClient;
   profile: TradeCycleProfile;
   state: string;
+  locked_reason?: string | null;
   is_master?: boolean | null;
   no_of_orders?: number | null;
   no_of_positions?: number | null;
@@ -635,7 +636,16 @@ export default function TradeCycles({
                     <td>{cycle.profile.broker_name}</td>
                     <td>{cycle.profile.risk_profile}</td>
                     <td>{cycle.profile.margin_equity}</td>
-                    <td>{cycle.state}</td>
+                    <td>
+                      <span className="flex items-center gap-1">
+                        {cycle.state}
+                        {cycle.state === "LOCKED" && cycle.locked_reason && (
+                          <span className="tooltip tooltip-right" data-tip={cycle.locked_reason}>
+                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-warning text-warning-content text-[10px] font-bold cursor-default select-none">i</span>
+                          </span>
+                        )}
+                      </span>
+                    </td>
                     <td>
                       <label className="label cursor-pointer justify-start gap-2">
                         <input

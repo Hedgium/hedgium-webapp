@@ -32,6 +32,7 @@ export interface Profile {
     broker_user_id: string;
     margin_equity: number;
     order_value_factor: number;
+    quantity_multiplier: number;
     verified: boolean;
     is_active: boolean;
     kite_login_device: string;

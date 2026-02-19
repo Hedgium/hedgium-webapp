@@ -27,6 +27,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         exit_pnl: 0,
         strategy_template_id: 1, // Default or fetch from API
         margin_required: 0,
+        multiplier_allowed: false,
         supergroup_ids: []
     });
     const [supergroups, setSupergroups] = useState<SuperGroup[]>([]);
@@ -46,6 +47,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 exit_pnl: initialData.exit_pnl,
                 strategy_template_id: initialData.strategy_template?.id || 1,
                 margin_required: initialData.margin_required || 0,
+                multiplier_allowed: initialData.multiplier_allowed ?? false,
                 supergroup_ids: initialData.supergroup_ids || []
             });
         }
@@ -92,7 +94,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
         
         // Handle strategy_template_id change - auto-populate margin_required
         if (name === 'strategy_template_id') {
@@ -102,6 +104,14 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 ...prev,
                 [name]: templateId,
                 margin_required: selectedTemplate?.minimum_capital || prev.margin_required || 0
+            }));
+            return;
+        }
+
+        if (type === 'checkbox') {
+            setFormData(prev => ({
+                ...prev,
+                [name]: (e.target as HTMLInputElement).checked
             }));
             return;
         }
@@ -273,6 +283,24 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     />
                     <label className="label">
                         <span className="label-text-alt">Auto-populated from template, but editable</span>
+                    </label>
+                </div>
+
+                <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-4">
+                        <span className="label-text flex items-center gap-1">
+                            Multiplier Allowed
+                            <span className="tooltip tooltip-right" data-tip="When enabled, each user's quantity_multiplier will be applied to leg quantities when creating trade cycle legs.">
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-base-300 text-base-content text-[10px] font-bold cursor-default select-none">i</span>
+                            </span>
+                        </span>
+                        <input
+                            type="checkbox"
+                            name="multiplier_allowed"
+                            checked={formData.multiplier_allowed ?? false}
+                            onChange={handleChange}
+                            className="toggle toggle-primary"
+                        />
                     </label>
                 </div>
 

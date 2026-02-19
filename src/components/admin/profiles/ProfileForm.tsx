@@ -26,6 +26,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         broker_user_id: '',
         margin_equity: 0,
         order_value_factor: 1,
+        quantity_multiplier: 1,
         is_active: false,
         verified: false,
         auto_trade_allowed: false,
@@ -42,6 +43,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                 broker_user_id: initialData.broker_user_id,
                 margin_equity: initialData.margin_equity,
                 order_value_factor: initialData.order_value_factor ?? 1,
+                quantity_multiplier: initialData.quantity_multiplier ?? 1,
                 is_active: initialData.is_active,
                 verified: initialData.verified,
                 auto_trade_allowed: initialData.auto_trade_allowed ?? false,
@@ -60,7 +62,9 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                 ? (e.target as HTMLInputElement).checked
                 : (name === 'margin_equity' || name === 'order_value_factor')
                     ? parseFloat(value)
-                    : value
+                    : name === 'quantity_multiplier'
+                        ? parseInt(value, 10)
+                        : value
         }));
     };
 
@@ -108,8 +112,26 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                     <input type="number" step="0.01" name="margin_equity" value={formData.margin_equity} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Order Value Factor</span></label>
+                    <label className="label">
+                        <span className="label-text flex items-center gap-1">
+                            Order Value Factor
+                            <span className="tooltip tooltip-right" data-tip="1 = 10 Lakhs">
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-base-300 text-base-content text-[10px] font-bold cursor-default select-none">i</span>
+                            </span>
+                        </span>
+                    </label>
                     <input type="number" step="0.01" name="order_value_factor" value={formData.order_value_factor ?? 1} onChange={handleChange} className="input input-bordered w-full" />
+                </div>
+                <div className="form-control">
+                    <label className="label">
+                        <span className="label-text flex items-center gap-1">
+                            Quantity Multiplier
+                            <span className="tooltip tooltip-right" data-tip="Multiplies leg quantities when strategy has multiplier_allowed enabled. Default is 1 (no change).">
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-base-300 text-base-content text-[10px] font-bold cursor-default select-none">i</span>
+                            </span>
+                        </span>
+                    </label>
+                    <input type="number" step="1" min="1" name="quantity_multiplier" value={formData.quantity_multiplier ?? 1} onChange={handleChange} className="input input-bordered w-full" />
                 </div>
 
                 <div className="form-control">

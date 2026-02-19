@@ -38,6 +38,7 @@ export interface StrategyBuilder {
     calculated_ws: number;
     exit_pnl: number;
     margin_required: number;
+    multiplier_allowed: boolean;
     strategy_template: StrategyTemplate;
     builder_legs: BuilderLeg[];
     supergroup_ids: number[];
@@ -55,6 +56,7 @@ export interface StrategyBuilderCreate {
     exit_pnl: number;
     strategy_template_id: number;
     margin_required?: number;
+    multiplier_allowed?: boolean;
     supergroup_ids?: number[];
 }
 
@@ -69,6 +71,7 @@ export interface StrategyBuilderUpdate {
     entry_condition?: string;
     strategy_template_id?: number;
     margin_required?: number;
+    multiplier_allowed?: boolean;
     supergroup_ids?: number[];
 }
 
