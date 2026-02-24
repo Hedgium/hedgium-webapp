@@ -23,6 +23,7 @@ type TradeCycleProfile = {
   broker_name?: string | null;
   risk_profile?: string | null;
   margin_equity?: number | null;
+  quantity_multiplier?: number | null;
 };
 
 type TradeCycleClient = {
@@ -84,12 +85,14 @@ type TradeCyclesProps = {
   id: number;
   trade_cycles: TradeCycle[];
   fetchTradeCycles: () => Promise<void> | void;
+  multiplierAllowed?: boolean;
 };
 
 export default function TradeCycles({
   id,
   trade_cycles,
   fetchTradeCycles,
+  multiplierAllowed = false,
 }: TradeCyclesProps) {
   const [selectedCycles, setSelectedCycles] = useState<number[]>([]);
   const [selectedProfiles, setSelectedProfiles] = useState<number[]>([]);
@@ -473,51 +476,81 @@ export default function TradeCycles({
     const resolvedEx = (instrument: string, exchange?: string | null) =>
       exchange || (instrument.match(/\d/) ? "NFO" : "NSE");
 
+    const cycle = trade_cycles.find((c) => c.id === cycleId);
+    const quantityMultiplier = cycle?.profile?.quantity_multiplier ?? 1;
+    const effectiveMultiplier = multiplierAllowed ? quantityMultiplier : 1;
+
     if (result.missing_details) {
       for (const item of result.missing_details) {
-        const netQty = item.master_buy_quantity - item.master_sell_quantity;
-        if (netQty > 0) {
-          items.push({
-            instrument: item.instrument,
-            exchange: resolvedEx(item.instrument, item.exchange),
-            transaction_type: "BUY",
-            quantity: netQty,
-          });
-        } else if (netQty < 0) {
-          items.push({
-            instrument: item.instrument,
-            exchange: resolvedEx(item.instrument, item.exchange),
-            transaction_type: "SELL",
-            quantity: Math.abs(netQty),
-          });
-        }
+        const masterNetBase =
+          (item.master_buy_quantity ?? 0) - (item.master_sell_quantity ?? 0);
+        const targetNetActual = masterNetBase * effectiveMultiplier;
+        const currentNetActual = 0; // missing in trade cycle
+        const diffActual = targetNetActual - currentNetActual;
+        if (diffActual === 0) continue;
+
+        const baseQty = Math.abs(diffActual) / (effectiveMultiplier || 1);
+        if (baseQty <= 0) continue;
+
+        const transaction_type: "BUY" | "SELL" =
+          diffActual > 0 ? "BUY" : "SELL";
+
+        items.push({
+          instrument: item.instrument,
+          exchange: resolvedEx(item.instrument, item.exchange),
+          transaction_type,
+          quantity: Math.round(baseQty),
+        });
       }
     }
     if (result.quantity_mismatch_details) {
       for (const item of result.quantity_mismatch_details) {
-        const masterNet = (item.master_buy_quantity ?? 0) - (item.master_sell_quantity ?? 0);
-        const tcNet = (item.trade_cycle_buy_quantity ?? 0) - (item.trade_cycle_sell_quantity ?? 0);
-        if (masterNet === tcNet) continue;
+        const masterNetBase =
+          (item.master_buy_quantity ?? 0) - (item.master_sell_quantity ?? 0);
+        const tcNetActual =
+          (item.trade_cycle_buy_quantity ?? 0) -
+          (item.trade_cycle_sell_quantity ?? 0);
+        const targetNetActual = masterNetBase * effectiveMultiplier;
+        const diffActual = targetNetActual - tcNetActual;
+        if (diffActual === 0) continue;
+
+        const baseQty = Math.abs(diffActual) / (effectiveMultiplier || 1);
+        if (baseQty <= 0) continue;
+
         const ex = resolvedEx(item.instrument, item.exchange);
-        const netDiff = masterNet - tcNet;
-        if (netDiff > 0) {
-          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "BUY", quantity: netDiff });
-        } else {
-          items.push({ instrument: item.instrument, exchange: ex, transaction_type: "SELL", quantity: Math.abs(netDiff) });
-        }
+        const transaction_type: "BUY" | "SELL" =
+          diffActual > 0 ? "BUY" : "SELL";
+
+        items.push({
+          instrument: item.instrument,
+          exchange: ex,
+          transaction_type,
+          quantity: Math.round(baseQty),
+        });
       }
     }
     if (result.extra_details) {
       for (const item of result.extra_details) {
-        const net = (item.trade_cycle_buy_quantity ?? 0) - (item.trade_cycle_sell_quantity ?? 0);
-        if (net === 0) continue;
+        const netActual =
+          (item.trade_cycle_buy_quantity ?? 0) -
+          (item.trade_cycle_sell_quantity ?? 0);
+        if (netActual === 0) continue;
+
+        const diffActual = 0 - netActual; // target is 0
+        const baseQty = Math.abs(diffActual) / (effectiveMultiplier || 1);
+        if (baseQty <= 0) continue;
+
         const ex = resolvedEx(item.instrument, item.exchange);
         const instrumentForOrder = item.master_instrument ?? item.instrument;
-        if (net > 0) {
-          items.push({ instrument: instrumentForOrder, exchange: ex, transaction_type: "SELL", quantity: net });
-        } else {
-          items.push({ instrument: instrumentForOrder, exchange: ex, transaction_type: "BUY", quantity: Math.abs(net) });
-        }
+        const transaction_type: "BUY" | "SELL" =
+          diffActual > 0 ? "BUY" : "SELL";
+
+        items.push({
+          instrument: instrumentForOrder,
+          exchange: ex,
+          transaction_type,
+          quantity: Math.round(baseQty),
+        });
       }
     }
     return items;
@@ -591,7 +624,7 @@ export default function TradeCycles({
       <div className="flex gap-3 mb-4">
         <input
           type="text"
-          placeholder="Search profiles..."
+          placeholder="Search profiles to add as trade cycles..."
           className="input input-bordered w-full"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -663,6 +696,7 @@ export default function TradeCycles({
                 <th>Broker</th>
                 <th>Risk</th>
                 <th>Margin</th>
+                <th>Qty x</th>
                 <th>State</th>
                 <th>Master</th>
                 <th>Orders</th>
@@ -690,6 +724,7 @@ export default function TradeCycles({
                     <td>{cycle.profile.broker_name}</td>
                     <td>{cycle.profile.risk_profile}</td>
                     <td>{cycle.profile.margin_equity}</td>
+                    <td>{cycle.profile.quantity_multiplier ?? 1}</td>
                     <td>
                       <span className="flex items-center gap-1">
                         {cycle.state}
@@ -707,7 +742,10 @@ export default function TradeCycles({
                           className="toggle toggle-primary toggle-sm"
                           checked={cycle.is_master || false}
                           onChange={() => handleToggleMaster(cycle.id, cycle.is_master || false)}
-                          disabled={updatingMaster === cycle.id}
+                          disabled={
+                            updatingMaster === cycle.id ||
+                            (cycle.profile?.quantity_multiplier ?? 1) !== 1
+                          }
                         />
                         {updatingMaster === cycle.id && (
                           <span className="loading loading-spinner loading-xs"></span>
@@ -861,10 +899,25 @@ export default function TradeCycles({
                       if (!cycle) {
                         return null;
                       }
-                      const netQty = item.master_buy_quantity - item.master_sell_quantity;
-                      const actionKey = netQty > 0
+                      const quantityMultiplier = cycle.profile?.quantity_multiplier ?? 1;
+                      const effectiveMultiplier = multiplierAllowed ? quantityMultiplier : 1;
+
+                      const masterNetBase =
+                        (item.master_buy_quantity ?? 0) - (item.master_sell_quantity ?? 0);
+                      const targetNetActual = masterNetBase * effectiveMultiplier;
+                      if (targetNetActual === 0) {
+                        return null;
+                      }
+
+                      const baseQty = Math.abs(targetNetActual) / (effectiveMultiplier || 1);
+                      if (baseQty <= 0) {
+                        return null;
+                      }
+
+                      const displayQty = Math.abs(targetNetActual);
+                      const actionKey = targetNetActual > 0
                         ? `${cycle.id}-${item.instrument}-BUY`
-                        : netQty < 0
+                        : targetNetActual < 0
                           ? `${cycle.id}-${item.instrument}-SELL`
                           : null;
                       const qtyText = [item.master_buy_quantity > 0 && `Buy: ${item.master_buy_quantity}`, item.master_sell_quantity > 0 && `Sell: ${item.master_sell_quantity}`].filter(Boolean).join(", ") || "—";
@@ -878,7 +931,7 @@ export default function TradeCycles({
                             <span className="opacity-80 text-xs">({qtyText})</span>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            {netQty > 0 && (
+                            {targetNetActual > 0 && (
                               <button
                                 className="btn btn-xs btn-primary"
                                 onClick={() =>
@@ -886,7 +939,7 @@ export default function TradeCycles({
                                     cycle,
                                     item.instrument,
                                     "BUY",
-                                    netQty,
+                                    Math.round(baseQty),
                                     item.exchange
                                   )
                                 }
@@ -897,11 +950,11 @@ export default function TradeCycles({
                                 ) : completedOrders.has(actionKey!) ? (
                                   "✓ Placed"
                                 ) : (
-                                  `Buy ${netQty}`
+                                  `Buy ${displayQty}`
                                 )}
                               </button>
                             )}
-                            {netQty < 0 && (
+                            {targetNetActual < 0 && (
                               <button
                                 className="btn btn-xs btn-secondary"
                                 onClick={() =>
@@ -909,7 +962,7 @@ export default function TradeCycles({
                                     cycle,
                                     item.instrument,
                                     "SELL",
-                                    Math.abs(netQty),
+                                    Math.round(baseQty),
                                     item.exchange
                                   )
                                 }
@@ -920,11 +973,11 @@ export default function TradeCycles({
                                 ) : completedOrders.has(actionKey!) ? (
                                   "✓ Placed"
                                 ) : (
-                                  `Sell ${Math.abs(netQty)}`
+                                  `Sell ${displayQty}`
                                 )}
                               </button>
                             )}
-                            {netQty === 0 && (
+                            {targetNetActual === 0 && (
                               <span className="text-xs opacity-60">No action (net 0)</span>
                             )}
                           </div>
@@ -944,10 +997,26 @@ export default function TradeCycles({
                   <div className="space-y-2">
                     {compareResults[compareModalCycleId].extra_details?.map((item) => {
                       const cycle = trade_cycles.find((c) => c.id === compareModalCycleId);
-                      const net = (item.trade_cycle_buy_quantity ?? 0) - (item.trade_cycle_sell_quantity ?? 0);
+                      if (!cycle) return null;
+
+                      const quantityMultiplier = cycle.profile?.quantity_multiplier ?? 1;
+                      const effectiveMultiplier = multiplierAllowed ? quantityMultiplier : 1;
+
+                      const netActual =
+                        (item.trade_cycle_buy_quantity ?? 0) -
+                        (item.trade_cycle_sell_quantity ?? 0);
+                      const diffActual = 0 - netActual; // target is 0
+                      const baseQty = Math.abs(diffActual) / (effectiveMultiplier || 1);
+                      if (baseQty <= 0) {
+                        return null;
+                      }
+
+                      const displayQty = Math.abs(diffActual);
                       const qtyText = [item.trade_cycle_buy_quantity > 0 && `Buy: ${item.trade_cycle_buy_quantity}`, item.trade_cycle_sell_quantity > 0 && `Sell: ${item.trade_cycle_sell_quantity}`].filter(Boolean).join(", ") || "—";
                       const instrumentForOrder = item.master_instrument ?? item.instrument;
-                      const actionKey = net > 0 ? `${cycle?.id}-${instrumentForOrder}-SELL` : `${cycle?.id}-${instrumentForOrder}-BUY`;
+                      const actionKey = diffActual > 0
+                        ? `${cycle.id}-${instrumentForOrder}-BUY`
+                        : `${cycle.id}-${instrumentForOrder}-SELL`;
                       return (
                         <div
                           key={`extra-${item.instrument}`}
@@ -959,11 +1028,17 @@ export default function TradeCycles({
                           </div>
                           {cycle && (
                             <div className="flex flex-wrap gap-2">
-                              {net > 0 ? (
+                              {diffActual < 0 ? (
                                 <button
                                   className="btn btn-xs btn-secondary"
                                   onClick={() =>
-                                    handlePlaceCompareOrder(cycle, instrumentForOrder, "SELL", net, item.exchange)
+                                    handlePlaceCompareOrder(
+                                      cycle,
+                                      instrumentForOrder,
+                                      "SELL",
+                                      Math.round(baseQty),
+                                      item.exchange
+                                    )
                                   }
                                   disabled={placingCompareOrder === actionKey || completedOrders.has(actionKey)}
                                 >
@@ -972,14 +1047,20 @@ export default function TradeCycles({
                                   ) : completedOrders.has(actionKey) ? (
                                     "✓ Placed"
                                   ) : (
-                                    `Sell ${net}`
+                                    `Sell ${displayQty}`
                                   )}
                                 </button>
-                              ) : net < 0 ? (
+                              ) : diffActual > 0 ? (
                                 <button
                                   className="btn btn-xs btn-primary"
                                   onClick={() =>
-                                    handlePlaceCompareOrder(cycle, instrumentForOrder, "BUY", Math.abs(net), item.exchange)
+                                    handlePlaceCompareOrder(
+                                      cycle,
+                                      instrumentForOrder,
+                                      "BUY",
+                                      Math.round(baseQty),
+                                      item.exchange
+                                    )
                                   }
                                   disabled={placingCompareOrder === actionKey || completedOrders.has(actionKey)}
                                 >
@@ -988,7 +1069,7 @@ export default function TradeCycles({
                                   ) : completedOrders.has(actionKey) ? (
                                     "✓ Placed"
                                   ) : (
-                                    `Buy ${Math.abs(net)}`
+                                    `Buy ${displayQty}`
                                   )}
                                 </button>
                               ) : (
@@ -1014,9 +1095,17 @@ export default function TradeCycles({
                       const cycle = trade_cycles.find((c) => c.id === compareModalCycleId);
                       if (!cycle) return null;
 
-                      const masterNet = (item.master_buy_quantity ?? 0) - (item.master_sell_quantity ?? 0);
-                      const tcNet = (item.trade_cycle_buy_quantity ?? 0) - (item.trade_cycle_sell_quantity ?? 0);
-                      if (masterNet === tcNet) {
+                      const quantityMultiplier = cycle.profile?.quantity_multiplier ?? 1;
+                      const effectiveMultiplier = multiplierAllowed ? quantityMultiplier : 1;
+
+                      const masterNetBase =
+                        (item.master_buy_quantity ?? 0) - (item.master_sell_quantity ?? 0);
+                      const tcNetActual =
+                        (item.trade_cycle_buy_quantity ?? 0) -
+                        (item.trade_cycle_sell_quantity ?? 0);
+                      const targetNetActual = masterNetBase * effectiveMultiplier;
+
+                      if (targetNetActual === tcNetActual) {
                         return (
                           <div
                             key={`qty-${item.instrument}`}
@@ -1027,8 +1116,10 @@ export default function TradeCycles({
                                 {item.user_instrument || item.instrument}
                               </span>
                               <span className="text-xs opacity-70 mt-1">
-                                B: {item.trade_cycle_buy_quantity}/{item.master_buy_quantity} • S:{" "}
-                                {item.trade_cycle_sell_quantity}/{item.master_sell_quantity} (Net equal)
+                                B: {item.trade_cycle_buy_quantity}/
+                                {item.master_buy_quantity * effectiveMultiplier} • S:{" "}
+                                {item.trade_cycle_sell_quantity}/
+                                {item.master_sell_quantity * effectiveMultiplier} (Net equal)
                               </span>
                             </div>
                             <span className="text-xs opacity-60">No action</span>
@@ -1036,8 +1127,12 @@ export default function TradeCycles({
                         );
                       }
 
-                      const netDiff = masterNet - tcNet;
-                      const actionKey = netDiff > 0
+                      const diffActual = targetNetActual - tcNetActual;
+                      const baseQty = Math.abs(diffActual) / (effectiveMultiplier || 1);
+                      if (baseQty <= 0) return null;
+
+                      const displayQty = Math.abs(diffActual);
+                      const actionKey = diffActual > 0
                         ? `${cycle.id}-${item.instrument}-BUY`
                         : `${cycle.id}-${item.instrument}-SELL`;
 
@@ -1052,11 +1147,11 @@ export default function TradeCycles({
                             </span>
                             <span className="text-xs opacity-70 mt-1">
                               B: {item.trade_cycle_buy_quantity}/{item.master_buy_quantity} • S:{" "}
-                              {item.trade_cycle_sell_quantity}/{item.master_sell_quantity} (Net: {tcNet} → {masterNet})
+                              {item.trade_cycle_sell_quantity}/{item.master_sell_quantity} (Net: {tcNetActual} → {targetNetActual})
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            {netDiff > 0 ? (
+                            {diffActual > 0 ? (
                               <button
                                 className="btn btn-xs btn-primary"
                                 onClick={() =>
@@ -1064,7 +1159,7 @@ export default function TradeCycles({
                                     cycle,
                                     item.instrument,
                                     "BUY",
-                                    netDiff,
+                                    Math.round(baseQty),
                                     item.exchange
                                   )
                                 }
@@ -1075,7 +1170,7 @@ export default function TradeCycles({
                                 ) : completedOrders.has(actionKey) ? (
                                   "✓ Placed"
                                 ) : (
-                                  `Buy ${netDiff}`
+                                  `Buy ${displayQty}`
                                 )}
                               </button>
                             ) : (
@@ -1086,7 +1181,7 @@ export default function TradeCycles({
                                     cycle,
                                     item.instrument,
                                     "SELL",
-                                    Math.abs(netDiff),
+                                    Math.round(baseQty),
                                     item.exchange
                                   )
                                 }
@@ -1097,7 +1192,7 @@ export default function TradeCycles({
                                 ) : completedOrders.has(actionKey) ? (
                                   "✓ Placed"
                                 ) : (
-                                  `Sell ${Math.abs(netDiff)}`
+                                  `Sell ${displayQty}`
                                 )}
                               </button>
                             )}

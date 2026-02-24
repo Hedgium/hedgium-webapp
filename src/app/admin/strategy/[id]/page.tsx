@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 
-
 // ----------------------------------------------------
 import { useParams } from "next/navigation";
 import { authFetch } from "@/utils/api";
@@ -12,11 +11,13 @@ import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateOnly } from "@/utils/formatDate";
 import useAlert from "@/hooks/useAlert";
 import { CheckCircle } from "lucide-react";
+import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
+import StrategyTradeCyclesSkeleton from "@/components/skeletons/StrategyTradeCyclesSkeleton";
 
 
 export default function StrategyDetail() {
 
-  const [strategy, setStrategy] = useState(null);
+  const [strategy, setStrategy] = useState<any>(null);
   const [trade_cycles, setTradeCycles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tradeCyclesLoading, setTradeCyclesLoading] = useState(false);
@@ -94,7 +95,24 @@ export default function StrategyDetail() {
   }, [id]);
 
 
-  if (loading) return <div className="p-4">Loading strategy details...</div>;
+  if (loading) {
+    return (
+      <div className="p-4 space-y-4">
+        <div className="h-6 bg-base-300 rounded w-32 mb-2 animate-pulse" />
+        <div className="h-8 bg-base-300 rounded w-64 mb-4 animate-pulse" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-4 animate-pulse">
+          {[...Array(3)].map((_, idx) => (
+            <div key={idx} className="stat bg-base-200 rounded-lg shadow">
+              <div className="h-4 bg-base-300 rounded w-20 mb-2" />
+              <div className="h-6 bg-base-300 rounded w-16" />
+            </div>
+          ))}
+        </div>
+        <StrategyAdjustmentsSkeleton />
+        <StrategyTradeCyclesSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 space-y-4">
@@ -146,17 +164,14 @@ export default function StrategyDetail() {
           
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
           <div className="stat bg-base-200 rounded-lg shadow">
             <div className="stat-title">Adjustments</div>
-            <div className="stat-value text-2xl">{strategy.adjustment_count ?? 0}</div>
+            <div className="stat-value text-2xl">
+              {Array.isArray(strategy.versions) ? strategy.versions.length : 0}
+            </div>
           </div>
-          
-          <div className="stat bg-base-200 rounded-lg shadow">
-            <div className="stat-title">Legs</div>
-            <div className="stat-value text-2xl">{strategy.leg_count ?? 0}</div>
-          </div>
-          
+
           <div className="stat bg-base-200 rounded-lg shadow">
             <div className="stat-title">Trade Cycles</div>
             <div className="stat-value text-2xl">{strategy.trade_cycle_count ?? 0}</div>
@@ -191,15 +206,18 @@ export default function StrategyDetail() {
 
 
       {/* TRADE CYCLES TABLE */}
-      {tradeCyclesLoading ? (
-        <div className="text-sm">Loading trade cycles...</div>
-      ) : (
-        <TradeCycles
-          id={strategyId}
-          trade_cycles={trade_cycles}
-          fetchTradeCycles={fetchTradeCycles}
-        />
-      )}
+      <div>
+        {tradeCyclesLoading ? (
+          <StrategyTradeCyclesSkeleton />
+        ) : (
+          <TradeCycles
+            id={strategyId}
+            trade_cycles={trade_cycles}
+            fetchTradeCycles={fetchTradeCycles}
+            multiplierAllowed={strategy.multiplier_allowed}
+          />
+        )}
+      </div>
 
     </div>
   );
