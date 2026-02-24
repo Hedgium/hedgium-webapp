@@ -19,11 +19,14 @@ type TradeCycle = {
   updated_at: string;
 };
 
-type MonthlyPnlSummary = {
+type PnlSummary = {
   month: string;
   m2m: number;
   realised: number;
   pnl: number;
+  ytd_m2m: number;
+  ytd_realised: number;
+  ytd_pnl: number;
 };
 
 export default function TradeCyclesPage() {
@@ -31,8 +34,8 @@ export default function TradeCyclesPage() {
   const [tradeCycles, setTradeCycles] = useState<TradeCycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [monthlySummary, setMonthlySummary] = useState<MonthlyPnlSummary | null>(null);
-  const [loadingMonthlySummary, setLoadingMonthlySummary] = useState(true);
+  const [pnlSummary, setPnlSummary] = useState<PnlSummary | null>(null);
+  const [loadingPnlSummary, setLoadingPnlSummary] = useState(true);
   // const [showLivePositionsModal, setShowLivePositionsModal] = useState(false);
   // const [livePositions, setLivePositions] = useState<LivePositionsData | null>(null);
   // const [loadingLivePositions, setLoadingLivePositions] = useState(false);
@@ -49,19 +52,19 @@ export default function TradeCyclesPage() {
     }
   }
 
-  async function fetchMonthlySummary() {
-    setLoadingMonthlySummary(true);
+  async function fetchPnlSummary() {
+    setLoadingPnlSummary(true);
     try {
-      const res = await authFetch("positions/pnl/monthly-summary/");
+      const res = await authFetch("positions/pnl/summary/");
       if (!res.ok) {
-        throw new Error("Failed to fetch monthly summary");
+        throw new Error("Failed to fetch PnL summary");
       }
       const data = await res.json();
-      setMonthlySummary(data);
+      setPnlSummary(data);
     } catch (error) {
-      console.error("Error fetching monthly summary:", error);
+      console.error("Error fetching PnL summary:", error);
     } finally {
-      setLoadingMonthlySummary(false);
+      setLoadingPnlSummary(false);
     }
   }
 
@@ -111,7 +114,7 @@ export default function TradeCyclesPage() {
 
       // Refetch all trade cycles to update positions
       await getAllTradeCycles();
-      await fetchMonthlySummary();
+      await fetchPnlSummary();
     } catch (err: unknown) {
       console.error("Error refreshing positions:", err);
       const errorMessage = err instanceof Error 
@@ -131,10 +134,10 @@ export default function TradeCyclesPage() {
   }, []);
 
   useEffect(() => {
-    
     (async () => {
       setLoading(true);
       await getAllTradeCycles();
+      await fetchPnlSummary();
       setLoading(false);
     })();
   }, []);
@@ -147,16 +150,17 @@ export default function TradeCyclesPage() {
         
         <section>
           <div className="bg-base-100 rounded-lg shadow p-4">
-            <h3 className="text-lg font-semibold mb-2">Current Month Summary</h3>
-            {loadingMonthlySummary ? (
-              <div className="text-sm opacity-60">Loading monthly summary...</div>
-            ) : monthlySummary ? (
+            <h3 className="text-lg font-semibold mb-2">Summary</h3>
+            {loadingPnlSummary ? (
+              <div className="text-sm opacity-60">Loading summary...</div>
+            ) : pnlSummary ? (
               <div className="text-sm opacity-80">
-                {monthlySummary.month} · PnL ₹{monthlySummary.pnl.toFixed(2)} · Realised ₹
-                {monthlySummary.realised.toFixed(2)} · M2M ₹{monthlySummary.m2m.toFixed(2)}
+                Ytd PNL: ₹{pnlSummary.ytd_pnl.toFixed(2)}, {pnlSummary.month}: PnL ₹
+                {pnlSummary.pnl.toFixed(2)}, Realised ₹{pnlSummary.realised.toFixed(2)}, M2M ₹
+                {pnlSummary.m2m.toFixed(2)}
               </div>
             ) : (
-              <div className="text-sm opacity-60">Monthly summary unavailable</div>
+              <div className="text-sm opacity-60">Summary unavailable</div>
             )}
           </div>
         </section>
