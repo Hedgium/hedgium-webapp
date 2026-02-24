@@ -14,10 +14,34 @@ import { CheckCircle } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
 import StrategyTradeCyclesSkeleton from "@/components/skeletons/StrategyTradeCyclesSkeleton";
 
+interface StrategyVersion {
+  id: number;
+  version: number;
+  title: string | null;
+}
+
+interface StrategyDetail {
+  id: number;
+  name: string;
+  description?: string | null;
+  margin_required: number;
+  validity_start: string;
+  validity_end: string;
+  source?: string | null;
+  is_active: boolean;
+  completed: boolean;
+  completed_at?: string | null;
+  trade_cycle_count: number;
+  total_pnl: number | null;
+  adjustment_count: number;
+  leg_count: number;
+  versions: StrategyVersion[];
+  multiplier_allowed?: boolean;
+}
 
 export default function StrategyDetail() {
 
-  const [strategy, setStrategy] = useState<any>(null);
+  const [strategy, setStrategy] = useState<StrategyDetail | null>(null);
   const [trade_cycles, setTradeCycles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tradeCyclesLoading, setTradeCyclesLoading] = useState(false);
