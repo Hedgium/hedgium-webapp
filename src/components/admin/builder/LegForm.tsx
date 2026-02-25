@@ -268,7 +268,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
     const loadOptions = async (inputValue: string) => {
         if (!inputValue) return [];
         try {
-            const response = await authFetch('market/instruments/search/?q=' + encodeURIComponent(inputValue));
+            const response = await authFetch('market/instruments/search/?instrument_type=EQ&q=' + encodeURIComponent(inputValue));
             const data = await response.json();
             return data.map((item: InstrumentSearchResult) => ({
                 label: `${item.tradingsymbol} - ${item.name}`,
