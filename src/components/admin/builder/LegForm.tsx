@@ -23,6 +23,7 @@ interface InstrumentSearchResult {
     tradingsymbol: string;
     name: string;
     instrument_token: number;
+    exchange: string;
     lot_size: number;
     exists: boolean;
 }
@@ -271,7 +272,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
             const response = await authFetch('market/instruments/search/?instrument_type=EQ&q=' + encodeURIComponent(inputValue));
             const data = await response.json();
             return data.map((item: InstrumentSearchResult) => ({
-                label: `${item.tradingsymbol} - ${item.name}`,
+                label: `${item.tradingsymbol} - ${item.name} - ${item.exchange}`,
                 value: item.tradingsymbol,
                 token: item.instrument_token.toString(),
                 lot_size: item.lot_size
