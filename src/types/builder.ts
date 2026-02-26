@@ -21,6 +21,7 @@ export interface BuilderLeg {
     price: number;
     quantity: number;
     lot_size: number;
+    exchange?: string;
 }
 
 export interface StrategyBuilder {
@@ -91,6 +92,7 @@ export interface BuilderLegCreate {
     price: number;
     quantity: number;
     lot_size: number;
+    exchange?: string;
 }
 
 export interface BuilderLegUpdate {
@@ -108,6 +110,7 @@ export interface BuilderLegUpdate {
     price?: number;
     quantity?: number;
     lot_size?: number;
+    exchange?: string;
 }
 
 export interface StrategyBuilderResponse {

@@ -25,7 +25,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         exit_ws: 0,
         entry_condition: 'LESS',
         exit_pnl: 0,
-        strategy_template_id: 1, // Default or fetch from API
+        strategy_template_id: null, // Default or fetch from API
         margin_required: 0,
         multiplier_allowed: false,
         supergroup_ids: []
@@ -72,6 +72,20 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         };
         fetchTemplates();
     }, []);
+
+    // When creating new: once templates load, set first template and its margin_required
+    useEffect(() => {
+        if (initialData || strategyTemplates.length === 0) return;
+        const first = strategyTemplates[0];
+        setFormData(prev => {
+            if (prev.strategy_template_id != null) return prev;
+            return {
+                ...prev,
+                strategy_template_id: first.id,
+                margin_required: first.minimum_capital ?? 0,
+            };
+        });
+    }, [strategyTemplates, initialData]);
 
     useEffect(() => {
         const fetchSupergroups = async () => {
@@ -183,6 +197,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         <option value="NFO">NFO</option>
                         <option value="BFO">BFO</option>
                         <option value="MCX">MCX</option>
+                        <option value="NFO_BFO">NFO_BFO</option>
                     </select>
                 </div>
                 <div className="form-control">

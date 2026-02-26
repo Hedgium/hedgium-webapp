@@ -76,6 +76,10 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
     const [instrumentData, setInstrumentData] = useState<InstrumentSearchResult | null>(null);
     const [currentPrice, setCurrentPrice] = useState<number | null>(null);
 
+    // When builder exchange is NFO_BFO, user picks NFO or BFO per leg
+    const [legExchange, setLegExchange] = useState<string>('NFO');
+    const effectiveExchange = exchange === 'NFO_BFO' ? legExchange : exchange;
+
     const calculateATMStrike = (currentPrice: number, strikeStep: number, strikeMultiplier: number = 1): number => {
         const step = strikeStep * strikeMultiplier;
         if (step === 0) return 0;
@@ -115,10 +119,16 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                 price: initialData.price,
                 quantity: initialData.quantity,
                 lot_size: initialData.lot_size
+                
             });
-            // setLotSize(initialData.lot_size);
+            setNoOfLots(initialData.quantity / initialData.lot_size);
+            if (exchange === 'NFO_BFO') {
+                setLegExchange(initialData.exchange === 'BFO' ? 'BFO' : 'NFO');
+            }
+        } else if (exchange === 'NFO_BFO') {
+            setLegExchange('NFO');
         }
-    }, [initialData, builderId]);
+    }, [initialData, builderId, exchange]);
 
 
     useEffect(() => {
@@ -153,7 +163,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
             try {
                 const dateFormatted = formatDateForAPI(formData.expiry);
-                const response = await authFetch('market/instruments/validate?security=' + formData.symbol + '&date=' + dateFormatted + '&strike=' + formData.strike.toString() + '&option=' + formData.option_type + '&exchange=' + exchange);
+                const response = await authFetch('market/instruments/validate?security=' + formData.symbol + '&date=' + dateFormatted + '&strike=' + formData.strike.toString() + '&option=' + formData.option_type + '&exchange=' + effectiveExchange);
                 const data = await response.json();
 
                 setInstrumentData(data);
@@ -197,7 +207,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         // Debounce validation
         const timeoutId = setTimeout(validateInstrument, 500);
         return () => clearTimeout(timeoutId);
-    }, [formData.symbol, formData.expiry, formData.strike, formData.option_type]);
+    }, [formData.symbol, formData.expiry, formData.strike, formData.option_type, effectiveExchange]);
 
     // Fetch price when symbol changes
 
@@ -294,12 +304,12 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
             const lastWord = parts[parts.length - 1];
 
             let symbol = '';
-            if (exchange == "MCX") { symbol = lastWord; } else { symbol = firstWord; }
+            if (effectiveExchange === "MCX") { symbol = lastWord; } else { symbol = firstWord; }
             
             setFormData(prev => ({
                 ...prev,
                 symbol: symbol,
-                token: option.token,
+                token: option.token
             }));
 
             // Fetch strike step for the selected symbol
@@ -330,7 +340,11 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         }
         setIsSubmitting(true);
         try {
-            await Promise.resolve(onSubmit(formData as BuilderLegCreate));
+            const payload = { ...formData } as BuilderLegCreate | BuilderLegUpdate;
+            if (exchange === 'NFO_BFO') {
+                payload.exchange = legExchange;
+            }
+            await Promise.resolve(onSubmit(payload));
         } finally {
             setIsSubmitting(false);
         }
@@ -342,6 +356,21 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
+
+                {/* Exchange (only when builder exchange is NFO_BFO) */}
+                {exchange === 'NFO_BFO' && (
+                    <div className="form-control">
+                        <label className="label"><span className="label-text">Exchange</span></label>
+                        <select
+                            value={legExchange}
+                            onChange={(e) => setLegExchange(e.target.value)}
+                            className="select select-bordered w-full"
+                        >
+                            <option value="NFO">NFO</option>
+                            <option value="BFO">BFO</option>
+                        </select>
+                    </div>
+                )}
 
                 {/* Symbol (Underlying) - searchable */}
                 <div className="form-control">
