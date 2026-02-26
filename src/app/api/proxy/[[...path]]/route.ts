@@ -36,20 +36,22 @@ async function handleProxyRequest(request: Request) {
     );
   }
 
-    const allowedOrigin = process.env.ALLOWED_ORIGIN;
-    const origin = request.headers.get('origin');
-    if (allowedOrigin && origin !== allowedOrigin) {
-      // console.log("ALLOWED");
-      return NextResponse.json({ error: 'Forbidden - bad origin' }, { status: 403 });
-    }
-  
-    // 2️⃣ Verify session cookie
-    const session = getSessionCookie();
-    if (!session) {
-      console.log("SESSION RECEIVED");
-      return NextResponse.json({ error: 'Unauthorized - no valid session' }, { status: 401 });
-    }
+  const allowedOrigin = process.env.ALLOWED_ORIGIN;
+  const origin = request.headers.get("origin");
+  if (allowedOrigin && origin !== allowedOrigin) {
+    return NextResponse.json(
+      { error: "Forbidden - bad origin" },
+      { status: 403 }
+    );
+  }
 
+  const session = await getSessionCookie();
+  if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized - no valid session" },
+      { status: 401 }
+    );
+  }
 
   try {
     const headers: HeadersInit = {
