@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Home, Briefcase, Bell, Settings, Sun, Moon, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, Briefcase, Bell, Settings, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Receipt } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
@@ -13,6 +13,7 @@ const tabs = [
   { name: "Builder", href: "/admin/builder", icon: <Settings className="h-5 w-5" /> },
   { name: "Strategies", href: "/admin/strategy", icon: <Briefcase className="h-5 w-5" /> },
   { name: "Profiles", href: "/admin/profiles", icon: <Bell className="h-5 w-5" /> },
+  { name: "Payments", href: "/admin/payments", icon: <Receipt className="h-5 w-5" /> },
 ];
 
 export default function AdminSidebar() {

@@ -1,140 +1,165 @@
-"use client"
-import { useState, useEffect } from 'react';
-import { CheckCircle, Check } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
-import { authFetch, myFetch } from '@/utils/api';
+"use client";
+
+import { useState, useEffect } from "react";
+import { CheckCircle, Check, Upload, Receipt } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { authFetch } from "@/utils/api";
 
 interface Plan {
-  id: string;
+  id: number;
   name: string;
+  duration: string;
+  duration_days: number;
   price: number;
   aum: string;
-  features: string[];
-  popular?: boolean;
-  description: string;
+  features: string;
+  description: string | null;
 }
 
-interface PaymentData {
-  cardNumber: string;
-  expiryDate: string;
-  cvv: string;
-  cardHolder: string;
+interface PaymentRequestItem {
+  id: number;
+  plan_id: number;
+  plan: Plan | null;
+  transaction_id: string;
+  screenshot: string | null;
+  status: string;
+  created_at: string;
 }
 
-export default function PricingPage() {
+const DURATION_LABEL: Record<string, string> = {
+  MONTHLY: "Monthly",
+  QUARTERLY: "Quarterly",
+  YEARLY: "Yearly",
+};
+
+function formatApiError(err: { detail?: unknown; message?: string }): string {
+  if (typeof err.detail === "string") return err.detail;
+  if (Array.isArray(err.detail)) {
+    return err.detail
+      .map((e: { msg?: string; loc?: unknown }) => (typeof e?.msg === "string" ? e.msg : JSON.stringify(e)))
+      .join(". ") || "Validation failed.";
+  }
+  if (typeof err.message === "string") return err.message;
+  return "Failed to submit.";
+}
+
+export default function UpgradePage() {
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  const [plans, setPlans] = useState<Plan[] | null>([]);
-  const {user, updateUser} = useAuthStore();
-  const [paymentData, setPaymentData] = useState<PaymentData>({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardHolder: ''
-  });
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [transactionId, setTransactionId] = useState("");
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [myRequests, setMyRequests] = useState<PaymentRequestItem[]>([]);
+  const [showMyRequests, setShowMyRequests] = useState(false);
+  const { user } = useAuthStore();
 
-  const [currentStep, setCurrentStep] = useState<'select' | 'payment' | 'success'>('select');
-  const handlePlanSelect = (plan: Plan) => {
-    setSelectedPlan(plan);
-    setCurrentStep('payment');
-  };
+  const step = submitSuccess ? "success" : selectedPlan ? "payment" : "select";
 
-  const handlePaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsProcessing(true);
+  useEffect(() => {
+    loadPlans();
+  }, []);
 
-    const url = "subscriptions/user-subscriptions/"
+  useEffect(() => {
+    if (user) loadMyRequests();
+  }, [user]);
 
-    const res = await authFetch(url, {
-        method:"POST",
-        body: JSON.stringify({
-            "user_id": user.id,
-            "plan_id": selectedPlan.id
-        })
-    })
-
-    const data = await res.json();
-    // console.log(data);
-    updateUser({active_subscription:data})
-
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsProcessing(false);
-    setPaymentSuccess(true);
-    setCurrentStep('success');
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPaymentData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  async function getAllPlans(){
-       const res = await myFetch("subscriptions/?page=1&page_size=10");
-       const data = await res.json();
-       const plansData = data.results;
-       const plansWithFeatureList: Plan[] = plansData.map(plan => ({
-            ...plan,
-            features: plan.features.split(",").map(f => f.trim())
-        }));
-        console.log(plansWithFeatureList);
-       setPlans(plansWithFeatureList);
-        
+  async function loadPlans() {
+    try {
+      const res = await authFetch("subscriptions/?page=1&page_size=50");
+      const data = await res.json();
+      const list = data.results || [];
+      setPlans(list);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  useEffect(()=>{
-    getAllPlans();
-  },[])
-
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
-    const parts = [];
-    
-    for (let i = 0; i < match.length; i += 4) {
-      parts.push(match.substring(i, i + 4));
+  async function loadMyRequests() {
+    try {
+      const res = await authFetch("subscriptions/payment-requests/?page=1&page_size=20");
+      const data = await res.json();
+      setMyRequests(data.results || []);
+    } catch (e) {
+      console.error(e);
     }
-    
-    return parts.length ? parts.join(' ') : value;
+  }
+
+  const handlePlanSelect = (plan: Plan) => {
+    setSelectedPlan(plan);
+    setSubmitSuccess(false);
+    setSubmitError("");
   };
 
-  const formatExpiryDate = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    if (v.length >= 2) {
-      return `${v.substring(0, 2)}/${v.substring(2, 4)}`;
+  const handleSubmitPaymentRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPlan || !transactionId.trim()) return;
+    setIsSubmitting(true);
+    setSubmitError("");
+    try {
+      const formData = new FormData();
+      formData.append("plan_id", String(selectedPlan.id));
+      formData.append("transaction_id", transactionId.trim());
+      if (screenshotFile) formData.append("screenshot", screenshotFile);
+      const res = await authFetch("subscriptions/payment-requests/", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const msg = formatApiError(err);
+        setSubmitError(msg);
+        setIsSubmitting(false);
+        return;
+      }
+      setSubmitSuccess(true);
+      setTransactionId("");
+      setScreenshotFile(null);
+      loadMyRequests();
+    } catch (e) {
+      setSubmitError("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    return value;
   };
 
-  if (currentStep === 'success') {
+  const featuresList = (plan: Plan) =>
+    plan.features ? plan.features.split(",").map((f) => f.trim()).filter(Boolean) : [];
+
+  if (step === "success") {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
         <div className="card w-full max-w-md bg-base-100 shadow-xl">
           <div className="card-body text-center">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-success" />
             </div>
-            <h2 className="card-title justify-center text-2xl mb-2">Payment Successful!</h2>
-            <p className="text-lg font-semibold mb-2">{selectedPlan?.name} Plan Activated</p>
-            <p className="text-gray-600 mb-6">
-              Thank you for subscribing to our {selectedPlan?.name} plan. Your account has been upgraded and you now have access to all premium features.
+            <h2 className="card-title justify-center text-2xl mb-2">Request submitted</h2>
+            <p className="text-base-content/80 mb-6">
+              We&apos;ll verify your payment and activate your plan shortly. You can track status below.
             </p>
-            <div className="card-actions justify-center">
-              <button 
+            <div className="card-actions justify-center gap-2">
+              <button
+                type="button"
                 className="btn btn-primary"
                 onClick={() => {
-                  setCurrentStep('select');
+                  setSubmitSuccess(false);
                   setSelectedPlan(null);
-                  setPaymentSuccess(false);
                 }}
               >
-                Back to Pricing
+                Subscribe again
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setSubmitSuccess(false);
+                  setSelectedPlan(null);
+                  setShowMyRequests(true);
+                }}
+              >
+                My payment requests
               </button>
             </div>
           </div>
@@ -143,111 +168,71 @@ export default function PricingPage() {
     );
   }
 
-  if (currentStep === 'payment' && selectedPlan) {
+  if (step === "payment" && selectedPlan) {
     return (
-      <div className="min-h-screen bg-base-200 py-12 px-4">
+      <div className="min-h-screen bg-base-200 py-8 px-4">
         <div className="max-w-2xl mx-auto">
-          <button 
-            className="btn btn-ghost mb-6"
-            onClick={() => setCurrentStep('select')}
+          <button
+            type="button"
+            className="btn btn-ghost mb-4"
+            onClick={() => setSelectedPlan(null)}
           >
-            ← Back to Plans
+            ← Back to plans
           </button>
-          
           <div className="card bg-base-100 shadow-xl">
             <div className="card-body">
-              <h2 className="card-title text-2xl mb-2">Complete Your Purchase</h2>
-              
-              {/* Order Summary */}
+              <h2 className="card-title text-2xl mb-2">Pay manually</h2>
               <div className="bg-base-200 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold mb-2">Order Summary</h3>
+                <h3 className="font-semibold mb-2">Order summary</h3>
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="font-medium">{selectedPlan.name} Plan</p>
-                    <p className="text-sm text-gray-600">{selectedPlan.aum}</p>
+                    <p className="font-medium">{selectedPlan.name} ({DURATION_LABEL[selectedPlan.duration] || selectedPlan.duration})</p>
+                    <p className="text-sm text-base-content/70">{selectedPlan.aum || ""}</p>
                   </div>
-                  <p className="text-lg font-bold">₹{selectedPlan.price}/month</p>
+                  <p className="text-lg font-bold">₹{selectedPlan.price}</p>
                 </div>
               </div>
-
-              {/* Payment Form */}
-              <form onSubmit={handlePaymentSubmit}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="label">
-                      <span className="label-text">Card Holder Name</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="cardHolder"
-                      value={paymentData.cardHolder}
-                      onChange={handleInputChange}
-                      placeholder="John Doe"
-                      className="input input-bordered w-full"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="label">
-                      <span className="label-text">Card Number</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="cardNumber"
-                      value={formatCardNumber(paymentData.cardNumber)}
-                      onChange={handleInputChange}
-                      placeholder="1234 5678 9012 3456"
-                      maxLength={19}
-                      className="input input-bordered w-full"
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="label">
-                        <span className="label-text">Expiry Date</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="expiryDate"
-                        value={formatExpiryDate(paymentData.expiryDate)}
-                        onChange={handleInputChange}
-                        placeholder="MM/YY"
-                        maxLength={5}
-                        className="input input-bordered w-full"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="label">
-                        <span className="label-text">CVV</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="cvv"
-                        value={paymentData.cvv}
-                        onChange={handleInputChange}
-                        placeholder="123"
-                        maxLength={3}
-                        className="input input-bordered w-full"
-                        required
-                      />
-                    </div>
-                  </div>
+              <p className="text-sm text-base-content/70 mb-4">
+                Pay the amount via UPI / bank transfer to our account. After payment, enter the <strong>Transaction ID</strong> from your bank/UPI app and optionally upload a <strong>payment screenshot</strong>. Our team will verify and activate your plan.
+              </p>
+              <form onSubmit={handleSubmitPaymentRequest} className="space-y-4">
+                <div>
+                  <label className="label">
+                    <span className="label-text">Transaction ID *</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={transactionId}
+                    onChange={(e) => setTransactionId(e.target.value)}
+                    placeholder="e.g. 123456789012"
+                    className="input input-bordered w-full"
+                    required
+                  />
                 </div>
-
-                <div className="card-actions justify-end mt-8">
-                  <button 
-                    type="submit" 
-                    className={`btn btn-primary w-full ${isProcessing ? 'loading' : ''}`}
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? 'Processing...' : `Pay ₹${selectedPlan.price}`}
-                  </button>
+                <div>
+                  <label className="label">
+                    <span className="label-text">Payment screenshot (optional)</span>
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="file-input file-input-bordered w-full"
+                    onChange={(e) => setScreenshotFile(e.target.files?.[0] || null)}
+                  />
+                  {screenshotFile && (
+                    <p className="text-sm text-base-content/60 mt-1">{screenshotFile.name}</p>
+                  )}
                 </div>
+                {submitError && (
+                  <p className="text-sm text-error">{submitError}</p>
+                )}
+                <button
+                  type="submit"
+                  className="btn btn-primary w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting…" : "Submit payment request"}
+                </button>
               </form>
             </div>
           </div>
@@ -259,79 +244,116 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-base-200 py-12 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-primary mb-4">Choose Your Plan</h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Subscription-based model with tiers designed for different investor profiles based on AUM
-          </p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-primary mb-2">Choose your plan</h1>
+            <p className="text-base-content/70">
+              Monthly, quarterly, and yearly options with discounts on longer plans.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-outline gap-2"
+            onClick={() => setShowMyRequests(!showMyRequests)}
+          >
+            <Receipt className="h-4 w-4" />
+            {showMyRequests ? "Hide" : "My payment requests"}
+          </button>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`card rounded-xl transition-all duration-300 hover:scale-105 ${
-                plan.popular 
-                  ? 'bg-primary text-primary-content shadow-2xl transform scale-105' 
-                  : 'bg-base-100 border border-base-300'
-              }`}
-            >
-              {plan.popular && (
-                <div className="badge badge-accent absolute top-0 right-0 transform translate-x-2 -translate-y-2">
-                  POPULAR
+        {showMyRequests && (
+          <div className="card bg-base-100 shadow-xl mb-8">
+            <div className="card-body">
+              <h3 className="card-title">My payment requests</h3>
+              {myRequests.length === 0 ? (
+                <p className="text-base-content/60">No payment requests yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="table table-zebra">
+                    <thead>
+                      <tr>
+                        <th>Plan</th>
+                        <th>Transaction ID</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {myRequests.map((pr) => (
+                        <tr key={pr.id}>
+                          <td>
+                            {pr.plan
+                              ? `${pr.plan.name} (${DURATION_LABEL[pr.plan.duration] || pr.plan.duration})`
+                              : `Plan #${pr.plan_id}`}
+                          </td>
+                          <td className="font-mono text-sm">{pr.transaction_id}</td>
+                          <td>
+                            <span
+                              className={`badge ${
+                                pr.status === "VERIFIED"
+                                  ? "badge-success"
+                                  : pr.status === "REJECTED"
+                                  ? "badge-error"
+                                  : "badge-warning"
+                              }`}
+                            >
+                              {pr.status}
+                            </span>
+                          </td>
+                          <td className="text-sm text-base-content/70">
+                            {new Date(pr.created_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
-              
-              <div className="card-body p-8">
-                <div className="text-center mb-6">
-                  <h3 className={`text-xl font-semibold mb-2 ${plan.popular ? 'text-primary-content' : 'text-primary'}`}>
-                    {plan.name}
-                  </h3>
-                  <div className={`text-3xl font-bold mb-1 ${plan.popular ? 'text-accent' : 'text-secondary'}`}>
-                    ₹{plan.price}
-                  </div>
-                  <p className={`text-sm ${plan.popular ? 'text-primary-content/80' : 'text-gray-500'}`}>
-                    {plan.aum}
-                  </p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {plans.map((plan) => (
+            <div
+              key={`${plan.id}-${plan.duration}`}
+              className="card bg-base-100 border border-base-300 shadow-xl hover:shadow-2xl transition-shadow"
+            >
+              <div className="card-body">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-xl font-semibold text-primary">{plan.name}</h3>
+                  <span className="badge badge-outline">
+                    {DURATION_LABEL[plan.duration] || plan.duration}
+                  </span>
                 </div>
-
-                <p className={`text-sm mb-6 ${plan.popular ? 'text-primary-content/80' : 'text-gray-600'}`}>
-                  {plan.description}
+                <div className="text-2xl font-bold mb-1">₹{plan.price}</div>
+                <p className="text-sm text-base-content/60 mb-4">
+                  {plan.duration_days === 30 && "per month"}
+                  {plan.duration_days === 90 && "for 3 months"}
+                  {plan.duration_days === 365 && "for 12 months"}
+                  {plan.aum && ` · ${plan.aum}`}
                 </p>
-
-                <ul className="space-y-3 mb-8 flex-1">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <Check className={`w-5 h-5 mt-0.5 mr-3 flex-shrink-0 ${
-                        plan.popular ? 'text-green-400' : 'text-green-500'
-                      }`}  />
-                      <span className="text-sm">{feature}</span>
+                {plan.description && (
+                  <p className="text-sm text-base-content/70 mb-4">{plan.description}</p>
+                )}
+                <ul className="space-y-2 mb-6 flex-1">
+                  {featuresList(plan).map((feature, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <Check className="w-4 h-4 text-success shrink-0 mt-0.5" />
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
-
                 <button
-                  className={`btn w-full ${
-                    plan.popular 
-                      ? 'btn-accent text-accent-content' 
-                      : 'btn-outline btn-primary'
-                  }`}
+                  type="button"
+                  className="btn btn-primary w-full"
                   onClick={() => handlePlanSelect(plan)}
                 >
-                  {plan.price === 0 ? 'Get Started' : 'Subscribe Now'}
+                  {plan.price === 0 ? "Get started" : "Subscribe"}
                 </button>
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-12">
-          <p className="text-gray-600">
-            All plans include our proprietary AI stack and risk management framework
-          </p>
         </div>
       </div>
     </div>
