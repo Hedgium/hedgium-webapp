@@ -1,11 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
 import { Mail, Lock } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { Shield } from "lucide-react";
+
+/** Safe redirect path: must start with / and not be protocol-relative or external */
+function getSafeNext(next: string | null): string | null {
+  if (!next || typeof next !== "string") return null;
+  const path = next.startsWith("/") ? next : `/${next}`;
+  if (path.includes("//")) return null; // avoid // or https://
+  return path;
+}
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -17,20 +26,20 @@ const Login: React.FC = () => {
 
   const { login, accessToken, isLoading, isInitializing } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = getSafeNext(searchParams.get("next"));
 
   useEffect(() => {
     fetch("/api/session", { method: "GET", credentials: "include" })
       .catch(console.error);
   }, []);
 
-  // redirect if already logged in - always go to hedgium dashboard
+  // Redirect when logged in: use ?next= if present, else dashboard
   useEffect(() => {
-    // console.log("isInitializing", isInitializing);
-    // console.log("accessToken", accessToken);
     if (!isInitializing && accessToken) {
-      router.push("/hedgium/dashboard");
+      router.push(nextPath || "/hedgium/dashboard");
     }
-  }, [accessToken, isInitializing, router]);
+  }, [accessToken, isInitializing, router, nextPath]);
 
   const handleLogin = async (e?: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent) => {
     if (e) {
