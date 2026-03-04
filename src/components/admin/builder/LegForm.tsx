@@ -68,7 +68,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         action: 'BUY',
         // price: 0,
         quantity: 75,
-        lot_size: 75
+        lot_size: 75,
     });
 
 
@@ -125,9 +125,9 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
             if (exchange === 'NFO_BFO') {
                 setLegExchange(initialData.exchange === 'BFO' ? 'BFO' : 'NFO');
             }
-        } else if (exchange === 'NFO_BFO') {
-            setLegExchange('NFO');
-        }
+        } else {
+            setLegExchange(initialData?.exchange || 'NFO');
+        } 
     }, [initialData, builderId, exchange]);
 
 
@@ -241,8 +241,6 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
     async function fetchDepthToken() {
         const data = await fetchTokenPrice(instrumentData?.instrument_token.toString());
 
-        // console.log(data)
-
         if (formData.action == "BUY") {
             setFormData(prev => ({
                 ...prev,
@@ -279,7 +277,8 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
     const loadOptions = async (inputValue: string) => {
         if (!inputValue) return [];
         try {
-            const response = await authFetch('market/instruments/search/?instrument_type=EQ&q=' + encodeURIComponent(inputValue));
+            const instrumentType = effectiveExchange === 'MCX' ? 'EQ' : 'EQ';
+            const response = await authFetch('market/instruments/search/?instrument_type=' + instrumentType + '&q=' + encodeURIComponent(inputValue));
             const data = await response.json();
             return data.map((item: InstrumentSearchResult) => ({
                 label: `${item.tradingsymbol} - ${item.name} - ${item.exchange}`,
@@ -299,9 +298,9 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
            // this one for nifty and banknifty
             const firstWord = option.value.split(' ')[0];
-
-            const parts = option.label.split(" ");
-            const lastWord = parts[parts.length - 1];
+            const parts = option.label.split(" - ");
+            const lastWord = parts[1];
+            
 
             let symbol = '';
             if (effectiveExchange === "MCX") { symbol = lastWord; } else { symbol = firstWord; }
@@ -340,11 +339,9 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         }
         setIsSubmitting(true);
         try {
-            const payload = { ...formData } as BuilderLegCreate | BuilderLegUpdate;
-            if (exchange === 'NFO_BFO') {
-                payload.exchange = legExchange;
-            }
-            await Promise.resolve(onSubmit(payload));
+        const payload = { ...formData } as BuilderLegCreate | BuilderLegUpdate;
+        payload.exchange = effectiveExchange;
+        await Promise.resolve(onSubmit(payload));
         } finally {
             setIsSubmitting(false);
         }
