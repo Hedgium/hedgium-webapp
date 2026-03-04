@@ -10,9 +10,10 @@ import Link from "next/link";
 import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateOnly } from "@/utils/formatDate";
 import useAlert from "@/hooks/useAlert";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Plus } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
 import StrategyTradeCyclesSkeleton from "@/components/skeletons/StrategyTradeCyclesSkeleton";
+import ManualAdjustmentModal from "@/components/admin/strategy/ManualAdjustmentModal";
 
 interface StrategyVersion {
   id: number;
@@ -46,6 +47,7 @@ export default function StrategyDetail() {
   const [loading, setLoading] = useState(true);
   const [tradeCyclesLoading, setTradeCyclesLoading] = useState(false);
   const [completingStrategy, setCompletingStrategy] = useState(false);
+  const [showManualAdjustment, setShowManualAdjustment] = useState(false);
   const alert = useAlert();
 
   const params = useParams<{ id: string }>();
@@ -220,9 +222,19 @@ export default function StrategyDetail() {
         </div>
       </div>
 
-      {/* LEGS TABLE */}
+      {/* ADJUSTMENTS */}
       <div>
-        <h4 className="text-lg font-semibold mb-2">Strategy Adjustments</h4>
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-lg font-semibold">Strategy Adjustments</h4>
+          {!strategy.completed && (
+            <button
+              onClick={() => setShowManualAdjustment(true)}
+              className="btn btn-sm btn-outline gap-1"
+            >
+              <Plus size={14} /> Manual Adjustment
+            </button>
+          )}
+        </div>
         <Adjustments adjustments={strategy.versions} onRefresh={fetchStrategyData} />
       </div>
 
@@ -242,6 +254,15 @@ export default function StrategyDetail() {
           />
         )}
       </div>
+
+      {/* MANUAL ADJUSTMENT MODAL */}
+      {showManualAdjustment && (
+        <ManualAdjustmentModal
+          strategyId={strategyId}
+          onClose={() => setShowManualAdjustment(false)}
+          onSuccess={fetchStrategyData}
+        />
+      )}
 
     </div>
   );

@@ -11,8 +11,30 @@ function Adjustment({ adj, onDelete }) {
   const [open, setOpen] = useState(false);
   const [adjustment, setAdjustment] = useState(adj);
   const [deleting, setDeleting] = useState(false);
+  const [togglingCompleted, setTogglingCompleted] = useState(false);
 
   const alert = useAlert();
+
+  async function toggleCompleted(adjId: number) {
+    const newValue = !adjustment.completed;
+    setTogglingCompleted(true);
+    try {
+      const res = await authFetch(`strategies/adjustments/${adjId}/`, {
+        method: "PUT",
+        body: JSON.stringify({ completed: newValue }),
+      });
+      if (res.ok) {
+        setAdjustment((prev) => ({ ...prev, completed: newValue }));
+        alert.success(newValue ? "Adjustment marked as completed." : "Adjustment marked as active.");
+      } else {
+        alert.error("Failed to update adjustment.");
+      }
+    } catch {
+      alert.error("Error updating adjustment.");
+    } finally {
+      setTogglingCompleted(false);
+    }
+  }
 
   async function approveAdjustment(adjId: number) {
     try {
@@ -71,16 +93,30 @@ function Adjustment({ adj, onDelete }) {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* <span className="text-sm opacity-70">Approved: {adj.approved ? "Yes" : "No"}</span> */}
           <span className="text-sm opacity-70">{formatDateTimeMinutes(adjustment.created_at)}</span>
+
+          {/* Completed toggle */}
+          <label
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+            title={adjustment.completed ? "Mark as active" : "Mark as completed"}
+          >
+            <span className="text-xs opacity-60">Completed</span>
+            <input
+              type="checkbox"
+              className="toggle toggle-sm toggle-warning"
+              checked={adjustment.completed}
+              disabled={togglingCompleted}
+              onChange={() => toggleCompleted(adjustment.id)}
+            />
+          </label>
 
           <button
             onClick={(e) => {
-              e.stopPropagation(); // prevent dropdown toggle
+              e.stopPropagation();
               approveAdjustment(adjustment.id);
             }}
-            className={`btn btn-sm ${adjustment.approved ? "btn-disabled" : "btn-success"
-              }`}
+            className={`btn btn-sm ${adjustment.approved ? "btn-disabled" : "btn-success"}`}
           >
             {adjustment.approved ? "Approved" : "Approve"}
           </button>
@@ -90,17 +126,14 @@ function Adjustment({ adj, onDelete }) {
               e.stopPropagation(); // prevent dropdown toggle
               deleteAdjustment(adjustment.id);
             }}
-            disabled={deleting}
+            disabled={deleting || adjustment.approved}
             className="btn btn-sm btn-error btn-ghost"
-            title="Delete adjustment and all its legs"
+            title={adjustment.approved ? "Cannot delete an approved adjustment" : "Delete adjustment and all its legs"}
           >
-            {deleting ? (
-              <span className="loading loading-spinner loading-xs"></span>
-            ) : (
-              !adjustment.approved && (
-                <Trash2 size={14} />
-              ))
-              }
+            {deleting
+              ? <span className="loading loading-spinner loading-xs"></span>
+              : <Trash2 size={14} />
+            }
           </button>
 
           {/* Arrow */}
