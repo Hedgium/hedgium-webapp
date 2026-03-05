@@ -90,7 +90,7 @@ export default function ManualAdjustmentModal({ strategyId, onClose, onSuccess }
                 legs,
             };
 
-            const res = await authFetch(`strategies/${strategyId}/push-adjustment/`, {
+            const res = await authFetch(`strategies/${strategyId}/push-allocate-adjustment/`, {
                 method: "POST",
                 body: JSON.stringify(payload),
             });
@@ -156,17 +156,6 @@ export default function ManualAdjustmentModal({ strategyId, onClose, onSuccess }
                             <option value="MCX">MCX</option>
                             <option value="NFO_BFO">NFO + BFO (mixed)</option>
                         </select>
-                    </div>
-
-                    <div className="form-control md:col-span-2">
-                        <label className="label"><span className="label-text">Notes</span></label>
-                        <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Optional notes about this adjustment"
-                            className="textarea textarea-bordered w-full"
-                            rows={2}
-                        />
                     </div>
 
                     <div className="form-control">
