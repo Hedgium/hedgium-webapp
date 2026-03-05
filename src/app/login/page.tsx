@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
 import { Mail, Lock } from "lucide-react";
@@ -16,7 +16,7 @@ function getSafeNext(next: string | null): string | null {
   return path;
 }
 
-const Login: React.FC = () => {
+const LoginContent: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -202,5 +202,11 @@ const Login: React.FC = () => {
     </>
   );
 };
+
+const Login: React.FC = () => (
+  <Suspense>
+    <LoginContent />
+  </Suspense>
+);
 
 export default Login;
