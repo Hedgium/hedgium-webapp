@@ -244,12 +244,12 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         if (formData.action == "BUY") {
             setFormData(prev => ({
                 ...prev,
-                price: data?.depth.sell[0].price
+                price: data?.depth.buy[0].price
             }));
         } else {
             setFormData(prev => ({
                 ...prev,
-                price: data?.depth.buy[0].price
+                price: data?.depth.sell[0].price
             }));
         }
     }

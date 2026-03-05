@@ -119,7 +119,7 @@ export default function AdminPaymentsPage() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : pending.length === 0 ? (
-        <div className="card bg-base-100 shadow-xl">
+        <div className="card bg-base-100 ">
           <div className="card-body items-center text-center py-12">
             <p className="text-base-content/70">No payment requests found.</p>
           </div>
