@@ -37,12 +37,6 @@ export default function WebLoginClient({ loginUrl, token }) {
     <div className="p-6 text-center">
       <h1 className="text-xl font-semibold mb-2">Redirecting...</h1>
       <p>Please wait while we authenticate and continue.</p>
-
-      <div className="mt-6 opacity-60 text-sm">
-        <p>loginUrl: {loginUrl}</p>
-        <p>token: {token}</p>
-        <p>accessToken: {accessToken}</p>
-      </div>
     </div>
   );
 }

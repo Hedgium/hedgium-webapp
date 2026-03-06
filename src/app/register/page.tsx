@@ -94,20 +94,19 @@ function Register() {
         setError(null)
         const res = await myFetch('users', {
           method: "POST",
-          body: JSON.stringify(dataToSend) // Convert the data object to a JSON string
+          body: JSON.stringify(dataToSend)
         });
         
         if (res.ok) {
-          const data = await res.json();
-          alert.success('User created sucessfully', { duration: 3000 });
-          login(email, password);
-          router.push("/register/complete-profile");
+          alert.success('Account created! Please verify your email.', { duration: 3000 });
+          await login(email, password);
+          // router.push("/register/verify-email");
           updateUser({ signup_step: "initiated" });
+          router.push("/register/verify-email");
         } else {
           const errorRes = await res.json();
           setError(errorRes?.detail)
-          alert(errorRes?.detail, {duration:3000})
-
+          alert(errorRes?.detail, { duration: 3000 })
         }
       } catch (e) {
         console.log(e);

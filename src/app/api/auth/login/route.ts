@@ -12,9 +12,8 @@ export async function POST(request: Request) {
   }
 
   // 2️⃣ Verify session cookie
-  const session = getSessionCookie();
+  const session = await getSessionCookie();
   if (!session) {
-    console.log("SESSION RECEIVED");
     return NextResponse.json({ error: 'Unauthorized - no valid session' }, { status: 401 });
   }
 

@@ -6,14 +6,16 @@ export async function POST(request: Request) {
   const backendUrl = `${process.env.BACKEND_API_URL}users/auth/logout`;
   const apiKey = process.env.BACKEND_API_KEY;
 
+  const cookieHeader = request.headers.get('cookie');
+
   try {
     const response = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'X-API-Key': apiKey ?? '',
         Authorization: accessToken ? `Bearer ${accessToken}` : '',
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
       },
-      credentials: 'include',
     });
 
     const data = await response.json();

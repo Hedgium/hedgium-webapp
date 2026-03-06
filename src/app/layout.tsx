@@ -29,15 +29,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   
     useEffect(() => {
       if (!isInitializing && accessToken){
+        // Don't redirect while the user is actively going through email verification
+        if (pathname === "/register/verify-email") return;
+
         if (user?.kyc_skipped) {
           if (!pathname.includes("hedgium")) {
             router.push("/hedgium/dashboard/");
           }
           return;
         }
-        else if (user?.signup_step=="initiated"){
-          router.push("/register/complete-profile")
-        } else if(user?.signup_step=="documents_uploaded"){
+        if (user?.signup_step === "initiated") {
+          router.push("/register/verify-email");
+        } else if (user?.signup_step === "email_verified") {
+          router.push("/register/complete-profile");
+        }
+        else if(user?.signup_step=="documents_uploaded"){
           router.push("/register/add-broker")
         } else if (user?.signup_step=="broker_profile_added"){
           router.push("/register/verification")

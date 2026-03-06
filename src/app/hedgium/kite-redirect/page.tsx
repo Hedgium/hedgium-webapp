@@ -40,10 +40,10 @@ const KiteRedirectPage = () => {
           if (data.kite_login_device == "WEB") {
             router.push("/hedgium/dashboard/")
           } else if (data.kite_login_device == "ANDROID") {
-            
-              const redirectUrl = `exp://192.168.0.232:8081/--/(tabs)/dashboard`
-              // const redirectUrl = `hedgiumapp://(tabs)/dashboard?kite_login=success`;
-              window.location.replace(redirectUrl);
+            const appDeepLink =
+              process.env.NEXT_PUBLIC_APP_DEEP_LINK ||
+              "hedgiumapp://(tabs)/dashboard";
+            window.location.replace(appDeepLink);
           }
         } else {
           setStatus("error");
