@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { CheckCircle, Check, Upload, Receipt } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { authFetch } from "@/utils/api";
+import { formatMoneyIN } from "@/utils/formatNumber";
 
 interface Plan {
   id: number;
@@ -189,7 +190,7 @@ export default function UpgradePage() {
                     <p className="font-medium">{selectedPlan.name} ({DURATION_LABEL[selectedPlan.duration] || selectedPlan.duration})</p>
                     <p className="text-sm text-base-content/70">{selectedPlan.aum || ""}</p>
                   </div>
-                  <p className="text-lg font-bold">₹{selectedPlan.price}</p>
+                  <p className="text-lg font-bold">{formatMoneyIN(selectedPlan.price)}</p>
                 </div>
               </div>
               <p className="text-sm text-base-content/70 mb-4">
@@ -326,7 +327,7 @@ export default function UpgradePage() {
                     {DURATION_LABEL[plan.duration] || plan.duration}
                   </span>
                 </div>
-                <div className="text-2xl font-bold mb-1">₹{plan.price}</div>
+                <div className="text-2xl font-bold mb-1">{formatMoneyIN(plan.price)}</div>
                 <p className="text-sm text-base-content/60 mb-4">
                   {plan.duration_days === 30 && "per month"}
                   {plan.duration_days === 90 && "for 3 months"}

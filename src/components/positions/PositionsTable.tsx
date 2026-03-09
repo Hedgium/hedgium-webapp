@@ -2,6 +2,7 @@
 
 import React from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { formatMoneyIN } from "@/utils/formatNumber";
 
 export interface Position {
   id: number;
@@ -68,16 +69,16 @@ export default function PositionsTable({
                 </td>
                 <td>
                   {pos.average_buy_price
-                    ? `₹${pos.average_buy_price.toFixed(2)}`
+                    ? formatMoneyIN(pos.average_buy_price)
                     : "-"}
                 </td>
                 <td>
                   {pos.average_sell_price
-                    ? `₹${pos.average_sell_price.toFixed(2)}`
+                    ? formatMoneyIN(pos.average_sell_price)
                     : "-"}
                 </td>
-                <td>₹{unrealisedValue.toFixed(2)}</td>
-                <td>₹{realisedValue.toFixed(2)}</td>
+                <td>{formatMoneyIN(unrealisedValue)}</td>
+                <td>{formatMoneyIN(realisedValue)}</td>
                 <td className={pnlColor}>
                   <div className="flex items-center gap-1 font-semibold">
                     {pos.pnl >= 0 ? (
@@ -85,7 +86,7 @@ export default function PositionsTable({
                     ) : (
                       <TrendingDown width={12} />
                     )}
-                    ₹{pos.pnl.toFixed(2)}
+                    {formatMoneyIN(pos.pnl)}
                   </div>
                 </td>
                 {showOrdersCount && (

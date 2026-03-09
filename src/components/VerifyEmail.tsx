@@ -9,6 +9,8 @@ import useAlert from "@/hooks/useAlert";
 
 const RESEND_COOLDOWN = 60;
 const OTP_LENGTH = 6;
+const OTP_AUTOSEND_THROTTLE_MS = 60_000; // Don't auto-send again within 60s (avoids 429 from remounts)
+const OTP_AUTOSEND_STORAGE_KEY = "hedgium_otp_autosend";
 
 export interface VerifyEmailProps {
   /** Email to verify. Default: current user email from auth store */
@@ -83,11 +85,24 @@ export default function VerifyEmail({
         body: JSON.stringify({ email }),
       });
       if (res.ok) {
+        try {
+          sessionStorage.setItem(
+            `${OTP_AUTOSEND_STORAGE_KEY}:${email}`,
+            Date.now().toString()
+          );
+        } catch {
+          // ignore
+        }
         alert.success("Code sent. Check your inbox.", { duration: 3000 });
         startCooldown();
       } else {
-        const data = await res.json();
-        setError(data.error || "Failed to send code.");
+        const data = await res.json().catch(() => ({}));
+        const msg =
+          res.status === 429
+            ? "Too many attempts. Please wait a minute before requesting another code."
+            : data.error || "Failed to send code.";
+        setError(msg);
+        if (res.status === 429) startCooldown(); // show resend cooldown
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -98,6 +113,16 @@ export default function VerifyEmail({
 
   useEffect(() => {
     if (!autoSendOnMount || !email) return;
+    // Throttle: don't auto-send if we already sent to this email in the last 60s (avoids 429 from remounts/Strict Mode)
+    try {
+      const raw = sessionStorage.getItem(`${OTP_AUTOSEND_STORAGE_KEY}:${email}`);
+      if (raw) {
+        const sentAt = parseInt(raw, 10);
+        if (Number.isFinite(sentAt) && Date.now() - sentAt < OTP_AUTOSEND_THROTTLE_MS) return;
+      }
+    } catch {
+      // ignore
+    }
     autoSendTimeoutRef.current = setTimeout(() => {
       sendOtp();
       autoSendTimeoutRef.current = null;

@@ -6,6 +6,7 @@ import TradeCyclePositionsSkeleton from "@/components/skeletons/TradeCyclePositi
 // import LivePositionsModal from "@/components/LivePositionsModal";
 import { LivePositionsData } from "@/types/positions";
 import { authFetch } from "@/utils/api";
+import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { RotateCw } from "lucide-react";
 
@@ -155,9 +156,9 @@ export default function TradeCyclesPage() {
               <div className="text-sm opacity-60">Loading summary...</div>
             ) : pnlSummary ? (
               <div className="text-sm opacity-80">
-                Ytd PNL: ₹{pnlSummary.ytd_pnl.toFixed(2)}, {pnlSummary.month}: PnL ₹
-                {pnlSummary.pnl.toFixed(2)}, Realised ₹{pnlSummary.realised.toFixed(2)}, M2M ₹
-                {pnlSummary.m2m.toFixed(2)}
+                Ytd PNL: {formatMoneyIN(pnlSummary.ytd_pnl)}, {pnlSummary.month}: PnL{" "}
+                {formatMoneyIN(pnlSummary.pnl)}, Realised {formatMoneyIN(pnlSummary.realised)}, M2M{" "}
+                {formatMoneyIN(pnlSummary.m2m)}
               </div>
             ) : (
               <div className="text-sm opacity-60">Summary unavailable</div>

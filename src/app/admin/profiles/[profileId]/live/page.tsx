@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authFetch } from "@/utils/api";
+import { formatMoneyIN } from "@/utils/formatNumber";
 import { placeOrder, modifyOrder, cancelOrder } from "@/services/liveTradingActions";
 import useAlert from "@/hooks/useAlert";
 import { ArrowLeft, RefreshCw, Plus, Edit2, X, LogOut, TrendingUp, TrendingDown } from "lucide-react";
@@ -379,7 +380,7 @@ export default function LivePositionsPage() {
                         ) : (
                           <TrendingDown width={16} />
                         )}
-                        ₹{totalPnl.toFixed(2)}
+                        {formatMoneyIN(totalPnl)}
                       </div>
                     </div>
                     <div className="text-center">
@@ -387,7 +388,7 @@ export default function LivePositionsPage() {
                         Total Realised
                       </div>
                       <div className="text-lg font-semibold">
-                        ₹{totalRealised.toFixed(2)}
+                        {formatMoneyIN(totalRealised)}
                       </div>
                     </div>
                     <div className="text-center">
@@ -395,7 +396,7 @@ export default function LivePositionsPage() {
                         Total Unrealised
                       </div>
                       <div className="text-lg font-semibold">
-                        ₹{totalUnrealised.toFixed(2)}
+                        {formatMoneyIN(totalUnrealised)}
                       </div>
                     </div>
                   </div>
@@ -423,12 +424,12 @@ export default function LivePositionsPage() {
                       <td>{position.quantity} ({position.buy_quantity}/{position.sell_quantity})</td>
                       <td>
                         {position.average_price
-                          ? `₹${position.average_price.toFixed(2)}`
+                          ? formatMoneyIN(position.average_price)
                           : "-"}
                       </td>
                       <td>
                         {position.last_price
-                          ? `₹${position.last_price.toFixed(2)}`
+                          ? formatMoneyIN(position.last_price)
                           : "-"}
                       </td>
                       <td
@@ -439,18 +440,18 @@ export default function LivePositionsPage() {
                         }
                       >
                         {position.pnl !== undefined
-                          ? `₹${position.pnl.toFixed(2)}`
+                          ? formatMoneyIN(position.pnl)
                           : "-"}
                       </td>
 
                       <td>
                         {position.realised !== undefined || position.realised_total !== undefined
-                          ? `₹${(position.realised ?? position.realised_total ?? 0).toFixed(2)}`
+                          ? formatMoneyIN(position.realised ?? position.realised_total ?? 0)
                           : "-"}
                       </td>
                       <td>
                         {position.unrealised_total !== undefined
-                          ? `₹${(position.unrealised_total ?? 0).toFixed(2)}`
+                          ? formatMoneyIN(position.unrealised_total ?? 0)
                           : "-"}
                       </td>
                       <td>
@@ -546,7 +547,7 @@ export default function LivePositionsPage() {
                         </span>
                       </td>
                       <td>{order.quantity}</td>
-                      <td>₹{order.price.toFixed(2)}</td>
+                      <td>{formatMoneyIN(order.price)}</td>
                       <td>{order.filled_quantity}</td>
                       <td>{order.pending_quantity}</td>
                       <td>

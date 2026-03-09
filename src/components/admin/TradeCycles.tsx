@@ -3,6 +3,7 @@
 import { useState, lazy, Suspense } from "react";
 import type { ComponentType, LazyExoticComponent } from "react";
 import { authFetch } from "@/utils/api";
+import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { RotateCw, Eye } from "lucide-react";
 import Link from "next/link";
@@ -453,7 +454,7 @@ export default function TradeCycles({
       if (data.status === "success") {
         const orderInfo = data.data;
         alert.success(
-          `Order placed: ${orderInfo.action} ${orderInfo.quantity} ${orderInfo.instrument} @ ₹${orderInfo.price}`
+          `Order placed: ${orderInfo.action} ${orderInfo.quantity} ${orderInfo.instrument} @ ${formatMoneyIN(orderInfo.price)}`
         );
         // Mark this order as completed to disable the button
         setCompletedOrders((prev) => new Set(prev).add(requestKey));
@@ -755,7 +756,7 @@ export default function TradeCycles({
                     <td>{cycle.no_of_orders || 0}</td>
                     <td>{cycle.no_of_positions || 0}</td>
                     <td className={cycle.pnl && cycle.pnl > 0 ? "text-green-400" : cycle.pnl && cycle.pnl < 0 ? "text-red-400" : ""}>
-                      {cycle.pnl !== null && cycle.pnl !== undefined ? `₹${cycle.pnl.toFixed(2)}` : "₹0.00"}
+                      {cycle.pnl !== null && cycle.pnl !== undefined ? formatMoneyIN(cycle.pnl) : formatMoneyIN(0)}
                     </td>
                     <td>
                       <div className="flex flex-col gap-1 w-full">

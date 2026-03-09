@@ -8,14 +8,14 @@ export default function DashboardMetrics() {
   const metrics = [
     { 
       title: "Margin Available", 
-      value: "₹2,52,780", 
+      value: "2,52,780", 
       subtitle: "Available to Trade", 
       icon: "lucide:pie-chart",
       trend: "neutral"
     },
     { 
       title: "Current M2M", 
-      value: "₹12,580", 
+      value: "12,580", 
       subtitle: "Mark-to-market value", 
       icon: "lucide:bar-chart-3",
       trend: "up",
@@ -23,7 +23,7 @@ export default function DashboardMetrics() {
     },
     { 
       title: "Realized P&L", 
-      value: "₹45,620", 
+      value: "45,620", 
       subtitle: "This month", 
       icon: "lucide:target",
       trend: "up",

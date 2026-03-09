@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { authFetch } from "@/utils/api";
+import { formatMoneyIN } from "@/utils/formatNumber";
 import { useAuthStore } from "@/store/authStore";
 import { RotateCw } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
@@ -18,7 +19,6 @@ interface BrokerState {
 export default function BrokerLoginStatus() {
   const alert = useAlert();
   const { user } = useAuthStore();
-  const [loading, setLoading] = useState(false);
   const [broker, setBroker] = useState<BrokerState>({
     loading: true,
     loggedIn: false,
@@ -158,25 +158,6 @@ export default function BrokerLoginStatus() {
     }
   };
 
-  /** 🪄 Handle Zerodha Login (redirect flow) */
-  const handleZerodhaLogin = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await authFetch(
-        `/users/kite-login/?domain=${encodeURIComponent(window.location.origin)}`
-      );
-      const data = await res.json();
-
-      if (!res.ok || !data.login_url) throw new Error("Failed to get login URL.");
-      window.location.href = data.login_url;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     fetchActiveProfile();
   }, [user]);
@@ -200,17 +181,11 @@ export default function BrokerLoginStatus() {
                     <span className="text-error font-medium">Not logged in</span>
                     {broker?.name && (
                       <button
-                        onClick={() => {
-                          if (broker.name === "ZERODHA") {
-                            handleZerodhaLogin();
-                          } else {
-                            setShowLoginModal(true);
-                          }
-                        }}
-                        disabled={loading || loggingIn}
+                        onClick={() => setShowLoginModal(true)}
+                        disabled={loggingIn}
                         className="btn btn-primary btn-sm"
                       >
-                        {loading ? "Redirecting..." : "Login"}
+                        Login
                       </button>
                     )}
                   </>
@@ -219,8 +194,8 @@ export default function BrokerLoginStatus() {
 
               {broker.margin != null && broker.loggedIn && (
                 <p className="flex items-center gap-2">
-                  <span className="font-medium">Margin:</span>₹{" "}
-                  {broker.margin.toLocaleString()}
+                  <span className="font-medium">Margin:</span>{" "}
+                  {formatMoneyIN(broker.margin, { decimals: 0 })}
                   <button
                     onClick={refreshMargin}
                     disabled={refreshing}

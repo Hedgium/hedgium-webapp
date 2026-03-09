@@ -4,6 +4,7 @@ import React, { JSX, useState, useEffect } from "react";
 import { Clock, CheckCircle, XCircle, ChevronUp, ChevronDown, Lock, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { authFetch } from "@/utils/api";
+import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 
 interface Leg {
@@ -153,7 +154,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
                 </span>
                 <span className="flex-1 text-gray-600 ml-3 truncate">{leg.instrument}</span>
                 <span className="text-gray-500">Qty {leg.quantity}</span>
-                <span className="ml-2">₹{leg.price}</span>
+                <span className="ml-2">{formatMoneyIN(leg.price)}</span>
                 {leg.status === "PENDING" ? (
                   <Clock width={14} className="ml-2 text-warning" />
                 ) : (

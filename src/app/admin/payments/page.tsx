@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { authFetch } from "@/utils/api";
+import { formatMoneyIN } from "@/utils/formatNumber";
 import { CheckCircle, XCircle, ImageIcon, Loader2 } from "lucide-react";
 
 interface Plan {
@@ -151,7 +152,7 @@ export default function AdminPaymentsPage() {
                       : `Plan #${pr.plan_id}`}
                   </td>
                   <td>
-                    {pr.plan ? `₹${pr.plan.price}` : "—"}
+                    {pr.plan ? formatMoneyIN(pr.plan.price) : "—"}
                   </td>
                   <td className="font-mono text-sm">{pr.transaction_id}</td>
                   <td>

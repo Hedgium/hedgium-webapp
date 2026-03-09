@@ -18,13 +18,13 @@ const BillingTab: React.FC = () => {
           <tr>
             <td>2025-09-01</td>
             <td>Pro Plan</td>
-            <td>₹999</td>
+            <td>999</td>
             <td className="text-success">Paid</td>
           </tr>
           <tr>
             <td>2025-08-01</td>
             <td>Pro Plan</td>
-            <td>₹999</td>
+            <td>999</td>
             <td className="text-success">Paid</td>
           </tr>
         </tbody>

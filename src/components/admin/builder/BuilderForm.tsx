@@ -261,7 +261,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     </select>
                 </div>
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Exit PnL (₹)</span></label>
+                    <label className="label"><span className="label-text">Exit PnL</span></label>
                     <input 
                         type="number" 
                         required 
@@ -281,7 +281,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 
 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Margin Required (₹)</span></label>
+                    <label className="label"><span className="label-text">Margin Required</span></label>
                     <input 
                         type="number" 
                         step="0.01" 

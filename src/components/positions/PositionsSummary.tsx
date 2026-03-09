@@ -3,6 +3,7 @@
 import React from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Position } from "./PositionsTable";
+import { formatMoneyIN } from "@/utils/formatNumber";
 
 interface PositionsSummaryProps {
   positions: Position[];
@@ -59,7 +60,7 @@ export default function PositionsSummary({
           ) : (
             <TrendingDown width={14} />
           )}
-          ₹{totalPnl.toFixed(2)}
+          {formatMoneyIN(totalPnl)}
         </div>
       </div>
       <div className="text-center">
@@ -67,7 +68,7 @@ export default function PositionsSummary({
           Realised
         </div>
         <div className="text-base font-semibold">
-          ₹{(realisedPnl).toFixed(2)}
+          {formatMoneyIN(realisedPnl)}
         </div>
       </div>
     
@@ -75,7 +76,7 @@ export default function PositionsSummary({
         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
           Unrealised
         </div>
-        <div className="text-base font-semibold">₹{unrealisedPnl.toFixed(2)}</div>
+        <div className="text-base font-semibold">{formatMoneyIN(unrealisedPnl)}</div>
       </div>
       <div className="text-center">
         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">

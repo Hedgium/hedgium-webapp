@@ -2,6 +2,7 @@
 
 import React from "react";
 import { LivePosition, LivePositionsData } from "@/types/positions";
+import { formatMoneyIN } from "@/utils/formatNumber";
 
 interface LivePositionsModalProps {
   isOpen: boolean;
@@ -69,22 +70,22 @@ export default function LivePositionsModal({
                     <td>{position.sell_quantity ?? "-"}</td>
                     <td>
                       {position.average_price
-                        ? `₹${position.average_price.toFixed(2)}`
+                        ? formatMoneyIN(position.average_price)
                         : "-"}
                     </td>
                     <td>
                       {position.last_price
-                        ? `₹${position.last_price.toFixed(2)}`
+                        ? formatMoneyIN(position.last_price)
                         : "-"}
                     </td>
                     <td>
                       {position.realised_total !== undefined
-                        ? `₹${position.realised_total.toFixed(2)}`
+                        ? formatMoneyIN(position.realised_total)
                         : "-"}
                     </td>
                     <td>
                       {position.unrealised_total !== undefined
-                        ? `₹${position.unrealised_total.toFixed(2)}`
+                        ? formatMoneyIN(position.unrealised_total)
                         : "-"}
                     </td>
                     <td
@@ -95,7 +96,7 @@ export default function LivePositionsModal({
                       }
                     >
                       {position.pnl !== undefined
-                        ? `₹${position.pnl.toFixed(2)}`
+                        ? formatMoneyIN(position.pnl)
                         : "-"}
                     </td>
                   </tr>

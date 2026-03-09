@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
+import { formatMoneyIN } from '@/utils/formatNumber';
 import useAlert from '@/hooks/useAlert';
 import { RotateCw, Edit2, TrendingUp, KeyRound } from 'lucide-react';
 import Link from 'next/link';
@@ -228,7 +229,7 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                 </div>
                 <div>
                     <p className="text-gray-400 text-sm">Margin Equity</p>
-                    <p className="font-medium">₹{equityMargin?.toLocaleString()}</p>
+                    <p className="font-medium">{formatMoneyIN(equityMargin, { decimals: 0 })}</p>
                     <div className="flex space-x-2 mt-1">
                         {brokerLoggedIn && <button
                             onClick={handleRefreshMargin}

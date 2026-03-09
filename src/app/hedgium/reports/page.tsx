@@ -21,6 +21,7 @@ import {
   LineSeries,
 } from "lightweight-charts";
 import { authFetch } from "@/utils/api";
+import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionsTable, { type Position } from "@/components/positions/PositionsTable";
 
 type PnlSummary = {
@@ -355,13 +356,7 @@ export default function ReportsPage() {
                             value != null && value >= 0 ? "text-success" : "text-error"
                           }`}
                         >
-                          ₹
-                          {value != null
-                            ? value.toLocaleString("en-IN", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })
-                            : "0.00"}
+                          {formatMoneyIN(value ?? 0)}
                         </p>
                       </div>
                     ))}
@@ -491,7 +486,7 @@ export default function ReportsPage() {
                     summary.total_pnl >= 0 ? "text-success" : "text-error"
                   }`}
                 >
-                  Total PnL: ₹{summary?.total_pnl?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  Total PnL: {formatMoneyIN(summary?.total_pnl)}
                 </p>
               )}
               </div>
@@ -549,7 +544,7 @@ export default function ReportsPage() {
                             cycle.pnl >= 0 ? "text-success" : "text-error"
                           }`}
                         >
-                          ₹{cycle.pnl.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          {formatMoneyIN(cycle.pnl)}
                         </div>
                       </div>
                       <p className="text-xs text-base-content/50 mt-2">
@@ -578,11 +573,7 @@ export default function ReportsPage() {
                                           : "text-error font-medium"
                                       }
                                     >
-                                      ₹
-                                      {cycleDetails[cycle.id].totals!.total_pnl.toLocaleString(
-                                        "en-IN",
-                                        { minimumFractionDigits: 2 }
-                                      )}
+                                      {formatMoneyIN(cycleDetails[cycle.id].totals!.total_pnl)}
                                     </span>
                                   </p>
                                 )}

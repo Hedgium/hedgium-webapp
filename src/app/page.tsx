@@ -70,7 +70,7 @@ export default function Home() {
                         <pre data-prefix=">" className="text-warning"><code>Initializing Hedgium AI Trading Bot...</code></pre>
                         <pre data-prefix=">" className="text-success"><code>Strategy loaded: AI Options Premium</code></pre>
                         <pre data-prefix=">" className="text-success"><code>2023-09-10 10:15:23 | Entry: NIFTY 19800 CE</code></pre>
-                        <pre data-prefix=">" className="text-success"><code>2023-09-10 10:45:36 | Exit: +₹2,450 profit</code></pre>
+                        <pre data-prefix=">" className="text-success"><code>2023-09-10 10:45:36 | Exit: +2,450 profit</code></pre>
                         <pre data-prefix=">" className="text-success"><code>YTD Return: +187.3%</code></pre>
                       </div>
                     </div>
@@ -240,7 +240,7 @@ export default function Home() {
                 <div className="card bg-base-100 shadow-xl card-hover">
                   <div className="card-body">
                     <h3 className="card-title text-2xl">Basic</h3>
-                    <div className="text-4xl font-bold my-4">₹9,999<span className="text-lg font-normal">/month</span></div>
+                    <div className="text-4xl font-bold my-4">9,999<span className="text-lg font-normal">/month</span></div>
                     <ul className="space-y-3">
                       <li className="flex items-center">
                         <Check className="text-green-500 mr-2" size={20} />
@@ -275,7 +275,7 @@ export default function Home() {
                       <div className="badge badge-primary badge-lg">Popular</div>
                     </div>
                     <h3 className="card-title text-2xl">Pro</h3>
-                    <div className="text-4xl font-bold my-4">₹19,999<span className="text-lg font-normal">/month</span></div>
+                    <div className="text-4xl font-bold my-4">19,999<span className="text-lg font-normal">/month</span></div>
                     <ul className="space-y-3">
                       <li className="flex items-center">
                         <Check className="text-green-500 mr-2" size={20} />
@@ -307,7 +307,7 @@ export default function Home() {
                 <div className="card bg-base-100 shadow-xl card-hover">
                   <div className="card-body">
                     <h3 className="card-title text-2xl">Enterprise</h3>
-                    <div className="text-4xl font-bold my-4">₹49,999<span className="text-lg font-normal">/month</span></div>
+                    <div className="text-4xl font-bold my-4">49,999<span className="text-lg font-normal">/month</span></div>
                     <ul className="space-y-3">
                       <li className="flex items-center">
                         <Check className="text-green-500 mr-2" size={20} />

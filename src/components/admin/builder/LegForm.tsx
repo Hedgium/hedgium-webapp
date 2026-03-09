@@ -494,7 +494,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Price (₹)</span></label>
+                    <label className="label"><span className="label-text">Price</span></label>
                     <input 
                         type="number" 
                         step="0.01" 

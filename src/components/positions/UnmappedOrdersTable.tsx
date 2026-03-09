@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { formatMoneyIN } from "@/utils/formatNumber";
 
 export interface UnmappedOrder {
   id: number;
@@ -77,7 +78,7 @@ export default function UnmappedOrdersTable({
                   </span>
                 </div>
                 <div className="text-gray-500">
-                  {ord.quantity} @ ₹{ord.price} • {ord.status}
+                  {ord.quantity} @ {formatMoneyIN(ord.price)} • {ord.status}
                 </div>
               </div>
             );
@@ -127,7 +128,7 @@ export default function UnmappedOrdersTable({
                 </td>
                 <td>{order.quantity}</td>
                 <td>
-                  {order.price ? `₹${order.price.toFixed(2)}` : "Market"}
+                  {order.price ? formatMoneyIN(order.price) : "Market"}
                 </td>
                 <td>{order.order_type}</td>
                 <td>

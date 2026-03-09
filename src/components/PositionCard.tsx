@@ -3,6 +3,7 @@
 
 import React from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
+import { formatMoneyIN } from "@/utils/formatNumber";
 
 interface Position {
   id: string;
@@ -67,11 +68,11 @@ const PositionCard: React.FC<Props> = ({ position }) => {
           </div>
           <div>
             <div className="text-gray-500">Entry Price</div>
-            <div className="font-semibold">₹{entryPrice}</div>
+            <div className="font-semibold">{formatMoneyIN(entryPrice)}</div>
           </div>
           <div>
             <div className="text-gray-500">Current Price</div>
-            <div className="font-semibold">₹{currentPrice}</div>
+            <div className="font-semibold">{formatMoneyIN(currentPrice)}</div>
           </div>
         </div>
 
@@ -86,7 +87,7 @@ const PositionCard: React.FC<Props> = ({ position }) => {
             ) : (
               <TrendingDown size={16} />
             )}
-            ₹{pnl.toFixed(2)}
+            {formatMoneyIN(pnl)}
           </span>
         </div>
 

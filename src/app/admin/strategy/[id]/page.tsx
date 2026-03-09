@@ -9,6 +9,7 @@ import Adjustments from "@/components/admin/Adjustments";
 import Link from "next/link";
 import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateOnly } from "@/utils/formatDate";
+import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { CheckCircle, Plus } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
@@ -215,7 +216,7 @@ export default function StrategyDetail() {
                 : ""
             }`}>
               {strategy.total_pnl !== null && strategy.total_pnl !== undefined
-                ? `₹${Number(strategy.total_pnl).toFixed(2)}`
+                ? formatMoneyIN(Number(strategy.total_pnl))
                 : "—"}
             </div>
           </div>
