@@ -3,16 +3,14 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
-import { Shield } from "lucide-react";
 
-/** Safe redirect path: must start with / and not be protocol-relative or external */
 function getSafeNext(next: string | null): string | null {
   if (!next || typeof next !== "string") return null;
   const path = next.startsWith("/") ? next : `/${next}`;
-  if (path.includes("//")) return null; // avoid // or https://
+  if (path.includes("//")) return null;
   return path;
 }
 
@@ -21,7 +19,6 @@ const LoginContent: React.FC = () => {
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-
   const [loginError, setLoginError] = useState("");
 
   const { login, accessToken, isLoading, isInitializing } = useAuthStore();
@@ -30,11 +27,9 @@ const LoginContent: React.FC = () => {
   const nextPath = getSafeNext(searchParams.get("next"));
 
   useEffect(() => {
-    fetch("/api/session", { method: "GET", credentials: "include" })
-      .catch(console.error);
+    fetch("/api/session", { method: "GET", credentials: "include" }).catch(console.error);
   }, []);
 
-  // Redirect when logged in: use ?next= if present, else dashboard
   useEffect(() => {
     if (!isInitializing && accessToken) {
       router.push(nextPath || "/hedgium/dashboard");
@@ -42,164 +37,103 @@ const LoginContent: React.FC = () => {
   }, [accessToken, isInitializing, router, nextPath]);
 
   const handleLogin = async (e?: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
+    if (e) e.preventDefault();
+    setLoginError("");
     let valid = true;
-
     if (!email) {
       setEmailError("Email is required");
       valid = false;
-    }
-    // Email pattern check
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailError("Please enter a valid email address");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Enter a valid email address");
       valid = false;
-    } 
-    else {
-      setEmailError("");
-    }
-
+    } else setEmailError("");
     if (!password) {
       setPasswordError("Password is required");
       valid = false;
-    } else {
-      setPasswordError("");
-    }
-
+    } else setPasswordError("");
     if (valid) {
-      try{
+      try {
         await login(email, password);
       } catch (err: unknown) {
-        // Show error to user
-        const errorDetail = (err as { detail?: string })?.detail;
-        setLoginError(errorDetail || "Something went wrong");
+        setLoginError((err as { detail?: string })?.detail || "Something went wrong");
       }
     }
   };
 
   return (
-    <>
-      <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <h2 className="text-center text-3xl font-bold text-base-content">
+    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
+      <div className="w-full max-w-[380px]">
+        <div className="text-center mb-6">
+          <h1 className="text-xl font-semibold text-base-content tracking-tight">
             Log in to <span className="text-primary">Hedgium</span>
-          </h2>
-
-          <div className="card bg-base-100 border border-base-300 card-hover">
-            <div className="card-body space-y-2">
-              {accessToken ? (
-                <div className="text-center">
-                  <p className="text-green-600 font-semibold text-lg">
-                    ✅ Login successful!
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {/* Email */}
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium">
-                      Email address
-                    </label>
-                    <div className="mt-1 relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                        <Mail className="h-5 w-5 text-gray-400 z-10" />
-                      </div>
-                      <input
-                        id="email"
-                        type="email"
-                        className={`input input-bordered w-full pl-10 ${
-                          emailError ? "input-error" : ""
-                        }`}
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            handleLogin(e);
-                          }
-                        }}
-                        placeholder="Enter your email"
-                      />
-                    </div>
-                    {emailError && (
-                      <p className="mt-2 text-sm text-red-600">{emailError}</p>
-                    )}
-                  </div>
-
-                  {/* Password */}
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium">
-                      Password
-                    </label>
-                    <div className="mt-1 relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                        <Lock className="h-5 w-5 text-gray-400 z-10" />
-                      </div>
-                      <input
-                        id="password"
-                        type="password"
-                        className={`input input-bordered w-full pl-10 ${
-                          passwordError ? "input-error" : ""
-                        }`}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            handleLogin(e);
-                          }
-                        }}
-                        placeholder="Enter your password"
-                      />
-                    </div>
-                    {passwordError && (
-                      <p className="mt-2 text-sm text-red-600">{passwordError}</p>
-                    )}
-                    <p className="mt-2 text-right">
-                      <Link
-                        href="/forgot-password"
-                        className="text-sm text-primary hover:underline"
-                      >
-                        Forgot password?
-                      </Link>
-                    </p>
-                  </div>
-
-                  {/* Login Button */}
-                  <button
-                    className="btn btn-primary w-full"
-                    onClick={handleLogin}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Loading..." : "Log In"}
-                  </button>
-
-                  {loginError && (
-                    <p className="text-red-600 text-sm text-center mb-2">{loginError}</p>
-                  )}
-
-                  <div className="text-center text-sm space-y-2">
-                    <p className="text-xs text-base-content/50 flex items-center justify-center gap-1">
-                      <Shield className="w-3 h-3" />
-                      Your data is securely encrypted and protected
-                    </p>
-
-                    <p>
-                      Don&apos;t have an account?{" "}
-                      <Link
-                        href="/register"
-                        className="font-medium text-primary hover:text-primary-dark"
-                      >
-                        Sign up
-                      </Link>
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+          </h1>
+          <p className="text-sm text-base-content/60 mt-1">Enter your credentials to continue</p>
         </div>
+
+        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+          {accessToken ? (
+            <div className="py-4 text-center">
+              <p className="text-sm font-medium text-success">Login successful. Redirecting…</p>
+            </div>
+          ) : (
+            <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-xs font-medium text-base-content/80 mb-1.5">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                  <input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${emailError ? "input-error" : ""}`}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </div>
+                {emailError && <p className="mt-1 text-xs text-error">{emailError}</p>}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="password" className="block text-xs font-medium text-base-content/80">Password</label>
+                  <Link href="/forgot-password" className="text-xs text-primary hover:underline">Forgot?</Link>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                  <input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${passwordError ? "input-error" : ""}`}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin(e)}
+                    placeholder="••••••••"
+                  />
+                </div>
+                {passwordError && <p className="mt-1 text-xs text-error">{passwordError}</p>}
+              </div>
+
+              {loginError && <p className="text-xs text-error text-center py-1">{loginError}</p>}
+
+              <button
+                type="submit"
+                className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case"
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log in"}
+              </button>
+            </form>
+          )}
+        </div>
+
+        <p className="text-center text-xs text-base-content/50 mt-4">
+          Don&apos;t have an account?{" "}
+          <Link href="/onboarding" className="text-primary font-medium hover:underline">Sign up</Link>
+        </p>
       </div>
-    </>
+    </div>
   );
 };
 

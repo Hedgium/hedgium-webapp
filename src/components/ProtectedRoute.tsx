@@ -22,11 +22,11 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const kycRoute = () => {
     switch (user?.signup_step) {
       case "initiated":
-        return "/register/complete-profile";
+        return "/onboarding/complete-profile";
       case "documents_uploaded":
-        return "/register/add-broker";
+        return "/onboarding/add-broker";
       case "broker_profile_added":
-        return "/register/verification";
+        return "/onboarding/verification";
       default:
         return "/hedgium/dashboard/";
     }

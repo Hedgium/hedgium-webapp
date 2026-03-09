@@ -69,7 +69,7 @@ export default function Navbar() {
         <Link href="/login" className="btn btn-ghost text-gray-700 hover:text-primary">
           Login
         </Link>
-        <Link href="/register" className="btn btn-primary shadow hover:shadow-md">
+        <Link href="/onboarding" className="btn btn-primary shadow hover:shadow-md">
           Get Started
         </Link>
       </div>

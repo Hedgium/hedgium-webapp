@@ -1,36 +1,228 @@
 "use client";
+import { authFetch } from "@/utils/api";
+import Link from "next/link";
+import React from "react";
+import { CheckCircle } from "lucide-react";
 
-import { useState } from "react";
-import ScheduledTasks from "@/components/admin/ScheduledTasks";
-import RunningTasks from "@/components/admin/RunningTasks";
+interface Version {
+  version: number,
+  approved: boolean,
+}
 
-export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<"scheduled" | "running">(
-    "scheduled"
-  );
+interface Strategy {
+  id: number;
+  name: string;
+  adjustment_count: number;
+  trade_cycle_count: number;
+  leg_count: number;
+  total_pnl: number | null;
+  completed: boolean;
+  completed_at: string | null;
+  versions: Version[]
+}
 
+// ---- SAMPLE DATA ----
+// const strategies: Strategy[] = [
+//   {
+//     id: 1,
+//     name: "NIFTY Credit Spread",
+//     versions: [
+//       {
+//         version: 1,
+//         approved: true,
+//         legs: [
+//           { leg_index: 1, action: "SELL", quantity: 50, instrument: "NIFTY24JAN20000CE", price: 120 },
+//           { leg_index: 2, action: "BUY", quantity: 50, instrument: "NIFTY24JAN20200CE", price: 60 },
+//         ],
+//       },
+//       {
+//         version: 2,
+//         approved: false,
+//         legs: [
+//           { leg_index: 1, action: "SELL", quantity: 50, instrument: "NIFTY24JAN19900CE", price: null },
+//         ],
+//       },
+//     ],
+//   },
+//   {
+//     id: 2,
+//     name: "BANKNIFTY Iron Condor",
+//     versions: [],
+//   },
+// ];
+
+
+
+export default function Page() {
+
+
+  const [strategies, setStrategies] = React.useState<Strategy[]>([]);
+  const [next, setNext] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState<boolean>(false);
+  const [isActive, setIsActive] = React.useState<string>("");
+
+  async function fetchStrategies() {
+    setLoading(true);
+    const res = await authFetch("myadmin/strategies/?page=1&page_size=10" + (isActive === "" ? "" : "&is_active=" + isActive));
+    const data = await res.json();
+    if (data.next) {
+      setNext(data.next.split("api/")[1]);
+    } else {
+      setNext(null);
+    }
+    // console.log(data.next)
+    setStrategies(data.results);
+    setLoading(false);
+  }
+
+  async function loadMoreStrategies() {
+    if (!next) return;
+    setLoading(true);
+    const res = await authFetch(next);
+    const data = await res.json();
+    if (data.next) {
+      setNext(data.next.split("api/")[1]);
+    } else {
+      setNext(null);
+    }
+    setStrategies((prev) => [...prev, ...data.results]);
+    setLoading(false);
+  }
+
+  React.useEffect(() => {
+    fetchStrategies();
+  }, [isActive])
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
-      <div className="flex flex-col gap-4">
-        <div className="tabs tabs-boxed w-fit">
-          <button
-            className={`tab ${activeTab === "scheduled" ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("scheduled")}
-          >
-            Scheduled Tasks
-          </button>
-          <button
-            className={`tab ${activeTab === "running" ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("running")}
-          >
-            Running Tasks
-          </button>
+      <div className="flex items-center justify-between">
+
+        <h3 className="text-2xl font-bold">Strategies</h3>
+
+        <div className="form-control ">
+          <select onChange={(e) => setIsActive(e.target.value)} defaultValue={isActive} className="select select-bordered">
+            <option value="" >All</option>
+            <option value="true"  >Active</option>
+            <option value="false"  >Inactive</option>
+          </select>
         </div>
 
-        {activeTab === "scheduled" ? <ScheduledTasks /> : <RunningTasks />}
       </div>
+
+
+
+      <div className="overflow-x-auto rounded-xl shadow">
+        <table className="table table-zebra w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Allocated</th>
+              <th>Total Adjustments</th>
+              <th>Total Legs</th>
+              <th>Total PnL</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {(strategies.length === 0 && !loading) ? (
+              <tr>
+                <td colSpan={8} className="text-center py-6">
+                  No strategies available.
+                </td>
+              </tr>
+            ) : (
+              strategies.map((strategy) => (
+                <tr key={strategy.id}>
+                  <td>{strategy.id}</td>
+                  <td className="font-semibold">{strategy.name}</td>
+                  <td>
+                    {strategy.completed ? (
+                      <div className="badge badge-success badge-sm gap-1">
+                        <CheckCircle size={12} />
+                        Completed
+                      </div>
+                    ) : (
+                      <div className="badge badge-outline badge-sm">Active</div>
+                    )}
+                  </td>
+                  <td>{strategy.trade_cycle_count}</td>
+                  <td>
+                    {/* {strategy.adjustment_count ?? 0} */}
+
+
+                      {strategy.versions.map((adj, i) => 
+                        <div key={i} className="mb-1 pb-0">
+                            <span className="font-semibold">
+                              v{adj.version}_
+                            </span>
+                            <span
+                              className={`badge badge-sm badge-outline ${adj.approved ? "badge-success" : "badge-error"
+                                }`}
+                            >
+                              {adj.approved ? "Approved" : "Not Approved"}
+                            </span>
+                        </div>)}
+                  </td>
+                  <td>{strategy.leg_count ?? 0}</td>
+                  <td>
+                    {strategy.total_pnl !== null
+                      ? Number(strategy.total_pnl).toFixed(2)
+                      : "—"}
+                  </td>
+
+                  <td>
+                    <Link href={`/admin/strategy/${strategy.id}`} className="btn btn-sm btn-outline">View</Link>
+                  </td>
+                </tr>
+              ))
+            )}
+
+            {loading &&
+              <>
+                {[1, 2, 3].map((i) => (
+                  <tr key={i}>
+                    <td>
+                      <div className="h-4 w-8 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-32 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-4 w-16 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                    <td>
+                      <div className="h-8 w-16 bg-gray-300 rounded animate-pulse"></div>
+                    </td>
+                  </tr>
+                ))}
+              </>
+            }
+
+
+          </tbody>
+        </table>
+      </div>
+
+      {(next && !loading) &&
+        <button onClick={loadMoreStrategies} className="btn btn-sm">
+          Load More
+        </button>}
+
     </div>
   );
 }

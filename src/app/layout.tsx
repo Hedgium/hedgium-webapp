@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     useEffect(() => {
       if (!isInitializing && accessToken){
         // Don't redirect while the user is actively going through email verification
-        if (pathname === "/register/verify-email") return;
+        if (pathname === "/onboarding/verify-email") return;
 
         if (user?.kyc_skipped) {
           if (!pathname.includes("hedgium")) {
@@ -39,14 +39,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           return;
         }
         if (user?.signup_step === "initiated") {
-          router.push("/register/verify-email");
+          router.push("/onboarding/verify-email");
         } else if (user?.signup_step === "email_verified") {
-          router.push("/register/complete-profile");
+          router.push("/onboarding/complete-profile");
         }
         else if(user?.signup_step=="documents_uploaded"){
-          router.push("/register/add-broker")
+          router.push("/onboarding/add-broker")
         } else if (user?.signup_step=="broker_profile_added"){
-          router.push("/register/verification")
+          router.push("/onboarding/verification")
         } 
         // else if (user?.signup_step=="verified" && !pathname.includes("hedgium")){
         //   router.push("/hedgium/dashboard/")

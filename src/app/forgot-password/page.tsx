@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Mail, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import { myFetch } from "@/utils/api";
 
 export default function ForgotPasswordPage() {
@@ -11,8 +10,6 @@ export default function ForgotPasswordPage() {
   const [emailError, setEmailError] = useState("");
   const [message, setMessage] = useState<"idle" | "success" | "error">("idle");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +21,7 @@ export default function ForgotPasswordPage() {
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailError("Please enter a valid email address");
+      setEmailError("Enter a valid email address");
       return;
     }
 
@@ -48,84 +45,81 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <h2 className="text-center text-3xl font-bold text-base-content">
-          Forgot <span className="text-primary">password</span>?
-        </h2>
-        <p className="text-center text-base-content/70 text-sm">
-          Enter your email and we&apos;ll send you a link to reset your password.
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
+      <div className="w-full max-w-[380px]">
+        <div className="text-center mb-6">
+          <h1 className="text-xl font-semibold text-base-content tracking-tight">
+            Forgot <span className="text-primary">password</span>?
+          </h1>
+          <p className="text-sm text-base-content/60 mt-1">
+            Enter your email and we&apos;ll send a reset link
+          </p>
+        </div>
 
-        <div className="card bg-base-100 border border-base-300 card-hover">
-          <div className="card-body space-y-4">
-            {message === "success" ? (
-              <div className="space-y-4">
-                <p className="text-success font-medium text-center">
-                  If an account exists for that email, we&apos;ve sent a reset link. Check your inbox and spam folder.
-                </p>
-                <Link href="/login" className="btn btn-primary w-full gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to login
-                </Link>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-1">
-                    Email address
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="z-10 h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      id="email"
-                      type="email"
-                      className={`input input-bordered w-full pl-10 ${
-                        emailError ? "input-error" : ""
-                      }`}
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setEmailError("");
-                      }}
-                      placeholder="Enter your email"
-                      disabled={isSubmitting}
-                      autoComplete="email"
-                    />
-                  </div>
-                  {emailError && (
-                    <p className="mt-2 text-sm text-error">{emailError}</p>
-                  )}
-                </div>
-
-                {message === "error" && (
-                  <p className="text-sm text-error text-center">
-                    Something went wrong. Please try again.
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  className="btn btn-primary w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Sending…" : "Send reset link"}
-                </button>
-              </form>
-            )}
-
-            <div className="text-center pt-2">
+        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+          {message === "success" ? (
+            <div className="space-y-4">
+              <p className="text-sm text-success text-center">
+                If an account exists for that email, we&apos;ve sent a reset link. Check your inbox and spam folder.
+              </p>
               <Link
                 href="/login"
-                className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back to login
               </Link>
             </div>
-          </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-xs font-medium text-base-content/80 mb-1.5">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                  <input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${
+                      emailError ? "input-error" : ""
+                    }`}
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailError("");
+                    }}
+                    placeholder="you@example.com"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                {emailError && <p className="mt-1 text-xs text-error">{emailError}</p>}
+              </div>
+
+              {message === "error" && (
+                <p className="text-xs text-error text-center">Something went wrong. Please try again.</p>
+              )}
+
+              <button
+                type="submit"
+                className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
+              </button>
+            </form>
+          )}
+
+          <p className="text-center mt-4">
+            <Link
+              href="/login"
+              className="text-xs text-base-content/50 hover:text-primary inline-flex items-center gap-1"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Back to login
+            </Link>
+          </p>
         </div>
       </div>
     </div>

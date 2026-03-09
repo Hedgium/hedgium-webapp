@@ -4,14 +4,17 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
+import VerifyEmail from "@/components/VerifyEmail";
 
 const ProfileTab: React.FC = () => {
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const alert = useAlert();
   const [loading, setLoading] = useState(false);
   const [autoTradeAllowed, setAutoTradeAllowed] = useState(false);
   const [profileId, setProfileId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [verifyEmailModalOpen, setVerifyEmailModalOpen] = useState(false);
 
   /** 🔍 Fetch active profile to get auto_trade_allowed */
   const fetchProfile = async () => {
@@ -97,6 +100,22 @@ const ProfileTab: React.FC = () => {
         <div>
           <p className="text-sm text-base-content/70">Email</p>
           <p className="font-medium">{user.email || "—"}</p>
+          {user.email_verified ? (
+            <p className="text-xs text-success mt-1">Email verified</p>
+          ) : (
+            <div className="mt-2">
+              <p className="text-xs text-base-content/70 mb-2">
+                Verify your email to secure your account and receive important updates.
+              </p>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm normal-case"
+                onClick={() => setVerifyEmailModalOpen(true)}
+              >
+                Verify email
+              </button>
+            </div>
+          )}
         </div>
         <div>
           <p className="text-sm text-base-content/70">Phone</p>
@@ -133,6 +152,40 @@ const ProfileTab: React.FC = () => {
           <div className="alert alert-error">
             <span className="text-sm">{error}</span>
           </div>
+        )}
+
+        {verifyEmailModalOpen && (
+          <dialog open className="modal modal-open">
+            <div className="modal-box max-h-[85vh] overflow-y-auto w-11/12 max-w-md">
+              <VerifyEmail
+                autoSendOnMount={true}
+                showSkip={false}
+                successPath=""
+                skipPath=""
+                onVerified={() => {
+                  setVerifyEmailModalOpen(false);
+                  updateUser({ email_verified: true, signup_step: "email_verified" });
+                }}
+              />
+              <div className="modal-action pt-2">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm normal-case"
+                  onClick={() => setVerifyEmailModalOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <div
+              className="modal-backdrop"
+              onClick={() => setVerifyEmailModalOpen(false)}
+              onKeyDown={(e) => e.key === "Escape" && setVerifyEmailModalOpen(false)}
+              role="button"
+              tabIndex={0}
+              aria-label="Close modal"
+            />
+          </dialog>
         )}
       </div>
     </div>

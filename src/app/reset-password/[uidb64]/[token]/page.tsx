@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, ArrowLeft } from "lucide-react";
+import { Lock, ArrowLeft, Loader2 } from "lucide-react";
 import { myFetch } from "@/utils/api";
 
 export default function ResetPasswordPage() {
@@ -27,10 +27,10 @@ export default function ResetPasswordPage() {
 
     let valid = true;
     if (!newPassword) {
-      setNewPasswordError("New password is required");
+      setNewPasswordError("Password is required");
       valid = false;
     } else if (newPassword.length < 8) {
-      setNewPasswordError("Password must be at least 8 characters");
+      setNewPasswordError("At least 8 characters");
       valid = false;
     }
     if (newPassword !== confirmPassword) {
@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
       if (res.ok && data.success) {
         setSuccess(true);
       } else {
-        setSubmitError(data.message || "Invalid or expired link. Please request a new reset.");
+        setSubmitError(data.message || "Invalid or expired link. Request a new reset.");
       }
     } catch {
       setSubmitError("Something went wrong. Please try again.");
@@ -64,21 +64,24 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <h2 className="text-center text-3xl font-bold text-base-content">
-            Password <span className="text-primary">reset</span>
-          </h2>
-          <div className="card bg-base-100 border border-base-300 card-hover">
-            <div className="card-body space-y-4">
-              <p className="text-success font-medium text-center">
-                Your password has been reset successfully. You can now log in with your new password.
-              </p>
-              <Link href="/login" className="btn btn-primary w-full gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to login
-              </Link>
-            </div>
+      <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
+        <div className="w-full max-w-[380px]">
+          <div className="text-center mb-6">
+            <h1 className="text-xl font-semibold text-base-content tracking-tight">
+              Password <span className="text-primary">reset</span>
+            </h1>
+          </div>
+          <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+            <p className="text-sm text-success text-center mb-4">
+              Your password has been reset. You can now log in with your new password.
+            </p>
+            <Link
+              href="/login"
+              className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to login
+            </Link>
           </div>
         </div>
       </div>
@@ -86,101 +89,91 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen hero-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <h2 className="text-center text-3xl font-bold text-base-content">
-          Set new <span className="text-primary">password</span>
-        </h2>
-        <p className="text-center text-base-content/70 text-sm">
-          Enter your new password below.
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
+      <div className="w-full max-w-[380px]">
+        <div className="text-center mb-6">
+          <h1 className="text-xl font-semibold text-base-content tracking-tight">
+            Set new <span className="text-primary">password</span>
+          </h1>
+          <p className="text-sm text-base-content/60 mt-1">
+            Enter your new password below
+          </p>
+        </div>
 
-        <div className="card bg-base-100 border border-base-300 card-hover">
-          <div className="card-body space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium mb-1">
-                  New password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="z-10 h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="newPassword"
-                    type="password"
-                    className={`input input-bordered w-full pl-10 ${
-                      newPasswordError ? "input-error" : ""
-                    }`}
-                    value={newPassword}
-                    onChange={(e) => {
-                      setNewPassword(e.target.value);
-                      setNewPasswordError("");
-                    }}
-                    placeholder="Enter new password"
-                    disabled={isSubmitting}
-                    autoComplete="new-password"
-                    minLength={8}
-                  />
-                </div>
-                {newPasswordError && (
-                  <p className="mt-2 text-sm text-error">{newPasswordError}</p>
-                )}
+        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="newPassword" className="block text-xs font-medium text-base-content/80 mb-1.5">
+                New password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                <input
+                  id="newPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${
+                    newPasswordError ? "input-error" : ""
+                  }`}
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setNewPasswordError("");
+                  }}
+                  placeholder="••••••••"
+                  disabled={isSubmitting}
+                />
               </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
-                  Confirm password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="z-10 h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    className={`input input-bordered w-full pl-10 ${
-                      confirmError ? "input-error" : ""
-                    }`}
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      setConfirmError("");
-                    }}
-                    placeholder="Confirm new password"
-                    disabled={isSubmitting}
-                    autoComplete="new-password"
-                    minLength={8}
-                  />
-                </div>
-                {confirmError && (
-                  <p className="mt-2 text-sm text-error">{confirmError}</p>
-                )}
-              </div>
-
-              {submitError && (
-                <p className="text-sm text-error text-center">{submitError}</p>
-              )}
-
-              <button
-                type="submit"
-                className="btn btn-primary w-full"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Resetting…" : "Reset password"}
-              </button>
-            </form>
-
-            <div className="text-center pt-2">
-              <Link
-                href="/login"
-                className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to login
-              </Link>
+              {newPasswordError && <p className="mt-1 text-xs text-error">{newPasswordError}</p>}
             </div>
-          </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-xs font-medium text-base-content/80 mb-1.5">
+                Confirm password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${
+                    confirmError ? "input-error" : ""
+                  }`}
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setConfirmError("");
+                  }}
+                  placeholder="••••••••"
+                  disabled={isSubmitting}
+                />
+              </div>
+              {confirmError && <p className="mt-1 text-xs text-error">{confirmError}</p>}
+            </div>
+
+            {submitError && <p className="text-xs text-error text-center">{submitError}</p>}
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reset password"}
+            </button>
+          </form>
+
+          <p className="text-center mt-4">
+            <Link
+              href="/login"
+              className="text-xs text-base-content/50 hover:text-primary inline-flex items-center gap-1"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Back to login
+            </Link>
+          </p>
         </div>
       </div>
     </div>

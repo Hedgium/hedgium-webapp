@@ -33,6 +33,7 @@ export interface User {
   username: string;
   email: string;
   mobile: string | null;
+  email_verified?: boolean;
   verified: boolean;
   signup_step: string;
   created_at: string; // ISO date string

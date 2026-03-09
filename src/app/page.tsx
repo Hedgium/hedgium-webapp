@@ -52,7 +52,7 @@ export default function Home() {
                     Achieve the best annual returns in the market.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <Link href="/register" className="btn btn-primary btn-lg">
+                    <Link href="/onboarding" className="btn btn-primary btn-lg">
                       Get Started
                       <ArrowRight size={20} />
                     </Link>
