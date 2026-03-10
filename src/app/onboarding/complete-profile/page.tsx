@@ -19,6 +19,7 @@ const CompleteProfile: React.FC = () => {
   const [panDocument, setPanDocument] = useState<File | null>(null);
   const [aadharDocument, setAadharDocument] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,9 +51,12 @@ const CompleteProfile: React.FC = () => {
 
       if (!skip) {
         updateUser({ kyc_skipped: skip, signup_step: "documents_uploaded" });
-        router.push("/onboarding/add-broker");
+        alert.success("Profile updated", { duration: 3000 });
+        setRedirecting(true);
+        router.push("/onboarding/verification");
+        return;
       }
-      alert.success(skip ? "Skipped KYC" : "Profile updated", { duration: 3000 });
+      alert.success("Skipped KYC", { duration: 3000 });
 
       if (!skip && (panDocument || aadharDocument)) {
         const formData = new FormData();
@@ -147,14 +151,14 @@ const CompleteProfile: React.FC = () => {
             <div className="flex gap-2 pt-2">
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || redirecting}
                 className="btn btn-primary btn-sm flex-1 h-9 text-sm font-medium normal-case"
               >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit"}
+                {redirecting ? "Redirecting..." : submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit"}
               </button>
               <button
                 type="button"
-                disabled={submitting}
+                disabled={submitting || redirecting}
                 onClick={handleSkip}
                 className="btn btn-outline btn-sm flex-1 h-9 text-sm normal-case"
               >

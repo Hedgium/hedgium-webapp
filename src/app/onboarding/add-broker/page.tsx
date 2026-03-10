@@ -20,6 +20,7 @@ const BrokerSetup: React.FC = () => {
   const [secretKey, setSecretKey] = useState("");
   const [brokerTwofa, setBrokerTwofa] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [helpField, setHelpField] = useState<string | null>(null);
 
@@ -68,8 +69,8 @@ const BrokerSetup: React.FC = () => {
       alert.error("Enter Secret Key", { duration: 3000 });
       return;
     }
-    if ((brokerName === "SHOONYA" || brokerName === "KOTAKNEO") && !brokerTwofa) {
-      alert.error(brokerName === "KOTAKNEO" ? "Enter TOTP Secret" : "Enter 2FA Code", { duration: 3000 });
+    if (!brokerTwofa) {
+      alert.error("Enter TOTP Secret", { duration: 3000 });
       return;
     }
 
@@ -89,17 +90,17 @@ const BrokerSetup: React.FC = () => {
         broker_api_key: apiKey,
       };
       if (brokerName === "ZERODHA") formData.broker_secret_key = secretKey;
-      if (brokerName === "SHOONYA" || brokerName === "KOTAKNEO") formData.broker_twofa = brokerTwofa;
+      formData.broker_twofa = brokerTwofa;
 
       const res = await authFetch("profiles/", { method: "POST", body: JSON.stringify(formData) });
       if (res.ok) {
-        updateUser({ signup_step: "broker_profile_added" });
         alert.success("Broker added", { duration: 3000 });
+        setRedirecting(true);
         router.push("/onboarding/verification/");
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        alert.error(errorData.message || "Failed to add broker", { duration: 4000 });
+        return;
       }
+      const errorData = await res.json().catch(() => ({}));
+      alert.error(errorData.message || "Failed to add broker", { duration: 4000 });
     } catch (err: unknown) {
       alert.error(err instanceof Error ? err.message : "Something went wrong", { duration: 4000 });
     } finally {
@@ -204,11 +205,11 @@ const BrokerSetup: React.FC = () => {
                 />
               </div>
             )}
-            {(brokerName === "SHOONYA" || brokerName === "KOTAKNEO") && (
+            {brokerName && (
               <div>
                 <div className="flex items-center justify-between gap-2 mb-1.5">
                   <label className="text-xs font-medium text-base-content/80">
-                    {brokerName === "KOTAKNEO" ? "TOTP Secret" : "2FA"}
+                    TOTP Secret
                   </label>
                   <button
                     type="button"
@@ -224,7 +225,7 @@ const BrokerSetup: React.FC = () => {
                   value={brokerTwofa}
                   onChange={(e) => setBrokerTwofa(e.target.value)}
                   className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
-                  placeholder={brokerName === "KOTAKNEO" ? "TOTP secret" : "2FA code"}
+                  placeholder="TOTP secret"
                 />
               </div>
             )}
@@ -232,14 +233,14 @@ const BrokerSetup: React.FC = () => {
             <div className="flex gap-2 pt-2">
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || redirecting}
                 className="btn btn-primary btn-sm flex-1 h-9 text-sm font-medium normal-case"
               >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save broker"}
+                {redirecting ? "Redirecting..." : submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save broker"}
               </button>
               <button
                 type="button"
-                disabled={submitting}
+                disabled={submitting || redirecting}
                 onClick={handleSkip}
                 className="btn btn-outline btn-sm flex-1 h-9 text-sm normal-case"
               >

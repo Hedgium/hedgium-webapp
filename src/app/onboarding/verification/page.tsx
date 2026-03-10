@@ -13,6 +13,7 @@ const VerificationPending: React.FC = () => {
   const router = useRouter();
   const alert = useAlert();
   const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const handleSkip = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +35,7 @@ const VerificationPending: React.FC = () => {
 
   useEffect(() => {
     if (user?.signup_step === "verified") {
+      setRedirecting(true);
       alert.success("Verified. Redirecting to dashboard.");
       router.push("/hedgium/dashboard");
     }
@@ -42,30 +44,36 @@ const VerificationPending: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-base-200 px-4 py-8">
       <div className="w-full max-w-2xl mb-4">
-        <SignUpStepper currentStepId="broker_profile_added" />
+        <SignUpStepper currentStepId="documents_uploaded" />
       </div>
 
       <div className="w-full max-w-[380px]">
         <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-warning/10 p-3">
-              <Clock className="w-8 h-8 text-warning" />
-            </div>
-          </div>
-          <h1 className="text-xl font-semibold text-base-content tracking-tight">
-            Verification pending
-          </h1>
-          <p className="text-sm text-base-content/60 mt-2">
-            Your profile is under review. We&apos;ll notify you once verification is complete.
-          </p>
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={handleSkip}
-            className="btn btn-outline btn-sm h-9 text-sm normal-case mt-4"
-          >
-            Skip verification
-          </button>
+          {redirecting ? (
+            <p className="text-sm font-medium text-base-content/80">Redirecting to dashboard...</p>
+          ) : (
+            <>
+              <div className="flex justify-center mb-4">
+                <div className="rounded-full bg-warning/10 p-3">
+                  <Clock className="w-8 h-8 text-warning" />
+                </div>
+              </div>
+              <h1 className="text-xl font-semibold text-base-content tracking-tight">
+                Verification pending
+              </h1>
+              <p className="text-sm text-base-content/60 mt-2">
+                Your profile is under review. We&apos;ll notify you once verification is complete.
+              </p>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={handleSkip}
+                className="btn btn-outline btn-sm h-9 text-sm normal-case mt-4"
+              >
+                Skip verification
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

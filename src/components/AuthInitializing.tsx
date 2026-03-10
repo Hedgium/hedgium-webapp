@@ -136,19 +136,21 @@ export default function AuthInitializingProvider({
 
   if (hasTimedOut || initState === "error") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-100">
-        <div className="text-center space-y-4 max-w-md mx-auto px-4">
-          <div className="flex justify-center">
-            <AlertCircle className="w-16 h-16 text-error" />
-          </div>
-          <h2 className="text-2xl font-semibold text-base-content">
-            Authentication Timeout
-          </h2>
-          <p className="text-base-content/70">
-            Taking too long to authenticate. Redirecting to login...
-          </p>
-          <div className="flex justify-center">
-            <span className="loading loading-spinner loading-md text-error"></span>
+      <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
+        <div className="w-full max-w-[400px]">
+          <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6 text-center space-y-4">
+            <div className="flex justify-center">
+              <AlertCircle className="w-12 h-12 text-error" />
+            </div>
+            <h2 className="text-xl font-semibold text-base-content tracking-tight">
+              Authentication timeout
+            </h2>
+            <p className="text-sm text-base-content/60">
+              Taking too long to authenticate. Redirecting to login...
+            </p>
+            <div className="flex justify-center">
+              <Loader2 className="w-6 h-6 text-error animate-spin" />
+            </div>
           </div>
         </div>
       </div>
@@ -158,23 +160,22 @@ export default function AuthInitializingProvider({
   // Show loading UI
   if (showLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-100">
-        <div className="w-full max-w-md mx-auto px-6">
-          <div className="space-y-6">
+      <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
+        <div className="w-full max-w-[400px]">
+          <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
             {/* Header */}
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-semibold text-base-content">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold text-base-content tracking-tight">
                 Initializing
               </h2>
-              <p className="text-sm text-base-content/70">
+              <p className="text-sm text-base-content/60 mt-1">
                 Please wait while we set things up
               </p>
             </div>
 
             {/* State Steps */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {states.map((state, index) => {
-                const Icon = state.icon;
                 const isActive = state.key === initState;
                 const isCompleted = state.completed && index < currentStateIndex;
                 const showLoader = isActive && (state.key === "checking-login" || state.key === "redirecting");
@@ -184,37 +185,37 @@ export default function AuthInitializingProvider({
                 return (
                   <div
                     key={state.key}
-                    className={`flex items-center gap-4 p-4 rounded-lg transition-all ${
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
                       isActive
                         ? showError
-                          ? "bg-error/10 border-2 border-error"
-                          : "bg-primary/10 border-2 border-primary"
+                          ? "bg-error/5 border-error"
+                          : "bg-primary/5 border-primary"
                         : isCompleted
-                        ? "bg-success/10 border-2 border-success"
-                        : "bg-base-200 border-2 border-transparent"
+                        ? "bg-success/5 border-success"
+                        : "bg-base-200/50 border-base-300"
                     }`}
                   >
                     <div className="flex-shrink-0">
                       {showSuccess ? (
-                        <CheckCircle2 className="w-6 h-6 text-success" />
+                        <CheckCircle2 className="w-5 h-5 text-success" />
                       ) : showError ? (
-                        <X className="w-6 h-6 text-error" />
+                        <X className="w-5 h-5 text-error" />
                       ) : showLoader ? (
-                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                        <Loader2 className="w-5 h-5 text-primary animate-spin" />
                       ) : (
-                        <div className="w-6 h-6 rounded-full border-2 border-base-300" />
+                        <div className="w-5 h-5 rounded-full border border-base-300" />
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <p
-                        className={`font-medium ${
+                        className={`text-sm font-medium ${
                           isActive
                             ? showError
                               ? "text-error"
                               : "text-primary"
                             : isCompleted
                             ? "text-success"
-                            : "text-base-content/50"
+                            : "text-base-content/60"
                         }`}
                       >
                         {state.label}
@@ -226,16 +227,14 @@ export default function AuthInitializingProvider({
             </div>
 
             {/* Progress indicator */}
-            <div className="pt-4">
-              <div className="w-full bg-base-200 rounded-full h-2">
+            <div className="mt-4 pt-4 border-t border-base-300">
+              <div className="w-full bg-base-200 rounded-full h-1.5">
                 <div
-                  className="bg-primary h-2 rounded-full transition-all duration-500"
+                  className="bg-primary h-1.5 rounded-full transition-all duration-500"
                   style={{
-                    width: `${
-                      ((currentStateIndex + 1) / states.length) * 100
-                    }%`,
+                    width: `${((currentStateIndex + 1) / states.length) * 100}%`,
                   }}
-                ></div>
+                />
               </div>
             </div>
           </div>

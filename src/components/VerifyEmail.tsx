@@ -53,6 +53,7 @@ export default function VerifyEmail({
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [verifying, setVerifying] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState("");
@@ -173,7 +174,11 @@ export default function VerifyEmail({
         alert.success("Email verified.", { duration: 3000 });
         updateUser({ signup_step: "email_verified", email_verified: true });
         onVerified?.();
-        if (successPath) router.push(successPath);
+        if (successPath) {
+          setRedirecting(true);
+          router.push(successPath);
+          return;
+        }
       } else {
         setError(data.error || "Invalid code. Try again.");
         setOtp(Array(OTP_LENGTH).fill(""));
@@ -230,9 +235,9 @@ export default function VerifyEmail({
         type="button"
         className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case mt-4"
         onClick={handleVerify}
-        disabled={verifying || otp.join("").length < OTP_LENGTH}
+        disabled={verifying || redirecting || otp.join("").length < OTP_LENGTH}
       >
-        {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify email"}
+        {redirecting ? "Redirecting..." : verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify email"}
       </button>
 
       <div className="text-xs text-base-content/60 text-center mt-4">

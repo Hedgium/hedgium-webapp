@@ -43,9 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         } else if (user?.signup_step === "email_verified") {
           router.push("/onboarding/complete-profile");
         }
-        else if(user?.signup_step=="documents_uploaded"){
-          router.push("/onboarding/add-broker")
-        } else if (user?.signup_step=="broker_profile_added"){
+        else if(user?.signup_step=="documents_uploaded" || user?.signup_step=="broker_profile_added"){
           router.push("/onboarding/verification")
         } 
         // else if (user?.signup_step=="verified" && !pathname.includes("hedgium")){

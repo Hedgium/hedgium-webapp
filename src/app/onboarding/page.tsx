@@ -19,6 +19,7 @@ function Onboarding() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [registering, setRegistering] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [first_nameError, setFirstNameError] = useState("");
   const [last_nameError, setLastNameError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -85,11 +86,12 @@ function Onboarding() {
         alert.success("Account created. Please verify your email.", { duration: 3000 });
         await login(email, password);
         updateUser({ signup_step: "initiated" });
+        setRedirecting(true);
         router.push("/onboarding/verify-email");
-      } else {
-        const errorRes = await res.json();
-        setError(errorRes?.detail || "Something went wrong");
+        return;
       }
+      const errorRes = await res.json();
+      setError(errorRes?.detail || "Something went wrong");
     } catch (err) {
       console.error(err);
       alert.error("Something went wrong", { duration: 5000 });
@@ -198,9 +200,9 @@ function Onboarding() {
             <button
               type="submit"
               className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case"
-              disabled={registering}
+              disabled={registering || redirecting}
             >
-              {registering ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
+              {redirecting ? "Redirecting..." : registering ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
             </button>
           </form>
         </div>

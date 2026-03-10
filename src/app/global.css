@@ -93,4 +93,21 @@
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Hero trapezium bottom bar */
+.trapezium-wrap {
+  padding-bottom: 0;
+}
+.trapezium-reverse {
+  position: relative;
+  width: 100%;
+  max-width: 1024px;
+  clip-path: polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%);
+  background: rgba(0, 63, 75, 0.55);
+  backdrop-filter: blur(6px);
+}
+.trapezium-inner {
+  padding: 1.25rem 3rem 1.5rem;
+  color: #fff;
+}
+
 

@@ -24,7 +24,6 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       case "initiated":
         return "/onboarding/complete-profile";
       case "documents_uploaded":
-        return "/onboarding/add-broker";
       case "broker_profile_added":
         return "/onboarding/verification";
       default:

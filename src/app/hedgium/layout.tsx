@@ -37,16 +37,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     
     switch (user?.signup_step) {
       case "initiated":
-        router.push("/onboarding/complete-profile")
+        router.push("/onboarding/complete-profile");
+        break;
 
       case "documents_uploaded":
-        router.push("/onboarding/add-broker")
-
       case "broker_profile_added":
-        router.push("/onboarding/verification")
+        router.push("/onboarding/verification");
+        break;
 
       default:
-        router.push("/hedgium/dashboard/")
+        router.push("/hedgium/dashboard/");
     }
   };
 
