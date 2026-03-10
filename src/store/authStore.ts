@@ -62,8 +62,9 @@ interface AuthState {
   autoLogin: () => Promise<void>;
   startAutoRefresh: () => void;
   stopAutoRefresh: () => void;
-  updateUser: (partial: Partial<User>) => void; // 👈 new
-
+  updateUser: (partial: Partial<User>) => void;
+  brokerNeedsRefresh: boolean;
+  setBrokerNeedsRefresh: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -74,6 +75,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isInitializing: true,
   refreshTimerId: null,
   keys: null,
+  brokerNeedsRefresh: false,
 
 
   userKeyGet: async () => {
@@ -256,9 +258,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   updateUser: (partial) => {
-    // console.log(partial);
     const user = get().user;
-    if (!user) return; // ignore if user not loaded
+    if (!user) return;
     set({ user: { ...user, ...partial } });
   },
+
+  setBrokerNeedsRefresh: (value) => set({ brokerNeedsRefresh: value }),
 }));
