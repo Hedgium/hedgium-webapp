@@ -6,6 +6,10 @@ export interface User {
     mobile?: string | null;
     signup_step?: string | null;
     verified?: boolean | null;
+    aadhar_number?: string | null;
+    pan_number?: string | null;
+    pan_document_url?: string | null;
+    aadhar_document_url?: string | null;
 }
 
 export interface SubscriptionPlan {

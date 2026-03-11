@@ -124,7 +124,7 @@ export default function AddBrokerPage() {
           setStep("login");
         } else {
           const err = await res.json().catch(() => ({}));
-          setFormError(err.message || "Failed to update broker credentials");
+          setFormError(err.detail || err.message || "Failed to update broker credentials");
         }
       } else {
         // No existing profile — create a new one
@@ -139,7 +139,7 @@ export default function AddBrokerPage() {
           setStep("login");
         } else {
           const err = await res.json().catch(() => ({}));
-          setFormError(err.message || "Failed to save broker credentials");
+          setFormError(err.detail || err.message || "Failed to save broker credentials");
         }
       }
     } catch (err: unknown) {
@@ -287,7 +287,7 @@ export default function AddBrokerPage() {
                     className="select select-bordered select-sm w-full h-9 text-sm bg-base-100"
                   >
                     <option value="">Select broker</option>
-                    <option value="ZERODHA">Zerodha</option>
+                    {/* <option value="ZERODHA">Zerodha</option> */}
                     <option value="SHOONYA">Shoonya</option>
                     <option value="KOTAKNEO">Kotak Neo</option>
                   </select>

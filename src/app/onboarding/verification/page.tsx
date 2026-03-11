@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Clock } from "lucide-react";
+import { Clock, FileUp } from "lucide-react";
 import SignUpStepper from "@/components/SignUpStepper";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "nextjs-toploader/app";
@@ -13,7 +13,29 @@ const VerificationPending: React.FC = () => {
   const router = useRouter();
   const alert = useAlert();
   const [submitting, setSubmitting] = useState(false);
+  const [uploadRedirecting, setUploadRedirecting] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+
+  const handleUploadDocuments = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setUploadRedirecting(true);
+      const res = await authFetch("users/me/", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signup_step: "email_verified" }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Failed to update");
+      }
+      updateUser({ signup_step: "email_verified" });
+      router.push("/onboarding/complete-profile");
+    } catch (e) {
+      alert.error(e instanceof Error ? e.message : "Something went wrong", { duration: 3000 });
+      setUploadRedirecting(false);
+    }
+  };
 
   const handleSkip = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,14 +86,25 @@ const VerificationPending: React.FC = () => {
               <p className="text-sm text-base-content/60 mt-2">
                 Your profile is under review. We&apos;ll notify you once verification is complete.
               </p>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={handleSkip}
-                className="btn btn-outline btn-sm h-9 text-sm normal-case mt-4"
-              >
-                Skip verification
-              </button>
+              <div className="flex flex-col mt-4 flex-wrap gap-2 justify-center">
+                <button
+                  type="button"
+                  disabled={uploadRedirecting || submitting}
+                  onClick={handleUploadDocuments}
+                  className="btn btn-primary btn-sm text-sm normal-case"
+                >
+                  <FileUp className="w-4 h-4 shrink-0" />
+                  {uploadRedirecting ? "..." : "Upload or update documents"}
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting || uploadRedirecting}
+                  onClick={handleSkip}
+                  className="btn btn-outline btn-sm text-sm normal-case"
+                >
+                  Skip verification
+                </button>
+              </div>
             </>
           )}
         </div>

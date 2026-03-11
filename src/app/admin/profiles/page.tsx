@@ -55,6 +55,7 @@ export default function ProfilesPage() {
             const url = `profiles/?${params.toString()}`;
             const response = await authFetch(url);
             const data = await response.json();
+            console.log(data);
 
             if (reset) {
                 setProfiles(data.results);

@@ -112,6 +112,16 @@ export default function VerifyEmail({
     }
   }, [email, sending, alert, startCooldown]);
 
+  // Clean up cooldown interval only on unmount (so "Resend in Xs" countdown is not killed when sendOtp ref changes)
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) {
+        clearInterval(cooldownTimerRef.current);
+        cooldownTimerRef.current = null;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (!autoSendOnMount || !email) return;
     // Throttle: don't auto-send if we already sent to this email in the last 60s (avoids 429 from remounts/Strict Mode)
@@ -130,7 +140,6 @@ export default function VerifyEmail({
     }, 100);
     return () => {
       if (autoSendTimeoutRef.current) clearTimeout(autoSendTimeoutRef.current);
-      if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
     };
   }, [autoSendOnMount, email, sendOtp]);
 

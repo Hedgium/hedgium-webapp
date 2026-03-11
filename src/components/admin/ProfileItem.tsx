@@ -177,14 +177,43 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
         }
     };
 
+    const u = profile.user as typeof profile.user & { aadhar_number?: string | null; pan_number?: string | null; pan_document_url?: string | null; aadhar_document_url?: string | null };
+
     return (
         <div className="bg-base-100 rounded-lg p-4 mb-4 border border-base-300">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
                     <p className="text-gray-400 text-sm">User</p>
                     <p className="font-medium">{profile.user.email}</p>
                     <p className="text-xs text-gray-500">{profile.user.first_name} {profile.user.last_name}</p>
                     <p className="text-xs text-gray-500">ID: {profile.user_id}</p>
+                </div>
+                <div>
+                    <p className="text-gray-400 text-sm">Aadhar / PAN / Documents</p>
+                    <p className="text-xs text-gray-500">
+                        {u.aadhar_number ? <span>Aadhar: {u.aadhar_number}</span> : <span className="opacity-60">Aadhar: —</span>}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                        {u.pan_number ? <span>PAN: {u.pan_number}</span> : <span className="opacity-60">PAN: —</span>}
+                    </p>
+                    <div className="flex gap-2 mt-1 flex-wrap items-center">
+                        {u.pan_document_url ? (
+                            <a href={u.pan_document_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" title="View PAN">
+                                <img src={u.pan_document_url} alt="PAN" className="w-10 h-10 object-cover rounded border border-base-300" />
+                                <span className="link link-primary text-xs">PAN</span>
+                            </a>
+                        ) : (
+                            <span className="text-xs opacity-60">PAN —</span>
+                        )}
+                        {u.aadhar_document_url ? (
+                            <a href={u.aadhar_document_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" title="View Aadhar">
+                                <img src={u.aadhar_document_url} alt="Aadhar" className="w-10 h-10 object-cover rounded border border-base-300" />
+                                <span className="link link-primary text-xs">Aadhar</span>
+                            </a>
+                        ) : (
+                            <span className="text-xs opacity-60">Aadhar —</span>
+                        )}
+                    </div>
                 </div>
                 <div>
                     <p className="text-gray-400 text-sm">Broker</p>
@@ -271,14 +300,19 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                     <p className="text-gray-400 text-sm">Status</p>
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center space-x-2 flex-wrap">
-                            <span className={`px-2 my-1 py-1 rounded text-xs ${profile.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
-                                {profile.verified ? 'Verified' : 'Unverified'}
-                            </span>
                             <span className={`px-2 my-1 py-1 rounded text-xs ${profile.is_active ? 'bg-blue-900 text-blue-300' : 'bg-gray-700 text-gray-300'}`}>
                                 {profile.is_active ? 'Active' : 'Inactive'}
                             </span>
                             <span className={`px-2 my-1 py-1 rounded text-xs ${profile.auto_trade_allowed ? 'bg-purple-900 text-purple-300' : 'bg-gray-700 text-gray-300'}`}>
                                 {profile.auto_trade_allowed ? 'Auto Trade ON' : 'Auto Trade OFF'}
+                            </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <span className={`px-2 py-1 rounded text-xs w-fit ${profile.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`} title="Profile (broker) verified">
+                                Profile: {profile.verified ? 'Verified' : 'Unverified'}
+                            </span>
+                            <span className={`px-2 py-1 rounded text-xs w-fit ${profile.user.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`} title="User (identity) verified">
+                                User: {profile.user.verified ? 'Verified' : 'Unverified'}
                             </span>
                         </div>
                         {profile.subscription && (

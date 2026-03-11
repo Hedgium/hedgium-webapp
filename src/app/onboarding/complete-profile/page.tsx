@@ -49,6 +49,16 @@ const CompleteProfile: React.FC = () => {
       }
 
       if (!skip) {
+        if (panDocument || aadharDocument) {
+          const formData = new FormData();
+          if (panDocument) formData.append("pan_document", panDocument);
+          if (aadharDocument) formData.append("aadhar_document", aadharDocument);
+          const documentsRes = await authFetch("users/me/uploads/", { method: "PUT", body: formData });
+          if (!documentsRes.ok) {
+            const errorData = await documentsRes.json();
+            throw new Error(errorData.message || documentsRes.statusText);
+          }
+        }
         updateUser({ kyc_skipped: skip, signup_step: "documents_uploaded" });
         alert.success("Profile updated", { duration: 3000 });
         setRedirecting(true);
@@ -56,17 +66,6 @@ const CompleteProfile: React.FC = () => {
         return;
       }
       alert.success("Skipped KYC", { duration: 3000 });
-
-      if (!skip && (panDocument || aadharDocument)) {
-        const formData = new FormData();
-        if (panDocument) formData.append("pan_document", panDocument);
-        if (aadharDocument) formData.append("aadhar_document", aadharDocument);
-        const documentsRes = await authFetch("users/me/uploads/", { method: "PUT", body: formData });
-        if (!documentsRes.ok) {
-          const errorData = await documentsRes.json();
-          throw new Error(errorData.message || documentsRes.statusText);
-        }
-      }
     } catch (e) {
       console.error("saveProfile:", e);
       alert.error(e instanceof Error ? e.message : "Something went wrong", { duration: 3000 });

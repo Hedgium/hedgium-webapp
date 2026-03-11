@@ -65,15 +65,18 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
       field: "api_key",
       label: "API Key",
       steps: [
-        { text: "Open the Shoonya API / developer section from your broker dashboard." },
-        { text: "Create or view your app to get the API key." },
+        { text: "Login to prism.shoonya.com and click on profile icon on the top right." },
+        { text: "Click on the API Key then click at generate & Copy it from there." },
       ],
     },
     {
       field: "broker_twofa",
       label: "2FA",
       steps: [
-        { text: "Use the 2FA code from your authenticator app when connecting." },
+        { text: "Login to https://trade.shoonya.com/" },
+        { text: "Click on the profile user/client id on the top right." },
+        { text: "Click on Security then click at totp & Copy it from there." },
+        { text: "Click on copy icon to copy the totp secret and paste it in the form." },
       ],
     },
   ],
