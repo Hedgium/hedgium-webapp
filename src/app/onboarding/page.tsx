@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Mail, Lock, Loader2 } from "lucide-react";
+import { User, Mail, Lock, Loader2, Phone } from "lucide-react";
 import Link from "next/link";
 import { myFetch } from "@/utils/api";
 import { useAuthStore } from "@/store/authStore";
@@ -16,6 +16,7 @@ function Onboarding() {
   const [first_name, setFirstName] = useState("");
   const [last_name, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [registering, setRegistering] = useState(false);
@@ -23,6 +24,7 @@ function Onboarding() {
   const [first_nameError, setFirstNameError] = useState("");
   const [last_nameError, setLastNameError] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [mobileError, setMobileError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [error, setError] = useState("");
@@ -35,6 +37,7 @@ function Onboarding() {
     setFirstNameError("");
     setLastNameError("");
     setEmailError("");
+    setMobileError("");
     setPasswordError("");
     setConfirmPasswordError("");
     let valid = true;
@@ -52,6 +55,13 @@ function Onboarding() {
       valid = false;
     } else if (!validateEmail(email)) {
       setEmailError("Enter a valid email address");
+      valid = false;
+    }
+    if (!mobile) {
+      setMobileError("Mobile number is required");
+      valid = false;
+    } else if (!/^\d{10}$/.test(mobile.trim())) {
+      setMobileError("Enter a valid 10-digit mobile number");
       valid = false;
     }
     if (!password) {
@@ -78,6 +88,7 @@ function Onboarding() {
           first_name,
           last_name,
           email,
+          mobile: mobile.trim(),
           username: email,
           password,
         }),
@@ -161,6 +172,22 @@ function Onboarding() {
                 />
               </div>
               {emailError && <p className="mt-1 text-xs text-error">{emailError}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-base-content/80 mb-1.5">Mobile</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${mobileError ? "input-error" : ""}`}
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  placeholder="10-digit mobile number"
+                />
+              </div>
+              {mobileError && <p className="mt-1 text-xs text-error">{mobileError}</p>}
             </div>
 
             <div>

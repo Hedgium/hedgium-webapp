@@ -59,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
       className={font.className + " min-h-screen flex flex-col"} >
         <NextTopLoader 
-          color="#2299DD"
+          color="#244061"
           showSpinner={true}
           height={2}
         />

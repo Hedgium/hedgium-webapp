@@ -58,25 +58,26 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="p-4 md:px-8 min-h-screen">
-
-      <MarketHeader />
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-base-200/40 px-4 py-4 md:px-8 md:py-6">
+      <div className="max-w-7xl mx-auto space-y-5">
+        <MarketHeader />
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-2 pt-2">
-              <Target className="w-6 h-6 text-primary" />
-              <h1 className="text-2xl md:text-3xl font-semibold">Strategies</h1>
+        <section className="px-1 pb-1 ">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                <h1 className="text-xl md:text-2xl font-semibold text-base-content">Strategies</h1>
+              </div>
+              <p className="text-sm text-base-content/70 mt-1">Explore your currently active trade cycles</p>
             </div>
-            <p className="text-sm text-base-content/50 ">Explore your currently active trade cycles</p>
           </div>
-        </div>
+        </section>
 
         {/* Strategy Cards */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {[...Array(4)].map((_, i) => (
               <TradeCycleCardSkeleton key={i} />
             ))}
@@ -84,7 +85,7 @@ export default function Dashboard() {
         ) : activeTradeCycles.length > 0 ? (
           <>
             {/* Grid Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {activeTradeCycles.map((tc) => (
                 <TradeCycleCard key={tc?.id} tradeCycle={tc} isActive={true} />
               ))}
@@ -96,7 +97,7 @@ export default function Dashboard() {
                 <button
                   onClick={loadMoreTradeCycles}
                   disabled={loadingMore}
-                  className="btn btn-outline btn-primary"
+                  className="btn btn-outline btn-primary rounded-lg"
                 >
                   {loadingMore ? (
                     <>
@@ -111,14 +112,13 @@ export default function Dashboard() {
             )}
           </>
         ) : (
-          <div className="text-center py-12 bg-base-100 rounded-box border border-base-300">
-            <h3 className="text-xl font-semibold mb-2">No Active Trade Cycles</h3>
+          <div className="text-center py-12 bg-base-100 rounded-xl border border-base-300">
+            <h3 className="text-lg font-semibold mb-2 text-base-content">No Active Trade Cycles</h3>
             <p className="text-base-content/60">
               {`You don't have any active trade cycles at the moment.`}
             </p>
           </div>
         )}
-
       </div>
     </div>
   );

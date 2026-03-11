@@ -11,9 +11,8 @@ import { Loader2 } from "lucide-react";
 const CompleteProfile: React.FC = () => {
   const router = useRouter();
   const alert = useAlert();
-  const { user, updateUser } = useAuthStore();
+  const { updateUser } = useAuthStore();
 
-  const [mobile, setMobile] = useState("");
   const [panNumber, setPanNumber] = useState("");
   const [aadharNumber, setAadharNumber] = useState("");
   const [panDocument, setPanDocument] = useState<File | null>(null);
@@ -34,7 +33,7 @@ const CompleteProfile: React.FC = () => {
     try {
       setSubmitting(true);
       const userDetails = !skip
-        ? { mobile, pan_number: panNumber, aadhar_number: aadharNumber, signup_step: "documents_uploaded" }
+        ? { pan_number: panNumber, aadhar_number: aadharNumber, signup_step: "documents_uploaded" }
         : { kyc_skipped: true };
       updateUser({ kyc_skipped: skip });
 
@@ -99,16 +98,6 @@ const CompleteProfile: React.FC = () => {
 
         <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-base-content/80 mb-1.5">Mobile</label>
-              <input
-                type="tel"
-                className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                placeholder="Your mobile number"
-              />
-            </div>
             <div>
               <label className="block text-xs font-medium text-base-content/80 mb-1.5">PAN number</label>
               <input

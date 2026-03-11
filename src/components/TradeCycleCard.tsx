@@ -62,7 +62,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
     ACTIVATED: <Clock width={14} className="text-warning" />,
     ADJUSTED: <CheckCircle width={14} className="text-success" />,
     CLOSED: <XCircle width={14} className="text-error" />,
-    LOCKED: <Lock width={14} className="text-gray-400" />,
+    LOCKED: <Lock width={14} className="text-base-content/40" />,
   };
 
   async function activateTradeCycle() {
@@ -86,7 +86,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
   }
 
   return (
-    <div className={`card bg-base-100 border border-base-300 rounded-2xl flex flex-col relative ${isLocked ? 'opacity-75' : ''}`}>
+    <div className={`card bg-base-100 border border-base-300 rounded-xl flex flex-col relative ${isLocked ? 'opacity-80' : ''}`}>
       {/* Locked Overlay */}
 
       <div className="card-body p-4 flex flex-col flex-1">
@@ -102,7 +102,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
               <span className="badge badge-outline badge-dash">{cycle.sub_state}</span>
             </div>
           </div>
-          <div className="text-xs text-gray-500 flex flex-col items-end">
+          <div className="text-xs text-base-content/60 flex flex-col items-end">
             <span>ID: {cycle.id}</span>
             <span>Created: {new Date(cycle.created_at).toLocaleDateString()}</span>
           </div>
@@ -110,8 +110,8 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
 
         {isLocked && < >
           <div className="bg-base-100 p-6 text-center mx-4">
-            <Lock className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-            <h3 className="text-lg font-semibold mb-2">Strategy Locked</h3>
+            <Lock className="w-12 h-12 mx-auto mb-3 text-base-content/40" />
+            <h3 className="text-lg font-semibold text-base-content mb-2">Strategy Locked</h3>
             <p className="text-sm text-base-content/70 mb-4">
               This strategy is not available in your current plan.
             </p>
@@ -152,8 +152,8 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
                 >
                   {leg.action}
                 </span>
-                <span className="flex-1 text-gray-600 ml-3 truncate">{leg.instrument}</span>
-                <span className="text-gray-500">Qty {leg.quantity}</span>
+                <span className="flex-1 text-base-content/80 ml-3 truncate">{leg.instrument}</span>
+                <span className="text-base-content/60">Qty {leg.quantity}</span>
                 <span className="ml-2">{formatMoneyIN(leg.price)}</span>
                 {leg.status === "PENDING" ? (
                   <Clock width={14} className="ml-2 text-warning" />

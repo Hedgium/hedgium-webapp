@@ -7,7 +7,6 @@ import { useRouter } from "nextjs-toploader/app";
 import { Home, Briefcase, Bell, Settings, LineChart, Sun, Moon, LogOut, FileText } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
-import CurrentSubscription from "@/components/CurrentSubscription";
 import Link from "next/link";
 import { useNotificationStore } from "@/store/notificationStore";
 
@@ -23,7 +22,19 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
+
+  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
+  const displayName = fullName || user?.username || "User";
+  const displayEmail = user?.email || "";
+  const planName = user?.active_subscription?.plan?.name || "No Active Plan";
+  const isLegends = planName === "LEGENDS";
+  const initials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 
   const { unreadCount } = useNotificationStore();
 
@@ -35,9 +46,29 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
   if (sidebar) {
     return (
       <div className="flex flex-col h-full bg-base-200/50 border border-base-300">
-        {/* Logo/Brand */}
-
-        <CurrentSubscription />
+        <div className="px-4 py-3 border-b border-base-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary text-primary-content flex items-center justify-center text-sm font-semibold shrink-0">
+              {initials || "U"}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-base-content truncate">{displayName}</p>
+              {displayEmail ? (
+                <p className="text-xs text-base-content/60 truncate">{displayEmail}</p>
+              ) : null}
+              <div className="mt-1 flex items-center gap-2">
+                <span className={`text-xs font-medium ${isLegends ? "text-warning" : "text-primary"} truncate`}>
+                  Plan: {planName}
+                </span>
+                {!isLegends && user?.active_subscription?.plan?.name ? (
+                  <Link href="/hedgium/upgrade" className="text-[11px] text-primary hover:underline">
+                    Upgrade
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
 
 
         {/* <div className="p-4 border-b border-base-300">
@@ -48,7 +79,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
         </div> */}
 
         {/* Navigation items */}
-        <nav className="flex-1 overflow-y-auto px-4">
+        <nav className="flex-1 overflow-y-auto px-4 mt-4">
           <ul className="gap-2 space-y-1">
             {tabs.map((tab, idx) => {
               const active = pathname === tab.href;

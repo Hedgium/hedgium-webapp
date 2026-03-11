@@ -2,7 +2,7 @@ import React from "react";
 
 export default function TradeCycleCardSkeleton() {
   return (
-    <div className="card bg-base-100 border border-base-300 rounded-2xl animate-pulse">
+    <div className="card bg-base-100 border border-base-300 rounded-xl animate-pulse">
       <div className="card-body p-4 flex flex-col flex-1">
         {/* Header Skeleton */}
         <div className="flex justify-between items-start mb-4">

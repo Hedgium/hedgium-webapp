@@ -23,6 +23,9 @@ import {
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionsTable, { type Position } from "@/components/positions/PositionsTable";
+import ReportsSummarySkeleton from "@/components/skeletons/ReportsSummarySkeleton";
+import ReportsListSkeleton from "@/components/skeletons/ReportsListSkeleton";
+import ReportsChartSkeleton from "@/components/skeletons/ReportsChartSkeleton";
 
 type PnlSummary = {
   all_time?: number;
@@ -333,61 +336,65 @@ export default function ReportsPage() {
       <div className="max-w-7xl mx-auto space-y-8">
 
                 {/* Legacy PnL Summary & Allocation Summary */}
-          {!loading && (pnlSummary || allocationSummary) && (
-          <section className="border-base-300">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {pnlSummary && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                    <h4 className="font-medium">PnL Summary</h4>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {Object.entries(pnlSummary).map(([period, value]) => (
-                      <div
-                        key={period}
-                        className="p-3 bg-base-100 rounded-lg border border-base-300"
-                      >
-                        <span className="text-xs text-base-content/60 uppercase">
-                          {period.replace(/_/g, " ")}
-                        </span>
-                        <p
-                          className={`font-semibold ${
-                            value != null && value >= 0 ? "text-success" : "text-error"
-                          }`}
+        {loading ? (
+          <ReportsSummarySkeleton />
+        ) : (
+          (pnlSummary || allocationSummary) && (
+            <section className="border-base-300">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {pnlSummary && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                      <h4 className="font-medium">PnL Summary</h4>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {Object.entries(pnlSummary).map(([period, value]) => (
+                        <div
+                          key={period}
+                          className="p-3 bg-base-100 rounded-lg border border-base-300"
                         >
-                          {formatMoneyIN(value ?? 0)}
-                        </p>
-                      </div>
-                    ))}
+                          <span className="text-xs text-base-content/60 uppercase">
+                            {period.replace(/_/g, " ")}
+                          </span>
+                          <p
+                            className={`font-semibold ${
+                              value != null && value >= 0 ? "text-success" : "text-error"
+                            }`}
+                          >
+                            {formatMoneyIN(value ?? 0)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-              {allocationSummary && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Briefcase className="w-5 h-5 text-primary" />
-                    <h4 className="font-medium">Allocated Trade Cycles</h4>
+                )}
+                {allocationSummary && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Briefcase className="w-5 h-5 text-primary" />
+                      <h4 className="font-medium">Allocated Trade Cycles</h4>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {Object.entries(allocationSummary).map(([period, value]) => (
+                        <div
+                          key={period}
+                          className="p-3 bg-base-100 rounded-lg border border-base-300"
+                        >
+                          <span className="text-xs text-base-content/60 uppercase">
+                            {period.replace(/_/g, " ")}
+                          </span>
+                          <p className="font-semibold text-primary">
+                            {value != null ? value : 0}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {Object.entries(allocationSummary).map(([period, value]) => (
-                      <div
-                        key={period}
-                        className="p-3 bg-base-100 rounded-lg border border-base-300"
-                      >
-                        <span className="text-xs text-base-content/60 uppercase">
-                          {period.replace(/_/g, " ")}
-                        </span>
-                        <p className="font-semibold text-primary">
-                          {value != null ? value : 0}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
+                )}
+              </div>
+            </section>
+          )
         )}
 
         {/* Title */}
@@ -431,9 +438,7 @@ export default function ReportsPage() {
                 </h3>
               </div>
               {loadingCharts ? (
-                <div className="h-64 flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                </div>
+                <ReportsChartSkeleton />
               ) : marginChartData.length === 0 ? (
                 <div className="h-64 flex items-center justify-center text-base-content/60">
                   No margin data in selected range
@@ -456,9 +461,7 @@ export default function ReportsPage() {
                 </h3>
               </div>
               {loadingCharts ? (
-                <div className="h-64 flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                </div>
+                <ReportsChartSkeleton />
               ) : pnlChartData.length === 0 ? (
                 <div className="h-64 flex items-center justify-center text-base-content/60">
                   No PnL data in selected range
@@ -493,10 +496,7 @@ export default function ReportsPage() {
           </div>
 
           {loadingReports ? (
-            <div className="flex flex-col items-center justify-center py-16 bg-base-100 rounded-lg shadow">
-              <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-              <p className="text-base-content/70">Loading trade cycles...</p>
-            </div>
+            <ReportsListSkeleton />
           ) : results.length === 0 ? (
             <div className="text-center py-16 bg-base-100 rounded-lg shadow">
               <Briefcase className="w-12 h-12 mx-auto text-base-content/40 mb-3" />
@@ -681,7 +681,7 @@ function MarginLineChart({ data, period }: { data: MarginSnapshot[]; period: Cha
 
     const textColor = resolveChartColor("hsl(var(--bc) / 0.9)", "#374151");
     const gridColor = resolveChartColor("hsl(var(--bc) / 0.15)", "rgba(0,0,0,0.1)");
-    const netColor = resolveChartColor("hsl(var(--p))", "#2563eb");
+    const netColor = resolveChartColor("hsl(var(--p))", "#244061");
     const utilisedColor = resolveChartColor("hsl(var(--wa))", "#ea580c");
 
     const chart = createChart(containerRef.current, {

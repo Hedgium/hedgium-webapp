@@ -8,6 +8,9 @@ export function useTickStream(
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const { accessToken } = useAuthStore();
+  const tokensKey = initialTokens
+    .map((item) => `${item.token}:${(item.mode || "LTP").toUpperCase()}`)
+    .join("|");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [ticks, setTicks] = useState<Record<number, any>>({});
   const [isConnected, setIsConnected] = useState(false);
@@ -82,7 +85,7 @@ export function useTickStream(
       }
       wsRef.current?.close();
     };
-  }, [accessToken]);
+  }, [accessToken, tokensKey]);
 
   // --- Dynamic subscribe (supports mode) ---
   const subscribeToken = (token: number, mode: string = "LTP") => {

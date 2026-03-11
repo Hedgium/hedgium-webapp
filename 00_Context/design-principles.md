@@ -18,7 +18,7 @@ Apply these principles across all UI so the product feels like a modern, profess
 - **Page background** — Use `bg-base-200` (or equivalent surface) for full-page context; reserve `bg-base-100` for content containers and cards.
 - **Content width** — Constrain width where it helps focus: e.g. narrow forms (max ~380–400px), medium content (max-w-2xl), wide only for data-heavy tables/dashboards.
 - **Centering** — Center narrow flows (auth, simple forms) with `flex items-center justify-center` and consistent vertical padding (`py-8` or similar).
-- **Cards / containers** — `rounded-xl`, light border (`border-base-300`), subtle shadow (`shadow-sm`). Avoid heavy shadows or strong borders.
+- **Cards / containers** — `rounded-xl`, light border (`border-base-300`), and minimum shadow by default. Prefer no shadow unless elevation is necessary; when needed use only subtle `shadow-sm`. Avoid heavy shadows or strong borders.
 
 ---
 
