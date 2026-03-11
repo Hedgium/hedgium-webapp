@@ -171,6 +171,18 @@ export default function VerifyEmail({
       });
       const data = await res.json();
       if (res.ok) {
+        const updateRes = await authFetch("users/me/", {
+          method: "PUT",
+          body: JSON.stringify({
+            signup_step: "email_verified",
+            email_verified: true,
+          }),
+        });
+        if (!updateRes.ok) {
+          const updateErr = await updateRes.json().catch(() => ({}));
+          setError(updateErr?.detail || "Email verified, but failed to update profile state.");
+          return;
+        }
         alert.success("Email verified.", { duration: 3000 });
         updateUser({ signup_step: "email_verified", email_verified: true });
         onVerified?.();

@@ -64,7 +64,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Main content */}
         <main className="flex-1 bg-base-200 overflow-y-auto flex flex-col">
 
-              {(user && user?.signup_step !== "verified" ) && (
+              {(user && user?.signup_step !== "initiated" || user?.signup_step !== "email_verified") && (
                 <div className="bg-warning border-l-4 px-4 py-2 flex justify-between items-center">
                 <p className="text-sm font-medium">
                   Your profile verification is pending. Please complete your KYC to unlock full access.

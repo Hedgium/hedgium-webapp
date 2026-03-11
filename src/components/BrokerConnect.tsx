@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
@@ -39,6 +39,7 @@ export default function BrokerLoginStatus() {
   const [password, setPassword] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const autoMarginFetchedForProfileRef = useRef<number | null>(null);
 
   const fetchActiveProfile = async () => {
     if (!user) return;
@@ -67,7 +68,7 @@ export default function BrokerLoginStatus() {
     }
   };
 
-  const refreshMargin = async () => {
+  const refreshMargin = async ({ silent = false }: { silent?: boolean } = {}) => {
     if (!user) return;
     setRefreshing(true);
     setStatusError(null);
@@ -76,7 +77,9 @@ export default function BrokerLoginStatus() {
       const res = await authFetch("profiles/refresh-margin/");
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Failed to fetch margin");
-      alert.success("Margins updated");
+      if (!silent) {
+        alert.success("Margins updated");
+      }
       await fetchActiveProfile();
     } catch (err) {
       setStatusError("Failed to refresh margin.");
@@ -99,6 +102,19 @@ export default function BrokerLoginStatus() {
     fetchActiveProfile();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Auto-refresh margin once when a broker session is logged in (including after login).
+  useEffect(() => {
+    if (!broker.loggedIn || !broker.profileId) {
+      autoMarginFetchedForProfileRef.current = null;
+      return;
+    }
+
+    if (autoMarginFetchedForProfileRef.current === broker.profileId) return;
+    autoMarginFetchedForProfileRef.current = broker.profileId;
+    refreshMargin({ silent: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [broker.loggedIn, broker.profileId, user]);
 
   // ── Login handler (for already-verified broker) ──
   const handleBrokerLogin = async () => {
@@ -135,7 +151,6 @@ export default function BrokerLoginStatus() {
         setPassword("");
         setLoginError(null);
         await fetchActiveProfile();
-        setTimeout(() => refreshMargin(), 500);
       } else {
         // Surface the exact message from the broker
         setLoginError(data.message || "Login failed. Please check your credentials.");

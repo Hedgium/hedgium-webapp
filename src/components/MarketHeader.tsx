@@ -213,8 +213,7 @@ export default function MarketHeader() {
     <section className="mb-2 pb-3">
       <div className="flex items-center justify-between mb-2 px-1">
         <p className="text-xs text-base-content/70">
-          Market snapshot
-          {source === "ws" ? " - live via websocket" : source === "api" ? " - auto refresh via API" : ""}
+          Market Today
         </p>
         {lastUpdatedAt ? (
           <span className="text-xs text-base-content/60">
