@@ -71,6 +71,14 @@ export default function Navbar() {
         </ul>
       </div>
       <div className="navbar-end flex items-center gap-4">
+
+      <Link
+          href="/get-started"
+          className="btn btn-primary btn-sm shadow hover:shadow-md"
+        >
+          Get Started
+        </Link>
+
         <Link
           href="/login"
           className="flex items-center gap-1.5 text-base-content hover:text-primary text-sm font-medium uppercase tracking-wide"
@@ -78,12 +86,7 @@ export default function Navbar() {
           <LogIn className="h-4 w-4 shrink-0" aria-hidden />
           LOGIN
         </Link>
-        <Link
-          href="/onboarding"
-          className="btn btn-primary btn-sm shadow hover:shadow-md"
-        >
-          Get Started
-        </Link>
+        
       </div>
     </nav>
   );

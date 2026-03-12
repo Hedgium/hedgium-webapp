@@ -1,70 +1,155 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowRight, Bot, TrendingUp, Code, Smartphone, Shield, Users, CheckCircle, Check, X, ChevronDown, Calendar, Sigma, Network, Brain } from 'lucide-react';
+import { Check, ChevronDown, Calendar, Sigma, Network, Brain, Lock } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
+
+function TwinEngineFrameworkSection() {
+  return (
+    <section className="relative py-20 px-6 bg-base-200">
+      <div className="max-w-6xl mx-auto text-center">
+
+        {/* Heading */}
+        <h2 className="text-4xl font-bold text-base-content">
+          The Twin Engine Investing Framework
+        </h2>
+
+        <p className="mt-2 text-base-content/70">
+          Our quant based dual approach to generating superior risk-adjusted returns
+        </p>
+
+        {/* Cards */}
+        <div className="grid md:grid-cols-2 gap-8 mt-12">
+
+          {/* Step 1 */}
+          <div className="card bg-base-100 border-2 border-primary rounded-3xl p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+
+              <div className="text-left">
+                <h3 className="text-xl font-semibold text-primary mb-3">
+                  Step 1: Build Model Portfolio
+                </h3>
+
+                <p className="text-sm text-base-content/70 leading-relaxed">
+                  Construct or restructure a base portfolio with securities
+                  using Hedgium’s model portfolio to achieve optimal
+                  diversification and long term potential
+                </p>
+              </div>
+
+              <div className="text-primary text-5xl">
+                📈
+              </div>
+
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="card bg-base-100 border-2 border-primary rounded-3xl p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+
+              <div className="text-left">
+                <h3 className="text-xl font-semibold text-primary mb-3">
+                  Step 2: Deploy Statistical Arbitrage
+                </h3>
+
+                <p className="text-sm text-base-content/70 leading-relaxed">
+                  Leverage margin from the portfolio to execute
+                  non-directional, algorithm-driven options strategies
+                  to generate consistent income
+                </p>
+              </div>
+
+              <div className="text-primary text-5xl">
+                ⚙️
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section */}
+        <div className="mt-12 max-w-2xl mx-auto text-left">
+
+          <p className="text-center font-medium mb-6">
+            Combined, our approach aims to:
+          </p>
+
+          <ul className="space-y-3">
+            <li className="flex items-center gap-3">
+              <Check className="text-primary w-5 h-5" />
+              Generate consistent market-neutral alpha
+            </li>
+
+            <li className="flex items-center gap-3">
+              <Check className="text-primary w-5 h-5" />
+              Achieve superior risk-adjusted returns
+            </li>
+
+            <li className="flex items-center gap-3">
+              <Check className="text-primary w-5 h-5" />
+              Outperform traditional benchmark strategies
+            </li>
+
+            <li className="flex items-center gap-3">
+              <Check className="text-primary w-5 h-5" />
+              Boost overall return on capital compounding over a multi-period horizon
+            </li>
+          </ul>
+
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+
+const WHAT_WE_DO_IMAGES = [
+  "/images/home/what we do _ slide 1.png",
+  "/images/home/what we do _ slide 2.png",
+  "/images/home/what we do _ slide 3.jpg",
+].map((path) => path.replace(/ /g, "%20"));
+
 const WHAT_WE_DO_SLIDES = [
   {
-    id: "twin-engine",
-    content: (
-      <div className="flex flex-col h-full gap-4">
-        <div className="flex-1 min-h-0 rounded-xl border border-base-300 bg-base-100 p-4 flex flex-col justify-end">
-          <div className="flex gap-2 items-end h-24">
-            <div className="flex-1 rounded-t bg-primary/80 h-12" title="Engine-1: Model Portfolio" />
-            <div className="flex-1 rounded-t bg-primary/60 h-16" />
-            <div className="flex-1 rounded-t bg-primary/80 h-14" />
-            <div className="flex-1 rounded-t bg-primary/60 h-20" />
-            <div className="flex-1 rounded-t bg-primary/80 h-16" />
-          </div>
-          <div className="flex justify-between mt-2 text-xs text-base-content/70">
-            <span>Engine-1: Hedgium Model Portfolio</span>
-            <span>Engine-2: Options income</span>
-          </div>
-        </div>
-        <p className="font-semibold text-base-content text-sm shrink-0">Outperform benchmark returns</p>
-      </div>
+    id: "slide-1",
+    image: WHAT_WE_DO_IMAGES[0],
+    bottomText: (
+      <>
+        <span className="font-light text-2xl">{`{ `}</span>
+        Outperform benchmark returns
+        <span className="font-light text-2xl">{` }`}</span>
+      </>
     ),
   },
   {
-    id: "features",
-    content: (
-      <div className="flex flex-col gap-4 h-full justify-center p-2">
-        <div className="flex items-center gap-3">
-          <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-            <Sigma className="w-5 h-5" />
-          </div>
-          <p className="text-sm text-base-content">Superior risk-adjusted returns using statistical arbitrage.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-            <Network className="w-5 h-5" />
-          </div>
-          <p className="text-sm text-base-content">Algo-Driven: Real-time opportunity scanning & risk management.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-            <Brain className="w-5 h-5" />
-          </div>
-          <p className="text-sm text-base-content">AI powered intelligence to keep tabs on market events.</p>
-        </div>
-      </div>
+    id: "slide-2",
+    image: WHAT_WE_DO_IMAGES[1],
+    bottomText: (
+      <>
+        <span className="font-light text-2xl">{`{ `}</span>
+        Sophisticated institutional grade set-ups
+        <span className="font-light text-2xl">{` }`}</span>
+      </>
     ),
   },
   {
-    id: "experience",
-    content: (
-      <div className="flex flex-col h-full gap-4">
-        <div className="flex-1 min-h-0 bg-base-200 rounded-xl flex items-center justify-center text-base-content/50 text-sm">
-          Photo placeholder
-        </div>
-        <div className="shrink-0 border border-base-300 rounded-lg px-4 py-3 bg-base-100">
-          <p className="font-semibold text-base-content text-sm">2 decades of investing & trading experience</p>
-        </div>
-      </div>
+    id: "slide-3",
+    image: WHAT_WE_DO_IMAGES[2],
+    bottomText: (
+      <>
+        <span className="font-light text-2xl">{`{ `}</span>
+        2 decades of investing & trading experience
+        <span className="font-light text-2xl">{` }`}</span>
+      </>
     ),
   },
 ];
@@ -81,42 +166,52 @@ function WhatWeDoSection() {
   }, [total]);
 
   return (
-    <section id="what-we-do" className="py-20 px-6 bg-base-100">
+    <>
+    <section id="what-we-do" className="py-16 md:py-24 px-6 bg-base-100" data-aos="fade-up">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-stretch">
           {/* Left: Static content */}
-          <div className="lg:w-1/2 flex flex-col justify-center order-2 lg:order-1">
+          <div className="lg:w-1/2 flex flex-col justify-center">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content leading-snug mb-5">
-              Hedgium is a quant-driven research house focused on generating market-neutral alpha for clients using the powerful{' '}
-              <span className="text-primary">Twin Engine Investing</span> framework.
+              Outperform Benchmark Returns with Our{' '}
+
+              <span className="text-primary">Twin Engine Investing</span> framework
             </h2>
-            <ul className="text-sm lg:text-base text-base-content space-y-2 mb-4">
-              <li><strong>Step-1:</strong> Build Model Portfolio</li>
-              <li><strong>Step-2:</strong> Deploy quant-based statistical arbitrage strategies to generate additional portfolio income through options</li>
-            </ul>
+            
             <p className="text-sm lg:text-base text-base-content/80 mb-6">
-              Combined, this approach generates superior risk-adjusted returns unrivalled by traditional strategies, boosting overall return on capital and potentially compounding over a multi-period horizon.
+              Hedgium is a quant-driven research house focused on generating <span className="text-primary font-bold">market-neutral alpha</span> for clients.
+
             </p>
             <div className="flex flex-col gap-2">
               <Link
-                href="/onboarding"
+                href="/get-started?ref=schedule_call"
                 className="btn btn-primary gap-2 w-fit"
               >
                 <Calendar className="w-4 h-4" aria-hidden />
                 Set up a Free Call
               </Link>
-              <Link href="/#features" className="text-sm text-primary hover:underline">
+              {/* <Link href="/#features" className="text-sm text-primary hover:underline">
                 Learn More
-              </Link>
+              </Link> */}
             </div>
           </div>
-          {/* Right: Slider — matches height of left content on desktop */}
-          <div className="lg:w-1/2 flex flex-col order-1 lg:order-2 min-h-[280px] lg:min-h-0">
-            <div className="rounded-xl border border-base-300 bg-base-200/50 overflow-hidden flex flex-col flex-1 min-h-0">
-              <div className="flex-1 min-h-0 p-4 md:p-6">
-                {WHAT_WE_DO_SLIDES[current].content}
+          {/* Right: Slider — fixed height so all slides match */}
+          <div className="lg:w-1/2 flex flex-col order-1 lg:order-2">
+              <div className="h-[320px] md:h-[480px] min-h-0 flex flex-col gap-4 border border-dashed border-2 border-primary/50 rounded-xl p-4">
+                <div className="flex-1 min-h-0 relative rounded-xl overflow-hidden">
+                  <Image
+                    src={WHAT_WE_DO_SLIDES[current].image}
+                    alt=""
+                    fill
+                    className="object-contain rounded-xl"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
+                </div>
+                <div className="flex items-center justify-center gap-2 mt-auto shrink-0">
+                  <span>{WHAT_WE_DO_SLIDES[current].bottomText}</span>
+                </div>
               </div>
-              <div className="flex justify-center gap-2 pb-4 shrink-0">
+              <div className="flex justify-center gap-2 py-4 shrink-0">
                 {WHAT_WE_DO_SLIDES.map((_, i) => (
                   <button
                     key={i}
@@ -129,11 +224,13 @@ function WhatWeDoSection() {
                   />
                 ))}
               </div>
-            </div>
           </div>
         </div>
       </div>
+
     </section>
+    <TwinEngineFrameworkSection />
+    </>
   );
 }
 
@@ -147,7 +244,7 @@ function UnlockPotentialSection() {
   const [activeStep, setActiveStep] = useState(0);
 
   return (
-    <section id="unlock-potential">
+    <section id="unlock-potential" data-aos="fade-up">
       {/* Banner */}
       <div className="bg-primary text-primary-content py-7 px-6">
         <div className="max-w-6xl mx-auto">
@@ -159,9 +256,9 @@ function UnlockPotentialSection() {
       </div>
 
       {/* Body — light gray background matching mockup */}
-      <div className="bg-base-200 py-16 px-6">
+      <div className="bg-base-200 py-16 md:py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-14 items-start">
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-14 items-center">
 
             {/* Left: Step flow with full-width buttons and large triangle connectors */}
             <div className="lg:w-[38%] flex flex-col">
@@ -175,7 +272,7 @@ function UnlockPotentialSection() {
                       className={`w-full cursor-pointer text-left px-4 py-3 font-bold text-base lg:text-lg flex items-center justify-between transition-colors ${
                         isActive
                           ? 'bg-primary text-primary-content'
-                          : 'bg-neutral/60 text-base-content'
+                          : 'bg-neutral/50 hover:bg-neutral/70 hover:text-primary text-base-content'
                       }`}
                     >
                       <span>{step.label}</span>
@@ -201,7 +298,7 @@ function UnlockPotentialSection() {
 
             {/* Right: Content inside a dashed border box */}
             <div className="lg:w-[62%] flex flex-col">
-              <div className="border border-dashed border-primary/50 rounded-lg p-5 bg-base-200 min-h-[200px]">
+              <div className="border border-dashed border-2 border-primary/50 rounded-lg p-5 bg-base-200 min-h-[200px]">
                 {activeStep === 0 && (
                   <div className="space-y-3">
                     <h3 className="font-bold text-base lg:text-lg text-base-content">Most Portfolios are -</h3>
@@ -281,22 +378,22 @@ function UnlockPotentialSection() {
 
 function PlaybooksSection() {
   return (
-    <section id="playbooks" className="py-14 px-6 bg-base-100">
+    <section id="playbooks" className="py-14 md:py-24 px-6 bg-base-100" data-aos="fade-up">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col lg:flex-row gap-10 lg:gap-14 items-start">
+        <div className="flex flex-col lg:flex-row gap-10 lg:gap-14 items-center">
 
           {/* Left: heading + two approach cards + Hedgium icon connector */}
           <div className="lg:w-1/2 flex flex-col gap-6">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content">
+            <h2 className="text-2xl py-2 md:text-3xl lg:text-4xl font-bold text-base-content">
               Playbooks adapted to{' '}
               <span className="text-primary">your goals</span>
             </h2>
 
             {/* Relative container for the two cards + icon */}
-            <div className="relative flex flex-col gap-0">
+            <div className="relative flex flex-col gap-6">
 
               {/* Portfolio income approach */}
-              <div className="flex flex-col gap-1 max-w-xs">
+              <div className="flex flex-col gap-1">
                 <div className="bg-primary text-primary-content px-3 py-1.5 font-bold text-sm lg:text-base rounded-sm">
                   Portfolio income approach
                 </div>
@@ -306,27 +403,12 @@ function PlaybooksSection() {
                 </p>
               </div>
 
-              {/* Hedgium icon connector — positioned to the right, vertically centered between cards */}
-              <div
-                className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-0"
-                aria-hidden
-              >
-                {/* Dashed horizontal line from card to icon */}
-                <div className="flex-1 border-t border-dashed border-primary/60 w-16" />
-                {/* Hexagonal-style icon */}
-                <div className="w-12 h-12 bg-primary rounded-[30%] flex items-center justify-center text-primary-content shrink-0">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                  </svg>
-                </div>
-              </div>
 
               {/* Spacer */}
-              <div className="h-8" />
+              {/* <div className="h-8" /> */}
 
               {/* Total income approach — offset right to match layout */}
-              <div className="flex flex-col gap-1 max-w-xs self-center">
+              <div className="flex flex-col gap-1 self-center">
                 <div className="bg-primary text-primary-content px-3 py-1.5 font-bold text-sm lg:text-base rounded-sm">
                   Total income approach
                 </div>
@@ -340,10 +422,8 @@ function PlaybooksSection() {
           </div>
 
           {/* Right: Photo placeholder */}
-          <div className="lg:w-1/2 flex items-start justify-center">
-            <div className="w-full aspect-[4/3] max-h-64 bg-primary/30 rounded-lg flex items-center justify-center text-base-content/50 text-sm">
-              Photo placeholder
-            </div>
+          <div className="lg:w-1/2">
+              <Image src="/images/home2.jpg" className="rounded-lg" alt="Playbooks" width={500} height={500} />
           </div>
 
         </div>
@@ -362,18 +442,14 @@ const WHY_HEDGIUM_TABS = [
           <p className="text-sm lg:text-base font-semibold text-base-content">
             Developed, optimized &amp; operational since last 5 years
           </p>
-          <div className="ml-4 flex flex-col gap-3">
-            <p className="text-sm lg:text-base text-base-content/80">
+          <div className="flex flex-col gap-3">
+          <p className="text-sm lg:text-base text-base-content/80">
               Tested in live, diverse market conditions including periods of high volatility, with built-in downside protections
-            </p>
-            <div className="ml-4 flex flex-col gap-3">
-              <p className="text-sm lg:text-base text-base-content/80">Adaptable to different risk-appetites. Focused on better risk-adjusted returns
-              </p>
-              <div className="ml-4">
-                <p className="text-sm lg:text-base text-base-content/80">Suited for various capital sizes — From 25 Lakh to 20 Crore
-                </p>
-              </div>
-            </div>
+          </p>
+          <p className="text-sm lg:text-base text-base-content/80">Adaptable to different risk-appetites. Focused on better risk-adjusted returns
+          </p>
+          <p className="text-sm lg:text-base text-base-content/80">Suited for various capital sizes — From 25 Lakh to 20 Crore
+          </p>
           </div>
         </div>
       </div>
@@ -428,26 +504,53 @@ const WHY_HEDGIUM_TABS = [
     id: 'security',
     label: 'Security in Design',
     content: (
-      <div className="grid grid-cols-3 gap-4 items-center text-base-content/90">
-        {/* Top */}
-        <div className="col-span-3 text-center text-xs lg:text-sm">
-          Funds &amp; securities always stay in client&apos;s account under their exclusive access and control at all times
-        </div>
-        {/* Middle row */}
-        <div className="text-xs lg:text-sm text-center">
-          All trade logs, reports, dashboards are available to the client on real-time basis
-        </div>
-        <div className="flex items-center justify-center">
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl">
-            🔒
+      <div className="relative rounded-xl border border-primary/20 bg-base-100/50 p-6 lg:p-8 min-h-[280px] flex items-center justify-center overflow-hidden">
+        {/* Four arrows: from center padlock outward to each text block */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden>
+          <defs>
+            <marker id="sec-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <path d="M0 0 L8 3 L0 6 Z" fill="currentColor" />
+            </marker>
+          </defs>
+          <g className="text-primary/40 stroke-current" strokeWidth="2" fill="none">
+            {/* Center circle edge → top-left (trade logs) */}
+            <line x1="42" y1="42" x2="20" y2="20" markerEnd="url(#sec-arrow)" strokeLinecap="round" />
+            {/* Center → top-right (funds) */}
+            <line x1="58" y1="42" x2="80" y2="20" markerEnd="url(#sec-arrow)" strokeLinecap="round" />
+            {/* Center → bottom-right (system access) */}
+            <line x1="58" y1="58" x2="80" y2="80" markerEnd="url(#sec-arrow)" strokeLinecap="round" />
+            {/* Center → bottom-left (strategies) */}
+            <line x1="42" y1="58" x2="20" y2="80" markerEnd="url(#sec-arrow)" strokeLinecap="round" />
+          </g>
+        </svg>
+        {/* Central padlock */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-base-100 border border-primary/20 flex items-center justify-center text-primary shadow-sm z-10">
+            <Lock className="w-8 h-8 lg:w-10 lg:h-10" strokeWidth={2} />
           </div>
         </div>
-        <div className="text-xs lg:text-sm text-center">
-          System access is encrypted, client-controlled, and revocable any time
-        </div>
-        {/* Bottom */}
-        <div className="col-span-3 text-center text-xs lg:text-sm">
-          All strategies are approved / pre-approved by the client, and trade execution control is always with the client
+        {/* Four text blocks */}
+        <div className="relative grid grid-cols-2 gap-x-6 gap-y-6 max-w-2xl mx-auto z-10">
+          <div className="col-start-2 text-right">
+            <p className="text-xs lg:text-sm text-base-content/90 leading-snug">
+              Funds &amp; securities always stay in client&apos;s account under their exclusive access and control at all times
+            </p>
+          </div>
+          <div className="col-start-2 row-start-2 text-right">
+            <p className="text-xs lg:text-sm text-base-content/90 leading-snug">
+              System access is encrypted, client-controlled, and revocable any time
+            </p>
+          </div>
+          <div className="col-start-1 row-start-2 text-left">
+            <p className="text-xs lg:text-sm text-base-content/90 leading-snug">
+              All strategies are approved / pre-approved by the client, and trade execution control is always with the client
+            </p>
+          </div>
+          <div className="col-start-1 row-start-1 text-left">
+            <p className="text-xs lg:text-sm text-base-content/90 leading-snug">
+              All trade logs, reports, dashboards are available to the client on real-time basis
+            </p>
+          </div>
         </div>
       </div>
     ),
@@ -537,7 +640,7 @@ function WhyHedgiumSection() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <section id="why-hedgium" className="py-20 px-6 bg-base-200">
+    <section id="why-hedgium" className="py-20 px-6 bg-base-200" data-aos="fade-up">
       <div className="max-w-6xl mx-auto">
         {/* Heading */}
         <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content mb-10">
@@ -546,7 +649,7 @@ function WhyHedgiumSection() {
 
         <div className="flex flex-col py-10 lg:flex-row gap-8 lg:gap-12 items-start">
           {/* Left: Tab list with hex icons + dashed connector */}
-          <div className="lg:w-[38%] flex flex-col gap-2">
+          <div className="lg:w-[38%] flex flex-col gap-4">
             {WHY_HEDGIUM_TABS.map((tab, i) => {
               const isActive = activeTab === i;
               return (
@@ -586,6 +689,97 @@ function WhyHedgiumSection() {
             </div>
           </div>
         </div>
+
+        {/* Think beyond Mutual Funds, PMS, AIF – comparison table */}
+        <div className="mt-16 lg:mt-20">
+          <h3 className="text-xl md:text-2xl font-bold text-primary mb-2">
+            Think beyond Mutual Funds, PMS, AIF –
+          </h3>
+          <p className="text-sm lg:text-base text-primary/80 mb-6">
+            Take back control, gain liquidity, reduce costs &amp; improve tax efficiency
+          </p>
+          <div className="overflow-x-auto rounded-xl border border-base-300 bg-base-100">
+            <table className="w-full min-w-[640px] text-left border-collapse">
+              <thead>
+                <tr className="border-b border-base-300">
+                  <th className="w-0 p-0" aria-label="Category" />
+                  <th className="p-3 lg:p-4 font-bold text-base-content bg-primary/10 border-2 border-dashed border-primary/50 rounded-tl-lg">
+                    Hedgium
+                  </th>
+                  <th className="p-3 lg:p-4 font-bold text-base-content border-b border-base-300">
+                    Mutual Funds
+                  </th>
+                  <th className="p-3 lg:p-4 font-bold text-base-content border-b border-base-300">
+                    PMS
+                  </th>
+                  <th className="p-3 lg:p-4 font-bold text-base-content border-b border-base-300 rounded-tr-lg">
+                    AIF
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  {
+                    category: "Control Risk",
+                    hedgium: "Securities/capital under direct client control/access",
+                    mutualFunds: "Securities/capital in Fund Manager's control",
+                    pms: "PMS Fund Managers have discretion",
+                    aif: "Securities/capital in Fund Manager's control",
+                  },
+                  {
+                    category: "Liquidity",
+                    hedgium: "Highly liquid as funds in own brokerage account",
+                    mutualFunds: "Redemption Process & Exit Load Costs",
+                    pms: "—",
+                    aif: "Most AIFs have multi-year lock-ins",
+                  },
+                  {
+                    category: "Tax efficiency",
+                    hedgium: "Taxed at own marginal bracket. Can claim expenses to reduce tax",
+                    mutualFunds: "Can't claim expenses to reduce liability",
+                    pms: "—",
+                    aif: "AIFs taxed at fund's level, usually 42.7% irrespective of client's tax bracket",
+                  },
+                  {
+                    category: "Directional Risk",
+                    hedgium: "Engine 2 provides non-correlated returns",
+                    mutualFunds: "Correlated to market, and depends on strategy",
+                    pms: "—",
+                    aif: "AIFs can go short but leverage is restricted to a level",
+                  },
+                  {
+                    category: "ROI driver",
+                    hedgium: "Quant based statistical arbitrage",
+                    mutualFunds: "—",
+                    pms: "Heavily relies on stock picking. Poor performance of a few stocks can significantly hurt overall returns",
+                    aif: "—",
+                  },
+                ].map((row, i) => (
+                  <tr key={row.category} className="border-b border-base-300 last:border-b-0">
+                    <td className="py-2 pr-2 align-top">
+                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary text-primary-content text-xs lg:text-sm font-semibold">
+                        <span aria-hidden>→</span>
+                        {row.category}
+                      </span>
+                    </td>
+                    <td className={`p-3 lg:p-4 text-xs lg:text-sm text-base-content/90 align-top border-l border-r-2 border-dashed border-primary/50 bg-primary/5 ${i === 4 ? "rounded-bl-lg" : ""}`}>
+                      {row.hedgium}
+                    </td>
+                    <td className="p-3 lg:p-4 text-xs lg:text-sm text-base-content/80 align-top">
+                      {row.mutualFunds}
+                    </td>
+                    <td className="p-3 lg:p-4 text-xs lg:text-sm text-base-content/80 align-top">
+                      {row.pms}
+                    </td>
+                    <td className="p-3 lg:p-4 text-xs lg:text-sm text-base-content/80 align-top">
+                      {row.aif}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -593,7 +787,7 @@ function WhyHedgiumSection() {
 
 function FAQSection() {
   return (
-    <section id="faq" className="py-20 px-6 bg-base-200">
+    <section id="faq" className="py-20 px-6 bg-base-200" data-aos="fade-up">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content mb-3">
           Frequently Asked Questions
@@ -629,6 +823,10 @@ function FAQSection() {
 
 export default function Home() {
   useEffect(() => {
+    AOS.init({ duration: 600, once: true, offset: 80 });
+  }, []);
+
+  useEffect(() => {
     // Simple smooth scroll implementation
     const handleAnchorClick = (e: Event) => {
       const target = e.target as Element;
@@ -659,7 +857,7 @@ export default function Home() {
         <Navbar />
 
           {/* Hero Section */}
-          <section className="relative h-[94vh] w-full overflow-hidden flex items-center justify-center text-white">
+          <section className="relative h-[96vh] w-full overflow-hidden flex items-center justify-center text-white">
             {/* Background video */}
             <video
               autoPlay
@@ -709,7 +907,7 @@ export default function Home() {
     
 
           {/* Sandbox Section */}
-          <section id="sandbox" className="py-16 px-6 bg-base-100">
+          <section id="sandbox" className="py-16 px-6 bg-base-100" data-aos="fade-up">
             <div className="max-w-6xl mx-auto">
 
               {/* Heading row */}
@@ -725,7 +923,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="hidden sm:block border-t border-dashed border-primary/50 w-12" aria-hidden />
-                  <Link href="/onboarding" className="btn btn-primary whitespace-nowrap">
+                  <Link href="/get-started" className="btn btn-primary whitespace-nowrap">
                     Take me there
                   </Link>
                 </div>
@@ -822,86 +1020,70 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Fees / Plans Section */}
-          <section id="pricing" className="py-20 px-6 bg-base-100">
+          {/* Fees Section */}
+          <section id="pricing" className="py-20 px-6 bg-base-100" data-aos="fade-up">
             <div className="max-w-6xl mx-auto">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-base-content mb-3">Fees</h2>
-              <p className="text-base lg:text-lg text-base-content/70 mb-12">
-                Transparent, performance-aligned pricing — no hidden charges.
+              <h2 className="text-3xl md:text-4xl font-bold text-primary mb-2">Fees</h2>
+              <p className="text-base text-base-content/70 mb-10">
+                Simple structure and charged only if there are profits to cover the fees
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Portfolio Income */}
-                <div className="flex flex-col rounded-xl border border-base-300 bg-base-100 shadow-sm overflow-hidden card-hover">
-                  <div className="bg-primary px-5 py-4">
-                    <h3 className="text-lg font-bold text-primary-content">Portfolio Income</h3>
-                    <p className="text-sm text-primary-content/80 mt-0.5">Top-up income on existing portfolio</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start mb-10">
+                {/* Left: Client-specific fee structure */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-base-content mb-3">Retail clients</h3>
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <span className="font-bold text-primary text-lg">25L to 75L</span>
+                      <span className="text-base-content/80 text-sm lg:text-base">
+                        Starts at 0.5% of AUM
+                        <br />
+                        per quarter<sup className="text-primary">^</sup>
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex-1 p-5 flex flex-col gap-4">
-                    <div>
-                      <p className="text-xs text-base-content/60 uppercase tracking-wide font-semibold mb-1">Management Fee</p>
-                      <p className="text-2xl font-bold text-base-content">1% <span className="text-sm font-normal text-base-content/60">per annum</span></p>
+                  <div className="border-t border-dashed border-base-300 pt-6">
+                    <h3 className="text-lg font-bold text-base-content mb-3">Accredited or Institutional Clients</h3>
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <span className="font-bold text-primary text-lg">75L+</span>
+                      <span className="text-base-content/80 text-sm lg:text-base">
+                        Customized pricing
+                        <br />
+                        depending on mandate
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-xs text-base-content/60 uppercase tracking-wide font-semibold mb-1">Performance Fee</p>
-                      <p className="text-2xl font-bold text-base-content">20% <span className="text-sm font-normal text-base-content/60">of profits</span></p>
-                    </div>
-                    <ul className="space-y-2 text-sm text-base-content/80 mt-auto">
-                      {['Incremental options income', 'Statistical arbitrage strategies', 'Real-time risk management', 'Web & mobile app access'].map(f => (
-                        <li key={f} className="flex items-center gap-2"><Check className="w-4 h-4 shrink-0 text-primary" />{f}</li>
-                      ))}
-                    </ul>
-                    <Link href="/onboarding" className="btn btn-outline btn-primary w-full mt-4">Get Started</Link>
                   </div>
                 </div>
 
-                {/* Total Income — highlighted */}
-                <div className="flex flex-col rounded-xl border-2 border-primary bg-base-100 shadow-md overflow-hidden card-hover relative">
-                  <div className="absolute top-3 right-3 z-10">
-                    <span className="badge badge-primary badge-sm font-semibold">Most Popular</span>
-                  </div>
-                  <div className="bg-primary px-5 py-4">
-                    <h3 className="text-lg font-bold text-primary-content">Total Income</h3>
-                    <p className="text-sm text-primary-content/80 mt-0.5">Build portfolio + top-up income</p>
-                  </div>
-                  <div className="flex-1 p-5 flex flex-col gap-4">
-                    <div>
-                      <p className="text-xs text-base-content/60 uppercase tracking-wide font-semibold mb-1">Management Fee</p>
-                      <p className="text-2xl font-bold text-base-content">1.5% <span className="text-sm font-normal text-base-content/60">per annum</span></p>
+                {/* Right: Pyramid – fees from profits */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-full max-w-[280px] flex flex-col">
+                    <div className="bg-primary text-primary-content text-center py-3 px-4 rounded-t-lg text-sm font-semibold">
+                      Fees
                     </div>
-                    <div>
-                      <p className="text-xs text-base-content/60 uppercase tracking-wide font-semibold mb-1">Performance Fee</p>
-                      <p className="text-2xl font-bold text-base-content">20% <span className="text-sm font-normal text-base-content/60">of profits</span></p>
+                    <div className="bg-primary/80 text-primary-content text-center py-4 px-4 text-sm font-semibold">
+                      Trading Profit (Engine-2)
                     </div>
-                    <ul className="space-y-2 text-sm text-base-content/80 mt-auto">
-                      {['Hedgium model portfolio', 'Options income on top', 'Superior risk-adjusted returns', 'Dedicated relationship manager', 'Web & mobile app access'].map(f => (
-                        <li key={f} className="flex items-center gap-2"><Check className="w-4 h-4 shrink-0 text-primary" />{f}</li>
-                      ))}
-                    </ul>
-                    <Link href="/onboarding" className="btn btn-primary w-full mt-4">Get Started</Link>
-                  </div>
-                </div>
-
-                {/* Bespoke */}
-                <div className="flex flex-col rounded-xl border border-base-300 bg-base-100 shadow-sm overflow-hidden card-hover">
-                  <div className="bg-primary px-5 py-4">
-                    <h3 className="text-lg font-bold text-primary-content">Bespoke</h3>
-                    <p className="text-sm text-primary-content/80 mt-0.5">Custom institutional mandates</p>
-                  </div>
-                  <div className="flex-1 p-5 flex flex-col gap-4">
-                    <div>
-                      <p className="text-xs text-base-content/60 uppercase tracking-wide font-semibold mb-1">Fees</p>
-                      <p className="text-2xl font-bold text-base-content">Custom</p>
+                    <div className="bg-primary/60 text-primary-content text-center py-5 px-4 rounded-b-lg text-sm font-semibold">
+                      Base Portfolio Profit (Engine-1)
                     </div>
-                    <ul className="space-y-2 text-sm text-base-content/80 mt-auto">
-                      {['Fully custom strategy design', 'Institutional capital sizes', 'Dedicated quant team', '24/7 live support', 'API & system integration'].map(f => (
-                        <li key={f} className="flex items-center gap-2"><Check className="w-4 h-4 shrink-0 text-primary" />{f}</li>
-                      ))}
-                    </ul>
-                    <Link href="mailto:contact@hedgium.in" className="btn btn-outline btn-primary w-full mt-4">Contact Us</Link>
                   </div>
                 </div>
               </div>
+
+              {/* New Fiscal Year Offer */}
+              <div className="rounded-xl bg-primary text-primary-content p-5 lg:p-6 mb-6">
+                <p className="font-bold text-base lg:text-lg mb-2">
+                  New Fiscal Year Offer (Valid only till 30th Apr 2026):
+                </p>
+                <p className="text-sm lg:text-base opacity-95">
+                  Free first month - potentially earn back a significant portion of the fees at no cost before you even pay
+                </p>
+              </div>
+
+              <p className="text-xs text-base-content/50">
+                <sup>^</sup> Subject to Regulatory framework prescribed by SEBI
+              </p>
             </div>
           </section>
 
@@ -909,7 +1091,7 @@ export default function Home() {
           <FAQSection />
 
           {/* Contact Section */}
-          <section id="contact" className="py-20 px-6 bg-base-200">
+          <section id="contact" className="py-20 px-6 bg-base-200" data-aos="fade-up">
             <div className="max-w-6xl mx-auto">
               <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
 
@@ -920,7 +1102,7 @@ export default function Home() {
                     <span className="text-primary">systematic probability-driven alpha.</span>
                   </h2>
                   <p className="text-lg lg:text-xl text-base-content/70 mb-8">Let&apos;s get started!</p>
-                  <Link href="/onboarding" className="btn btn-primary btn-lg w-fit gap-2">
+                  <Link href="/get-started?ref=schedule_call" className="btn btn-primary btn-lg w-fit gap-2">
                     <Calendar className="w-5 h-5" aria-hidden />
                     Set up a Free Call
                   </Link>

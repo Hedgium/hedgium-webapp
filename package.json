@@ -10,6 +10,7 @@
     "analyze": "cross-env ANALYZE=true next build"
   },
   "dependencies": {
+    "aos": "^2.3.4",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "lightweight-charts": "^5.0.8",

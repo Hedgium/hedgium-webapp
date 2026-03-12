@@ -1,0 +1,420 @@
+"use client";
+
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { MessageCircle, Loader2, ChevronLeft, Shield } from "lucide-react";
+import { myFetch } from "@/utils/api";
+import useAlert from "@/hooks/useAlert";
+import { TIME_OPTIONS_15MIN } from "@/utils/timeOptions";
+
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "";
+const DEFAULT_MESSAGE = "Hi, I'm interested in Hedgium. I'd like to schedule a call or learn more.";
+
+const INVESTMENT_OPTIONS = [
+  { value: "below_50l", label: "Below ₹50 Lakhs" },
+  { value: "50l_2cr", label: "₹50 Lakhs to ₹2 Crores" },
+  { value: "2cr_5cr", label: "₹2 Crores to ₹5 Crores" },
+  { value: "5cr_plus", label: "₹5 Crore+" },
+] as const;
+
+const VALID_SOURCES = ["website", "ads", "social_media", "direct_contact", "other"] as const;
+const SOURCE_OPTIONS: { value: typeof VALID_SOURCES[number]; label: string }[] = [
+  { value: "website", label: "Website" },
+  { value: "ads", label: "Ads" },
+  { value: "social_media", label: "Social media" },
+  { value: "direct_contact", label: "Direct contact" },
+  { value: "other", label: "Other" },
+];
+
+/** Left-panel content per step: quotation (step 1), testimonial (step 2), guide (step 3), or after submit */
+function getLeftPanelContent(step: number, submitted: boolean): React.ReactNode {
+  const wrapper = (children: React.ReactNode) => (
+    <div className="flex flex-col items-center justify-center p-8 lg:p-12 text-center">
+      {children}
+    </div>
+  );
+
+  if (submitted) {
+    return wrapper(
+      <>
+        <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center text-2xl mb-6">✓</div>
+        <p className="text-lg font-medium text-base-content">Thank you for getting in touch.</p>
+        <p className="mt-3 text-sm text-base-content/60">We&apos;ll confirm your meeting and reach out shortly.</p>
+      </>
+    );
+  }
+
+  if (step === 1) {
+    // Quotation
+    return wrapper(
+      <>
+        <span className="text-4xl text-primary/50 font-serif leading-none">&ldquo;</span>
+        <p className="text-lg lg:text-xl font-medium text-base-content leading-relaxed max-w-sm mt-2">
+          The best time to start was yesterday. The next best is now.
+        </p>
+        <p className="mt-5 text-sm text-base-content/60">— Get started in minutes</p>
+      </>
+    );
+  }
+
+  if (step === 2) {
+    // Testimonial
+    return wrapper(
+      <>
+        <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-primary/10 flex items-center justify-center text-xl lg:text-2xl font-bold text-primary mb-6">
+          RB
+        </div>
+        <p className="text-lg lg:text-xl font-medium text-base-content leading-relaxed max-w-sm">
+          &ldquo;Until this call, I didn&apos;t know that majority of my funds were under performing benchmark.&rdquo;
+        </p>
+        <p className="mt-5 text-sm text-base-content/60">– Rajesh Begur, Founder - Begur & Partners</p>
+      </>
+    );
+  }
+
+  // Step 3: Guide
+  return wrapper(
+    <>
+      <h3 className="text-base font-semibold text-base-content mb-3">What happens next</h3>
+      <ul className="text-sm text-base-content/80 text-left max-w-sm space-y-2 list-disc list-inside">
+        <li>We&apos;ll confirm your slot via call or WhatsApp</li>
+        <li>Our advisor will reach out at the chosen time</li>
+        <li>Bring your portfolio or goals — we&apos;ll tailor the discussion</li>
+      </ul>
+    </>
+  );
+}
+
+export default function GetStartedPage() {
+  const searchParams = useSearchParams();
+  const alert = useAlert();
+  const sourceFromUrl = useMemo(() => {
+    const s = (searchParams.get("source") || "").toLowerCase().replace(/-/g, "_");
+    return VALID_SOURCES.includes(s as typeof VALID_SOURCES[number]) ? s : "website";
+  }, [searchParams]);
+
+  const [step, setStep] = useState(1);
+  const [mobile, setMobile] = useState("");
+  const [name, setName] = useState("");
+  const [source, setSource] = useState<string>(sourceFromUrl);
+  useEffect(() => setSource(sourceFromUrl), [sourceFromUrl]);
+  const [investmentValue, setInvestmentValue] = useState<string>("");
+  const [meetingDate, setMeetingDate] = useState("");
+  const [meetingTime, setMeetingTime] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+
+  const whatsappUrl = useMemo(() => {
+    if (!WHATSAPP_NUMBER) return null;
+    const num = WHATSAPP_NUMBER.replace(/\D/g, "");
+    return `https://wa.me/${num}?text=${encodeURIComponent(DEFAULT_MESSAGE)}`;
+  }, []);
+
+  const canProceedStep1 = useMemo(() => {
+    const digits = mobile.replace(/\D/g, "");
+    return digits.length === 10;
+  }, [mobile]);
+
+  const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "");
+    if (value.length <= 10) setMobile(value);
+  };
+
+  const handleBack = () => {
+    setError("");
+    if (step > 1) setStep(step - 1);
+  };
+
+  const handleStep1Continue = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!canProceedStep1) {
+      setError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    setStep(2);
+  };
+
+  const handleStep2Continue = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!investmentValue) {
+      setError("Please select an option.");
+      return;
+    }
+    setStep(3);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    const date = meetingDate.trim();
+    const time = meetingTime.trim();
+    if (!date || !time) {
+      setError("Please select both date and time for the meeting.");
+      return;
+    }
+    const scheduledAt = new Date(`${date}T${time}`).toISOString();
+    if (Number.isNaN(Date.parse(scheduledAt))) {
+      setError("Please enter a valid date and time.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const digits = mobile.replace(/\D/g, "").slice(0, 10);
+      const res = await myFetch("leads/", {
+        method: "POST",
+        body: JSON.stringify({
+          mobile: digits,
+          name: name.trim() || undefined,
+          source,
+          investment_value: investmentValue,
+          scheduled_at: scheduledAt,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSubmitted(true);
+        alert.success(data.message || "Thank you. We'll be in touch shortly.");
+      } else {
+        setError(data.detail || "Something went wrong. Please try again.");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const leftContent = getLeftPanelContent(step, submitted);
+
+  return (
+    <div className="bg-base-200 min-h-screen flex items-center justify-center">
+      <div className="md:w-10/12 lg:w-8/12 mx-auto bg-base-100 my-8 rounded-xl border border-base-300 shadow-sm flex items-center justify-center">
+        {/* Left: Quotation / Testimonial / Guide (varies by step or submitted) */}
+        <div className="hidden lg:flex lg:w-2/5 xl:w-1/2 flex-col">
+          {leftContent}
+        </div>
+
+        {/* Right: Form or success message */}
+        <div className="flex-1 flex items-center justify-center p-4 py-4">
+          <div className="w-full max-w-md overflow-hidden">
+            <div className="p-4">
+            {/* Header: Back + Step (when form) or just WhatsApp (when submitted) */}
+            <div className="flex items-center justify-between mb-4">
+              <span className="flex items-center gap-2">
+                {!submitted && step > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="btn btn-outline btn-sm"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                )}
+                {!submitted && <span className="text-sm text-base-content/60">Step {step} of 3</span>}
+              </span>
+              {(whatsappUrl && !submitted) && (
+                <div>
+                  
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-sm btn btn-primary btn-sm normal-case"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  WhatsApp
+                </a>
+                </div>
+              )}
+            </div>
+
+            {submitted ? (
+              <div className="text-center">
+                <h2 className="text-xl font-bold text-base-content mb-2">We&apos;ll be in touch shortly</h2>
+                <p className="text-base-content/70 text-sm mb-6">
+                  We&apos;ve received your details and will confirm your meeting time. Prefer to chat now?
+                </p>
+                {whatsappUrl && (
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 btn btn-primary btn-sm normal-case"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Chat on WhatsApp
+                  </a>
+                )}
+              </div>
+            ) : null}
+
+            {!submitted && step === 1 && (
+            <form onSubmit={handleStep1Continue} className="space-y-1">
+              <h2 className="text-lg font-bold text-base-content">Get started</h2>
+              <p className="text-base-content/70 text-sm">
+                Share your number and we&apos;ll get in touch.
+              </p>
+              <div className="space-y-3 pt-4">
+                <div>
+                  <label className="label py-0.5">
+                    <span className="label-text">Mobile number <span className="text-error">*</span></span>
+                  </label>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    maxLength={10}
+                    value={mobile}
+                    onChange={handleMobileChange}
+                    placeholder="10-digit mobile number"
+                    className="input input-bordered input-sm w-full"
+                  />
+                </div>
+                <div>
+                  <label className="label py-0.5">
+                    <span className="label-text">Name (optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="input input-bordered input-sm w-full"
+                  />
+                </div>
+                <div>
+                  <label className="label py-0.5">
+                    <span className="label-text">Where did you hear about us? (optional)</span>
+                  </label>
+                  <select
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                    className="select select-bordered select-sm w-full"
+                  >
+                    {SOURCE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {error && <p className="text-sm text-error">{error}</p>}
+              <button
+                type="submit"
+                disabled={!canProceedStep1}
+                className="btn btn-primary w-full btn-sm normal-case mt-4"
+              >
+                Continue →
+              </button>
+            </form>
+          )}
+
+          {!submitted && step === 2 && (
+            <form onSubmit={handleStep2Continue} className="space-y-4">
+              <h2 className="text-lg font-bold text-base-content">What&apos;s the total value of your investments?</h2>
+              <p className="text-base-content/70 text-sm">
+                Include Stocks, MFs, FDs, and cash. This will help us personalise your experience.
+              </p>
+              <div className="space-y-2">
+                {INVESTMENT_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                      investmentValue === opt.value
+                        ? "border-primary bg-primary/5"
+                        : "border-base-300 bg-base-200/50 hover:bg-base-200"
+                    }`}
+                  >
+                    <span className="text-sm text-base-content">{opt.label}</span>
+                    <input
+                      type="radio"
+                      name="investment_value"
+                      value={opt.value}
+                      checked={investmentValue === opt.value}
+                      onChange={() => setInvestmentValue(opt.value)}
+                      className="radio radio-primary radio-sm"
+                    />
+                  </label>
+                ))}
+              </div>
+              {error && <p className="text-sm text-error">{error}</p>}
+              <button
+                type="submit"
+                disabled={!investmentValue}
+                className="btn btn-primary w-full btn-sm normal-case mt-4"
+              >
+                Continue →
+              </button>
+            </form>
+          )}
+
+          {!submitted && step === 3 && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <h2 className="text-lg font-bold text-base-content">When would you like to meet?</h2>
+              <p className="text-base-content/70 text-sm">
+                Pick a date and time. We&apos;ll confirm via call or WhatsApp.
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="label py-0.5">
+                    <span className="label-text">Date</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={meetingDate}
+                    onChange={(e) => setMeetingDate(e.target.value)}
+                    min={new Date().toISOString().slice(0, 10)}
+                    className="input input-bordered input-sm w-full"
+                  />
+                </div>
+                <div>
+                  <label className="label py-0.5">
+                    <span className="label-text">Time</span>
+                  </label>
+                  <select
+                    value={meetingTime}
+                    onChange={(e) => setMeetingTime(e.target.value)}
+                    className="select select-bordered select-sm w-full"
+                  >
+                    <option value="">Select time</option>
+                    {TIME_OPTIONS_15MIN.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {error && <p className="text-sm text-error">{error}</p>}
+              <button
+                type="submit"
+                disabled={submitting || !meetingDate || !meetingTime}
+                className="btn btn-primary w-full btn-sm normal-case mt-4 gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit"
+                )}
+              </button>
+            </form>
+          )}
+
+          <p className="mt-5 pt-4 border-t border-base-300 flex items-center justify-center gap-2 text-xs text-base-content/50">
+            <Shield className="w-3.5 h-3.5 flex-shrink-0" />
+            Your data is 100% protected
+          </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
