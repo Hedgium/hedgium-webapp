@@ -144,7 +144,7 @@ export default function StrategyDetail() {
   return (
     <div className="p-4 space-y-4">
 
-      <Link href="/admin/strategy" className="btn btn-sm btn-outline btn-ghost mb-2">
+      <Link href="/admin" className="btn btn-sm btn-outline btn-ghost mb-2">
         {`← Back`}
       </Link>
       {/* HEADER */}

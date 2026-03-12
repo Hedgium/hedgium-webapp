@@ -1,6 +1,6 @@
 /** Time options at 15-minute intervals (00:00, 00:15, ..., 23:45) for dropdowns */
 export const TIME_OPTIONS_15MIN: string[] = [];
-for (let h = 0; h < 24; h++) {
+for (let h = 9; h <=20; h++) {
   for (let m = 0; m < 60; m += 15) {
     TIME_OPTIONS_15MIN.push(
       `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`
