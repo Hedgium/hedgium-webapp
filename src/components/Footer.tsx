@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto">
 
         {/* Top row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-neutral-content/20">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 ">
 
           {/* Brand */}
           <div className="md:col-span-1 flex flex-col gap-4">
@@ -52,19 +52,88 @@ export default function Footer() {
             <a href="https://www.hedgium.ai" className="text-sm text-neutral-content/70 hover:text-neutral-content transition-colors">
               www.hedgium.ai
             </a>
-            <a href="tel:+918454838304" className="text-sm text-neutral-content/70 hover:text-neutral-content transition-colors">
-              +91 8454838304
+            <a href={`tel:+91${process.env.NEXT_PUBLIC_PHONE_NUMBER}`} className="text-sm text-neutral-content/70 hover:text-neutral-content transition-colors">
+              +91 {process.env.NEXT_PUBLIC_PHONE_NUMBER}
             </a>
-            <div className="mt-2 text-xs text-neutral-content/50 space-y-0.5">
-              <p>Haware City, Thane</p>
-              <p>Hiranandani Gardens, Powai</p>
-              <p>Seawoods, Navi Mumbai</p>
-            </div>
           </div>
 
         </div>
 
-        {/* Bottom row */}
+  
+
+        {/* SEBI / RA / IA registration and disclaimers */}
+        <div className="pt-10 mt-10 border-t border-neutral-content/20 text-xs text-neutral-content/60 space-y-8">
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-neutral-content/90">Research Analyst (RA)</h3>
+            <ul className="space-y-1">
+              <li>SEBI Registration No.: INH000009825</li>
+              <li>BSE Enlistment No.: 5586</li>
+              <li>Type of Registration: Non-Individual</li>
+              <li>Validity: June 13, 2022 - Perpetual</li>
+            </ul>
+            <div className="space-y-1 pt-2">
+              <p><strong className="text-neutral-content/80">Principal Officer:</strong> Mr. Rahul Kumar Ghose</p>
+              <p>Email: contactus@octanom.com | Contact: +91 7669668668</p>
+            </div>
+            <div className="space-y-1">
+              <p><strong className="text-neutral-content/80">Compliance Officer:</strong> Mr. Pratik Rathod</p>
+              <p>Email: compliance@octanom.com | Contact: +91 9076160917</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-neutral-content/90">Investment Advisor (IA)</h3>
+            <ul className="space-y-1">
+              <li>SEBI Registration No.: INA000021207</li>
+              <li>BSE Enlistment No.: 2368</li>
+              <li>Type of Registration: Non-Individual</li>
+              <li>Validity: October 30, 2025 - Perpetual</li>
+            </ul>
+            <div className="space-y-1 pt-2">
+              <p><strong className="text-neutral-content/80">Principal Officer:</strong> Mr. Archit Mahajan</p>
+              <p>Email: archit@octanom.com | Contact: +91 9930180035</p>
+            </div>
+            <div className="space-y-1">
+              <p><strong className="text-neutral-content/80">Compliance Officer:</strong> Mr. Pratik Rathod</p>
+              <p>Email: compliance@octanom.com | Contact: +91 9076160917</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-neutral-content/90">SEBI Correspondence Office Details</h3>
+            <p>Securities and Exchange Board of India, SEBI Bhavan II, Plot No: C7, &quot;G&quot; Block, Bandra Kurla Complex, Bandra (East), Mumbai-400051</p>
+            <p>
+              <a href="https://scores.sebi.gov.in/scores-home" target="_blank" rel="noopener noreferrer" className="text-neutral-content/70 hover:text-neutral-content underline">SEBI SCORES</a>
+              {' · '}
+              <a href="https://smartodr.in/login" target="_blank" rel="noopener noreferrer" className="text-neutral-content/70 hover:text-neutral-content underline">SMARTODR</a>
+            </p>
+          </div>
+
+
+
+            
+          </div>
+
+
+  
+
+   
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-neutral-content/90">Disclaimers</h3>
+            <ul className="space-y-2 list-disc list-inside text-neutral-content/70">
+              <li>Registration granted by SEBI, enlistment as Research Analyst and Investment Adviser with Exchange, and certification from NISM in no way guarantee the performance of the intermediary or provide any assurance of returns to investors.</li>
+              <li>The company does not guarantee or provide any assurance of return, fixed returns, or risk-free return. Investments in the securities are subject to market risks. Read all the related documents carefully before investing.</li>
+              <li>Past performance may or may not be sustained in the future, and there is no guarantee of future results.</li>
+              <li>All fees and payments must be made solely to the Company&apos;s designated bank account. The Company shall not be liable for any payments made to any specific individuals.</li>
+            </ul>
+          </div>
+        </div>
+
+
+              {/* Bottom row */}
         <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-neutral-content/40">
           <p>© {new Date().getFullYear()} Hedgium. All rights reserved.</p>
           <p>In a market dominated by directional risk, we focus on systematic probability-driven alpha.</p>

@@ -222,7 +222,7 @@ export default function BrokerLoginStatus() {
                   <span className="font-medium">Margin:</span>{" "}
                   {formatMoneyIN(broker.margin, { decimals: 0 })}
                   <button
-                    onClick={refreshMargin}
+                    onClick={() => refreshMargin()}
                     disabled={refreshing}
                     className={`btn btn-ghost btn-xs ${refreshing ? "animate-spin" : ""}`}
                   >
