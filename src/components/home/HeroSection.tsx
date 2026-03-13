@@ -19,7 +19,7 @@ export default function HeroSection() {
       >
         <div className="trapezium-reverse mx-auto">
           <div className="trapezium-inner">
-            <p className="text-sm md:text-lg opacity-90 leading-relaxed">
+            <p className="text-base text-center md:text-lg opacity-90 leading-relaxed">
               <span className="md:hidden text-center">Two decades of expertise. Cutting-edge technology.</span>
               <span className="hidden md:inline">
                 We capture opportunities in real-time and deliver sophisticated playbooks to maximize risk-adjusted returns, by combining two decades of market expertise with cutting-edge technology.

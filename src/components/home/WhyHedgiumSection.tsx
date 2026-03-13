@@ -186,42 +186,38 @@ const WHY_HEDGIUM_TABS = [
   },
 ] as const;
 
+/** Aligned to deck: Hedgium | Mutual Funds & PMS | AIF */
 const COMPARISON_ROWS = [
   {
     category: 'Control Risk',
-    hedgium: 'Securities/capital under direct client control/access',
-    mutualFunds: "Securities/capital in Fund Manager's control",
-    pms: 'PMS Fund Managers have discretion',
-    aif: "Securities/capital in Fund Manager's control",
+    hedgium: 'Securities under direct client control & access',
+    mutualFundsPms: 'Fund Managers have discretion/ control',
+    aif: "Securities in Fund Manager's control",
   },
   {
     category: 'Liquidity',
     hedgium: 'Highly liquid as funds in own brokerage account',
-    mutualFunds: 'Redemption Process & Exit Load Costs',
-    pms: 'Redemption Process & Exit Load Costs',
+    mutualFundsPms: 'Redemption Process & Exit Load Costs in case of MFs',
     aif: 'Most AIFs have multi-year lock-ins',
   },
   {
     category: 'Tax efficiency',
     hedgium: 'Taxed at own marginal bracket. Can claim expenses to reduce tax',
-    mutualFunds: "Can't claim expenses to reduce liability",
-    pms: "Can't claim expenses to reduce liability",
+    mutualFundsPms: "Can't claim expenses to reduce liability",
     aif: "AIFs taxed at fund's level, usually 42.7% irrespective of client's tax bracket",
   },
   {
     category: 'Directional Risk',
     hedgium: 'Engine 2 provides non-correlated returns',
-    mutualFunds: 'Correlated to market, and depends on strategy',
-    pms: 'Correlated to market, and depends on strategy',
+    mutualFundsPms: 'Correlated to market, and depends on strategy',
     aif: 'AIFs can go short but leverage is restricted to a level',
   },
   {
     category: 'ROI driver',
     hedgium: 'Quant based statistical arbitrage',
-    mutualFunds:
+    mutualFundsPms:
       'Heavily relies on stock picking. Poor performance of a few stocks can significantly hurt overall returns',
-    pms: 'Heavily relies on stock picking. Poor performance of a few stocks can significantly hurt overall returns',
-    aif: 'Heavily relies on stock picking. Poor performance of a few stocks can significantly hurt overall returns',
+    aif: 'Same as Mutual Funds & PMS',
   },
 ] as const;
 
@@ -298,14 +294,14 @@ export default function WhyHedgiumSection() {
           data-aos-duration="650"
           data-aos-once="true"
         >
-          <h3 className="text-xl md:text-2xl font-bold text-primary mb-2">
+          <h3 className="text-xl md:text-2xl font-bold text-base-content mb-2">
             Think beyond Mutual Funds, PMS, AIF –
           </h3>
-          <p className="text-sm lg:text-base text-primary/80 mb-6">
+          <p className="text-sm lg:text-base text-primary mb-6">
             Take back control, gain liquidity, reduce costs &amp; improve tax efficiency
           </p>
           <div className="overflow-x-auto rounded-xl border border-base-300 bg-base-100">
-            <table className="w-full min-w-[640px] text-left border-collapse">
+            <table className="w-full min-w-[560px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-base-300">
                   <th className="w-0 p-0" aria-label="Category" />
@@ -313,10 +309,7 @@ export default function WhyHedgiumSection() {
                     Hedgium
                   </th>
                   <th className="p-3 lg:p-4 font-bold text-base-content border-b border-base-300">
-                    Mutual Funds
-                  </th>
-                  <th className="p-3 lg:p-4 font-bold text-base-content border-b border-base-300">
-                    PMS
+                    Mutual Funds &amp; PMS
                   </th>
                   <th className="p-3 lg:p-4 font-bold text-base-content border-b border-base-300 rounded-tr-lg">
                     AIF
@@ -325,7 +318,7 @@ export default function WhyHedgiumSection() {
               </thead>
               <tbody>
                 {COMPARISON_ROWS.map((row, i) => (
-                  <tr key={row.category} className="border-b border-base-300 last:border-b-0">
+                  <tr key={row.category} className="border-b border-base-300 last:border-b-2 last:border-base-300">
                     <td className="py-2 px-2 align-top">
                       <span className="inline-flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-md bg-primary text-primary-content text-xs lg:text-sm font-semibold">
                         <span aria-hidden>→</span>
@@ -340,10 +333,7 @@ export default function WhyHedgiumSection() {
                       {row.hedgium}
                     </td>
                     <td className="p-3 lg:p-4 text-xs lg:text-sm text-base-content/80 align-top">
-                      {row.mutualFunds}
-                    </td>
-                    <td className="p-3 lg:p-4 text-xs lg:text-sm text-base-content/80 align-top">
-                      {row.pms}
+                      {row.mutualFundsPms}
                     </td>
                     <td className="p-3 lg:p-4 text-xs lg:text-sm text-base-content/80 align-top">
                       {row.aif}

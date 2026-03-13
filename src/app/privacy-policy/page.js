@@ -162,8 +162,8 @@ export default function PrivacyPolicyPage() {
               <p>
                 If you have questions or concerns about this Privacy Policy,
                 please contact us at:{" "}
-                <a href="mailto:privacy@example.com" className="link">
-                  privacy@example.com
+                <a href="mailto:contact@hedgium.in" className="link">
+                  contact@hedgium.in
                 </a>
               </p>
             </section>

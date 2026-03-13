@@ -89,7 +89,7 @@ export default function Navbar() {
 
       <Link
           href="/get-started"
-          className="btn btn-primary btn-sm shadow hover:shadow-md"
+          className="btn btn-primary btn-md shadow hover:shadow-md"
         >
           Get Started
         </Link>

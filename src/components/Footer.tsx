@@ -57,7 +57,6 @@ export default function Footer() {
             <span className="text-xs font-bold uppercase tracking-widest text-neutral-content/50 mb-1">Legal</span>
             <Link href="/terms-of-use" className="text-sm text-neutral-content/70 hover:text-neutral-content transition-colors">Terms of Use</Link>
             <Link href="/privacy-policy" className="text-sm text-neutral-content/70 hover:text-neutral-content transition-colors">Privacy Policy</Link>
-            <Link href="#" className="text-sm text-neutral-content/70 hover:text-neutral-content transition-colors">Disclaimer</Link>
           </div>
 
           {/* Contact */}
@@ -84,44 +83,24 @@ export default function Footer() {
 
   
 
-        {/* SEBI / RA / IA registration and disclaimers */}
+        {/* SEBI / RA registration and disclaimers */}
         <div className="pt-10 mt-10 border-t border-neutral-content/20 text-xs text-neutral-content/60 space-y-8">
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-neutral-content/90">Research Analyst (RA)</h3>
             <ul className="space-y-1">
-              <li>SEBI Registration No.: INH000009825</li>
-              <li>BSE Enlistment No.: 5586</li>
-              <li>Type of Registration: Non-Individual</li>
-              <li>Validity: June 13, 2022 - Perpetual</li>
+              <li>SEBI registration number: INH000025258</li>
             </ul>
             <div className="space-y-1 pt-2">
-              <p><strong className="text-neutral-content/80">Principal Officer:</strong> Mr. Rahul Kumar Ghose</p>
-              <p>Email: contactus@octanom.com | Contact: +91 7669668668</p>
+              <p><strong className="text-neutral-content/80">Principal officer:</strong> Kamlesh Ramchandani</p>
+              <p>Email: <a href="mailto:kamlesh.ramchandani@hedgium.in" className="text-neutral-content/70 hover:text-neutral-content underline">kamlesh.ramchandani@hedgium.in</a></p>
+              <p>Phone: <a href="tel:+918454838304" className="text-neutral-content/70 hover:text-neutral-content underline">8454838304</a></p>
             </div>
             <div className="space-y-1">
-              <p><strong className="text-neutral-content/80">Compliance Officer:</strong> Mr. Pratik Rathod</p>
-              <p>Email: compliance@octanom.com | Contact: +91 9076160917</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-content/90">Investment Advisor (IA)</h3>
-            <ul className="space-y-1">
-              <li>SEBI Registration No.: INA000021207</li>
-              <li>BSE Enlistment No.: 2368</li>
-              <li>Type of Registration: Non-Individual</li>
-              <li>Validity: October 30, 2025 - Perpetual</li>
-            </ul>
-            <div className="space-y-1 pt-2">
-              <p><strong className="text-neutral-content/80">Principal Officer:</strong> Mr. Archit Mahajan</p>
-              <p>Email: archit@octanom.com | Contact: +91 9930180035</p>
-            </div>
-            <div className="space-y-1">
-              <p><strong className="text-neutral-content/80">Compliance Officer:</strong> Mr. Pratik Rathod</p>
-              <p>Email: compliance@octanom.com | Contact: +91 9076160917</p>
+              <p><strong className="text-neutral-content/80">Compliance Officer:</strong> Aerik Wadhwani</p>
+              <p>Email: <a href="mailto:compliance@hedgium.in" className="text-neutral-content/70 hover:text-neutral-content underline">compliance@hedgium.in</a></p>
             </div>
           </div>
 
@@ -147,7 +126,7 @@ export default function Footer() {
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-neutral-content/90">Disclaimers</h3>
             <ul className="space-y-2 list-disc list-inside text-neutral-content/70">
-              <li>Registration granted by SEBI, enlistment as Research Analyst and Investment Adviser with Exchange, and certification from NISM in no way guarantee the performance of the intermediary or provide any assurance of returns to investors.</li>
+              <li>Registration granted by SEBI, enlistment as Research Analyst with Exchange, and certification from NISM in no way guarantee the performance of the intermediary or provide any assurance of returns to investors.</li>
               <li>The company does not guarantee or provide any assurance of return, fixed returns, or risk-free return. Investments in the securities are subject to market risks. Read all the related documents carefully before investing.</li>
               <li>Past performance may or may not be sustained in the future, and there is no guarantee of future results.</li>
               <li>All fees and payments must be made solely to the Company&apos;s designated bank account. The Company shall not be liable for any payments made to any specific individuals.</li>

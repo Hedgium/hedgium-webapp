@@ -9,7 +9,6 @@ import TwinEngineFrameworkSection from '@/components/home/TwinEngineFrameworkSec
 const WHAT_WE_DO_IMAGES = [
   '/images/home/what we do _ slide 1.png',
   '/images/home/what we do _ slide 2.png',
-  '/images/home/what we do _ slide 3.jpg',
 ].map((path) => path.replace(/ /g, '%20'));
 
 const WHAT_WE_DO_SLIDES = [
@@ -17,35 +16,31 @@ const WHAT_WE_DO_SLIDES = [
     id: 'slide-1',
     image: WHAT_WE_DO_IMAGES[0],
     bottomText: (
-      <>
-        <span className="font-light text-2xl">{`{ `}</span>
+      <span className="font-semibold text-base">
         Outperform benchmark returns
-        <span className="font-light text-2xl">{` }`}</span>
-      </>
+      </span>
     ),
   },
   {
     id: 'slide-2',
     image: WHAT_WE_DO_IMAGES[1],
     bottomText: (
-      <>
-        <span className="font-light text-2xl">{`{ `}</span>
-        Sophisticated institutional grade set-ups
-        <span className="font-light text-2xl">{` }`}</span>
-      </>
+      <span className="font-semibold text-base ">
+        Over 20 years of investing & trading experience
+      </span>
     ),
-  },
-  {
-    id: 'slide-3',
-    image: WHAT_WE_DO_IMAGES[2],
-    bottomText: (
-      <>
-        <span className="font-light text-2xl">{`{ `}</span>
-        2 decades of investing & trading experience
-        <span className="font-light text-2xl">{` }`}</span>
-      </>
-    ),
-  },
+  }
+  // {
+  //   id: 'slide-3',
+  //   image: WHAT_WE_DO_IMAGES[2],
+  //   bottomText: (
+  //     <>
+  //       <span className="font-light text-2xl">{`{ `}</span>
+  //       2 decades of investing & trading experience
+  //       <span className="font-light text-2xl">{` }`}</span>
+  //     </>
+  //   ),
+  // },
 ];
 
 export default function WhatWeDoSection() {
@@ -79,7 +74,7 @@ export default function WhatWeDoSection() {
                 <span className="text-primary font-bold">market-neutral alpha</span> for clients.
               </p>
               <div className="flex flex-col gap-2">
-                <Link href="/get-started?ref=schedule_call" className="btn btn-primary gap-2 w-fit">
+                <Link href="/get-started?ref=schedule_call" className="btn btn-primary btn-md gap-2 w-fit">
                   <Calendar className="w-4 h-4" aria-hidden />
                   Set up a Free Call
                 </Link>
