@@ -9,7 +9,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 ">
 
           {/* Brand */}
-          <div className="md:col-span-1 flex flex-col gap-4">
+          <div
+            className="md:col-span-1 flex flex-col gap-4"
+            data-aos="fade-up"
+            data-aos-duration="600"
+            data-aos-once="true"
+          >
             <img
               src="/images/logos_darkmode/Hedgium stacked darkmode.png"
               alt="Hedgium"
@@ -21,7 +26,13 @@ export default function Footer() {
           </div>
 
           {/* Navigate */}
-          <div className="flex flex-col gap-2">
+          <div
+            className="flex flex-col gap-2"
+            data-aos="fade-up"
+            data-aos-duration="600"
+            data-aos-delay="60"
+            data-aos-once="true"
+          >
             <span className="text-xs font-bold uppercase tracking-widest text-neutral-content/50 mb-1">Navigate</span>
             {[
               { label: 'What We Do', href: '/#what-we-do' },
@@ -36,7 +47,13 @@ export default function Footer() {
           </div>
 
           {/* Legal */}
-          <div className="flex flex-col gap-2">
+          <div
+            className="flex flex-col gap-2"
+            data-aos="fade-up"
+            data-aos-duration="600"
+            data-aos-delay="100"
+            data-aos-once="true"
+          >
             <span className="text-xs font-bold uppercase tracking-widest text-neutral-content/50 mb-1">Legal</span>
             <Link href="/terms-of-use" className="text-sm text-neutral-content/70 hover:text-neutral-content transition-colors">Terms of Use</Link>
             <Link href="/privacy-policy" className="text-sm text-neutral-content/70 hover:text-neutral-content transition-colors">Privacy Policy</Link>
@@ -44,7 +61,13 @@ export default function Footer() {
           </div>
 
           {/* Contact */}
-          <div className="flex flex-col gap-2">
+          <div
+            className="flex flex-col gap-2"
+            data-aos="fade-up"
+            data-aos-duration="600"
+            data-aos-delay="140"
+            data-aos-once="true"
+          >
             <span className="text-xs font-bold uppercase tracking-widest text-neutral-content/50 mb-1">Contact</span>
             <a href="mailto:contact@hedgium.in" className="text-sm text-neutral-content/70 hover:text-neutral-content transition-colors">
               contact@hedgium.in

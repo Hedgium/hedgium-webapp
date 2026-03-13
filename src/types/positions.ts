@@ -10,6 +10,8 @@ export interface LivePosition {
   realised?: number;
   realised_total?: number;
   unrealised_total?: number;
+  /** Broker live API (e.g. Zerodha) — may be set when unrealised_total is not */
+  unrealised?: number;
 }
 
 export interface LivePositionsData {

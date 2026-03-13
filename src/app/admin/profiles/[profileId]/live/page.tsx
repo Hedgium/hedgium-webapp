@@ -365,7 +365,11 @@ export default function LivePositionsPage() {
               {(() => {
                 const totalPnl = positions.reduce((sum, pos) => sum + (pos.pnl || 0), 0);
                 const totalRealised = positions.reduce((sum, pos) => sum + (pos.realised || pos.realised_total || 0), 0);
-                const totalUnrealised = positions.reduce((sum, pos) => sum + (pos.unrealised_total || 0), 0);
+                const totalUnrealised = positions.reduce(
+                  (sum, pos) =>
+                    sum + (pos.unrealised_total ?? pos.unrealised ?? 0),
+                  0
+                );
                 const totalPnlColor = totalPnl >= 0 ? "text-green-400" : "text-red-400";
                 
                 return (
@@ -450,8 +454,11 @@ export default function LivePositionsPage() {
                           : "-"}
                       </td>
                       <td>
-                        {position.unrealised_total !== undefined
-                          ? formatMoneyIN(position.unrealised_total ?? 0)
+                        {position.unrealised_total !== undefined ||
+                        position.unrealised !== undefined
+                          ? formatMoneyIN(
+                              position.unrealised_total ?? position.unrealised ?? 0
+                            )
                           : "-"}
                       </td>
                       <td>
