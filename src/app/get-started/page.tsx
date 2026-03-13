@@ -146,6 +146,30 @@ export default function GetStartedPage() {
     setStep(3);
   };
 
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }, []);
+  const timeOptionsForSelectedDate = useMemo(() => {
+    if (!meetingDate) return TIME_OPTIONS_15MIN;
+    const minAheadMs = 60_000;
+    const now = Date.now();
+    return TIME_OPTIONS_15MIN.filter((t) => {
+      const slot = new Date(`${meetingDate}T${t}`).getTime();
+      return !Number.isNaN(slot) && slot >= now + minAheadMs;
+    });
+  }, [meetingDate]);
+
+  useEffect(() => {
+    if (!meetingDate || !meetingTime) return;
+    if (!timeOptionsForSelectedDate.includes(meetingTime)) {
+      setMeetingTime("");
+    }
+  }, [meetingDate, meetingTime, timeOptionsForSelectedDate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -155,11 +179,16 @@ export default function GetStartedPage() {
       setError("Please select both date and time for the meeting.");
       return;
     }
-    const scheduledAt = new Date(`${date}T${time}`).toISOString();
-    if (Number.isNaN(Date.parse(scheduledAt))) {
+    const slotMs = new Date(`${date}T${time}`).getTime();
+    if (Number.isNaN(slotMs)) {
       setError("Please enter a valid date and time.");
       return;
     }
+    if (slotMs < Date.now() + 60_000) {
+      setError("That time has already passed. Please pick a future date and time.");
+      return;
+    }
+    const scheduledAt = new Date(slotMs).toISOString();
     setSubmitting(true);
     try {
       const digits = mobile.replace(/\D/g, "").slice(0, 10);
@@ -367,7 +396,7 @@ export default function GetStartedPage() {
                     type="date"
                     value={meetingDate}
                     onChange={(e) => setMeetingDate(e.target.value)}
-                    min={new Date().toISOString().slice(0, 10)}
+                    min={todayStr}
                     className="input input-bordered input-sm w-full"
                   />
                 </div>
@@ -381,7 +410,12 @@ export default function GetStartedPage() {
                     className="select select-bordered select-sm w-full"
                   >
                     <option value="">Select time</option>
-                    {TIME_OPTIONS_15MIN.map((t) => (
+                    {timeOptionsForSelectedDate.length === 0 && meetingDate === todayStr ? (
+                      <option value="" disabled>
+                        No slots left today — pick tomorrow
+                      </option>
+                    ) : null}
+                    {timeOptionsForSelectedDate.map((t) => (
                       <option key={t} value={t}>
                         {t}
                       </option>
@@ -392,7 +426,12 @@ export default function GetStartedPage() {
               {error && <p className="text-sm text-error">{error}</p>}
               <button
                 type="submit"
-                disabled={submitting || !meetingDate || !meetingTime}
+                disabled={
+                  submitting ||
+                  !meetingDate ||
+                  !meetingTime ||
+                  timeOptionsForSelectedDate.length === 0
+                }
                 className="btn btn-primary w-full btn-sm normal-case mt-4 gap-2"
               >
                 {submitting ? (
