@@ -13,7 +13,7 @@ import Footer from "@/components/Footer";
 
 function TwinEngineFrameworkSection() {
   return (
-    <section className="relative py-20 px-6 bg-base-200">
+    <section className="relative py-20 px-4 lg:px-8 bg-base-200">
       <div className="max-w-6xl mx-auto text-center">
 
         {/* Heading */}
@@ -29,7 +29,7 @@ function TwinEngineFrameworkSection() {
         <div className="grid md:grid-cols-2 gap-8 mt-12">
 
           {/* Step 1 */}
-          <div className="card bg-base-100 border-2 border-primary rounded-3xl p-6 shadow-sm">
+          <div className="card bg-base-100 border-2 border-primary/50 rounded-3xl p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between">
 
               <div className="text-left">
@@ -52,7 +52,7 @@ function TwinEngineFrameworkSection() {
           </div>
 
           {/* Step 2 */}
-          <div className="card bg-base-100 border-2 border-primary rounded-3xl p-6 shadow-sm">
+          <div className="card bg-base-100 border-2 border-primary/50 rounded-3xl p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between">
 
               <div className="text-left">
@@ -78,29 +78,48 @@ function TwinEngineFrameworkSection() {
         {/* Bottom Section */}
         <div className="mt-12 max-w-2xl mx-auto text-left">
 
-          <p className="text-center font-medium mb-6">
+          <p className="text-center font-semibold mb-6">
             Combined, our approach aims to:
           </p>
 
           <ul className="space-y-3">
-            <li className="flex items-center gap-3">
-              <Check className="text-primary w-5 h-5" />
-              Generate consistent market-neutral alpha
+            <li className="flex items-start gap-3">
+              <Check
+                className="text-primary size-5 shrink-0 mt-0.5"
+                strokeWidth={2.5}
+                aria-hidden
+              />
+              <span>Generate consistent market-neutral alpha</span>
             </li>
 
-            <li className="flex items-center gap-3">
-              <Check className="text-primary w-5 h-5" />
-              Achieve superior risk-adjusted returns
+            <li className="flex items-start gap-3">
+              <Check
+                className="text-primary size-5 shrink-0 mt-0.5"
+                strokeWidth={2.5}
+                aria-hidden
+              />
+              <span>Achieve superior risk-adjusted returns</span>
             </li>
 
-            <li className="flex items-center gap-3">
-              <Check className="text-primary w-5 h-5" />
-              Outperform traditional benchmark strategies
+            <li className="flex items-start gap-3">
+              <Check
+                className="text-primary size-5 shrink-0 mt-0.5"
+                strokeWidth={2.5}
+                aria-hidden
+              />
+              <span>Outperform traditional benchmark strategies</span>
             </li>
 
-            <li className="flex items-center gap-3">
-              <Check className="text-primary w-5 h-5" />
-              Boost overall return on capital compounding over a multi-period horizon
+            <li className="flex items-start gap-3">
+              <Check
+                className="text-primary size-5 shrink-0 mt-0.5"
+                strokeWidth={2.5}
+                aria-hidden
+              />
+              <span>
+                Boost overall return on capital compounding over a multi-period
+                horizon
+              </span>
             </li>
           </ul>
 
@@ -167,7 +186,7 @@ function WhatWeDoSection() {
 
   return (
     <>
-    <section id="what-we-do" className="py-16 md:py-24 px-6 bg-base-100" data-aos="fade-up">
+    <section id="what-we-do" className="py-16 md:py-24 px-4 lg:px-8 bg-base-100" data-aos="fade-up">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-stretch">
           {/* Left: Static content */}
@@ -203,12 +222,12 @@ function WhatWeDoSection() {
                     src={WHAT_WE_DO_SLIDES[current].image}
                     alt=""
                     fill
-                    className="object-contain rounded-xl"
+                    className="object-contain w-full h-full"
                     sizes="(max-width: 1024px) 100vw, 50vw"
                   />
                 </div>
                 <div className="flex items-center justify-center gap-2 mt-auto shrink-0">
-                  <span>{WHAT_WE_DO_SLIDES[current].bottomText}</span>
+                  <span className='text-xs lg:text-base'>{WHAT_WE_DO_SLIDES[current].bottomText}</span>
                 </div>
               </div>
               <div className="flex justify-center gap-2 py-4 shrink-0">
@@ -246,7 +265,7 @@ function UnlockPotentialSection() {
   return (
     <section id="unlock-potential" data-aos="fade-up">
       {/* Banner */}
-      <div className="bg-primary text-primary-content py-7 px-6">
+      <div className="bg-primary text-primary-content py-8 px-4 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-snug">
             Unlock incremental Alpha,{' '}
@@ -256,7 +275,7 @@ function UnlockPotentialSection() {
       </div>
 
       {/* Body — light gray background matching mockup */}
-      <div className="bg-base-200 py-16 md:py-24 px-6">
+      <div className="bg-base-200 py-12 md:py-24 px-4 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-14 items-center">
 
@@ -298,7 +317,7 @@ function UnlockPotentialSection() {
 
             {/* Right: Content inside a dashed border box */}
             <div className="lg:w-[62%] flex flex-col">
-              <div className="border border-dashed border-2 border-primary/50 rounded-lg p-5 bg-base-200 min-h-[200px]">
+              <div className="border border-dashed border-2 border-primary/50 rounded-lg p-4 lg:p-6 bg-base-200 min-h-[200px]">
                 {activeStep === 0 && (
                   <div className="space-y-3">
                     <h3 className="font-bold text-base lg:text-lg text-base-content">Most Portfolios are -</h3>
@@ -853,7 +872,6 @@ export default function Home() {
 
   return (
     <>
-      <div>
         <Navbar />
 
           {/* Hero Section */}
@@ -892,8 +910,7 @@ export default function Home() {
             </div>
           </section>
 
-        <div>
-          {/* What We Do Section */}
+=          {/* What We Do Section */}
           <WhatWeDoSection />
 
           {/* Unlock Potential Section */}
@@ -1021,7 +1038,7 @@ export default function Home() {
           </section>
 
           {/* Fees Section */}
-          <section id="pricing" className="py-20 px-6 bg-base-100" data-aos="fade-up">
+          <section id="pricing" className="py-20 px-4 lg:px-8 bg-base-100" data-aos="fade-up">
             <div className="max-w-6xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold text-primary mb-2">Fees</h2>
               <p className="text-base text-base-content/70 mb-10">
@@ -1091,7 +1108,7 @@ export default function Home() {
           <FAQSection />
 
           {/* Contact Section */}
-          <section id="contact" className="py-20 px-6 bg-base-200" data-aos="fade-up">
+          <section id="contact" className="py-20 px-4 lg:px-8 bg-base-200" data-aos="fade-up">
             <div className="max-w-6xl mx-auto">
               <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
 
@@ -1146,9 +1163,7 @@ export default function Home() {
               </div>
             </div>
           </section>
-        </div>
-        <Footer />
-      </div>
+          <Footer />
     </>
   );
 }

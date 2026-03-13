@@ -9,6 +9,7 @@ import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { useNotificationStore } from "@/store/notificationStore";
+import KycStatusIndicator from "@/components/KycStatusIndicator";
 
 const tabs = [
   { name: "Dashboard", href: "/hedgium/dashboard", icon: <Home className="h-5 w-5" /> },
@@ -51,8 +52,11 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
             <div className="w-10 h-10 rounded-full bg-primary text-primary-content flex items-center justify-center text-sm font-semibold shrink-0">
               {initials || "U"}
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-base-content truncate">{displayName}</p>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <p className="text-sm font-semibold text-base-content truncate">{displayName}</p>
+                <KycStatusIndicator className="shrink-0" />
+              </div>
               {displayEmail ? (
                 <p className="text-xs text-base-content/60 truncate">{displayEmail}</p>
               ) : null}

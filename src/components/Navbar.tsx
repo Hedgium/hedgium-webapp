@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X, Menu, LogIn } from "lucide-react";
 import Link from "next/link";
 
@@ -9,18 +9,35 @@ const NAV_LINKS = [
   { label: "Unlock Potential", href: "/#unlock-potential" },
   { label: "Why Hedgium", href: "/#why-hedgium" },
   { label: "Fees", href: "/#pricing" },
+  { label: "Login", href: "/login" },
 ] as const;
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const close = (e: MouseEvent | PointerEvent) => {
+      if (menuRef.current?.contains(e.target as Node)) return;
+      setIsMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", close, true);
+    return () => document.removeEventListener("pointerdown", close, true);
+  }, [isMenuOpen]);
 
   return (
     <nav className="navbar px-4 lg:px-8 bg-base-100/80 backdrop-blur-md sticky top-0 z-50 border-b border-base-300 glass-effect">
-      <div className="navbar-start">
-        <div className="dropdown">
-          <label
-            tabIndex={0}
-            className="btn btn-ghost lg:hidden"
+      <div className="navbar-start relative z-[100]">
+        <div
+          ref={menuRef}
+          className={`dropdown ${isMenuOpen ? "dropdown-open" : ""}`}
+        >
+          <button
+            type="button"
+            className="btn btn-ghost lg:hidden px-2"
+            aria-expanded={isMenuOpen}
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? (
@@ -28,21 +45,17 @@ export default function Navbar() {
             ) : (
               <Menu size={24} height={24} />
             )}
-          </label>
-          {isMenuOpen && (
-            <ul
-              tabIndex={0}
-              className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
-            >
-              {NAV_LINKS.map(({ label, href }) => (
-                <li key={href}>
-                  <Link href={href} onClick={() => setIsMenuOpen(false)}>
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+          </button>
+          {isMenuOpen && <ul className="menu menu-sm dropdown-content mt-3 z-[200] p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300">
+            {NAV_LINKS.map(({ label, href }) => (
+              <li key={href}>
+                <Link href={href} onClick={() => setIsMenuOpen(false)}>
+                  {label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          }
         </div>
         <Link
           href="/"
@@ -52,8 +65,10 @@ export default function Navbar() {
           <img
             src="/images/logos/Hedgium Banner cropped.png"
             alt="HEDGIUM"
-            className="h-8 w-auto"
+            className="h-8 w-auto "
           />
+
+
         </Link>
       </div>
       <div className="navbar-center hidden lg:flex">
@@ -81,7 +96,7 @@ export default function Navbar() {
 
         <Link
           href="/login"
-          className="flex items-center gap-1.5 text-base-content hover:text-primary text-sm font-medium uppercase tracking-wide"
+          className="hidden lg:flex items-center gap-1.5 text-base-content hover:text-primary text-sm font-medium uppercase tracking-wide"
         >
           <LogIn className="h-4 w-4 shrink-0" aria-hidden />
           LOGIN
