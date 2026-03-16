@@ -1,68 +1,93 @@
-import Link from 'next/link';
-import { Calendar } from 'lucide-react';
+import { Mail, Phone, MapPin, Calendar, MessageCircle } from "lucide-react";
 
 export default function ContactSection() {
   return (
-    <section id="contact" className="py-12 md:py-24 px-4 lg:px-8 bg-base-200">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
-          <div
-            className="w-full md:w-1/2 flex flex-col justify-center"
-            data-aos="fade-up"
-            data-aos-duration="650"
-            data-aos-once="true"
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-base-content leading-snug mb-4">
-              In a market dominated by directional risk, we focus on{' '}
-              <span className="text-primary">systematic probability-driven alpha.</span>
-            </h2>
-            <p className="text-lg lg:text-xl text-base-content/70 mb-8">Let&apos;s get started!</p>
-            <Link href="/get-started?ref=schedule_call" className="btn btn-primary btn-lg w-fit gap-2">
-              <Calendar className="w-5 h-5" aria-hidden />
-              Set up a Free Call
-            </Link>
-          </div>
+    <section className="relative bg-base-100 py-20 px-6">
 
-          <div
-            className="w-full md:w-1/2 flex flex-col gap-6"
-            data-aos="fade-up"
-            data-aos-duration="650"
-            data-aos-delay="100"
-            data-aos-once="true"
-          >
-            <div className="flex flex-col gap-4">
-              {[
-                { icon: '✉', label: 'Email', value: 'contact@hedgium.in', href: 'mailto:contact@hedgium.in' },
-                { icon: '🌐', label: 'Website', value: 'www.hedgium.ai', href: 'https://www.hedgium.ai' },
-                { icon: '📱', label: 'Phone / WhatsApp', value: '+91 8454838304', href: 'tel:+918454838304' },
-              ].map(({ icon, label, value, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-base-100 border border-base-300 hover:border-primary transition-colors group"
-                >
-                  <span className="text-2xl shrink-0">{icon}</span>
-                  <div>
-                    <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide">{label}</p>
-                    <p className="text-base font-semibold text-primary group-hover:underline">{value}</p>
-                  </div>
-                </a>
-              ))}
-            </div>
+      <div className="max-w-4xl mx-auto">
 
-            <div className="p-4 rounded-xl bg-base-100 border border-base-300">
-              <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide mb-3">📍 Locations</p>
-              <ul className="space-y-1.5 text-sm text-base-content">
-                {['Haware City, Thane', 'Hiranandani Gardens, Powai, Mumbai', 'Seawoods, Navi Mumbai'].map((loc) => (
-                  <li key={loc} className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" aria-hidden />
-                    {loc}
-                  </li>
-                ))}
-              </ul>
-            </div>
+        {/* headline */}
+        <div className="text-center mb-12 space-y-6">
+
+          <h2 className="text-2xl md:text-4xl font-semibold text-primary leading-relaxed">
+            In a market dominated by directional risk,
+            <br className="hidden md:block"/>
+            we focus on systematic probability-driven alpha.
+          </h2>
+
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+
+            <p className="text-lg font-medium text-accent">
+              {`Let’s get started`}
+            </p>
+
+            <button className="btn btn-primary gap-2">
+              <Calendar size={18} />
+              Schedule an expert call
+            </button>
+
           </div>
         </div>
+
+
+        {/* contact card */}
+        <div className="bg-base-200 border rounded-xl p-4 md:p-6 border-base-300">
+
+          <div className="grid md:grid-cols-2 gap-0">
+
+            {/* contact info */}
+            <div className="space-y-6">
+
+              <div className="flex items-center gap-4">
+                <Mail className="text-primary" size={22}/>
+                <div>
+                  <p className="text-sm text-base-content/60">Email</p>
+                  <p className="font-semibold">contact@hedgium.in</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <Phone className="text-primary" size={22}/>
+                <div>
+                  <p className="text-sm text-base-content/60">Phone / WhatsApp</p>
+                  <p className="font-semibold">+91 {process.env.NEXT_PUBLIC_PHONE_NUMBER}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <MapPin className="text-primary mt-1" size={22}/>
+                <div>
+                  <p className="text-sm text-base-content/60">Locations</p>
+                  <p className="font-semibold leading-relaxed">
+                    Haware City, Thane <br/>
+                    Powai, Mumbai <br/>
+                    Seawoods, Navi Mumbai
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* whatsapp CTA */}
+            <div className="flex flex-col md:border-l border-base-300 md:px-4 py-4 justify-center items-center md:items-start gap-4">
+
+              <p className="text-base-content/70 text-base">
+                Prefer WhatsApp? Send us a quick message and our team will get back to you shortly.
+              </p>
+
+              <a
+                href={`https://wa.me/+91${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi, I'm interested in Hedgium. I'd like to schedule a call or learn more.")}`}
+                className="btn btn-outline btn-primary gap-2"
+              >
+                <MessageCircle size={18} />
+                Send us a “Hi” on WhatsApp
+              </a>
+
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </section>
   );

@@ -1,12 +1,12 @@
 import Image from "next/image";
 
 /** Same label column width so description text aligns across Retail + Institutional */
-const TIER_COL = "w-[10.5rem] min-w-[10.5rem] shrink-0 font-bold text-lg text-base-content leading-tight";
-const DESC_COL = "text-sm text-base-content/80 leading-relaxed pt-0.5";
+const TIER_COL = "w-[8rem] min-w-[8rem] shrink-0 font-bold text-lg md:text-xl text-base-content leading-tight";
+const DESC_COL = "text-base font-medium md:text-lg text-base-content/80 leading-relaxed pt-0.5";
 
 export default function FeesSection() {
   return (
-    <section className="bg-base-200 py-14 px-4">
+    <section className="bg-base-200 py-12 md:py-16 px-4 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Title */}
         <div
@@ -14,9 +14,9 @@ export default function FeesSection() {
           data-aos-duration="650"
           data-aos-once="true"
         >
-          <h2 className="text-3xl font-bold text-primary">Fees</h2>
-          <p className="text-primary/80 text-sm sm:text-base mt-1 mb-10 max-w-2xl">
-            Simple structure and charged only if there are profits to cover the fees
+          <h2 className="text-3xl md:text-4xl font-bold text-primary">Fees</h2>
+          <p className="text-accent text-base font-semibold md:text-lg mt-1 mb-10 max-w-2xl">
+            {`Simple structure and charged only if there are profits to cover the fees`}
           </p>
         </div>
 
@@ -30,7 +30,7 @@ export default function FeesSection() {
           >
             {/* Retail */}
             <div>
-              <h3 className="text-base font-semibold text-base-content border-b border-dashed border-primary/40 pb-2 mb-4">
+              <h3 className="text-lg text-primary md:text-xl font-semibold text-base-content border-b-2 border-dashed border-primary/40 pb-2 mb-4">
                 Retail clients
               </h3>
               <div className="flex gap-6 items-start">
@@ -46,7 +46,7 @@ export default function FeesSection() {
 
             {/* Institutional — description column lines up with Retail above */}
             <div>
-              <h3 className="text-base font-semibold text-base-content border-b border-dashed border-primary/40 pb-2 mb-4">
+              <h3 className="text-lg text-primary md:text-xl font-semibold text-base-content border-b-2 border-dashed border-primary/40 pb-2 mb-4">
                 Accredited or Institutional Clients
               </h3>
               <div className="flex gap-6 items-start">
@@ -78,17 +78,17 @@ export default function FeesSection() {
 
         {/* Offer Banner — single column, consistent alignment */}
         <div
-          className="bg-primary/70 text-primary-content mt-14 rounded-xl px-5 py-6 sm:px-8 sm:py-7"
+          className="bg-primary text-primary-content mt-12 rounded-xl px-4 py-2"
           data-aos="fade-up"
           data-aos-duration="650"
           data-aos-once="true"
         >
-          <div className="max-w-3xl space-y-3 text-left">
-            <p className="font-semibold text-base sm:text-lg leading-snug">
-              New Fiscal Year Offer (valid only till 30ᵗʰ Apr 2026)
+          <div className="space-y-1 text-left">
+            <p className="font-semibold text-lg md:text-xl leading-snug">
+              New Fiscal Year Offer (valid only till 30ᵗʰ Apr 2026):
             </p>
-            <p className="text-base sm:text-lg font-bold">
-              Free first month - <span className="text-sm sm:text-base opacity-95 leading-relaxed pl-0 sm:pl-1">
+            <p className="text-base md:text-lg">
+              <span className="underline">Free first month </span>- <span className="text-sm sm:text-base opacity-95 leading-relaxed pl-0 sm:pl-1">
               Potentially earn back a significant portion of the fees at no cost before you
               even pay.
             </span>
@@ -98,7 +98,7 @@ export default function FeesSection() {
         </div>
 
         <p className="text-xs text-base-content/60 mt-5">
-          * Subject to Regulatory framework prescribed by SEBI
+          * Subject to Regulatory framework prescribed by SEBI. Fees subject to GST as per applicable laws.
         </p>
       </div>
     </section>

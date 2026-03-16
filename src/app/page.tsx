@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
@@ -9,12 +10,91 @@ import Footer from '@/components/Footer';
 import WhatWeDoSection from '@/components/home/WhatWeDoSection';
 import UnlockPotentialSection from '@/components/home/UnlockPotentialSection';
 import PlaybooksSection from '@/components/home/PlaybooksSection';
-import WhyHedgiumSection from '@/components/home/WhyHedgiumSection';
-import SandboxSection from '@/components/home/SandboxSection';
-import FeesSection from '@/components/home/FeesSection';
-import FAQSection from '@/components/home/FAQSection';
-import ContactSection from '@/components/home/ContactSection';
 import HeroSection from '@/components/home/HeroSection';
+
+const LazyPlaceholder = ({ h = 400 }: { h?: number }) => (
+  <div className="bg-base-200" style={{ minHeight: `${h}px` }} aria-hidden />
+);
+
+const WhyHedgiumSection = dynamic(
+  () =>
+    import('@/components/home/WhyHedgiumSection').then((mod) => {
+      const C = mod.default;
+      return {
+        default: function WithAOS() {
+          useEffect(() => {
+            AOS.refresh();
+          }, []);
+          return <C />;
+        },
+      };
+    }),
+  { ssr: false, loading: () => <LazyPlaceholder h={500} /> }
+);
+
+const SandboxSection = dynamic(
+  () =>
+    import('@/components/home/SandboxSection').then((mod) => {
+      const C = mod.default;
+      return {
+        default: function WithAOS() {
+          useEffect(() => {
+            AOS.refresh();
+          }, []);
+          return <C />;
+        },
+      };
+    }),
+  { ssr: false, loading: () => <LazyPlaceholder h={450} /> }
+);
+
+const FeesSection = dynamic(
+  () =>
+    import('@/components/home/FeesSection').then((mod) => {
+      const C = mod.default;
+      return {
+        default: function WithAOS() {
+          useEffect(() => {
+            AOS.refresh();
+          }, []);
+          return <C />;
+        },
+      };
+    }),
+  { ssr: false, loading: () => <LazyPlaceholder h={400} /> }
+);
+
+const ContactSection = dynamic(
+  () =>
+    import('@/components/home/ContactSection').then((mod) => {
+      const C = mod.default;
+      return {
+        default: function WithAOS() {
+          useEffect(() => {
+            AOS.refresh();
+          }, []);
+          return <C />;
+        },
+      };
+    }),
+  { ssr: false, loading: () => <LazyPlaceholder h={350} /> }
+);
+
+const FAQSection = dynamic(
+  () =>
+    import('@/components/home/FAQSection').then((mod) => {
+      const C = mod.default;
+      return {
+        default: function WithAOS() {
+          useEffect(() => {
+            AOS.refresh();
+          }, []);
+          return <C />;
+        },
+      };
+    }),
+  { ssr: false, loading: () => <LazyPlaceholder h={500} /> }
+);
 
 export default function Home() {
   useEffect(() => {
@@ -66,8 +146,8 @@ export default function Home() {
       <WhyHedgiumSection />
       <SandboxSection />
       <FeesSection />
-      <FAQSection />
       <ContactSection />
+      <FAQSection />
       <Footer />
     </>
   );

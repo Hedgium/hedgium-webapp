@@ -9,7 +9,6 @@ const NAV_LINKS = [
   { label: "Unlock Potential", href: "/#unlock-potential" },
   { label: "Why Hedgium", href: "/#why-hedgium" },
   { label: "Fees", href: "/#pricing" },
-  { label: "Login", href: "/login" },
 ] as const;
 
 export default function Navbar() {
@@ -96,10 +95,10 @@ export default function Navbar() {
 
         <Link
           href="/login"
-          className="hidden lg:flex items-center gap-1.5 text-base-content hover:text-primary text-sm font-medium uppercase tracking-wide"
+          className="lg:flex items-center gap-1.5 text-base-content hover:text-primary text-sm font-medium uppercase tracking-wide"
         >
-          <LogIn className="h-4 w-4 shrink-0" aria-hidden />
-          LOGIN
+          <LogIn className="h-5 w-5 shrink-0" aria-hidden />
+          <span className="hidden lg:block">LOGIN</span>
         </Link>
         
       </div>

@@ -107,7 +107,7 @@ export default function GetStartedPage() {
 
   const whatsappUrl = useMemo(() => {
     if (!WHATSAPP_NUMBER) return null;
-    const num = WHATSAPP_NUMBER.replace(/\D/g, "");
+    const num = `+91${WHATSAPP_NUMBER.replace(/\D/g, "")}`;
     return `https://wa.me/${num}?text=${encodeURIComponent(DEFAULT_MESSAGE)}`;
   }, []);
 

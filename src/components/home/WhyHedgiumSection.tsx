@@ -3,6 +3,132 @@
 import { useState } from 'react';
 import { Lock } from 'lucide-react';
 
+
+
+/** Aligned to deck: Hedgium | Mutual Funds & PMS | AIF */
+const COMPARISON_ROWS = [
+  {
+    category: 'Control Risk',
+    hedgium: 'Securities under direct client control & access',
+    mutualFundsPms: 'Fund Managers have discretion/ control',
+    aif: "Securities in Fund Manager's control",
+  },
+  {
+    category: 'Liquidity',
+    hedgium: 'Highly liquid as funds in own brokerage account',
+    mutualFundsPms: 'Redemption Process & Exit Load Costs in case of MFs',
+    aif: 'Most AIFs have multi-year lock-ins',
+  },
+  {
+    category: 'Tax efficiency',
+    hedgium: 'Taxed at own marginal bracket. Can claim expenses to reduce tax',
+    mutualFundsPms: "Can't claim expenses to reduce liability",
+    aif: "AIFs taxed at fund's level, usually 42.7% irrespective of client's tax bracket",
+  },
+  {
+    category: 'Directional Risk',
+    hedgium: 'Engine 2 provides non-correlated returns',
+    mutualFundsPms: 'Correlated to market, and depends on strategy',
+    aif: 'AIFs can go short but leverage is restricted to a level',
+  },
+  {
+    category: 'ROI driver',
+    hedgium: 'Quant based statistical arbitrage',
+    mutualFundsPms:
+      'Heavily relies on stock picking. Poor performance of a few stocks can significantly hurt overall returns',
+    aif: 'Same as Mutual Funds & PMS',
+  },
+] as const;
+
+function ComparisonTable() {
+  return (
+    <div
+      className="mt-16 lg:mt-20"
+      data-aos="fade-up"
+      data-aos-duration="650"
+      data-aos-once="true"
+    >
+      <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content mb-2">
+        Think beyond Mutual Funds, PMS, AIF –
+      </h3>
+
+      <p className="text-base lg:text-lg text-primary mb-6">
+        Take back control, gain liquidity, reduce costs & improve tax efficiency
+      </p>
+
+      <div className="overflow-x-auto bg-base-100">
+        <table className="w-full min-w-[560px] text-left border-separate border-spacing-0">
+
+          {/* HEADER */}
+          <thead>
+            <tr>
+              <th className="w-[170px]"></th>
+
+              <th className="p-4 font-bold text-center border-t-2 border-l-2 border-r-2 border-dashed border-primary/60 rounded-t-2xl">
+                Hedgium
+              </th>
+
+              <th className="p-4 font-bold text-base-content">
+                Mutual Funds & PMS
+              </th>
+
+              <th className="p-4 font-bold text-base-content">
+                AIF
+              </th>
+            </tr>
+          </thead>
+
+          {/* BODY */}
+          <tbody>
+            {COMPARISON_ROWS.map((row, i) => {
+
+              const isLast = i === COMPARISON_ROWS.length - 1;
+
+              return (
+                <tr key={row.category} className="border-b border-base-300">
+
+                  {/* LEFT CATEGORY BUTTON */}
+                  <td className="py-3 px-2 md:px-3">
+                    <div className="inline-flex items-center">
+                      <span className="bg-primary text-primary-content text-sm lg:text-base font-semibold px-4 py-2 rounded-l-lg">
+                        {row.category}
+                      </span>
+
+                      <span className="w-0 h-0 border-t-[16px] border-b-[16px] border-l-[16px] border-t-transparent border-b-transparent border-l-primary"></span>
+                    </div>
+                  </td>
+
+                  {/* HEDGIUM COLUMN */}
+                  <td
+                    className={`p-4 text-sm lg:text-base text-base-content/90 
+                    border-l-2 border-r-2 border-dashed border-primary/60
+                    ${isLast ? "border-b-2 rounded-b-2xl" : ""}`}
+                  >
+                    {row.hedgium}
+                  </td>
+
+                  {/* MUTUAL FUNDS */}
+                  <td className="p-4 text-sm lg:text-base text-base-content/80">
+                    {row.mutualFundsPms}
+                  </td>
+
+                  {/* AIF */}
+                  <td className="p-4 text-sm lg:text-base text-base-content/80">
+                    {row.aif}
+                  </td>
+
+                </tr>
+              );
+            })}
+          </tbody>
+
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
 const WHY_HEDGIUM_TABS = [
   {
     id: 'market',
@@ -10,19 +136,19 @@ const WHY_HEDGIUM_TABS = [
     content: (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3">
-          <p className="text-sm lg:text-base font-semibold text-base-content">
+          <p className="text-base lg:text-lg font-semibold text-base-content">
             Developed, optimized &amp; operational since last 5 years
           </p>
           <div className="flex flex-col gap-3">
-            <p className="text-sm lg:text-base text-base-content/80">
+            <p className="text-base lg:text-lg text-base-content/80">
               Tested in live, diverse market conditions including periods of high
               volatility, with built-in downside protections
             </p>
-            <p className="text-sm lg:text-base text-base-content/80">
+            <p className="text-base lg:text-lg text-base-content/80">
               Adaptable to different risk-appetites. Focused on better risk-adjusted
               returns
             </p>
-            <p className="text-sm lg:text-base text-base-content/80">
+            <p className="text-base lg:text-lg text-base-content/80">
               Suited for various capital sizes — From 25 Lakh to 20 Crore
             </p>
           </div>
@@ -36,10 +162,10 @@ const WHY_HEDGIUM_TABS = [
     content: (
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2 font-bold text-sm lg:text-base text-base-content border-b border-base-300 pb-2">
+          <div className="flex items-center gap-2 font-bold text-base lg:text-lg text-base-content border-b border-base-300 pb-2">
             <span className="text-warning text-lg">⚠</span> RISKS
           </div>
-          <div className="flex items-center gap-2 font-bold text-sm lg:text-base text-base-content border-b border-base-300 pb-2">
+          <div className="flex items-center gap-2 font-bold text-base lg:text-lg text-base-content border-b border-base-300 pb-2">
             <span className="text-primary text-lg">🛡</span> MITIGATION
           </div>
         </div>
@@ -65,10 +191,10 @@ const WHY_HEDGIUM_TABS = [
             key={risk}
             className="grid grid-cols-2 gap-4 items-start border-b border-base-300/50 py-2 last:border-0"
           >
-            <p className="text-xs lg:text-sm font-bold text-base-content flex items-center gap-1 px-2 py-1">
+            <p className="text-base lg:text-lg font-bold text-base-content flex items-center gap-1 px-2 py-1">
               <span className="text-primary mr-1">→</span> {risk}
             </p>
-            <p className="text-xs lg:text-sm text-primary">{mitigation}</p>
+            <p className="text-base lg:text-lg text-primary">{mitigation}</p>
           </div>
         ))}
       </div>
@@ -118,14 +244,14 @@ const WHY_HEDGIUM_TABS = [
         <div className="relative grid grid-cols-2 gap-3 md:gap-4 lg:gap-6 max-w-2xl mx-auto z-10">
           {/* Top‑left card */}
           <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-left">
-            <p className="text-xs md:text-sm text-base-content/90 leading-snug">
+            <p className="text-base md:text-lg text-base-content/90 leading-snug">
               <span className="font-semibold text-primary">All trade logs, reports, dashboards</span>{' '}
               are available to the client on real-time basis
             </p>
           </div>
           {/* Top‑right card */}
           <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-right">
-            <p className="text-xs md:text-sm text-base-content/90 leading-snug">
+            <p className="text-base md:text-lg text-base-content/90 leading-snug">
               <span className="font-semibold text-primary">
                 Funds &amp; securities always stay in client&apos;s account
               </span>{' '}
@@ -134,7 +260,7 @@ const WHY_HEDGIUM_TABS = [
           </div>
           {/* Bottom‑left card */}
           <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-left">
-            <p className="text-xs md:text-sm text-base-content/90 leading-snug">
+            <p className="text-base md:text-lg text-base-content/90 leading-snug">
               <span className="font-semibold text-primary">
                 All strategies are approved / pre-approved by the client
               </span>
@@ -143,7 +269,7 @@ const WHY_HEDGIUM_TABS = [
           </div>
           {/* Bottom‑right card */}
           <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-right">
-            <p className="text-xs md:text-sm text-base-content/90 leading-snug">
+            <p className="text-base md:text-lg text-base-content/90 leading-snug">
               <span className="font-semibold text-primary">
                 System access is encrypted, client-controlled, and revocable any time
               </span>
@@ -158,27 +284,27 @@ const WHY_HEDGIUM_TABS = [
     label: 'Live Support & Access',
     content: (
       <div className="flex flex-col items-center gap-6 py-4">
-        <p className="text-sm lg:text-base font-semibold text-base-content text-center">
+        <p className="text-base lg:text-lg font-semibold text-base-content text-center">
           Hedgium Support is always available &amp; reachable during market &amp; off-market hours
         </p>
-        <div className="flex items-center justify-center gap-6 md:gap-10">
-          <div className="flex flex-col items-center gap-2 text-primary">
+        <div className="flex items-start justify-center gap-6 md:gap-10">
+          <div className="flex flex-col items-center text-center gap-2 text-primary">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 md:w-10 md:h-10 lg:w-14 lg:h-14">
               <path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z" />
             </svg>
-            <span className="text-xs lg:text-sm text-base-content/70">Live Chat</span>
+            <span className="text-base lg:text-lg text-base-content/70">Live Chat</span>
           </div>
-          <div className="flex flex-col items-center gap-2 text-primary">
+          <div className="flex flex-col items-center text-center gap-2 text-primary">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 md:w-10 md:h-10 lg:w-14 lg:h-14">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
             </svg>
-            <span className="text-xs lg:text-sm text-base-content/70">Dedicated Support</span>
+            <span className="text-base lg:text-lg text-base-content/70">Dedicated Support</span>
           </div>
-          <div className="flex flex-col items-center gap-2 text-primary">
+          <div className="flex flex-col items-center text-center gap-2 text-primary">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 md:w-10 md:h-10 lg:w-14 lg:h-14">
               <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
             </svg>
-            <span className="text-xs lg:text-sm text-base-content/70">Email</span>
+            <span className="text-base lg:text-lg text-base-content/70">Email</span>
           </div>
         </div>
       </div>
@@ -186,46 +312,11 @@ const WHY_HEDGIUM_TABS = [
   },
 ] as const;
 
-/** Aligned to deck: Hedgium | Mutual Funds & PMS | AIF */
-const COMPARISON_ROWS = [
-  {
-    category: 'Control Risk',
-    hedgium: 'Securities under direct client control & access',
-    mutualFundsPms: 'Fund Managers have discretion/ control',
-    aif: "Securities in Fund Manager's control",
-  },
-  {
-    category: 'Liquidity',
-    hedgium: 'Highly liquid as funds in own brokerage account',
-    mutualFundsPms: 'Redemption Process & Exit Load Costs in case of MFs',
-    aif: 'Most AIFs have multi-year lock-ins',
-  },
-  {
-    category: 'Tax efficiency',
-    hedgium: 'Taxed at own marginal bracket. Can claim expenses to reduce tax',
-    mutualFundsPms: "Can't claim expenses to reduce liability",
-    aif: "AIFs taxed at fund's level, usually 42.7% irrespective of client's tax bracket",
-  },
-  {
-    category: 'Directional Risk',
-    hedgium: 'Engine 2 provides non-correlated returns',
-    mutualFundsPms: 'Correlated to market, and depends on strategy',
-    aif: 'AIFs can go short but leverage is restricted to a level',
-  },
-  {
-    category: 'ROI driver',
-    hedgium: 'Quant based statistical arbitrage',
-    mutualFundsPms:
-      'Heavily relies on stock picking. Poor performance of a few stocks can significantly hurt overall returns',
-    aif: 'Same as Mutual Funds & PMS',
-  },
-] as const;
-
 export default function WhyHedgiumSection() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <section id="why-hedgium" className="py-16 md:py-20 px-4 md:px-6 bg-base-200">
+    <section id="why-hedgium" className="py-16 md:py-24 px-4 md:px-8 bg-base-200">
       <div className="max-w-6xl mx-auto">
         <h2
           className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content mb-8 md:mb-10"
@@ -236,10 +327,31 @@ export default function WhyHedgiumSection() {
           What makes <span className="text-primary">Hedgium</span> different?
         </h2>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+        {/* Mobile: stacked layout – each tab as a block */}
+        <div
+          className="flex flex-col gap-4 lg:hidden"
+          data-aos="fade-up"
+          data-aos-duration="650"
+          data-aos-once="true"
+        >
+          {WHY_HEDGIUM_TABS.map((tab) => (
+            <div
+              key={tab.id}
+              className="border-2 border-base-300 rounded-3xl p-5 md:p-6 bg-base-100 overflow-hidden"
+            >
+              <h3 className="font-bold text-lg text-primary mb-4 pb-2 border-b border-base-300">
+                {tab.label}
+              </h3>
+              {tab.content}
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: tabs + content */}
+        <div className="hidden lg:flex flex-row gap-0 items-start">
           {/* Left column – tab buttons */}
           <div
-            className="lg:w-[38%] w-full flex flex-col gap-3 md:gap-4"
+            className="lg:w-[40%] w-full flex flex-col gap-3 md:gap-4"
             data-aos="fade-up"
             data-aos-duration="650"
             data-aos-once="true"
@@ -247,19 +359,19 @@ export default function WhyHedgiumSection() {
             {WHY_HEDGIUM_TABS.map((tab, i) => {
               const isActive = activeTab === i;
               return (
-                <div key={tab.id} className="flex items-center gap-2 md:gap-3">
+                <div key={tab.id} className="flex items-center">
                   <img
                     src="/images/logos/Hedgium icon cropped.png"
                     alt=""
                     aria-hidden
                     className="shrink-0 w-7 h-7 md:w-9 md:h-9 object-contain"
                   />
-                  <div className="flex-1 flex items-center gap-1 md:gap-1.5">
+                  <div className="flex-1 flex items-center">
                     <div className="border-t border-dashed border-primary/50 w-3 md:w-4 shrink-0" />
                     <button
                       type="button"
                       onClick={() => setActiveTab(i)}
-                      className={`flex-1 cursor-pointer text-left px-3 md:px-4 py-3 md:py-2.5 font-bold text-sm md:text-base rounded transition-all active:scale-[0.98] ${
+                      className={`flex-1 cursor-pointer text-left px-3 md:px-4 py-3 md:py-2.5 font-bold text-base md:text-lg rounded transition-all active:scale-[0.98] ${
                         isActive
                           ? 'bg-primary text-primary-content shadow'
                           : 'bg-primary/25 text-base-content hover:bg-primary/35'
@@ -267,6 +379,11 @@ export default function WhyHedgiumSection() {
                     >
                       {tab.label}
                     </button>
+                    <div
+                      className={`border-t-2 border-dashed border-primary/50 md:w-12 shrink-0 transition-opacity ${
+                        isActive ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    />
                   </div>
                 </div>
               );
@@ -275,7 +392,7 @@ export default function WhyHedgiumSection() {
 
           {/* Right column – dynamic content */}
           <div
-            className="lg:w-[62%] w-full"
+            className="lg:w-[60%] w-full"
             data-aos="fade-up"
             data-aos-duration="650"
             data-aos-delay="100"
@@ -288,62 +405,9 @@ export default function WhyHedgiumSection() {
         </div>
 
         {/* Comparison Table */}
-        <div
-          className="mt-16 lg:mt-20"
-          data-aos="fade-up"
-          data-aos-duration="650"
-          data-aos-once="true"
-        >
-          <h3 className="text-xl md:text-2xl font-bold text-base-content mb-2">
-            Think beyond Mutual Funds, PMS, AIF –
-          </h3>
-          <p className="text-sm lg:text-base text-primary mb-6">
-            Take back control, gain liquidity, reduce costs &amp; improve tax efficiency
-          </p>
-          <div className="overflow-x-auto rounded-xl border border-base-300 bg-base-100">
-            <table className="w-full min-w-[560px] text-left border-collapse">
-              <thead>
-                <tr className="border-b border-base-300">
-                  <th className="w-0 p-0" aria-label="Category" />
-                  <th className="p-3 lg:p-4 font-bold text-base-content bg-primary/10 border-2 border-dashed border-primary/50 rounded-tl-lg">
-                    Hedgium
-                  </th>
-                  <th className="p-3 lg:p-4 font-bold text-base-content border-b border-base-300">
-                    Mutual Funds &amp; PMS
-                  </th>
-                  <th className="p-3 lg:p-4 font-bold text-base-content border-b border-base-300 rounded-tr-lg">
-                    AIF
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {COMPARISON_ROWS.map((row, i) => (
-                  <tr key={row.category} className="border-b border-base-300 last:border-b-2 last:border-base-300">
-                    <td className="py-2 px-2 align-top">
-                      <span className="inline-flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-md bg-primary text-primary-content text-xs lg:text-sm font-semibold">
-                        <span aria-hidden>→</span>
-                        {row.category}
-                      </span>
-                    </td>
-                    <td
-                      className={`p-3 lg:p-4 text-xs lg:text-sm text-base-content/90 align-top border-l-2 border-r-2 border-dashed border-primary/50 bg-primary/5 ${
-                        i === 4 ? 'rounded-bl-lg' : ''
-                      }`}
-                    >
-                      {row.hedgium}
-                    </td>
-                    <td className="p-3 lg:p-4 text-xs lg:text-sm text-base-content/80 align-top">
-                      {row.mutualFundsPms}
-                    </td>
-                    <td className="p-3 lg:p-4 text-xs lg:text-sm text-base-content/80 align-top">
-                      {row.aif}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+
+        <ComparisonTable />
+
       </div>
     </section>
   );

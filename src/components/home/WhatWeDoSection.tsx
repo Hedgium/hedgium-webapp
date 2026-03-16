@@ -15,20 +15,14 @@ const WHAT_WE_DO_SLIDES = [
   {
     id: 'slide-1',
     image: WHAT_WE_DO_IMAGES[0],
-    bottomText: (
-      <span className="font-semibold text-base">
-        Outperform benchmark returns
-      </span>
-    ),
+    bottomText: "Superior Risk-Adjusted Returns"
+    
   },
   {
     id: 'slide-2',
     image: WHAT_WE_DO_IMAGES[1],
-    bottomText: (
-      <span className="font-semibold text-base ">
-        Over 20 years of investing & trading experience
-      </span>
-    ),
+    bottomText: "Over 20 years of investing & trading experience"
+
   }
   // {
   //   id: 'slide-3',
@@ -58,24 +52,24 @@ export default function WhatWeDoSection() {
     <>
       <section id="what-we-do" className="py-16 md:py-24 px-4 lg:px-8 bg-base-100">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-stretch">
+          <div className="flex flex-col lg:flex-row gap-8 md:gap-16 lg:gap-24 items-stretch">
             <div
               className="lg:w-1/2 flex flex-col justify-center"
               data-aos="fade-up"
               data-aos-duration="650"
               data-aos-once="true"
             >
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content leading-snug mb-5">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl text-base-content leading-snug mb-5">
                 Outperform Benchmark Returns with Our{' '}
-                <span className="text-primary">Twin Engine Investing</span> framework
+                <p className="text-primary font-bold">Twin Engine Investing</p> framework
               </h2>
-              <p className="text-sm lg:text-base text-base-content/80 mb-6">
+              <p className="text-base md:text-lg lg:text-xl text-base-content/80 mb-6">
                 Hedgium is a quant-driven research house focused on generating{' '}
                 <span className="text-primary font-bold">market-neutral alpha</span> for clients.
               </p>
               <div className="flex flex-col gap-2">
-                <Link href="/get-started?ref=schedule_call" className="btn btn-primary btn-md gap-2 w-fit">
-                  <Calendar className="w-4 h-4" aria-hidden />
+                <Link href="/get-started?ref=schedule_call" className="btn btn-primary btn-lg gap-2 w-fit">
+                  <Calendar className="w-6 h-6" aria-hidden />
                   Set up a Free Call
                 </Link>
               </div>
@@ -87,7 +81,7 @@ export default function WhatWeDoSection() {
               data-aos-delay="100"
               data-aos-once="true"
             >
-              <div className="h-[320px] md:h-[480px] min-h-0 flex flex-col gap-4 border border-dashed border-2 border-primary/50 rounded-xl p-4">
+              <div className="h-[320px] md:h-[480px] min-h-0 flex flex-col gap-2 md:p-4">
                 <div className="flex-1 min-h-0 relative rounded-xl overflow-hidden">
                   <Image
                     src={WHAT_WE_DO_SLIDES[current].image}
@@ -97,8 +91,8 @@ export default function WhatWeDoSection() {
                     sizes="(max-width: 1024px) 100vw, 50vw"
                   />
                 </div>
-                <div className="flex items-center justify-center gap-2 mt-auto shrink-0">
-                  <span className="text-xs lg:text-base">{WHAT_WE_DO_SLIDES[current].bottomText}</span>
+                <div className="flex items-center text-center justify-center gap-2 mt-auto shrink-0">
+                  <span className="text-base lg:text-lg text-primary font-semibold">{WHAT_WE_DO_SLIDES[current].bottomText}</span>
                 </div>
               </div>
               <div className="flex justify-center gap-2 py-4 shrink-0">
