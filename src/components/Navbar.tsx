@@ -26,7 +26,9 @@ export default function Navbar() {
   }, [isMenuOpen]);
 
   return (
-    <nav className="navbar px-4 lg:px-8 bg-base-100/80 backdrop-blur-md sticky top-0 z-50 border-b border-base-300 glass-effect">
+    <nav className="w-full px-4 lg:px-8 py-1 lg:py-3  bg-base-100/80 backdrop-blur-md sticky top-0 z-50 border-b border-base-300 glass-effect">
+      
+      <div className="navbar max-w-7xl mx-auto">
       <div className="navbar-start relative z-[100]">
         <div
           ref={menuRef}
@@ -64,7 +66,7 @@ export default function Navbar() {
           <img
             src="/images/logos/Hedgium Banner cropped.png"
             alt="HEDGIUM"
-            className="h-8 w-auto "
+            className="h-12 w-auto "
           />
 
 
@@ -76,7 +78,7 @@ export default function Navbar() {
             <li key={href}>
               <Link
                 href={href}
-                className="text-base-content hover:text-primary"
+                className="text-sm lg:text-base xl:text-md 2xl:text-lg text-base-content hover:text-primary"
               >
                 {label}
               </Link>
@@ -101,6 +103,8 @@ export default function Navbar() {
           <span className="hidden lg:block">LOGIN</span>
         </Link>
         
+      </div>
+
       </div>
     </nav>
   );

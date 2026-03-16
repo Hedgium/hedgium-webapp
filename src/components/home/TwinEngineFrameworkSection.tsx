@@ -1,61 +1,82 @@
-import { Check, TrendingUp, Settings } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 export default function TwinEngineFrameworkSection() {
   return (
     <section className="relative py-20 px-4 lg:px-8 bg-base-200">
-      <div className="max-w-6xl mx-auto text-center">
+      <div className="max-w-7xl mx-auto text-center">
         <div data-aos="fade-up" data-aos-duration="650" data-aos-once="true">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-bold text-base-content">
             The Twin Engine Investing Framework
           </h2>
-          <p className="mt-2 text-base md:text-lg font-medium text-base-content/80">
+          <p className="mt-2 md:mt-4 lg:mt-4 text-base md:text-lg lg:text-xl xl:text-xl 2xl:text-2xl font-medium text-base-content/80">
             Our quant based dual approach to generating superior risk-adjusted returns
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 mt-12">
-          <div
-            className="border-2 border-primary/50 rounded-3xl p-4 md:p-6"
-            data-aos="zoom-in"
-            data-aos-duration="650"
-            data-aos-once="true"
-          >
-            <div className="flex items-end justify-between gap-2">
-              <div className="text-left">
-                <span className='badge badge-outline'>Engine 1</span>
-                <h3 className="text-xl md:text-2xl font-semibold text-primary my-3">
-                  Build Model Portfolio
-                </h3>
-                <p className="text-base md:text-lg text-base-content/70 leading-relaxed">
-                  Construct or restructure a base portfolio with securities using Hedgium&apos;s model portfolio to achieve optimal diversification</p>
-              </div>
-              <div className="text-primary shrink-0" aria-hidden>
-                <img src="/images/home/17.png" alt="Portfolio" className="size-0 md:size-24" />
+        <div className="grid md:grid-cols-2 gap-8 mt-16">
+          
+        <div
+  className="relative border-2 border-primary/50 rounded-3xl p-6 pt-10"
+  data-aos="zoom-in"
+  data-aos-duration="650"
+  data-aos-once="true"
+>
 
-              </div>
-            </div>
-          </div>
+  {/* Engine Badge */}
+  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+    <span className="badge badge-primary badge-sm md:badge-md lg:badge-lg xl:badge-xl 2xl:badge-2xl px-4 py-3 text-white font-semibold shadow-md">
+      Engine - 1
+    </span>
+  </div>
+
+  <div className="flex items-end justify-between gap-2">
+    <div className="text-left">
+      <h3 className="text-xl md:text-2xl font-semibold text-primary mb-3">
+        Build Model Portfolio
+      </h3>
+
+      <p className="text-base md:text-lg text-base-content/70 leading-relaxed">
+        Construct or restructure a base portfolio with securities using Hedgium&apos;s model portfolio to achieve optimal diversification
+      </p>
+    </div>
+
+    <img
+      src="/images/home/17.png"
+      alt="Portfolio"
+      className="w-12 md:w-24 lg:w-24 xl:w-24 2xl:w-36"
+    />
+  </div>
+</div>
+
 
           <div
-            className="border-2 border-primary/50 rounded-3xl p-4 md:p-6"
+            className="relative border-2 border-primary/50 rounded-3xl p-6 pt-10"
             data-aos="zoom-in"
             data-aos-duration="650"
             data-aos-delay="120"
             data-aos-once="true"
           >
+            {/* Engine Badge */}
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+              <span className="badge badge-primary badge-sm md:badge-md lg:badge-lg xl:badge-xl 2xl:badge-2xl px-4 py-3 text-white font-semibold shadow-md">
+                Engine - 2
+              </span>
+            </div>
+
             <div className="flex items-end justify-between gap-2">
               <div className="text-left">
-                <span className='badge badge-outline'>Engine 2</span>
-                <h3 className="text-xl md:text-2xl font-semibold text-primary my-3">
+                <h3 className="text-xl md:text-2xl font-semibold text-primary mb-3">
                   Deploy Statistical Arbitrage
                 </h3>
                 <p className="text-base md:text-lg text-base-content/70 leading-relaxed">
                   Leverage margin from the portfolio to execute non-directional, algorithm-driven options strategies to generate consistent income
                 </p>
               </div>
-              <div className="text-primary shrink-0" aria-hidden>
-                <img src="/images/home/18.png" alt="Settings" className="size-0 md:size-24" />
-              </div>
+              <img
+                src="/images/home/18.png"
+                alt="Statistical Arbitrage"
+                className="w-12 md:w-24 lg:w-24 xl:w-24 2xl:w-36"
+              />
             </div>
           </div>
         </div>
