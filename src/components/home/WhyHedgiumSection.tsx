@@ -35,7 +35,7 @@ const COMPARISON_ROWS = [
     category: 'ROI driver',
     hedgium: 'Quant based statistical arbitrage',
     mutualFundsPms:
-      'Heavily relies on stock picking. Poor performance of a few stocks can significantly hurt overall returns',
+      'Poor performance of a few stocks can significantly hurt overall returns',
     aif: 'Same as Mutual Funds & PMS',
   },
 ] as const;
@@ -48,11 +48,11 @@ function ComparisonTable() {
       data-aos-duration="650"
       data-aos-once="true"
     >
-      <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content mb-2">
+      <h3 className="text-2xl md:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-bold text-base-content mb-2">
         Think beyond Mutual Funds, PMS, AIF –
       </h3>
 
-      <p className="text-base lg:text-lg text-primary mb-6">
+      <p className="text-base lg:text-lg xl:text-xl text-primary mb-6">
         Take back control, gain liquidity, reduce costs & improve tax efficiency
       </p>
 
@@ -64,15 +64,15 @@ function ComparisonTable() {
             <tr>
               <th className="w-[170px]"></th>
 
-              <th className="p-4 font-bold text-center border-t-2 border-l-2 border-r-2 border-dashed border-primary/60 rounded-t-2xl">
+              <th className="p-4 font-bold text-center text-sm lg:text-base xl:text-lg border-t-2 border-l-2 border-r-2 border-dashed border-primary/60 rounded-t-2xl">
                 Hedgium
               </th>
 
-              <th className="p-4 font-bold text-base-content">
+              <th className="p-4 font-bold text-base-content text-sm lg:text-base xl:text-lg">
                 Mutual Funds & PMS
               </th>
 
-              <th className="p-4 font-bold text-base-content">
+              <th className="p-4 font-bold text-base-content text-sm lg:text-base xl:text-lg">
                 AIF
               </th>
             </tr>
@@ -88,19 +88,21 @@ function ComparisonTable() {
                 <tr key={row.category} className="border-b border-base-300">
 
                   {/* LEFT CATEGORY BUTTON */}
-                  <td className="py-3 px-2 md:px-3">
+                  <td className="py-3 px-2 md:px-4">
                     <div className="inline-flex items-center">
-                      <span className="bg-primary text-primary-content text-sm lg:text-base font-semibold px-4 py-2 rounded-l-lg">
+                      <span
+                        className="inline-flex items-center justify-center w-[200px] min-w-[200px] lg:w-[240px] lg:min-w-[240px] xl:w-[240px] xl:min-w-[240px] text-white text-sm lg:text-base xl:text-lg 2xl:text-xl font-semibold px-3 py-2 rounded-l-lg bg-cover bg-center bg-no-repeat"
+                        style={{ backgroundImage: 'url(/images/home/button_bg.png)' }}
+                      >
                         {row.category}
                       </span>
 
-                      <span className="w-0 h-0 border-t-[16px] border-b-[16px] border-l-[16px] border-t-transparent border-b-transparent border-l-primary"></span>
                     </div>
                   </td>
 
                   {/* HEDGIUM COLUMN */}
                   <td
-                    className={`p-4 text-sm lg:text-base text-base-content/90 
+                    className={`p-4 text-sm lg:text-base xl:text-lg text-base-content/90 
                     border-l-2 border-r-2 border-dashed border-primary/60
                     ${isLast ? "border-b-2 rounded-b-2xl" : ""}`}
                   >
@@ -108,12 +110,12 @@ function ComparisonTable() {
                   </td>
 
                   {/* MUTUAL FUNDS */}
-                  <td className="p-4 text-sm lg:text-base text-base-content/80">
+                  <td className="p-4 text-sm lg:text-base xl:text-lg text-base-content/80">
                     {row.mutualFundsPms}
                   </td>
 
                   {/* AIF */}
-                  <td className="p-4 text-sm lg:text-base text-base-content/80">
+                  <td className="p-4 text-sm lg:text-base xl:text-lg text-base-content/80">
                     {row.aif}
                   </td>
 
@@ -136,19 +138,19 @@ const WHY_HEDGIUM_TABS = [
     content: (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3">
-          <p className="text-base lg:text-lg font-semibold text-base-content">
+          <p className="text-base lg:text-lg xl:text-xl font-semibold text-base-content">
             Developed, optimized &amp; operational since last 5 years
           </p>
           <div className="flex flex-col gap-3">
-            <p className="text-base lg:text-lg text-base-content/80">
+            <p className="text-base lg:text-lg xl:text-xl text-base-content/80">
               Tested in live, diverse market conditions including periods of high
               volatility, with built-in downside protections
             </p>
-            <p className="text-base lg:text-lg text-base-content/80">
+            <p className="text-base lg:text-lg xl:text-xl text-base-content/80">
               Adaptable to different risk-appetites. Focused on better risk-adjusted
               returns
             </p>
-            <p className="text-base lg:text-lg text-base-content/80">
+            <p className="text-base lg:text-lg xl:text-xl text-base-content/80">
               Suited for various capital sizes — From 25 Lakh to 20 Crore
             </p>
           </div>
@@ -162,11 +164,11 @@ const WHY_HEDGIUM_TABS = [
     content: (
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2 font-bold text-base lg:text-lg text-base-content border-b border-base-300 pb-2">
-            <span className="text-warning text-lg">⚠</span> RISKS
+          <div className="flex items-center gap-2 font-bold text-base lg:text-lg xl:text-xl text-base-content border-b border-base-300 pb-2">
+            <span className="text-warning text-lg xl:text-xl">⚠</span> RISKS
           </div>
-          <div className="flex items-center gap-2 font-bold text-base lg:text-lg text-base-content border-b border-base-300 pb-2">
-            <span className="text-primary text-lg">🛡</span> MITIGATION
+          <div className="flex items-center gap-2 font-bold text-base lg:text-lg xl:text-xl text-base-content border-b border-base-300 pb-2">
+            <span className="text-primary text-lg xl:text-xl">🛡</span> MITIGATION
           </div>
         </div>
         {[
@@ -191,10 +193,10 @@ const WHY_HEDGIUM_TABS = [
             key={risk}
             className="grid grid-cols-2 gap-4 items-start border-b border-base-300/50 py-2 last:border-0"
           >
-            <p className="text-base lg:text-lg font-bold text-base-content flex items-center gap-1 px-2 py-1">
+            <p className="text-base lg:text-lg xl:text-xl font-bold text-base-content flex items-center gap-1 px-2 py-1">
               <span className="text-primary mr-1">→</span> {risk}
             </p>
-            <p className="text-base lg:text-lg text-primary">{mitigation}</p>
+            <p className="text-base lg:text-lg xl:text-xl text-primary">{mitigation}</p>
           </div>
         ))}
       </div>
@@ -244,14 +246,14 @@ const WHY_HEDGIUM_TABS = [
         <div className="relative grid grid-cols-2 gap-3 md:gap-4 lg:gap-6 max-w-2xl mx-auto z-10">
           {/* Top‑left card */}
           <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-left">
-            <p className="text-base md:text-lg text-base-content/90 leading-snug">
+            <p className="text-base md:text-lg xl:text-xl text-base-content/90 leading-snug">
               <span className="font-semibold text-primary">All trade logs, reports, dashboards</span>{' '}
               are available to the client on real-time basis
             </p>
           </div>
           {/* Top‑right card */}
           <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-right">
-            <p className="text-base md:text-lg text-base-content/90 leading-snug">
+            <p className="text-base md:text-lg xl:text-xl text-base-content/90 leading-snug">
               <span className="font-semibold text-primary">
                 Funds &amp; securities always stay in client&apos;s account
               </span>{' '}
@@ -260,7 +262,7 @@ const WHY_HEDGIUM_TABS = [
           </div>
           {/* Bottom‑left card */}
           <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-left">
-            <p className="text-base md:text-lg text-base-content/90 leading-snug">
+            <p className="text-base md:text-lg xl:text-xl text-base-content/90 leading-snug">
               <span className="font-semibold text-primary">
                 All strategies are approved / pre-approved by the client
               </span>
@@ -269,7 +271,7 @@ const WHY_HEDGIUM_TABS = [
           </div>
           {/* Bottom‑right card */}
           <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-right">
-            <p className="text-base md:text-lg text-base-content/90 leading-snug">
+            <p className="text-base md:text-lg xl:text-xl text-base-content/90 leading-snug">
               <span className="font-semibold text-primary">
                 System access is encrypted, client-controlled, and revocable any time
               </span>
@@ -284,7 +286,7 @@ const WHY_HEDGIUM_TABS = [
     label: 'Live Support & Access',
     content: (
       <div className="flex flex-col items-center gap-6 py-4">
-        <p className="text-base lg:text-lg font-semibold text-base-content text-center">
+        <p className="text-base lg:text-lg xl:text-xl font-semibold text-base-content text-center">
           Hedgium Support is always available &amp; reachable during market &amp; off-market hours
         </p>
         <div className="flex items-start justify-center gap-6 md:gap-10">
@@ -292,19 +294,19 @@ const WHY_HEDGIUM_TABS = [
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 md:w-10 md:h-10 lg:w-14 lg:h-14">
               <path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z" />
             </svg>
-            <span className="text-base lg:text-lg text-base-content/70">Live Chat</span>
+            <span className="text-base lg:text-lg xl:text-xl text-base-content/70">Live Chat</span>
           </div>
           <div className="flex flex-col items-center text-center gap-2 text-primary">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 md:w-10 md:h-10 lg:w-14 lg:h-14">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
             </svg>
-            <span className="text-base lg:text-lg text-base-content/70">Dedicated Support</span>
+            <span className="text-base lg:text-lg xl:text-xl text-base-content/70">Dedicated Support</span>
           </div>
           <div className="flex flex-col items-center text-center gap-2 text-primary">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 md:w-10 md:h-10 lg:w-14 lg:h-14">
               <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
             </svg>
-            <span className="text-base lg:text-lg text-base-content/70">Email</span>
+            <span className="text-base lg:text-lg xl:text-xl text-base-content/70">Email</span>
           </div>
         </div>
       </div>
@@ -317,9 +319,9 @@ export default function WhyHedgiumSection() {
 
   return (
     <section id="why-hedgium" className="py-16 md:py-24 px-4 md:px-8 bg-base-200">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <h2
-          className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content mb-8 md:mb-10"
+          className="text-2xl md:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-bold text-base-content mb-8 md:mb-10"
           data-aos="fade-up"
           data-aos-duration="650"
           data-aos-once="true"
@@ -339,7 +341,7 @@ export default function WhyHedgiumSection() {
               key={tab.id}
               className="border-2 border-base-300 rounded-3xl p-5 md:p-6 bg-base-100 overflow-hidden"
             >
-              <h3 className="font-bold text-lg text-primary mb-4 pb-2 border-b border-base-300">
+              <h3 className="font-bold text-lg xl:text-xl text-primary mb-4 pb-2 border-b border-base-300">
                 {tab.label}
               </h3>
               {tab.content}
@@ -371,7 +373,7 @@ export default function WhyHedgiumSection() {
                     <button
                       type="button"
                       onClick={() => setActiveTab(i)}
-                      className={`flex-1 cursor-pointer text-left px-3 md:px-4 py-3 md:py-2.5 font-bold text-base md:text-lg rounded transition-all active:scale-[0.98] ${
+                      className={`flex-1 cursor-pointer text-left px-3 md:px-4 py-3 md:py-2.5 font-bold text-base md:text-lg xl:text-xl rounded transition-all active:scale-[0.98] ${
                         isActive
                           ? 'bg-primary text-primary-content shadow'
                           : 'bg-primary/25 text-base-content hover:bg-primary/35'
