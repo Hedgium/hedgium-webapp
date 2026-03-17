@@ -4,9 +4,9 @@ export default function PlaybooksSection() {
   return (
     <section id="playbooks" className="py-14 md:py-24 bg-base-100">
       <div className="max-w-8xl mx-auto px-4 lg:px-8">
-        <div className="flex flex-col lg:flex-row gap-10 lg:gap-14 items-center">
+        <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 xl:gap-20 items-center">
           <div
-            className="lg:w-1/2 flex flex-col gap-6"
+            className="lg:w-[60%] flex flex-col gap-6"
             data-aos="fade-up"
             data-aos-duration="650"
             data-aos-once="true"
@@ -21,7 +21,7 @@ export default function PlaybooksSection() {
                 </div>
 
                 <div className='mt-1 ml-2 lg:ml-4'>
-                <p className="text-base lg:text-lg font-bold text-base-content">Build top-up income</p>
+                <p className="text-base lg:text-lg font-bold text-base-content">Build top-up income (only Engine-2)</p>
                 <p className="text-base lg:text-lg text-primary">
                   Investors with an existing portfolio, who desire incremental returns by leveraging portfolio value using statistical-arbitrage low-risk strategies
                 </p>
@@ -32,7 +32,7 @@ export default function PlaybooksSection() {
                   Total income approach
                 </div>
                 <div className='mt-1 ml-2 lg:ml-4'>
-                <p className="text-base lg:text-lg font-bold text-base-content">Build base portfolio + Top-up income</p>
+                <p className="text-base lg:text-lg font-bold text-base-content">Build base portfolio + Top-up income (Engine-1 + Engine-2)</p>
                 <p className="text-base lg:text-lg text-primary">
                   Investors who want to build ground-up portfolios and leverage them for additional income, targeting superior risk-adjusted returns
                 </p>
@@ -41,13 +41,13 @@ export default function PlaybooksSection() {
             </div>
           </div>
           <div
-            className="lg:w-1/2"
+            className="lg:w-[40%]"
             data-aos="fade-up"
             data-aos-duration="700"
             data-aos-delay="120"
             data-aos-once="true"
           >
-            <Image src="/images/home2.jpg" className="rounded-lg" alt="Playbooks" width={500} height={500} />
+            <Image src="/images/home/playbook_image.png" className="rounded-lg" alt="Playbooks" width={500} height={500} />
           </div>
         </div>
       </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { MessageCircle, Loader2, ChevronLeft, Shield } from "lucide-react";
+import { MessageCircle, Loader2, ChevronLeft, Shield, Home } from "lucide-react";
 import { myFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import { TIME_OPTIONS_15MIN } from "@/utils/timeOptions";
@@ -11,11 +12,13 @@ const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "";
 const DEFAULT_MESSAGE = "Hi, I'm interested in Hedgium. I'd like to schedule a call or learn more.";
 
 const INVESTMENT_OPTIONS = [
-  { value: "below_50l", label: "Below ₹50 Lakhs" },
-  { value: "50l_2cr", label: "₹50 Lakhs to ₹2 Crores" },
-  { value: "2cr_5cr", label: "₹2 Crores to ₹5 Crores" },
-  { value: "5cr_plus", label: "₹5 Crore+" },
+  { value: "below_25l", label: "Below ₹25 Lakhs" },
+  { value: "25l_75l", label: "₹25 to ₹75 Lakhs" },
+  { value: "75l_2cr", label: "₹75 Lakhs to ₹2 Cr" },
+  { value: "2cr_plus", label: "₹2 Cr+" },
 ] as const;
+
+const BELOW_25L_VALUE = "below_25l";
 
 const VALID_SOURCES = ["website", "ads", "social_media", "direct_contact", "other"] as const;
 const SOURCE_OPTIONS: { value: typeof VALID_SOURCES[number]; label: string }[] = [
@@ -27,7 +30,7 @@ const SOURCE_OPTIONS: { value: typeof VALID_SOURCES[number]; label: string }[] =
 ];
 
 /** Left-panel content per step: quotation (step 1), testimonial (step 2), guide (step 3), or after submit */
-function getLeftPanelContent(step: number, submitted: boolean): React.ReactNode {
+function getLeftPanelContent(step: number, submitted: boolean, investmentValue?: string): React.ReactNode {
   const wrapper = (children: React.ReactNode) => (
     <div className="flex flex-col items-center justify-center p-8 lg:p-12 text-center">
       {children}
@@ -35,11 +38,16 @@ function getLeftPanelContent(step: number, submitted: boolean): React.ReactNode 
   );
 
   if (submitted) {
+    const isBelow25l = investmentValue === BELOW_25L_VALUE;
     return wrapper(
       <>
         <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center text-2xl mb-6">✓</div>
         <p className="text-lg font-medium text-base-content">Thank you for getting in touch.</p>
-        <p className="mt-3 text-sm text-base-content/60">We&apos;ll confirm your meeting and reach out shortly.</p>
+        <p className="mt-3 text-sm text-base-content/60">
+          {isBelow25l
+            ? "We&apos;ve noted your interest. We&apos;ll reach out if we expand our services to your investment range."
+            : "We&apos;ll confirm your meeting and reach out shortly."}
+        </p>
       </>
     );
   }
@@ -65,14 +73,22 @@ function getLeftPanelContent(step: number, submitted: boolean): React.ReactNode 
           RB
         </div>
         <p className="text-lg lg:text-xl font-medium text-base-content leading-relaxed max-w-sm">
-          &ldquo;Until this call, I didn&apos;t know that majority of my funds were under performing benchmark.&rdquo;
+          &ldquo;I did not know this opportunity existed before Hedgium.&rdquo;
         </p>
-        <p className="mt-5 text-sm text-base-content/60">– Rajesh Begur, Founder - Begur & Partners</p>
+        <p className="mt-5 text-sm text-base-content/60">– Hedgium Clients</p>
       </>
     );
   }
 
-  // Step 3: Guide
+  // Step 3: Guide (or below-25l message)
+  if (investmentValue === BELOW_25L_VALUE) {
+    return wrapper(
+      <>
+        <p className="text-lg font-medium text-base-content">We&apos;ve noted your interest.</p>
+        <p className="mt-3 text-sm text-base-content/60">We&apos;ll reach out if we expand our services to your investment range.</p>
+      </>
+    );
+  }
   return wrapper(
     <>
       <h3 className="text-base font-semibold text-base-content mb-3">What happens next</h3>
@@ -170,6 +186,35 @@ export default function GetStartedPage() {
     }
   }, [meetingDate, meetingTime, timeOptionsForSelectedDate]);
 
+  const submitLead = async (scheduledAt?: string) => {
+    setSubmitting(true);
+    try {
+      const digits = mobile.replace(/\D/g, "").slice(0, 10);
+      const payload: Record<string, unknown> = {
+        mobile: digits,
+        name: name.trim() || undefined,
+        source,
+        investment_value: investmentValue,
+      };
+      if (scheduledAt) payload.scheduled_at = scheduledAt;
+      const res = await myFetch("leads/", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSubmitted(true);
+        alert.success(data.message || "Thank you. We'll be in touch shortly.");
+      } else {
+        setError(data.detail || "Something went wrong. Please try again.");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -189,38 +234,32 @@ export default function GetStartedPage() {
       return;
     }
     const scheduledAt = new Date(slotMs).toISOString();
-    setSubmitting(true);
-    try {
-      const digits = mobile.replace(/\D/g, "").slice(0, 10);
-      const res = await myFetch("leads/", {
-        method: "POST",
-        body: JSON.stringify({
-          mobile: digits,
-          name: name.trim() || undefined,
-          source,
-          investment_value: investmentValue,
-          scheduled_at: scheduledAt,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setSubmitted(true);
-        alert.success(data.message || "Thank you. We'll be in touch shortly.");
-      } else {
-        setError(data.detail || "Something went wrong. Please try again.");
-      }
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+    await submitLead(scheduledAt);
   };
 
-  const leftContent = getLeftPanelContent(step, submitted);
+  const handleSubmitBelow25l = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    await submitLead();
+  };
+
+  const leftContent = getLeftPanelContent(step, submitted, investmentValue);
 
   return (
     <div className="bg-base-200 min-h-screen flex items-center justify-center">
-      <div className="md:w-10/12 lg:w-8/12 mx-auto bg-base-100 my-8 rounded-xl border border-base-300 shadow-sm flex items-center justify-center">
+      <div className="md:w-10/12 lg:w-8/12 mx-auto bg-base-100 my-8 rounded-xl border border-base-300 shadow-sm flex flex-col">
+        {/* Top: Back to home */}
+        <div className="px-4 pt-4 pb-2 border-b border-base-300">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm text-base-content/70 hover:text-base-content transition"
+          >
+            <Home className="w-3.5 h-3.5" />
+            Back to home
+          </Link>
+        </div>
+
+        <div className="flex flex-1 w-full items-center justify-center">
         {/* Left: Quotation / Testimonial / Guide (varies by step or submitted) */}
         <div className="hidden lg:flex lg:w-2/5 xl:w-1/2 flex-col">
           {leftContent}
@@ -264,7 +303,9 @@ export default function GetStartedPage() {
               <div className="text-center">
                 <h2 className="text-xl font-bold text-base-content mb-2">We&apos;ll be in touch shortly</h2>
                 <p className="text-base-content/70 text-sm mb-6">
-                  We&apos;ve received your details and will confirm your meeting time. Prefer to chat now?
+                  {investmentValue === BELOW_25L_VALUE
+                    ? "We&apos;ve noted your interest. If we expand our services to your investment range, we&apos;ll reach out."
+                    : "We&apos;ve received your details and will confirm your meeting time. Prefer to chat now?"}
                 </p>
                 {whatsappUrl && (
                   <a
@@ -304,7 +345,7 @@ export default function GetStartedPage() {
                 </div>
                 <div>
                   <label className="label py-0.5">
-                    <span className="label-text">Name (optional)</span>
+                    <span className="label-text">Name</span>
                   </label>
                   <input
                     type="text"
@@ -381,7 +422,31 @@ export default function GetStartedPage() {
             </form>
           )}
 
-          {!submitted && step === 3 && (
+          {!submitted && step === 3 && investmentValue === BELOW_25L_VALUE && (
+            <form onSubmit={handleSubmitBelow25l} className="space-y-4">
+              <h2 className="text-lg font-bold text-base-content">Thank you for your interest</h2>
+              <p className="text-base-content/70 text-sm">
+                We don&apos;t provide services for below ₹25 lakhs for now. If we provide it in the future we may contact you.
+              </p>
+              {error && <p className="text-sm text-error">{error}</p>}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="btn btn-primary w-full btn-sm normal-case mt-4 gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit"
+                )}
+              </button>
+            </form>
+          )}
+
+          {!submitted && step === 3 && investmentValue !== BELOW_25L_VALUE && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <h2 className="text-lg font-bold text-base-content">When would you like to meet?</h2>
               <p className="text-base-content/70 text-sm">
@@ -452,6 +517,7 @@ export default function GetStartedPage() {
           </p>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,10 @@
 @import "tailwindcss";
+
+@theme {
+  --container-8xl: 1440px;
+  --container-9xl: 1600px;
+}
+
 @plugin "@tailwindcss/typography";
 @plugin "daisyui" {
   themes: light --default, dark --prefersdark, cupcake;

@@ -57,12 +57,12 @@ function ComparisonTable() {
       </p>
 
       <div className="overflow-x-auto bg-base-100">
-        <table className="w-full min-w-[560px] text-left border-separate border-spacing-0">
+        <table className="w-full min-w-[800px] text-left border-separate border-spacing-0">
 
           {/* HEADER */}
           <thead>
             <tr>
-              <th className="w-[170px]"></th>
+              <th className=""></th>
 
               <th className="p-4 font-bold text-center text-base lg:text-lg xl:text-2xl border-t-2 border-l-2 border-r-2 border-dashed border-primary/60 rounded-t-2xl">
                 Hedgium
@@ -91,7 +91,7 @@ function ComparisonTable() {
                   <td className="py-3 px-2 md:px-4">
                     <div className="inline-flex items-center">
                       <span
-                        className="inline-flex items-center justify-center w-[200px] min-w-[200px] lg:w-[240px] lg:min-w-[240px] xl:w-[240px] xl:min-w-[240px] text-white text-sm lg:text-base xl:text-lg 2xl:text-xl font-semibold px-3 py-2 rounded-l-lg bg-cover bg-center bg-no-repeat"
+                        className="inline-flex items-center justify-center w-[160px] min-w-[160px] lg:w-[240px] lg:min-w-[240px] xl:w-[240px] xl:min-w-[240px] text-white text-sm lg:text-base xl:text-lg 2xl:text-xl font-semibold px-0 py-2 rounded-l-lg bg-cover bg-center bg-no-repeat"
                         style={{ backgroundImage: 'url(/images/home/button_bg.png)' }}
                       >
                         {row.category}
@@ -102,7 +102,7 @@ function ComparisonTable() {
 
                   {/* HEDGIUM COLUMN */}
                   <td
-                    className={`p-4 text-sm lg:text-base xl:text-lg text-base-content/90 
+                    className={`p-4 text-sm lg:text-base xl:text-lg text-base-content/90 min-w-[180px]
                     border-l-2 border-r-2 border-dashed border-primary/60
                     ${isLast ? "border-b-2 rounded-b-2xl" : ""}`}
                   >
@@ -110,12 +110,12 @@ function ComparisonTable() {
                   </td>
 
                   {/* MUTUAL FUNDS */}
-                  <td className="p-4 text-sm lg:text-base xl:text-lg text-base-content/80">
+                  <td className="p-4 text-sm lg:text-base xl:text-lg text-base-content/80 min-w-[180px]">
                     {row.mutualFundsPms}
                   </td>
 
                   {/* AIF */}
-                  <td className="p-4 text-sm lg:text-base xl:text-lg text-base-content/80">
+                  <td className="p-4 text-sm lg:text-base xl:text-lg text-base-content/80 min-w-[180px]">
                     {row.aif}
                   </td>
 
@@ -163,7 +163,7 @@ const WHY_HEDGIUM_TABS = [
     label: 'Real-time Risk Management',
     content: (
       <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-[35fr_65fr] gap-4">
           <div className="flex items-center gap-2 font-bold text-base lg:text-lg xl:text-xl text-base-content border-b border-base-300 pb-2">
             <span className="text-warning text-lg xl:text-xl">⚠</span> RISKS
           </div>
@@ -191,7 +191,7 @@ const WHY_HEDGIUM_TABS = [
         ].map(({ risk, mitigation }) => (
           <div
             key={risk}
-            className="grid grid-cols-2 gap-4 items-start border-b border-base-300/50 py-2 last:border-0"
+            className="grid grid-cols-[35fr_65fr] gap-4 items-start border-b border-base-300/50 py-2 last:border-0"
           >
             <p className="text-base lg:text-lg xl:text-xl font-bold text-base-content flex items-center gap-1 px-2 py-1">
               <span className="text-primary mr-1">→</span> {risk}
@@ -243,7 +243,7 @@ const WHY_HEDGIUM_TABS = [
         </div>
 
         {/* Four cards positioned around the lock */}
-        <div className="relative grid grid-cols-2 gap-3 md:gap-4 lg:gap-6 max-w-2xl mx-auto z-10">
+        <div className="relative grid grid-cols-2 gap-3 md:gap-4 lg:gap-6 mx-auto z-10">
           {/* Top‑left card */}
           <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-left">
             <p className="text-base md:text-lg xl:text-xl text-base-content/90 leading-snug">
@@ -349,62 +349,62 @@ export default function WhyHedgiumSection() {
           ))}
         </div>
 
+        
         {/* Desktop: tabs + content */}
-        <div className="hidden lg:flex flex-row gap-0 items-start">
-          {/* Left column – tab buttons */}
-          <div
-            className="lg:w-[40%] w-full flex flex-col gap-3 md:gap-4"
-            data-aos="fade-up"
-            data-aos-duration="650"
-            data-aos-once="true"
-          >
-            {WHY_HEDGIUM_TABS.map((tab, i) => {
-              const isActive = activeTab === i;
-              return (
-                <div key={tab.id} className="flex items-center">
-                  <img
-                    src="/images/logos/Hedgium icon cropped.png"
-                    alt=""
-                    aria-hidden
-                    className="shrink-0 w-7 h-7 md:w-9 md:h-9 object-contain"
-                  />
-                  <div className="flex-1 flex items-center">
-                    <div className="border-t border-dashed border-primary/50 w-3 md:w-4 shrink-0" />
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab(i)}
-                      className={`flex-1 cursor-pointer text-left px-3 md:px-4 py-3 md:py-2.5 font-bold text-base md:text-lg xl:text-xl rounded transition-all active:scale-[0.98] ${
-                        isActive
-                          ? 'bg-primary text-primary-content shadow'
-                          : 'bg-primary/25 text-base-content hover:bg-primary/35'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                    <div
-                      className={`border-t-2 border-dashed border-primary/50 md:w-12 shrink-0 transition-opacity ${
-                        isActive ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+<div className="hidden lg:flex flex-row items-center min-h-[520px]">
+  
+  {/* Left column – centered like Unlock section */}
+  <div className="lg:w-[40%] w-full flex flex-col gap-10 justify-center">
+    {WHY_HEDGIUM_TABS.map((tab, i) => {
+      const isActive = activeTab === i;
+      return (
+        <div key={tab.id} className="flex items-center">
+          <img
+            src="/images/logos/Hedgium icon cropped.png"
+            alt=""
+            aria-hidden
+            className="shrink-0 w-8 h-8 md:w-10 md:h-10 object-contain"
+          />
 
-          {/* Right column – dynamic content */}
-          <div
-            className="lg:w-[60%] w-full"
-            data-aos="fade-up"
-            data-aos-duration="650"
-            data-aos-delay="100"
-            data-aos-once="true"
-          >
-            <div className="border-2 border-base-300 rounded-3xl p-5 md:p-6 lg:p-8 bg-base-100 min-h-[220px]">
-              {WHY_HEDGIUM_TABS[activeTab].content}
-            </div>
+          <div className="flex-1 flex items-center">
+            <div className="border-t border-dashed border-primary/50 w-4 shrink-0" />
+
+            <button
+              type="button"
+              onClick={() => setActiveTab(i)}
+              className={`flex-1 cursor-pointer text-left px-4 py-3 font-bold text-lg xl:text-xl rounded active:scale-[0.98] ${
+                isActive
+                  ? 'bg-primary text-primary-content shadow'
+                  : 'bg-primary/25 text-base-content hover:bg-primary/35'
+              }`}
+            >
+              {tab.label}
+            </button>
+
+            <div
+              className={`border-t-2 border-dashed border-primary/50 w-12 shrink-0 transition-opacity ${
+                isActive ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
           </div>
         </div>
+      );
+    })}
+  </div>
+
+  {/* Right column – SAME height + centered content */}
+  <div className="lg:w-[60%] w-full">
+    <div
+      className="border-2 border-base-300 rounded-3xl bg-base-100
+                 h-[520px] flex items-center justify-center"
+    >
+      <div className="w-full p-4">
+        {WHY_HEDGIUM_TABS[activeTab].content}
+      </div>
+    </div>
+  </div>
+</div>
+
 
         {/* Comparison Table */}
 

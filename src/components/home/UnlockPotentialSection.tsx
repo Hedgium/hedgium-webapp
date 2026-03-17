@@ -135,71 +135,68 @@ export default function UnlockPotentialSection() {
           </div>
 
           {/* Desktop: tabs + content */}
-          <div className="hidden lg:flex flex-row gap-0 items-center">
-            {/* Left column – step buttons */}
-            <div
-              className="lg:w-[40%] flex flex-col w-full"
-              data-aos="fade-up"
-              data-aos-duration="650"
-              data-aos-once="true"
+          
+          {/* Desktop: tabs + content */}
+<div className="hidden lg:flex flex-row items-center">
+  
+  {/* Left column – step buttons */}
+  <div className="lg:w-[40%] flex flex-col justify-center">
+    {UNLOCK_STEPS.map((step, i) => {
+      const isActive = activeStep === i;
+      return (
+        <div key={step.id} className="flex flex-col">
+          <div className="flex items-center w-full">
+            <button
+              type="button"
+              onClick={() => setActiveStep(i)}
+              className={`flex-1 min-w-0 cursor-pointer text-left px-5 py-4 font-bold text-lg flex items-center justify-between transition-all shadow-sm active:scale-[0.98] ${
+                isActive
+                  ? 'bg-primary text-primary-content'
+                  : 'bg-neutral/50 hover:bg-neutral/70 hover:text-primary text-base-content'
+              }`}
             >
-              {UNLOCK_STEPS.map((step, i) => {
-                const isActive = activeStep === i;
-                return (
-                  <div key={step.id} className="flex flex-col">
-                    <div className="flex items-center w-full">
-                      <button
-                        type="button"
-                        onClick={() => setActiveStep(i)}
-                        className={`flex-1 min-w-0 cursor-pointer text-left px-4 py-4 md:py-3 font-bold text-base lg:text-lg flex items-center justify-between transition-all shadow-sm active:scale-[0.98] ${
-                          isActive
-                            ? 'bg-primary text-primary-content'
-                            : 'bg-neutral/50 hover:bg-neutral/70 hover:text-primary text-base-content'
-                        }`}
-                        aria-current={isActive ? 'step' : undefined}
-                      >
-                        <span>{step.label}</span>
-                        <span aria-hidden className="font-bold text-xl md:text-base">
-                          &gt;
-                        </span>
-                      </button>
-                      <div
-                        className={`border-t-2 border-dashed border-primary/50 md:w-12 shrink-0 transition-opacity ${
-                          isActive ? 'opacity-100' : 'opacity-0'
-                        }`}
-                        aria-hidden
-                      />
-                    </div>
-                    {i < UNLOCK_STEPS.length - 1 && (
-                      <div
-                        className="w-3/4 -translate-x-6 mx-auto mt-0.5 h-8 md:h-10"
-                        style={{
-                          clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-                          backgroundColor: isActive
-                            ? 'oklch(0.72 0.15 264 / 0.55)'
-                            : 'oklch(0.72 0.05 264 / 0.40)',
-                        }}
-                        aria-hidden
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+              <span>{step.label}</span>
+              <span className="font-bold text-xl">&gt;</span>
+            </button>
 
-            {/* Right column – dynamic content */}
             <div
-              className="lg:w-[60%] w-full"
-              data-aos="fade-up"
-              data-aos-duration="650"
-              data-aos-delay="100"
-              data-aos-once="true"
-            >
-              <div className="border border-dashed border-2 border-primary/50 rounded-lg p-5 lg:p-6 bg-base-200 min-h-[200px]">
-                <StepContent stepIndex={activeStep} />
-              </div>
-            </div>
+              className={`border-t-2 border-dashed border-primary/50 w-16 xl:w-24 shrink-0 transition-opacity ${
+                isActive ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
           </div>
+
+          {i < UNLOCK_STEPS.length - 1 && (
+            <div
+              className="w-3/4 -translate-x-6 lg:-translate-x-8 xl:-translate-x-12 mx-auto mt-0.5 h-10"
+              style={{
+                clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+                backgroundColor: isActive
+                  ? 'oklch(0.72 0.15 264 / 0.55)'
+                  : 'oklch(0.72 0.05 264 / 0.40)',
+              }}
+            />
+          )}
+        </div>
+      );
+    })}
+  </div>
+
+  {/* Right column – fixed height + centered content */}
+  <div className="lg:w-[60%] w-full">
+    <div className="border border-dashed border-2 border-primary/50 rounded-lg bg-base-200 p-6 
+                    min-h-[360px] lg:min-h-[420px] 
+                    flex items-center justify-center">
+
+      {/* Inner wrapper keeps content nicely centered */}
+      <div className="w-full max-w-xl">
+        <StepContent stepIndex={activeStep} />
+      </div>
+
+    </div>
+  </div>
+</div>
+
         </div>
       </div>
     </section>

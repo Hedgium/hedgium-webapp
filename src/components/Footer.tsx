@@ -97,12 +97,6 @@ export default function Footer() {
               MITC-RA
             </Link>
 
-            <Link
-              href="/mitc-ia"
-              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
-            >
-              MITC-IA
-            </Link>
           </div>
 
           {/* Contact */}
