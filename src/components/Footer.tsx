@@ -20,6 +20,11 @@ export default function Footer() {
               Quant-driven research house focused on generating market-neutral
               alpha using the Twin Engine Investing framework.
             </p>
+
+            <div className="text-xs text-neutral-content/60 space-y-1">
+              <p>Registered Entity Name: Hedgium Services LLP</p>
+              <p>Corporate Identification Number (CIN): {} </p>
+            </div>
           </div>
 
           {/* Navigate */}
@@ -62,6 +67,41 @@ export default function Footer() {
               className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
             >
               Privacy Policy
+            </Link>
+
+            <Link
+              href="/complaint-status"
+              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
+            >
+              Complaint Status
+            </Link>
+
+            <Link
+              href="/grievance-redressal"
+              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
+            >
+              Grievance Redressal
+            </Link>
+
+            <Link
+              href="/refund-policy"
+              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
+            >
+              Refund Policy
+            </Link>
+
+            <Link
+              href="/mitc-ra"
+              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
+            >
+              MITC-RA
+            </Link>
+
+            <Link
+              href="/mitc-ia"
+              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
+            >
+              MITC-IA
             </Link>
           </div>
 

@@ -59,8 +59,8 @@ export default function FAQSection() {
           data-aos-duration="650"
           data-aos-once="true"
         >
-        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content mb-3">Frequently Asked Questions</h2>
-        <p className="text-sm lg:text-base text-base-content/70 mb-8">
+        <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-base-content mb-3">Frequently Asked Questions</h2>
+        <p className="text-sm lg:text-base xl:text-lg 2xl:text-xl text-base-content/70 mb-8">
           Everything you need to know about Hedgium&apos;s framework, capital requirements, and portfolio setup.
         </p>
         </div>
@@ -74,7 +74,7 @@ export default function FAQSection() {
               data-aos-delay={String(Math.min(i * 50, 200))}
               data-aos-once="true"
             >
-              <summary className="list-none cursor-pointer px-4 py-3 md:px-5 md:py-4 flex items-start gap-3 justify-between">
+              <summary className="list-none cursor-pointer px-4 py-3 md:px-5 md:py-4 flex items-center gap-3 justify-between">
                 <span className="font-semibold text-base lg:text-lg text-base-content">
                   Q{i + 1}. {item.question}
                 </span>
