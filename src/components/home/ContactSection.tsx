@@ -2,9 +2,9 @@ import { Mail, Phone, MapPin, Calendar, MessageCircle } from "lucide-react";
 
 export default function ContactSection() {
   return (
-    <section className="relative bg-base-100 py-20 px-6">
+    <section className="relative bg-base-100 py-20">
 
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4 lg:px-8">
 
         {/* headline */}
         <div className="text-center mb-12 space-y-6">

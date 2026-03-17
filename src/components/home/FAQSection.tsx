@@ -52,8 +52,8 @@ const FAQ_ITEMS = [
 
 export default function FAQSection() {
   return (
-    <section id="faq" className="py-12 md:py-24 px-4 lg:px-8 bg-base-200">
-      <div className="max-w-6xl mx-auto">
+    <section id="faq" className="py-12 md:py-24 bg-base-200">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8">
         <div
           data-aos="fade-up"
           data-aos-duration="650"

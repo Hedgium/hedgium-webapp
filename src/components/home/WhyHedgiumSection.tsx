@@ -64,15 +64,15 @@ function ComparisonTable() {
             <tr>
               <th className="w-[170px]"></th>
 
-              <th className="p-4 font-bold text-center text-sm lg:text-base xl:text-lg border-t-2 border-l-2 border-r-2 border-dashed border-primary/60 rounded-t-2xl">
+              <th className="p-4 font-bold text-center text-base lg:text-lg xl:text-2xl border-t-2 border-l-2 border-r-2 border-dashed border-primary/60 rounded-t-2xl">
                 Hedgium
               </th>
 
-              <th className="p-4 font-bold text-base-content text-sm lg:text-base xl:text-lg">
+              <th className="p-4 font-bold text-base-content text-base lg:text-lg xl:text-2xl">
                 Mutual Funds & PMS
               </th>
 
-              <th className="p-4 font-bold text-base-content text-sm lg:text-base xl:text-lg">
+              <th className="p-4 font-bold text-base-content text-base lg:text-lg xl:text-2xl">
                 AIF
               </th>
             </tr>
@@ -318,8 +318,8 @@ export default function WhyHedgiumSection() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <section id="why-hedgium" className="py-16 md:py-24 px-4 md:px-8 bg-base-200">
-      <div className="max-w-7xl mx-auto">
+    <section id="why-hedgium" className="py-16 md:py-24 bg-base-200">
+      <div className="max-w-8xl mx-auto px-4 lg:px-8">
         <h2
           className="text-2xl md:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-bold text-base-content mb-8 md:mb-10"
           data-aos="fade-up"

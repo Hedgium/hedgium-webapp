@@ -2,8 +2,8 @@ import { Check } from 'lucide-react';
 
 export default function TwinEngineFrameworkSection() {
   return (
-    <section className="relative py-20 px-4 lg:px-8 bg-base-200">
-      <div className="max-w-7xl mx-auto text-center">
+    <section className="relative py-20 bg-base-200">
+      <div className="max-w-8xl mx-auto px-4 lg:px-8 text-center">
         <div data-aos="fade-up" data-aos-duration="650" data-aos-once="true">
           <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-bold text-base-content">
             The Twin Engine Investing Framework

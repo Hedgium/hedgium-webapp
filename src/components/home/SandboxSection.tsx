@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export default function SandboxSection() {
   return (
-    <section id="sandbox" className="py-12 md:py-24 px-4 lg:px-8 bg-base-100">
-      <div className="max-w-6xl mx-auto">
+    <section id="sandbox" className="py-12 md:py-24 bg-base-100">
+      <div className="max-w-8xl mx-auto px-4 lg:px-8">
         {/* PPT-style header: title + subtitle left | dashed connector + button right (same row on lg) */}
         <div
           className="flex flex-col justify-between lg:flex-row lg:items-start lg:gap-0 mb-8"

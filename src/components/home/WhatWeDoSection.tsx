@@ -50,8 +50,8 @@ export default function WhatWeDoSection() {
 
   return (
     <>
-      <section id="what-we-do" className="py-16 md:py-24 px-4 lg:px-8 bg-base-100">
-        <div className="max-w-7xl mx-auto">
+      <section id="what-we-do" className="py-16 md:py-24 bg-base-100">
+        <div className="max-w-8xl mx-auto px-4 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-8 md:gap-16 items-stretch">
             <div
               className="lg:w-1/2 flex flex-col justify-center"

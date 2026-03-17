@@ -26,9 +26,8 @@ export default function Navbar() {
   }, [isMenuOpen]);
 
   return (
-    <nav className="w-full px-4 lg:px-8 py-1 lg:py-3  bg-base-100/80 backdrop-blur-md sticky top-0 z-50 border-b border-base-300 glass-effect">
-      
-      <div className="navbar max-w-7xl mx-auto">
+    <nav className="w-full px-4 lg:px-4 py-1 lg:py-2 bg-base-100/80 backdrop-blur-md sticky top-0 z-50 border-b border-base-300 glass-effect">
+      <div className="navbar px-0 max-w-8xl mx-auto">
       <div className="navbar-start relative z-[100]">
         <div
           ref={menuRef}
@@ -90,7 +89,7 @@ export default function Navbar() {
 
       <Link
           href="/get-started"
-          className="btn btn-primary btn-md shadow hover:shadow-md"
+          className="btn btn-primary btn-md lg:btn-lg shadow hover:shadow-md"
         >
           Get Started
         </Link>

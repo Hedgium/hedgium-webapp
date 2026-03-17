@@ -96,10 +96,10 @@ export default function UnlockPotentialSection() {
 
   return (
     <section id="unlock-potential">
-      <div className="bg-primary text-primary-content py-6 px-4 lg:px-8">
-        <div className="max-w-6xl">
+      <div className="bg-primary text-primary-content py-6 ">
+        <div className="max-w-8xl mx-auto px-4 lg:px-8">
           <h2
-            className="text-2xl md:w-3/4 md:text-3xl lg:text-4xl font-bold leading-snug"
+            className="text-2xl md:w-3/4 md:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-bold leading-snug"
             data-aos="fade-up"
             data-aos-duration="650"
             data-aos-once="true"
@@ -112,8 +112,8 @@ export default function UnlockPotentialSection() {
         </div>
       </div>
 
-      <div className="bg-base-200 py-12 md:py-24 px-4 lg:px-8">
-        <div className="max-w-6xl mx-auto">
+      <div className="bg-base-200 py-12 md:py-24">
+        <div className="max-w-8xl mx-auto  px-4 lg:px-8">
           {/* Mobile: stacked layout – each step as a block */}
           <div
             className="flex flex-col gap-6 lg:hidden"
@@ -172,7 +172,7 @@ export default function UnlockPotentialSection() {
                     </div>
                     {i < UNLOCK_STEPS.length - 1 && (
                       <div
-                        className="w-3/4 mx-auto mt-0.5 h-8 md:h-10"
+                        className="w-3/4 -translate-x-6 mx-auto mt-0.5 h-8 md:h-10"
                         style={{
                           clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
                           backgroundColor: isActive
