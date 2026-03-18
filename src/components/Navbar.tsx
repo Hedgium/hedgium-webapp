@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { label: "What We Do", href: "/#what-we-do" },
   { label: "Unlock Potential", href: "/#unlock-potential" },
   { label: "Why Hedgium", href: "/#why-hedgium" },
-  { label: "Fees", href: "/#pricing" },
+  { label: "Fees", href: "/#fees" },
 ] as const;
 
 export default function Navbar() {

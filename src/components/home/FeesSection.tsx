@@ -6,7 +6,7 @@ const DESC_COL = "text-base font-medium md:text-lg text-base-content/80 leading-
 
 export default function FeesSection() {
   return (
-    <section className="bg-base-200 py-12 md:py-16">
+    <section id="fees" className="bg-base-200 py-12 md:py-16">
       <div className="max-w-6xl mx-auto px-4 lg:px-8 xl:px-12">
         {/* Title */}
         <div
