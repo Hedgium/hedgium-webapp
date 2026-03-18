@@ -34,7 +34,7 @@ export default function PerformanceSection() {
 
               <thead>
                 <tr>
-                  <th className="min-w-[200px] lg:min-w-[260px] xl:min-w-[280px]"></th>
+                  <th className="min-w-[220px] lg:min-w-[280px] xl:min-w-[300px]"></th>
                   <th className="text-primary-content text-center border-l-2 border-t-2 border-dashed rounded-tl-xl">Hedgium</th>
                   <th className="text-primary-content text-center border-r-2 border-t-2 border-dashed rounded-tr-xl">Alpha/ Outperformance</th>
                   <th className="text-center text-primary-content">Benchmark Return (NIFTY)</th>
@@ -44,7 +44,7 @@ export default function PerformanceSection() {
 
               <tbody>
                 <tr>
-                  <td className="text-primary-content/80 min-w-[200px] lg:min-w-[260px] xl:min-w-[280px]">
+                  <td className="text-primary-content/80 min-w-[220px] lg:min-w-[280px] xl:min-w-[300px]">
                     Portfolio Layer (Engine 1):-
                   </td>
                   <td className="text-center border-l-2 border-dashed">-2.8%</td>

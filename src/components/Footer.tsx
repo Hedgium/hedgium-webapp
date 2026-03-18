@@ -23,7 +23,7 @@ export default function Footer() {
 
             <div className="text-xs text-neutral-content/60 space-y-1">
               <p>Registered Entity Name: Hedgium Services LLP</p>
-              <p>Corporate Identification Number (CIN): {} </p>
+              <p>LLP Identification Number: ACQ-3740 </p>
             </div>
           </div>
 

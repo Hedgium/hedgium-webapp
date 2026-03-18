@@ -35,7 +35,7 @@ const COMPARISON_ROWS = [
 
 export default function ComparisonTable() {
   return (
-    <section className="bg-base-200 py-16 lg:py-24">
+    <section className="py-16 lg:py-24">
     <div className="max-w-8xl mx-auto px-4 lg:px-8 xl:px-16">
      
     <div

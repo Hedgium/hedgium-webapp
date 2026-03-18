@@ -144,7 +144,8 @@ export default function Home() {
       <UnlockPotentialSection />
       <PlaybooksSection />
       <WhyHedgiumSection />
-      <SandboxSection />
+      {/* uncomment this when sandbox is ready */}
+      {/* <SandboxSection /> */}
       <FeesSection />
       <ContactSection />
       <FAQSection />

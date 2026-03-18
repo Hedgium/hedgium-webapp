@@ -27,7 +27,7 @@ const WHY_HEDGIUM_TABS = [
               returns
             </li>
             <li className="text-base lg:text-lg xl:text-xl text-base-content/80">
-              Suited for various capital sizes — From 25 Lakh to 20 Crore
+              Suited for various capital sizes — From 25 Lakh to 25 Crore+
             </li>
           </ul>
         </div>
@@ -64,7 +64,7 @@ const WHY_HEDGIUM_TABS = [
             risk: 'ACCESS RISK',
             mitigation: 'Cloud based deployment. System monitored access and alerts',
           },
-          { risk: 'UNKNOWN RISK', mitigation: 'Manual real-time monitoring personnel. Live Support' },
+          { risk: 'Unidentified Risk', mitigation: 'Manual real-time monitoring personnel. Live Support' },
         ].map(({ risk, mitigation }) => (
           <div
             key={risk}
@@ -85,7 +85,7 @@ const WHY_HEDGIUM_TABS = [
   },
   {
     id: 'security',
-    label: 'Security in Design',
+    label: 'Secure by Design',
     content: (
       <div className="relative bg-base-100/50 min-h-[300px] md:min-h-[320px] flex items-center justify-center overflow-hidden pt-6">
         {/* Arrow SVG – responsive, points from cards to lock */}
