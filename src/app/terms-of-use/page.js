@@ -640,8 +640,8 @@ export default function TermsOfUsePage() {
                 </p>
                 <p>
                   For general inquiries:{" "}
-                  <a href="mailto:contact@hedgium.in" className="link">
-                    contact@hedgium.in
+                  <a href="mailto:clients@hedgium.ai" className="link">
+                    clients@hedgium.ai
                   </a>
                 </p>
               </section>

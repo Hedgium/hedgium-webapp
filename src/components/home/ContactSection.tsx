@@ -17,11 +17,11 @@ export default function ContactSection() {
 
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
 
-            <p className="text-lg font-medium text-accent">
+            <p className="text-lg font-medium lg:text-xl text-accent">
               {`Let’s get started`}
             </p>
 
-            <button className="btn btn-primary gap-2">
+            <button className="btn btn-primary lg:btn-md gap-2">
               <Calendar size={18} />
               Schedule an expert call
             </button>
@@ -42,7 +42,7 @@ export default function ContactSection() {
                 <Mail className="text-primary" size={22}/>
                 <div>
                   <p className="text-sm text-base-content/60">Email</p>
-                  <p className="font-semibold">contact@hedgium.in</p>
+                  <p className="font-semibold">clients@hedgium.ai</p>
                 </div>
               </div>
 

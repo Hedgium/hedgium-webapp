@@ -61,7 +61,7 @@ export default function WhatWeDoSection() {
             >
               <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl text-base-content leading-snug mb-8">
                 Outperform Benchmark Returns with Our{' '}
-                <span className="text-primary font-bold">Twin Engine Investing</span> framework
+                <span className="text-primary font-bold">Twin Engine Investing</span> Framework
               </h2>
               <p className="text-base md:text-lg lg:text-xl xl:text-xl 2xl:text-2xl text-base-content/80 mb-8">
                 Hedgium is a quant-driven research house focused on generating{' '}

@@ -12,8 +12,8 @@ const UNLOCK_STEPS = [
 function StepContent({ stepIndex }: { stepIndex: number }) {
   if (stepIndex === 0) {
     return (
-      <div className="space-y-3">
-        <h3 className="font-semibold text-lg lg:text-xl text-base-content">
+      <div className="space-y-3 rounded-xl">
+        <h3 className="text-primary text-lg lg:text-xl text-base-content">
           Most Portfolios are -
         </h3>
         <ul className="space-y-2 text-base lg:text-lg">
@@ -24,8 +24,8 @@ function StepContent({ stepIndex }: { stepIndex: number }) {
             'Have nil/ underutilization of hedged derivatives',
           ].map((item) => (
             <li key={item} className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-primary shrink-0" aria-hidden />
-              <span className="text-primary font-medium">{item}</span>
+              <span className="w-3 h-3 rounded-full bg-secondary shrink-0" aria-hidden />
+              <span className="text-secondary font-medium">{item}</span>
             </li>
           ))}
         </ul>
@@ -39,7 +39,7 @@ function StepContent({ stepIndex }: { stepIndex: number }) {
   if (stepIndex === 1) {
     return (
       <div className="space-y-3">
-        <h3 className="font-semibold text-lg lg:text-xl text-base-content">
+        <h3 className="text-primary text-lg lg:text-xl text-base-content">
           Markets sometimes exhibit inefficiencies for a very short period, due to
           variety of factors -
         </h3>
@@ -50,8 +50,8 @@ function StepContent({ stepIndex }: { stepIndex: number }) {
             'Forced expiry positioning',
           ].map((item) => (
             <li key={item} className="flex items-center gap-2">
-              <span className="w-3 h-3 rotate-45 bg-primary shrink-0" aria-hidden />
-              <span className="text-primary font-medium">{item}</span>
+              <span className="w-3 h-3 rotate-45 bg-secondary shrink-0" aria-hidden />
+              <span className="text-secondary font-medium">{item}</span>
             </li>
           ))}
         </ul>
@@ -64,7 +64,7 @@ function StepContent({ stepIndex }: { stepIndex: number }) {
   }
   return (
     <div className="space-y-3">
-      <h3 className="font-semibold text-lg lg:text-xl text-base-content">
+      <h3 className="text-primary text-lg lg:text-xl text-base-content">
         By deploying quantitative, high-frequency, non-directional statistical
         arbitrage strategies that -
       </h3>
@@ -75,18 +75,16 @@ function StepContent({ stepIndex }: { stepIndex: number }) {
           'Are hedged to protect downside in case of any unanticipated wild movements',
         ].map((item) => (
           <li key={item} className="flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0 text-primary mt-0.5" aria-hidden />
-            <span className="text-base-content">{item}</span>
+            <Check className="w-4 h-4 shrink-0 text-secondary mt-0.5" aria-hidden />
+            <span className="text-secondary text-base-content">{item}</span>
           </li>
         ))}
       </ul>
-      <div className="border border-base-300 rounded p-3 bg-base-100 mt-2">
         <p className="text-base lg:text-lg font-semibold text-base-content">
           With the goal to boost portfolio risk-adjusted returns and outperform
           market benchmarks in a variety of conditions, irrespective of market
           direction
         </p>
-      </div>
     </div>
   );
 }
@@ -126,7 +124,7 @@ export default function UnlockPotentialSection() {
                 key={step.id}
                 className="border border-dashed border-2 border-primary/50 rounded-lg p-5 bg-base-100"
               >
-                <h3 className="font-bold text-lg text-primary mb-4 pb-2 border-b border-base-300">
+                <h3 className="font-bold text-xl text-primary mb-4 pb-2 border-b border-base-300">
                   {step.label}
                 </h3>
                 <StepContent stepIndex={i} />
@@ -155,7 +153,7 @@ export default function UnlockPotentialSection() {
                   : 'bg-neutral/50 hover:bg-neutral/70 hover:text-primary text-base-content'
               }`}
             >
-              <span>{step.label}</span>
+              <span className="text-2xl">{step.label}</span>
               <span className="font-bold text-xl">&gt;</span>
             </button>
 
@@ -184,12 +182,12 @@ export default function UnlockPotentialSection() {
 
   {/* Right column – fixed height + centered content */}
   <div className="lg:w-[60%] w-full">
-    <div className="border border-dashed border-2 border-primary/50 rounded-lg bg-base-200 p-6 
+    <div className="border border-dashed border-2 border-primary/50 rounded-xl bg-base-200 p-6 
                     min-h-[360px] lg:min-h-[420px] 
                     flex items-center justify-center">
 
       {/* Inner wrapper keeps content nicely centered */}
-      <div className="w-full max-w-xl">
+      <div className="w-full max-w-2xl">
         <StepContent stepIndex={activeStep} />
       </div>
 

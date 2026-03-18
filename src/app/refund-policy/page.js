@@ -67,10 +67,10 @@ export default function RefundPolicyPage() {
                   For any queries regarding refunds or cancellations, please
                   contact us at{" "}
                   <a
-                    href="mailto:contact@hedgium.in"
+                    href="mailto:clients@hedgium.ai"
                     className="link link-primary"
                   >
-                    contact@hedgium.in
+                    clients@hedgium.ai
                   </a>
                   .
                 </p>

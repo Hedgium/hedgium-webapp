@@ -1,135 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, AlertTriangle, Shield, Check } from 'lucide-react';
 
-
-
-/** Aligned to deck: Hedgium | Mutual Funds & PMS | AIF */
-const COMPARISON_ROWS = [
-  {
-    category: 'Control Risk',
-    hedgium: 'Securities under direct client control & access',
-    mutualFundsPms: 'Fund Managers have discretion/ control',
-    aif: "Securities in Fund Manager's control",
-  },
-  {
-    category: 'Liquidity',
-    hedgium: 'Highly liquid as funds in own brokerage account',
-    mutualFundsPms: 'Redemption Process & Exit Load Costs in case of MFs',
-    aif: 'Most AIFs have multi-year lock-ins',
-  },
-  {
-    category: 'Tax efficiency',
-    hedgium: 'Taxed at own marginal bracket. Can claim expenses to reduce tax',
-    mutualFundsPms: "Can't claim expenses to reduce liability",
-    aif: "AIFs taxed at fund's level, usually 42.7% irrespective of client's tax bracket",
-  },
-  {
-    category: 'Directional Risk',
-    hedgium: 'Engine 2 provides non-correlated returns',
-    mutualFundsPms: 'Correlated to market, and depends on strategy',
-    aif: 'AIFs can go short but leverage is restricted to a level',
-  },
-  {
-    category: 'ROI driver',
-    hedgium: 'Quant based statistical arbitrage',
-    mutualFundsPms:
-      'Poor performance of a few stocks can significantly hurt overall returns',
-    aif: 'Same as Mutual Funds & PMS',
-  },
-] as const;
-
-function ComparisonTable() {
-  return (
-    <div
-      className="mt-16 lg:mt-20"
-      data-aos="fade-up"
-      data-aos-duration="650"
-      data-aos-once="true"
-    >
-      <h3 className="text-2xl md:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-bold text-base-content mb-2">
-        Think beyond Mutual Funds, PMS, AIF –
-      </h3>
-
-      <p className="text-base lg:text-lg xl:text-xl text-primary mb-6">
-        Take back control, gain liquidity, reduce costs & improve tax efficiency
-      </p>
-
-      <div className="overflow-x-auto bg-base-100">
-        <table className="w-full min-w-[800px] text-left border-separate border-spacing-0">
-
-          {/* HEADER */}
-          <thead>
-            <tr>
-              <th className=""></th>
-
-              <th className="p-4 font-bold text-center text-base lg:text-lg xl:text-2xl border-t-2 border-l-2 border-r-2 border-dashed border-primary/60 rounded-t-2xl">
-                Hedgium
-              </th>
-
-              <th className="p-4 font-bold text-base-content text-base lg:text-lg xl:text-2xl">
-                Mutual Funds & PMS
-              </th>
-
-              <th className="p-4 font-bold text-base-content text-base lg:text-lg xl:text-2xl">
-                AIF
-              </th>
-            </tr>
-          </thead>
-
-          {/* BODY */}
-          <tbody>
-            {COMPARISON_ROWS.map((row, i) => {
-
-              const isLast = i === COMPARISON_ROWS.length - 1;
-
-              return (
-                <tr key={row.category} className="border-b border-base-300">
-
-                  {/* LEFT CATEGORY BUTTON */}
-                  <td className="py-3 px-2 md:px-4">
-                    <div className="inline-flex items-center">
-                      <span
-                        className="inline-flex items-center justify-center w-[160px] min-w-[160px] lg:w-[240px] lg:min-w-[240px] xl:w-[240px] xl:min-w-[240px] text-white text-sm lg:text-base xl:text-lg 2xl:text-xl font-semibold px-0 py-2 rounded-l-lg bg-cover bg-center bg-no-repeat"
-                        style={{ backgroundImage: 'url(/images/home/button_bg.png)' }}
-                      >
-                        {row.category}
-                      </span>
-
-                    </div>
-                  </td>
-
-                  {/* HEDGIUM COLUMN */}
-                  <td
-                    className={`p-4 text-sm lg:text-base xl:text-lg text-base-content/90 min-w-[180px]
-                    border-l-2 border-r-2 border-dashed border-primary/60
-                    ${isLast ? "border-b-2 rounded-b-2xl" : ""}`}
-                  >
-                    {row.hedgium}
-                  </td>
-
-                  {/* MUTUAL FUNDS */}
-                  <td className="p-4 text-sm lg:text-base xl:text-lg text-base-content/80 min-w-[180px]">
-                    {row.mutualFundsPms}
-                  </td>
-
-                  {/* AIF */}
-                  <td className="p-4 text-sm lg:text-base xl:text-lg text-base-content/80 min-w-[180px]">
-                    {row.aif}
-                  </td>
-
-                </tr>
-              );
-            })}
-          </tbody>
-
-        </table>
-      </div>
-    </div>
-  );
-}
-
+import PerformanceSection from './PerformanceSection';
+import ComparisonTable from './ComparisonTable';
 
 const WHY_HEDGIUM_TABS = [
   {
@@ -137,50 +12,52 @@ const WHY_HEDGIUM_TABS = [
     label: 'Market Tested Strategies',
     content: (
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3">
-          <p className="text-base lg:text-lg xl:text-xl font-semibold text-base-content">
-            Developed, optimized &amp; operational since last 5 years
-          </p>
-          <div className="flex flex-col gap-3">
-            <p className="text-base lg:text-lg xl:text-xl text-base-content/80">
+        <div className="flex flex-col gap-3 p-0 lg:p-4">
+
+          <ul className="list-disc list-inside flex flex-col gap-4">
+            <li className="text-base lg:text-lg xl:text-xl text-base-content/80">
+              Developed, optimized &amp; operational since last 5 years
+            </li>
+            <li className="text-base lg:text-lg xl:text-xl text-base-content/80">
               Tested in live, diverse market conditions including periods of high
               volatility, with built-in downside protections
-            </p>
-            <p className="text-base lg:text-lg xl:text-xl text-base-content/80">
+            </li>
+            <li className="text-base lg:text-lg xl:text-xl text-base-content/80">
               Adaptable to different risk-appetites. Focused on better risk-adjusted
               returns
-            </p>
-            <p className="text-base lg:text-lg xl:text-xl text-base-content/80">
+            </li>
+            <li className="text-base lg:text-lg xl:text-xl text-base-content/80">
               Suited for various capital sizes — From 25 Lakh to 20 Crore
-            </p>
-          </div>
+            </li>
+          </ul>
         </div>
       </div>
     ),
   },
+
   {
     id: 'risk',
     label: 'Real-time Risk Management',
     content: (
       <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-[35fr_65fr] gap-4">
+        {/* Headers – hidden on mobile, shown on lg+ */}
+        <div className="hidden lg:grid grid-cols-[35fr_65fr] gap-4">
           <div className="flex items-center gap-2 font-bold text-base lg:text-lg xl:text-xl text-base-content border-b border-base-300 pb-2">
-            <span className="text-warning text-lg xl:text-xl">⚠</span> RISKS
+            <AlertTriangle className="size-5 xl:size-6 shrink-0 text-warning" /> RISKS
           </div>
           <div className="flex items-center gap-2 font-bold text-base lg:text-lg xl:text-xl text-base-content border-b border-base-300 pb-2">
-            <span className="text-primary text-lg xl:text-xl">🛡</span> MITIGATION
+            <Shield className="size-5 xl:size-6 shrink-0 text-primary" /> MITIGATION
           </div>
         </div>
+  
         {[
           {
-            risk: 'LIQUIDITY / SLIPPAGE RISK',
-            mitigation:
-              'Trade Entry checks for liquidity conditions. Real-time monitoring of liquidity and proactive adjustment',
+            risk: 'LIQUIDITY RISK',
+            mitigation: 'Trade Entry checks for liquidity conditions. Real-time monitoring of liquidity and proactive adjustment',
           },
           {
             risk: 'EXECUTION RISK',
-            mitigation:
-              'Timely triggered adjustments basis pre-defined parameters. Dedicated Trade execution logic & margin management Engine',
+            mitigation: 'Timely triggered adjustments basis pre-defined parameters. Dedicated Trade execution logic & margin management Engine',
           },
           { risk: 'TAIL EVENT RISK', mitigation: 'Built-in protection hedges for all strategies' },
           {
@@ -191,12 +68,16 @@ const WHY_HEDGIUM_TABS = [
         ].map(({ risk, mitigation }) => (
           <div
             key={risk}
-            className="grid grid-cols-[35fr_65fr] gap-4 items-start border-b border-base-300/50 py-2 last:border-0"
+            className="grid grid-cols-1 lg:grid-cols-[35fr_65fr] gap-2 lg:gap-4 items-start border-b border-base-300/50 py-2 last:border-0"
           >
-            <p className="text-base lg:text-lg xl:text-xl font-bold text-base-content flex items-center gap-1 px-2 py-1">
-              <span className="text-primary mr-1">→</span> {risk}
+            {/* Risk row – now with responsive layout */}
+            <p className="text-base lg:text-lg xl:text-xl font-bold text-base-content flex items-center gap-1 px-0 lg:px-2 py-1">
+              <span className="hidden lg:inline text-primary mr-1">→</span> 
+              <span>{risk}</span>
             </p>
-            <p className="text-base lg:text-lg xl:text-xl text-primary">{mitigation}</p>
+            <p className="text-base lg:text-lg xl:text-xl text-primary lg:pl-0 pl-2">
+              {mitigation}
+            </p>
           </div>
         ))}
       </div>
@@ -206,38 +87,12 @@ const WHY_HEDGIUM_TABS = [
     id: 'security',
     label: 'Security in Design',
     content: (
-      <div className="relative bg-base-100/50 min-h-[300px] md:min-h-[320px] flex items-center justify-center overflow-hidden">
+      <div className="relative bg-base-100/50 min-h-[300px] md:min-h-[320px] flex items-center justify-center overflow-hidden pt-6">
         {/* Arrow SVG – responsive, points from cards to lock */}
-        <svg
-          className="absolute inset-0 w-full h-full pointer-events-none text-primary/30"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden
-        >
-          <defs>
-            <marker
-              id="sec-arrow"
-              markerWidth="6"
-              markerHeight="4"
-              refX="5"
-              refY="2"
-              orient="auto"
-            >
-              <path d="M0 0 L6 2 L0 4 Z" fill="currentColor" />
-            </marker>
-          </defs>
-          <g stroke="currentColor" strokeWidth="1.2" fill="none">
-            {/* Arrows from card positions (roughly) to center (50,50) */}
-            <line x1="22" y1="22" x2="46" y2="46" markerEnd="url(#sec-arrow)" />
-            <line x1="78" y1="22" x2="54" y2="46" markerEnd="url(#sec-arrow)" />
-            <line x1="78" y1="78" x2="54" y2="54" markerEnd="url(#sec-arrow)" />
-            <line x1="22" y1="78" x2="46" y2="54" markerEnd="url(#sec-arrow)" />
-          </g>
-        </svg>
 
         {/* Central Lock */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full bg-base-100 border-2 border-primary/30 flex items-center justify-center text-primary shadow-md z-10">
+        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+          <div className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full bg-base-100 border-2 border-accent/30 flex items-center justify-center text-primary shadow-md z-10">
             <Lock className="w-7 h-7 md:w-8 md:h-8 lg:w-10 lg:h-10" strokeWidth={2} />
           </div>
         </div>
@@ -245,36 +100,40 @@ const WHY_HEDGIUM_TABS = [
         {/* Four cards positioned around the lock */}
         <div className="relative grid grid-cols-2 gap-3 md:gap-4 lg:gap-6 mx-auto z-10">
           {/* Top‑left card */}
-          <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-left">
-            <p className="text-base md:text-lg xl:text-xl text-base-content/90 leading-snug">
-              <span className="font-semibold text-primary">All trade logs, reports, dashboards</span>{' '}
-              are available to the client on real-time basis
+          <div className="bg-base-100 p-3 md:p-4 rounded-xl border border-accent/60 border-dashed shadow-sm text-left relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-accent hidden lg:flex items-center justify-center">
+              <Check className="w-3.5 h-3.5 text-primary-content" strokeWidth={2.5} />
+            </div>
+            <p className="text-sm font-semibold md:text-lg xl:text-xl text-base-content/90 leading-snug pt-1">
+              All trade logs, reports, dashboards are available to the client on real-time basis
             </p>
           </div>
           {/* Top‑right card */}
-          <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-right">
-            <p className="text-base md:text-lg xl:text-xl text-base-content/90 leading-snug">
-              <span className="font-semibold text-primary">
-                Funds &amp; securities always stay in client&apos;s account
-              </span>{' '}
-              under their exclusive access and control at all times
+          <div className="bg-base-100 p-3 md:p-4 rounded-xl border border-accent/60 border-dashed shadow-sm text-right relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-accent hidden lg:flex items-center justify-center">
+              <Check className="w-3.5 h-3.5 text-primary-content" strokeWidth={2.5} />
+            </div>
+            <p className="text-sm font-semibold md:text-lg xl:text-xl text-base-content/90 leading-snug pt-1">
+              Funds &amp; securities always stay in client&apos;s account under their exclusive access and control.
             </p>
           </div>
           {/* Bottom‑left card */}
-          <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-left">
-            <p className="text-base md:text-lg xl:text-xl text-base-content/90 leading-snug">
-              <span className="font-semibold text-primary">
-                All strategies are approved / pre-approved by the client
-              </span>
-              , and trade execution control is always with the client
+          <div className="bg-base-100 p-3 md:p-4 rounded-xl border border-accent/60 border-dashed shadow-sm text-left relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-accent hidden lg:flex items-center justify-center">
+              <Check className="w-3.5 h-3.5 text-primary-content" strokeWidth={2.5} />
+            </div>
+            <p className="text-sm font-semibold md:text-lg xl:text-xl text-base-content/90 leading-snug pt-1">
+              All strategies are approve / pre-approved by the client
+              and trade execution control is always with the client
             </p>
           </div>
           {/* Bottom‑right card */}
-          <div className="bg-base-100 p-3 md:p-4 rounded-lg border border-primary/20 shadow-sm text-right">
-            <p className="text-base md:text-lg xl:text-xl text-base-content/90 leading-snug">
-              <span className="font-semibold text-primary">
-                System access is encrypted, client-controlled, and revocable any time
-              </span>
+          <div className="bg-base-100 p-3 md:p-4 rounded-xl border border-accent/60 border-dashed shadow-sm text-right relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-accent hidden lg:flex items-center justify-center">
+              <Check className="w-3.5 h-3.5 text-primary-content" strokeWidth={2.5} />
+            </div>
+            <p className="text-sm font-semibold md:text-lg xl:text-xl text-base-content/90 leading-snug pt-1">
+              System access is encrypted, client-controlled, and revocable any time
             </p>
           </div>
         </div>
@@ -285,28 +144,19 @@ const WHY_HEDGIUM_TABS = [
     id: 'support',
     label: 'Live Support & Access',
     content: (
-      <div className="flex flex-col items-center gap-6 py-4">
+      <div className="flex max-w-xl mx-auto flex-col items-center gap-6 py-4">
         <p className="text-base lg:text-lg xl:text-xl font-semibold text-base-content text-center">
           Hedgium Support is always available &amp; reachable during market &amp; off-market hours
         </p>
-        <div className="flex items-start justify-center gap-6 md:gap-10">
-          <div className="flex flex-col items-center text-center gap-2 text-primary">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 md:w-10 md:h-10 lg:w-14 lg:h-14">
-              <path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z" />
-            </svg>
-            <span className="text-base lg:text-lg xl:text-xl text-base-content/70">Live Chat</span>
+        <div className="flex items-center justify-center gap-4 md:gap-8">
+          <div className="flex flex-col items-center text-center gap-2">
+            <img src="/images/home/message.png" alt="Live Chat" className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28 object-contain" />
           </div>
-          <div className="flex flex-col items-center text-center gap-2 text-primary">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 md:w-10 md:h-10 lg:w-14 lg:h-14">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
-            </svg>
-            <span className="text-base lg:text-lg xl:text-xl text-base-content/70">Dedicated Support</span>
+          <div className="flex flex-col items-center text-center gap-2">
+            <img src="/images/home/call.png" alt="Dedicated Support" className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 object-contain" />
           </div>
-          <div className="flex flex-col items-center text-center gap-2 text-primary">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 md:w-10 md:h-10 lg:w-14 lg:h-14">
-              <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-            </svg>
-            <span className="text-base lg:text-lg xl:text-xl text-base-content/70">Email</span>
+          <div className="flex flex-col items-center text-center gap-2">
+            <img src="/images/home/mail.png" alt="Email" className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28 object-contain" />
           </div>
         </div>
       </div>
@@ -318,10 +168,12 @@ export default function WhyHedgiumSection() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
+
+    <>
     <section id="why-hedgium" className="py-16 md:py-24 bg-base-200">
       <div className="max-w-8xl mx-auto px-4 lg:px-8">
         <h2
-          className="text-2xl md:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-bold text-base-content mb-8 md:mb-10"
+          className="text-2xl md:text-3xl lg:text-4xl xl:text-4xl 2xl:text-5xl font-bold text-base-content mb-8 md:mb-10 lg:mb-12 xl:mb-14 2xl:mb-16"
           data-aos="fade-up"
           data-aos-duration="650"
           data-aos-once="true"
@@ -339,7 +191,7 @@ export default function WhyHedgiumSection() {
           {WHY_HEDGIUM_TABS.map((tab) => (
             <div
               key={tab.id}
-              className="border-2 border-base-300 rounded-3xl p-5 md:p-6 bg-base-100 overflow-hidden"
+              className="border-2 border-base-300 rounded-3xl p-4 p-6 md:p-6 bg-base-100 overflow-hidden"
             >
               <h3 className="font-bold text-lg xl:text-xl text-primary mb-4 pb-2 border-b border-base-300">
                 {tab.label}
@@ -363,23 +215,37 @@ export default function WhyHedgiumSection() {
             src="/images/logos/Hedgium icon cropped.png"
             alt=""
             aria-hidden
-            className="shrink-0 w-8 h-8 md:w-10 md:h-10 object-contain"
+            className="shrink-0 w-10 h-10 md:w-12 md:h-12 object-contain"
           />
 
           <div className="flex-1 flex items-center">
             <div className="border-t border-dashed border-primary/50 w-4 shrink-0" />
 
-            <button
-              type="button"
-              onClick={() => setActiveTab(i)}
-              className={`flex-1 cursor-pointer text-left px-4 py-3 font-bold text-lg xl:text-xl rounded active:scale-[0.98] ${
-                isActive
-                  ? 'bg-primary text-primary-content shadow'
-                  : 'bg-primary/25 text-base-content hover:bg-primary/35'
-              }`}
-            >
-              {tab.label}
-            </button>
+
+        <button
+  type="button"
+  onClick={() => setActiveTab(i)}
+  className={`flex-1 cursor-pointer rounded-xl text-left px-4 py-3 font-bold text-lg xl:text-2xl transition-all duration-200 active:scale-[0.97]
+    ${
+      isActive
+        ? `
+          bg-primary 
+          text-primary-content 
+          shadow-md
+          ring-1 ring-primary/40
+        `
+        : `
+          bg-primary/10 
+          text-base-content/70
+          hover:bg-primary/30 
+          hover:text-primary-content
+          hover:shadow-sm
+        `
+    }
+  `}
+>
+  {tab.label}
+</button>
 
             <div
               className={`border-t-2 border-dashed border-primary/50 w-12 shrink-0 transition-opacity ${
@@ -408,9 +274,18 @@ export default function WhyHedgiumSection() {
 
         {/* Comparison Table */}
 
-        <ComparisonTable />
+       
 
       </div>
     </section>
+
+
+    <PerformanceSection />
+
+    <ComparisonTable />
+
+
+
+    </>
   );
 }

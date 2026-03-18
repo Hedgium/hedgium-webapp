@@ -106,10 +106,10 @@ export default function Footer() {
             </span>
 
             <a
-              href="mailto:contact@hedgium.in"
+              href="mailto:clients@hedgium.ai"
               className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
             >
-              contact@hedgium.in
+              clients@hedgium.ai
             </a>
 
             <a

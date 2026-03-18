@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 const HEDGIUM_ADDRESS = "Haware City, Thane; Powai, Mumbai; Seawoods, Navi Mumbai, Maharashtra, India";
 
 const ESCALATION_ROWS = [
-  { designation: "Customer Care", email: "contact@hedgium.in", contactKey: "phone" },
+  { designation: "Customer Care", email: "clients@hedgium.ai", contactKey: "phone" },
   { designation: "Compliance Officer", email: "compliance@hedgium.in", contactKey: null },
   { designation: "Principal Officer", email: "kamlesh.ramchandani@hedgium.in", contactKey: "8454838304" },
 ];
@@ -72,10 +72,10 @@ export default function GrievanceRedressalPage() {
                   entitled to make a complaint in writing. An email may be sent
                   to the Client Servicing Team on{" "}
                   <a
-                    href="mailto:contact@hedgium.in"
+                    href="mailto:clients@hedgium.ai"
                     className="link link-primary"
                   >
-                    contact@hedgium.in
+                    clients@hedgium.ai
                   </a>
                   .
                 </li>

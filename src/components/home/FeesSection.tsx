@@ -7,7 +7,7 @@ const DESC_COL = "text-base font-medium md:text-lg text-base-content/80 leading-
 export default function FeesSection() {
   return (
     <section className="bg-base-200 py-12 md:py-16">
-      <div className="max-w-6xl mx-auto px-4 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 xl:px-12">
         {/* Title */}
         <div
           data-aos="fade-up"
@@ -71,7 +71,7 @@ export default function FeesSection() {
               alt="Fees structure: base portfolio profit (Engine-1), trading profit (Engine-2), and fees"
               width={982}
               height={605}
-              className="w-full max-w-md h-auto object-contain"
+              className="w-full max-w-md h-auto rounded-xl"
             />
           </div>
         </div>

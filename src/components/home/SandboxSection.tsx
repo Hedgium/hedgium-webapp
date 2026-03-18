@@ -13,11 +13,11 @@ export default function SandboxSection() {
         >
           <div className="md:max-w-[70%] shrink-0">
             
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-base-content leading-tight">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-4xl font-bold text-base-content leading-tight">
               Try without commitments:{" "}
-              <span className="text-primary">Sandbox-mode!</span>
+              <span className="text-accent">Sandbox-mode!</span>
             </h2>
-            <p className="text-base md:text-lg text-base-content/75 my-2 mb-4 leading-relaxed">
+            <p className="text-secondary text-base md:text-lg text-base-content/75 my-2 mb-4 leading-relaxed">
               Log-in and observe your personalized simulated P&amp;L based on
               Hedgium&apos;s strategies applied to your notional capital in
               real-time
@@ -27,7 +27,7 @@ export default function SandboxSection() {
           <div className="hidden md:block">
           <Link
               href="/get-started"
-              className="btn btn-primary btn-md whitespace-nowrap shrink-0 w-full sm:w-auto lg:w-auto"
+              className="btn btn-primary btn-md lg:btn-lg whitespace-nowrap shrink-0 w-full sm:w-auto lg:w-auto"
             >
               Take me to Sandbox mode
           </Link> 
@@ -133,45 +133,58 @@ export default function SandboxSection() {
                 </span>
               </div>
 
-              <div className="rounded-lg bg-primary/10 p-3 sm:p-4 text-sm md:text-base flex flex-col gap-2">
-                <p className="text-base-content/85">Strategy Name:- BSE Spread</p>
-                <p className="text-base-content/85">Strategy Id: #243</p>
-                <p className="text-base-content/85">
-                  P&amp;L: +35,965 &nbsp;&nbsp; M2M: +15,700 &nbsp;&nbsp;
-                  Realized: +20,265
-                </p>
-                <p className="font-semibold text-base-content mt-1">
-                  Current Legs (4):-
-                </p>
-                <table className="w-full text-sm md:text-base text-base-content/80">
-                  <tbody>
-                    {[
-                      ["1.", "BSE 30 MAR 2500 PE", "SELL", "3750", "30.05", "+35,800"],
-                      ["2.", "BSE 28 APR 2550 PE", "BUY", "3750", "159.85", "-12,100"],
-                      ["3.", "BSE 30 MAR 2800 CE", "SELL", "3750", "98.05", "-13,540"],
-                      ["4.", "BSE 28 APR 2900 CE", "BUY", "3750", "278.30", "+5,540"],
-                    ].map(([n, inst, side, qty, px, pnl]) => (
-                      <tr key={n}>
-                        <td className="pr-1 py-0.5 text-base-content/50">{n}</td>
-                        <td className="pr-2 py-0.5">{inst}</td>
-                        <td className="pr-2 py-0.5 font-semibold">{side}</td>
-                        <td className="pr-2 py-0.5">{qty}</td>
-                        <td className="pr-2 py-0.5">{px}</td>
-                        <td
-                          className={`py-0.5 font-semibold ${
-                            pnl.startsWith("+") ? "text-success" : "text-error"
-                          }`}
-                        >
-                          {pnl}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="text-primary/80 text-sm md:text-base mt-1 cursor-pointer hover:underline">
-                  Closed Legs (6) [click to see more]
-                </p>
-              </div>
+
+              <div className="relative w-full  mx-auto">
+  {/* Back card 2 */}
+  <div className="absolute top-0 left-0 right-0 h-full bg-base-200/80 rounded-xl translate-y-1.5 translate-x-1.5" />
+
+  {/* Back card 1 */}
+
+  <div className="relative rounded-xl bg-base-200 border border-base-300 p-3 sm:p-4 text-sm md:text-base flex flex-col gap-2">
+
+              
+<p className="text-base-content/85">Strategy Name:- BSE Spread</p>
+<p className="text-base-content/85">Strategy Id: #243</p>
+<p className="text-base-content/85">
+  P&amp;L: +35,965 &nbsp;&nbsp; M2M: +15,700 &nbsp;&nbsp;
+  Realized: +20,265
+</p>
+<p className="font-semibold text-base-content mt-1">
+  Current Legs (4):-
+</p>
+<table className="w-full text-sm md:text-base text-base-content/80">
+  <tbody>
+    {[
+      ["1.", "BSE 30 MAR 2500 PE", "SELL", "3750", "30.05", "+35,800"],
+      ["2.", "BSE 28 APR 2550 PE", "BUY", "3750", "159.85", "-12,100"],
+      ["3.", "BSE 30 MAR 2800 CE", "SELL", "3750", "98.05", "-13,540"],
+      ["4.", "BSE 28 APR 2900 CE", "BUY", "3750", "278.30", "+5,540"],
+    ].map(([n, inst, side, qty, px, pnl]) => (
+      <tr key={n}>
+        <td className="pr-1 py-0.5 text-base-content/50">{n}</td>
+        <td className="pr-2 py-0.5">{inst}</td>
+        <td className="pr-2 py-0.5 font-semibold">{side}</td>
+        <td className="pr-2 py-0.5">{qty}</td>
+        <td className="pr-2 py-0.5">{px}</td>
+        <td
+          className={`py-0.5 font-semibold ${
+            pnl.startsWith("+") ? "text-success" : "text-error"
+          }`}
+        >
+          {pnl}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+<p className="text-primary/80 text-sm md:text-base mt-1 cursor-pointer hover:underline">
+  Closed Legs (6) [click to see more]
+</p>
+</div>
+
+
+</div>
+             
             </div>
           </div>
         </div>

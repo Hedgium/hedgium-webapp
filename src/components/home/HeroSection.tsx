@@ -73,7 +73,7 @@ export default function HeroSection() {
           <div className="trapezium-inner">
             <p className="text-base text-center md:text-lg lg:text-xl  opacity-90 leading-relaxed">
               <span className="text-center">
-              We capture opportunities in real-time and deliver sophisticated playbooks to maximize risk-adjusted returns, by combining two decades of market expertise with cutting-edge technology.
+              Leveraging two decades of market experience, we identify real-time market opportunities and manage risk dynamically to deliver consistent, exceptional capital performance.
 
               </span>
              

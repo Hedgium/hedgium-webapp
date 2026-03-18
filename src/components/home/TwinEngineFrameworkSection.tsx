@@ -29,21 +29,32 @@ export default function TwinEngineFrameworkSection() {
     </span>
   </div>
 
-  <div className="flex items-end justify-between gap-2">
+  <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
     <div className="text-left">
-      <h3 className="text-xl md:text-2xl font-semibold text-primary mb-3">
+      {/* Mobile: heading + image on same row */}
+      <div className="flex items-center justify-between gap-2 mb-3 md:hidden">
+        <h3 className="text-xl md:text-2xl font-semibold text-primary">
+          Build Model Portfolio
+        </h3>
+        <img
+          src="/images/home/17.png"
+          alt="Portfolio"
+          className="w-12 md:w-16 shrink-0"
+        />
+      </div>
+      {/* Large: heading only */}
+      <h3 className="hidden md:block text-xl md:text-2xl font-semibold text-primary mb-3">
         Build Model Portfolio
       </h3>
-
       <p className="text-base md:text-lg text-base-content/70 leading-relaxed">
         Construct or restructure a base portfolio with securities using Hedgium&apos;s model portfolio to achieve optimal diversification
       </p>
     </div>
-
+    {/* Large: image on right */}
     <img
       src="/images/home/17.png"
       alt="Portfolio"
-      className="w-12 md:w-24 lg:w-24 xl:w-24 2xl:w-36"
+      className="hidden md:block w-12 md:w-24 lg:w-24 xl:w-24 2xl:w-36 shrink-0"
     />
   </div>
 </div>
@@ -63,19 +74,32 @@ export default function TwinEngineFrameworkSection() {
               </span>
             </div>
 
-            <div className="flex items-end justify-between gap-2">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
               <div className="text-left">
-                <h3 className="text-xl md:text-2xl font-semibold text-primary mb-3">
+                {/* Mobile: heading + image on same row */}
+                <div className="flex items-center justify-between gap-2 mb-3 md:hidden">
+                  <h3 className="text-xl md:text-2xl font-semibold text-primary">
+                    Deploy Statistical Arbitrage
+                  </h3>
+                  <img
+                    src="/images/home/18.png"
+                    alt="Statistical Arbitrage"
+                    className="w-12 md:w-24 lg:w-24 xl:w-24 2xl:w-36 shrink-0"
+                  />
+                </div>
+                {/* Large: heading only */}
+                <h3 className="hidden md:block text-xl md:text-2xl font-semibold text-primary mb-3">
                   Deploy Statistical Arbitrage
                 </h3>
                 <p className="text-base md:text-lg text-base-content/70 leading-relaxed">
                   Leverage margin from the portfolio to execute non-directional, algorithm-driven options strategies to generate consistent income
                 </p>
               </div>
+              {/* Large: image on right (same as Engine 1) */}
               <img
                 src="/images/home/18.png"
                 alt="Statistical Arbitrage"
-                className="w-12 md:w-24 lg:w-24 xl:w-24 2xl:w-36"
+                className="hidden md:block w-12 md:w-24 lg:w-24 xl:w-24 2xl:w-36 shrink-0"
               />
             </div>
           </div>

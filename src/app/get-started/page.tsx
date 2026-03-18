@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { MessageCircle, Loader2, ChevronLeft, Shield, Home } from "lucide-react";
@@ -45,7 +45,7 @@ function getLeftPanelContent(step: number, submitted: boolean, investmentValue?:
         <p className="text-lg font-medium text-base-content">Thank you for getting in touch.</p>
         <p className="mt-3 text-sm text-base-content/60">
           {isBelow25l
-            ? "We&apos;ve noted your interest. We&apos;ll reach out if we expand our services to your investment range."
+            ? "We&apos;ve noted your interest, and we&apos;ll reach out if we expand our services to your investment range."
             : "We&apos;ll confirm your meeting and reach out shortly."}
         </p>
       </>
@@ -84,8 +84,7 @@ function getLeftPanelContent(step: number, submitted: boolean, investmentValue?:
   if (investmentValue === BELOW_25L_VALUE) {
     return wrapper(
       <>
-        <p className="text-lg font-medium text-base-content">We&apos;ve noted your interest.</p>
-        <p className="mt-3 text-sm text-base-content/60">We&apos;ll reach out if we expand our services to your investment range.</p>
+        <p className="text-lg font-medium text-base-content">We&apos;ve noted your interest, and we&apos;ll reach out if we expand our services to your investment range.</p>
       </>
     );
   }
@@ -237,11 +236,19 @@ export default function GetStartedPage() {
     await submitLead(scheduledAt);
   };
 
-  const handleSubmitBelow25l = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    await submitLead();
-  };
+  const hasAutoSubmittedBelow25l = useRef(false);
+  useEffect(() => {
+    if (
+      step === 3 &&
+      investmentValue === BELOW_25L_VALUE &&
+      !submitted &&
+      !submitting &&
+      !hasAutoSubmittedBelow25l.current
+    ) {
+      hasAutoSubmittedBelow25l.current = true;
+      submitLead();
+    }
+  }, [step, investmentValue, submitted, submitting]);
 
   const leftContent = getLeftPanelContent(step, submitted, investmentValue);
 
@@ -304,8 +311,8 @@ export default function GetStartedPage() {
                 <h2 className="text-xl font-bold text-base-content mb-2">We&apos;ll be in touch shortly</h2>
                 <p className="text-base-content/70 text-sm mb-6">
                   {investmentValue === BELOW_25L_VALUE
-                    ? "We&apos;ve noted your interest. If we expand our services to your investment range, we&apos;ll reach out."
-                    : "We&apos;ve received your details and will confirm your meeting time. Prefer to chat now?"}
+                    ? "We&apos;ve noted your interest, and if we expand our services to your investment range, we&apos;ll reach out."
+                    : "We&apos;ve received your details, and will confirm your meeting time. Prefer to chat now?"}
                 </p>
                 {whatsappUrl && (
                   <a
@@ -423,27 +430,19 @@ export default function GetStartedPage() {
           )}
 
           {!submitted && step === 3 && investmentValue === BELOW_25L_VALUE && (
-            <form onSubmit={handleSubmitBelow25l} className="space-y-4">
+            <div className="space-y-4">
               <h2 className="text-lg font-bold text-base-content">Thank you for your interest</h2>
               <p className="text-base-content/70 text-sm">
                 We don&apos;t provide services for below ₹25 lakhs for now. If we provide it in the future we may contact you.
               </p>
+              {submitting && (
+                <div className="flex items-center gap-2 text-sm text-base-content/70">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Submitting...
+                </div>
+              )}
               {error && <p className="text-sm text-error">{error}</p>}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="btn btn-primary w-full btn-sm normal-case mt-4 gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit"
-                )}
-              </button>
-            </form>
+            </div>
           )}
 
           {!submitted && step === 3 && investmentValue !== BELOW_25L_VALUE && (

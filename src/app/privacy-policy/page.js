@@ -255,8 +255,8 @@ export default function PrivacyPolicyPage() {
                   If you wish to cancel your account or request that we no
                   longer use your information to provide you the Services,
                   contact us through{" "}
-                  <a href="mailto:contact@hedgium.in" className="link">
-                    contact@hedgium.in
+                  <a href="mailto:clients@hedgium.ai" className="link">
+                    clients@hedgium.ai
                   </a>
                   . We will retain your information for as long as your account
                   on the Platforms is active and as needed to provide you the
@@ -368,8 +368,8 @@ export default function PrivacyPolicyPage() {
                   Terms via email or notice on the Website, once a year. If you
                   object to any of the changes to our terms, and you no longer
                   wish to use the Services, you may contact{" "}
-                  <a href="mailto:contact@hedgium.in" className="link">
-                    contact@hedgium.in
+                  <a href="mailto:clients@hedgium.ai" className="link">
+                    clients@hedgium.ai
                   </a>{" "}
                   to deactivate your account. Unless stated otherwise, the
                   Company&apos;s current Privacy Policy applies to all
@@ -390,8 +390,8 @@ export default function PrivacyPolicyPage() {
                   If you have questions about this Privacy Policy or the
                   Company&apos;s information collection, use and disclosure
                   practices, you may contact us at{" "}
-                  <a href="mailto:contact@hedgium.in" className="link">
-                    contact@hedgium.in
+                  <a href="mailto:clients@hedgium.ai" className="link">
+                    clients@hedgium.ai
                   </a>
                   . We will use reasonable efforts to respond promptly to any
                   requests, questions or concerns, which you may have regarding
