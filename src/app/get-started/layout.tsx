@@ -1,4 +1,11 @@
-import { Suspense } from "react";
+import { Suspense } from 'react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Get Started',
+  description:
+    'Start your investment journey with Hedgium. Share your details and we\'ll get in touch to personalise your experience.',
+};
 
 export default function GetStartedLayout({
   children,

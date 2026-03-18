@@ -1,15 +1,17 @@
-import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '404 - Page Not Found',
+  description: 'The page you are looking for does not exist.',
+  robots: { index: false, follow: false },
+};
 
 export default function Custom404() {
   return (
     <>
-      <Head>
-        <title>404 - Trade Not Found | TradingApp</title>
-      </Head>
-
       <Navbar />
       
       <div className="min-h-screen flex items-center justify-center bg-base-200">

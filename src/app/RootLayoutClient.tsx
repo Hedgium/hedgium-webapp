@@ -1,0 +1,55 @@
+'use client';
+
+import { ThemeProvider } from 'next-themes';
+import NextTopLoader from 'nextjs-toploader';
+import AuthProvider from '@/providers/AuthProvider';
+import AlertsContainer from '@/components/AlertsContainer';
+import { useEffect } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { useRouter } from 'nextjs-toploader/app';
+import { usePathname } from 'next/navigation';
+
+export default function RootLayoutClient({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { accessToken, isInitializing, user } = useAuthStore();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!isInitializing && accessToken) {
+      if (pathname === '/onboarding/verify-email') return;
+
+      if (user?.kyc_skipped) {
+        if (!pathname.includes('hedgium')) {
+          router.push('/hedgium/dashboard/');
+        }
+        return;
+      }
+      if (user?.signup_step === 'initiated') {
+        router.push('/onboarding/verify-email');
+      } else if (user?.signup_step === 'email_verified') {
+        router.push('/onboarding/complete-profile');
+      } else if (
+        user?.signup_step === 'documents_uploaded' ||
+        user?.signup_step === 'broker_profile_added'
+      ) {
+        router.push('/onboarding/verification');
+      }
+    }
+  }, [accessToken, isInitializing, router, pathname, user]);
+
+  return (
+    <>
+      <NextTopLoader color="#244061" showSpinner height={2} />
+      <AuthProvider>
+        <ThemeProvider defaultTheme="light">
+          {children}
+        </ThemeProvider>
+        <AlertsContainer />
+      </AuthProvider>
+    </>
+  );
+}

@@ -50,10 +50,10 @@ export default function HeroSection() {
       </button>
 
       {/* Container */}
-      <div className="absolute top-36 right-4 lg:top-24  z-10 flex items-center">
+      <div className="absolute top-36 right-4 left-4 lg:top-24 lg:right-8 lg:left-8 z-10 flex items-center justify-center">
         
         <div
-          className="max-w-8xl w-full mx-auto px-4 lg:px-8"
+          className="max-w-8xl w-full px-4 lg:px-8"
           data-aos="fade-up"
           data-aos-duration="800"
           data-aos-once="true"

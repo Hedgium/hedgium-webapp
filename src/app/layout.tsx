@@ -1,76 +1,67 @@
-'use client'
-
-import './global.css'
-
-// import { Roboto_Flex } from 'next/font/google'
-import { ThemeProvider } from 'next-themes';
+import './global.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
-import NextTopLoader from 'nextjs-toploader';
-import AuthProvider from "@/providers/AuthProvider";
+import RootLayoutClient from './RootLayoutClient';
+import type { Metadata } from 'next';
 
 const font = Plus_Jakarta_Sans({
-  weight: ["200", "300", "400", "600", "700"],
-  subsets: ["latin"],       // add others if needed
-  display: "swap",          // good CLS behavior
-})
+  weight: ['200', '300', '400', '600', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+});
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://hedgium.ai';
 
-import AlertsContainer from "@/components/AlertsContainer";
-import { useEffect } from "react";
-import { useAuthStore } from "@/store/authStore";
-import { useRouter } from 'nextjs-toploader/app';
-import { usePathname } from 'next/navigation'
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'Hedgium | Quant-Based Investment Platform',
+    template: '%s | Hedgium',
+  },
+  description:
+    'Hedgium offers a quant-based dual-engine investing framework for superior risk-adjusted returns. Build model portfolios and deploy statistical arbitrage strategies.',
+  keywords: [
+    'Hedgium',
+    'quant investing',
+    'statistical arbitrage',
+    'model portfolio',
+    'investment platform',
+    'risk-adjusted returns',
+  ],
+  authors: [{ name: 'Hedgium', url: SITE_URL }],
+  creator: 'Hedgium',
+  openGraph: {
+    type: 'website',
+    locale: 'en_IN',
+    url: SITE_URL,
+    siteName: 'Hedgium',
+    title: 'Hedgium | Quant-Based Investment Platform',
+    description:
+      'Hedgium offers a quant-based dual-engine investing framework for superior risk-adjusted returns.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Hedgium | Quant-Based Investment Platform',
+    description:
+      'Hedgium offers a quant-based dual-engine investing framework for superior risk-adjusted returns.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-    const { accessToken, isInitializing, user } = useAuthStore()
-    const router = useRouter()
-    const pathname = usePathname()
-  
-    useEffect(() => {
-      if (!isInitializing && accessToken){
-        // Don't redirect while the user is actively going through email verification
-        if (pathname === "/onboarding/verify-email") return;
-
-        if (user?.kyc_skipped) {
-          if (!pathname.includes("hedgium")) {
-            router.push("/hedgium/dashboard/");
-          }
-          return;
-        }
-        if (user?.signup_step === "initiated") {
-          router.push("/onboarding/verify-email");
-        } else if (user?.signup_step === "email_verified") {
-          router.push("/onboarding/complete-profile");
-        }
-        else if(user?.signup_step=="documents_uploaded" || user?.signup_step=="broker_profile_added"){
-          router.push("/onboarding/verification")
-        } 
-        // else if (user?.signup_step=="verified" && !pathname.includes("hedgium")){
-        //   router.push("/hedgium/dashboard/")
-        // }
-      } 
-    }, [accessToken, isInitializing, router, pathname, user]);
-
-
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {/* Apply globally */}
       <body
-      className={font.className + " min-h-screen flex flex-col"} >
-        <NextTopLoader 
-          color="#244061"
-          showSpinner={true}
-          height={2}
-        />
-
-        <AuthProvider>
-          <ThemeProvider defaultTheme="light">
-            {children}
-          </ThemeProvider>
-          <AlertsContainer />
-        </AuthProvider>
-        </body>
+        className={font.className + ' min-h-screen flex flex-col'}
+      >
+        <RootLayoutClient>{children}</RootLayoutClient>
+      </body>
     </html>
-  )
+  );
 }
