@@ -51,7 +51,7 @@ export default function ComparisonTable() {
         Take back control, gain liquidity, reduce costs & improve tax efficiency
       </p>
 
-      <div className="overflow-x-auto bg-base-100 rounded-xl">
+      <div className="overflow-x-auto bg-base-100 mt-8 lg:mt-12 xl:mt-16 rounded-xl">
         <table className="w-full min-w-[800px] text-left border-separate border-spacing-0">
 
           {/* HEADER */}
