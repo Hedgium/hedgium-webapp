@@ -102,6 +102,7 @@ export default function TradeCycles({
   const [refreshing, setRefreshing] = useState(false);
   const [validatingCycleId, setValidatingCycleId] = useState<number | null>(null);
   const [updatingMaster, setUpdatingMaster] = useState<number | null>(null);
+  const [updatingState, setUpdatingState] = useState<number | null>(null);
   const [comparingCycleId, setComparingCycleId] = useState<number | null>(null);
   const [compareResults, setCompareResults] = useState<Record<number, CompareResult>>({});
   const [compareErrors, setCompareErrors] = useState<Record<number, string>>({});
@@ -288,6 +289,37 @@ export default function TradeCycles({
       alert.error(errorMsg, { duration: 3000 });
     } finally {
       setUpdatingMaster(null);
+    }
+  }
+
+  const TRADE_CYCLE_STATES = ["LOCKED", "NEW", "ACTIVATED", "ADJUSTED", "CLOSED", "INACTIVE"] as const;
+
+  async function handleUpdateState(cycleId: number, newState: string) {
+    if (updatingState === cycleId) return;
+    setUpdatingState(cycleId);
+    try {
+      
+      const res = await authFetch(`trade-cycles/${cycleId}/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ state: newState, trade_allowed: true }),
+      });
+
+      if (res.ok) {
+        alert.success("State updated", { duration: 2000 });
+        fetchTradeCycles();
+      } else {
+        const data = await res.json();
+        alert.error(data.detail || "Failed to update state", { duration: 3000 });
+      }
+    } catch (error: unknown) {
+      console.error("Update state error:", error);
+      const errorMsg = error instanceof Error ? error.message : "Failed to update state";
+      alert.error(errorMsg, { duration: 3000 });
+    } finally {
+      setUpdatingState(null);
     }
   }
 
@@ -728,11 +760,23 @@ export default function TradeCycles({
                     <td>{cycle.profile.quantity_multiplier ?? 1}</td>
                     <td>
                       <span className="flex items-center gap-1">
-                        {cycle.state}
+                        <select
+                          className="select select-bordered select-sm min-w-[7rem]"
+                          value={cycle.state}
+                          onChange={(e) => handleUpdateState(cycle.id, e.target.value)}
+                          disabled={updatingState === cycle.id}
+                        >
+                          {TRADE_CYCLE_STATES.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
                         {cycle.state === "LOCKED" && cycle.locked_reason && (
                           <span className="tooltip tooltip-right" data-tip={cycle.locked_reason}>
                             <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-warning text-warning-content text-[10px] font-bold cursor-default select-none">i</span>
                           </span>
+                        )}
+                        {updatingState === cycle.id && (
+                          <span className="loading loading-spinner loading-xs"></span>
                         )}
                       </span>
                     </td>
