@@ -26,35 +26,36 @@ interface Adjustment {
   legs: Leg[];
 }
 
-interface TradeCycle {
+interface TradeCycleInput {
   id: number;
   name: string;
   description: string;
   state: string;
   sub_state: string;
   created_at: string;
-  adjustments: Adjustment[];
+  adjustments?: unknown[];
 }
 
 interface Props {
-  tradeCycle: TradeCycle;
+  tradeCycle: TradeCycleInput;
   isActive: boolean;
+  isSandbox?: boolean;
 }
 
-const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
+const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) => {
   const [expanded, setExpanded] = useState(false);
   const alert = useAlert();
 
   // ✅ Mirror props into state
-  const [cycle, setCycle] = useState<TradeCycle>(tradeCycle);
+  const [cycle, setCycle] = useState<TradeCycleInput>(tradeCycle);
 
   // ✅ Sync if parent updates the prop
   useEffect(() => {
     setCycle(tradeCycle);
   }, [tradeCycle]);
 
-  const latestAdjustment = cycle.adjustments[0];
-  const legs = latestAdjustment?.legs ?? [];
+  const latestAdjustment = (cycle.adjustments ?? [])[0] as { legs?: Leg[] } | undefined;
+  const legs: Leg[] = latestAdjustment?.legs ?? [];
   const isLocked = cycle.state === "LOCKED";
 
   const statusMap: Record<string, JSX.Element> = {
@@ -193,12 +194,12 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive }) => {
         {!isLocked && (
           <div className="card-actions justify-end mt-4">
             {cycle.state !== "NEW" && (
-              <Link href={`/hedgium/positions`} className="btn btn-outline btn-sm">
+              <Link href={isSandbox ? "/sandbox/positions" : "/hedgium/positions"} className="btn btn-outline btn-sm">
                 View Positions
               </Link>
             )}
 
-            {cycle.state === "NEW" && (
+            {cycle.state === "NEW" && !isSandbox && (
               <button onClick={activateTradeCycle} className="btn btn-outline btn-sm">
                 Activate
               </button>

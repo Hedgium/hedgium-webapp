@@ -4,14 +4,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { LineChart, Settings, Moon, Sun, LogOut } from "lucide-react";
+import { LineChart, Settings, Moon, Sun, LogOut, FlaskConical } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useSandboxStore } from "@/store/sandboxStore";
 import KycStatusIndicator from "@/components/KycStatusIndicator";
 
 export default function AuthNav() {
+  const pathname = usePathname();
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { logout, user } = useAuthStore();
+  const { clearSandboxPlan } = useSandboxStore();
+  const isSandbox = pathname?.startsWith("/sandbox");
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -94,9 +100,27 @@ export default function AuthNav() {
               </div>
             </li>
             <li>
-              <Link href="/dashboard/settings" onClick={() => setMenuOpen(false)}>
+              <Link href="/hedgium/settings" onClick={() => setMenuOpen(false)}>
                 <Settings className="w-4 h-4" /> Settings
               </Link>
+            </li>
+            <li>
+              {isSandbox ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearSandboxPlan();
+                    setMenuOpen(false);
+                    router.push("/sandbox");
+                  }}
+                >
+                  <FlaskConical className="w-4 h-4" /> Change plan
+                </button>
+              ) : (
+                <Link href="/sandbox" onClick={() => setMenuOpen(false)}>
+                  <FlaskConical className="w-4 h-4" /> Switch to Sandbox
+                </Link>
+              )}
             </li>
             <li>
               <button

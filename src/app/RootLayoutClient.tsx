@@ -23,7 +23,9 @@ export default function RootLayoutClient({
       if (pathname === '/onboarding/verify-email') return;
 
       if (user?.kyc_skipped) {
-        if (!pathname.includes('hedgium')) {
+        const isHedgium = pathname?.includes('hedgium');
+        const isSandbox = pathname?.startsWith('/sandbox');
+        if (!isHedgium && !isSandbox) {
           router.push('/hedgium/dashboard/');
         }
         return;
@@ -43,7 +45,7 @@ export default function RootLayoutClient({
 
   return (
     <>
-      <NextTopLoader color="#244061" showSpinner height={2} />
+      <NextTopLoader color="#2440ff" showSpinner height={2} />
       <AuthProvider>
         <ThemeProvider defaultTheme="light">
           {children}

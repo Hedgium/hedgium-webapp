@@ -4,7 +4,7 @@
 
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Home, Briefcase, Bell, Settings, LineChart, Sun, Moon, LogOut, FileText } from "lucide-react";
+import { Home, Briefcase, Bell, Settings, LineChart, Sun, Moon, LogOut, FileText, FlaskConical } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
@@ -85,6 +85,15 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
         {/* Navigation items */}
         <nav className="flex-1 overflow-y-auto px-4 mt-4">
           <ul className="gap-2 space-y-1">
+            {/* <li>
+              <Link
+                href="/sandbox"
+                className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all hover:bg-base-300/70 text-warning"
+              >
+                <FlaskConical className="h-5 w-5" />
+                <span className="font-medium">Sandbox</span>
+              </Link>
+            </li> */}
             {tabs.map((tab, idx) => {
               const active = pathname === tab.href;
               return (

@@ -21,12 +21,16 @@ interface TradeCycle {
   created_at: string;
 }
 
+type FetchFn = (path: string) => Promise<Response>;
+
 interface Props {
   tradeCycle: TradeCycle;
+  fetchFn?: FetchFn;
 }
 
-const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
+const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) => {
   const alert = useAlert();
+  const doFetch = fetchFn ?? authFetch;
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -56,7 +60,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle }) => {
       const url = loadAll 
         ? `trade-cycles/${tradeCycle.id}/details?load_all=true`
         : `trade-cycles/${tradeCycle.id}/details`;
-      const res = await authFetch(url);
+      const res = await doFetch(url);
       const data = await res.json();
       setUnmappedOrders(data.unmapped_orders)
       setPositions(data.positions);
