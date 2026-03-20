@@ -25,7 +25,8 @@ export default function RootLayoutClient({
       if (user?.kyc_skipped) {
         const isHedgium = pathname?.includes('hedgium');
         const isSandbox = pathname?.startsWith('/sandbox');
-        if (!isHedgium && !isSandbox) {
+        const isAdmin = pathname?.startsWith('/admin') || pathname?.startsWith('/myadmin');
+        if (!isHedgium && !isSandbox && !isAdmin) {
           router.push('/hedgium/dashboard/');
         }
         return;

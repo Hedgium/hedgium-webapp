@@ -219,7 +219,7 @@ export default function AddBrokerPage() {
         {step !== "result" && (
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-sm text-base-content/60 hover:text-base-content mb-6 transition-colors"
+            className="flex items-center cursor-pointer gap-1.5 text-sm text-base-content/60 hover:text-base-content mb-6 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back

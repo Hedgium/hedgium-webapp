@@ -264,14 +264,19 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: name === 'strike' || name === 'quantity' || name === 'strike_step' || name === 'strike_distance' || name === 'lot_size'
-                ? parseInt(value)
-                : name === 'price'
-                    ? parseFloat(value)
-                    : value
-        }));
+        setFormData(prev => {
+            const updates: Partial<typeof prev> = {
+                [name]: name === 'strike' || name === 'quantity' || name === 'strike_step' || name === 'strike_distance' || name === 'lot_size'
+                    ? parseInt(value)
+                    : name === 'price'
+                        ? parseFloat(value)
+                        : value
+            };
+            if (name === 'strike_type' && value === 'DYNAMIC') {
+                updates.strike_distance = 0;
+            }
+            return { ...prev, ...updates };
+        });
     };
 
     const loadOptions = async (inputValue: string) => {
@@ -357,11 +362,11 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                 {/* Exchange (only when builder exchange is NFO_BFO) */}
                 {exchange === 'NFO_BFO' && (
                     <div className="form-control">
-                        <label className="label"><span className="label-text">Exchange</span></label>
+                        <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Exchange</span></label>
                         <select
                             value={legExchange}
                             onChange={(e) => setLegExchange(e.target.value)}
-                            className="select select-bordered w-full"
+                            className="select select-bordered select-sm h-9 w-full"
                         >
                             <option value="NFO">NFO</option>
                             <option value="BFO">BFO</option>
@@ -371,7 +376,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
                 {/* Symbol (Underlying) - searchable */}
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Symbol (Underlying)</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Symbol (Underlying)</span></label>
                     <AsyncSelect
                         cacheOptions
                         defaultOptions
@@ -383,24 +388,24 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                         placeholder="Search Symbol (e.g., NIFTY, BANKNIFTY)..."
                     />
 
-                    <label className="label"><span className="label-text text-xs">Token: {formData.token}, Price: {currentPrice}</span></label>
+                    <label className="label py-0"><span className="label-text text-sm text-base-content/60">Token: {formData.token}, Price: {currentPrice}</span></label>
 
                 </div>
 
                 {/* <div className="form-control">
-                    <label className="label"><span className="label-text">Token</span></label>
-                    <input type="text" name="token" value={formData.token} className="input input-bordered w-full bg-gray-100" readOnly />
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Token</span></label>
+                    <input type="text" name="token" value={formData.token} className="input input-bordered input-sm h-9 w-full bg-base-200" readOnly />
                 </div> */}
 
                 {/* <div className="form-control">
-                    <label className="label"><span className="label-text">Current Price</span></label>
-                    <input type="number" value={currentPrice !== null ? currentPrice : ''} className="input input-bordered w-full bg-gray-100" readOnly />
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Current Price</span></label>
+                    <input type="number" value={currentPrice !== null ? currentPrice : ''} className="input input-bordered input-sm h-9 w-full bg-base-200" readOnly />
                 </div> */}
 
                 {/* Strike Type Selection */}
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Strike Type</span></label>
-                    <select name="strike_type" value={formData.strike_type} onChange={handleChange} className="select select-bordered w-full">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Strike Type</span></label>
+                    <select name="strike_type" value={formData.strike_type} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
                         <option value="FIXED">FIXED</option>
                         <option value="DYNAMIC">DYNAMIC</option>
                     </select>
@@ -408,25 +413,26 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                 </div>
 
 
-                <div className="form-control">
-                    <label className="label"><span className="label-text">ATM Strike Multiplier</span></label>
-                    <input 
-                        type="number" 
-                        name="strike_distance" 
-                        value={formData.strike_distance} 
-                        onChange={handleChange}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                handleSubmit(e);
-                            }
-                        }}
-                        className="input input-bordered w-full" 
-                    />
-                </div>
+                {formData.strike_type === 'FIXED' && (
+                    <div className="form-control">
+                        <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Strike Distance (ATM +/-)</span></label>
+                        <input 
+                            type="number" 
+                            name="strike_distance" 
+                            value={formData.strike_distance} 
+                            onChange={handleChange}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    handleSubmit(e);
+                                }
+                            }}
+                            className="input input-bordered input-sm h-9 w-full" 
+                        />
+                    </div>
+                )}
 
-
-                <div className="form-control">
-                    <label className="label"><span className="label-text">Calculated Strike</span></label>
+                {formData.strike_type === 'FIXED' && (<div className="form-control">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Calculated Strike</span></label>
                     <input 
                         type="number" 
                         name="strike" 
@@ -437,16 +443,17 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                                 handleSubmit(e);
                             }
                         }}
-                        className="input input-bordered w-full" 
+                        className="input input-bordered input-sm h-9 w-full" 
                         required 
                     />
-                    <label className="label"><span className="label-text text-xs">Strike Step: {formData.strike_step}</span></label>
+                    <label className="label py-0"><span className="label-text text-sm text-base-content/60">Strike Step: {formData.strike_step}</span></label>
 
                 </div>
+                )}
 
 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Expiry</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Expiry</span></label>
                     <input
                         type={expiryInputType}
                         name="expiry"
@@ -460,7 +467,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                             }
                         }}
                         placeholder="DD-MM-YY"
-                        className="input input-bordered w-full"
+                        className="input input-bordered input-sm h-9 w-full"
                         required
                     />
                 </div>
@@ -468,16 +475,16 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Option Type</span></label>
-                    <select name="option_type" value={formData.option_type} onChange={handleChange} className="select select-bordered w-full">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Option Type</span></label>
+                    <select name="option_type" value={formData.option_type} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
                         <option value="CE">CE</option>
                         <option value="PE">PE</option>
                     </select>
                 </div>
 
                 {/* <div className="form-control">
-                    <label className="label"><span className="label-text">Period</span></label>
-                    <select name="period" value={formData.period} onChange={handleChange} className="select select-bordered w-full">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Period</span></label>
+                    <select name="period" value={formData.period} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
                         <option value="WEEKLY">WEEKLY</option>
                         <option value="MONTHLY">MONTHLY</option>
                     </select>
@@ -485,8 +492,8 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Action</span></label>
-                    <select name="action" value={formData.action} onChange={handleChange} className="select select-bordered w-full">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Action</span></label>
+                    <select name="action" value={formData.action} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
                         <option value="BUY">BUY</option>
                         <option value="SELL">SELL</option>
                     </select>
@@ -494,7 +501,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Price</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Price</span></label>
                     <input 
                         type="number" 
                         step="0.01" 
@@ -506,12 +513,12 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                                 handleSubmit(e);
                             }
                         }}
-                        className="input input-bordered w-full" 
+                        className="input input-bordered input-sm h-9 w-full" 
                     />
                 </div>
 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Lot Size (Auto-filled)</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Lot Size (Auto-filled)</span></label>
                     <input
                         type="number"
                         name="lot_size"
@@ -528,12 +535,12 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                                 handleSubmit(e);
                             }
                         }}
-                        className="input input-bordered w-full bg-gray-100"
+                        className="input input-bordered input-sm h-9 w-full bg-base-200"
                     />
                 </div>
 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Number of Lots</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Number of Lots</span></label>
                     <input
                         type="number"
                         value={noOfLots}
@@ -551,20 +558,20 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                                 handleSubmit(e);
                             }
                         }}
-                        className="input input-bordered w-full"
+                        className="input input-bordered input-sm h-9 w-full"
                         min="1"
                     />
 
-                    <label className="label"><span className="label-text text-xs">Lot Size: {formData.lot_size}, Quantity: {formData.quantity}</span></label>
+                    <label className="label py-0"><span className="label-text text-sm text-base-content/60">Lot Size: {formData.lot_size}, Quantity: {formData.quantity}</span></label>
                 </div>
 
                 {/* <div className="form-control">
-                    <label className="label"><span className="label-text">Quantity (Lot Size × No. of Lots)</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Quantity (Lot Size × No. of Lots)</span></label>
                     <input
                         type="number"
                         name="quantity"
                         value={formData.quantity}
-                        className="input input-bordered w-full bg-gray-100"
+                        className="input input-bordered input-sm h-9 w-full bg-base-200"
                         readOnly
                     />
                 </div> */}
@@ -578,9 +585,9 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
             </div>
 
 
-            <div className="flex justify-end space-x-2 mt-6">
-                <button type="button" onClick={onCancel} className="btn btn-ghost" disabled={isSubmitting}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={!validationStatus.isValid || isSubmitting}>
+            <div className="flex justify-end gap-2 mt-6">
+                <button type="button" onClick={onCancel} className="btn btn-ghost btn-sm" disabled={isSubmitting}>Cancel</button>
+                <button type="submit" className="btn btn-primary btn-sm" disabled={!validationStatus.isValid || isSubmitting}>
                     {isSubmitting ? (
                         <>
                             <Loader2 className="w-4 h-4 animate-spin" />

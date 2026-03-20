@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import TradeCyclePositionsSkeleton from "@/components/skeletons/TradeCyclePositionsSkeleton";
 // import LivePositionsModal from "@/components/LivePositionsModal";
-import { LivePositionsData } from "@/types/positions";
+// import { LivePositionsData } from "@/types/positions";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";

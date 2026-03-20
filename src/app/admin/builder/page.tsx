@@ -1,17 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { authFetch } from "@/utils/api";
 import { StrategyBuilder, BuilderLeg, StrategyBuilderCreate, StrategyBuilderUpdate, BuilderLegCreate, BuilderLegUpdate } from "@/types/builder";
 import BuilderItem from "@/components/admin/builder/BuilderItem";
-import BuilderForm from "@/components/admin/builder/BuilderForm";
-import LegForm from "@/components/admin/builder/LegForm";
 import useAlert from "@/hooks/useAlert";
 import { Plus } from "lucide-react";
 
-import BuilderTaskControl from "@/components/admin/builder/BuilderTaskControl";
-import ExitTaskControl from "@/components/admin/builder/ExitTaskControl";
 import BuilderItemSkeleton from "@/components/skeletons/BuilderItemSkeleton";
+
+const BuilderForm = dynamic(
+    () => import("@/components/admin/builder/BuilderForm"),
+    { ssr: false }
+);
+
+const LegForm = dynamic(
+    () => import("@/components/admin/builder/LegForm"),
+    { ssr: false }
+);
+
+const BuilderTaskControl = dynamic(
+    () => import("@/components/admin/builder/BuilderTaskControl"),
+    { ssr: false, loading: () => <div className="h-14 w-40 bg-base-300 rounded-xl animate-pulse" /> }
+);
+
+const ExitTaskControl = dynamic(
+    () => import("@/components/admin/builder/ExitTaskControl"),
+    { ssr: false, loading: () => <div className="h-14 w-40 bg-base-300 rounded-xl animate-pulse" /> }
+);
 
 export default function BuilderPage() {
     const [builders, setBuilders] = useState<StrategyBuilder[]>([]);
@@ -187,52 +204,47 @@ export default function BuilderPage() {
     };
 
     return (
-        <div className="p-6">
+        <div className="p-6 max-w-7xl mx-auto">
             {/* Header Section */}
-            <div className="mb-0">
-                <div className="flex justify-between items-center mb-4">
-                    <h1 className="text-2xl font-bold">Strategy Builder</h1>
-
-
-                    <button
-                        onClick={handleAddBuilder}
-                        className="btn btn-primary gap-2"
-                    >
-                        <Plus size={20} /> Add Builder
-                    </button>
+            <div className="mb-6">
+                <div className="flex justify-between items-center mb-4 border-b border-base-300 pb-4">
+                    <h1 className="text-2xl font-semibold">Strategy Builder</h1>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-base-content/80">Filter by Status:</label>
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="select select-bordered select-sm h-9 w-48"
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="CHECKING">Checking</option>
+                                <option value="ACTIVE">Active</option>
+                                <option value="EXIT_CHECKING">Exit Checking</option>
+                                <option value="EXITED">Exited</option>
+                                <option value="INACTIVE">Inactive</option>
+                            </select>
+                            {statusFilter && (
+                                <button
+                                    onClick={() => setStatusFilter("")}
+                                    className="btn btn-ghost btn-sm"
+                                >
+                                    Clear Filter
+                                </button>
+                            )}
+                        </div>
+                        <button
+                            onClick={handleAddBuilder}
+                            className="btn btn-primary btn-sm gap-2"
+                        >
+                            <Plus size={18} /> Add Builder
+                        </button>
+                    </div>
                 </div>
 
-                <div className="flex mb-4">
-                    {/* Task Controls */}
+                <div className="flex flex-wrap gap-4 mb-4">
                     <BuilderTaskControl />
                     <ExitTaskControl />
-                </div>
-
-                {/* Filters */}
-                <div className="bg-base-200 rounded-lg py-4 mb-4">
-                    <div className="flex items-center gap-4">
-                        <label className="text-sm font-medium">Filter by Status:</label>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="select select-bordered select-sm w-48"
-                        >
-                            <option value="">All Statuses</option>
-                            <option value="CHECKING">Checking</option>
-                            <option value="ACTIVE">Active</option>
-                            <option value="EXIT_CHECKING">Exit Checking</option>
-                            <option value="EXITED">Exited</option>
-                            <option value="INACTIVE">Inactive</option>
-                        </select>
-                        {statusFilter && (
-                            <button
-                                onClick={() => setStatusFilter("")}
-                                className="btn btn-ghost btn-xs"
-                            >
-                                Clear Filter
-                            </button>
-                        )}
-                    </div>
                 </div>
             </div>
 
@@ -253,7 +265,7 @@ export default function BuilderPage() {
                         />
                     ))}
                     {builders.length === 0 && (
-                        <p className="text-center text-gray-400">No strategy builders found.</p>
+                        <p className="text-center text-base-content/60">No strategy builders found.</p>
                     )}
                 </div>
             )}
@@ -261,8 +273,8 @@ export default function BuilderPage() {
             {/* Builder Modal */}
             {isBuilderModalOpen && (
                 <div className="modal modal-open">
-                    <div className="modal-box w-11/12 max-w-3xl">
-                        <h3 className="font-bold text-lg mb-4">{editingBuilder ? 'Edit Strategy Builder' : 'Add Strategy Builder'}</h3>
+                    <div className="modal-box w-11/12 max-w-3xl rounded-xl">
+                        <h3 className="font-semibold text-xl mb-4">{editingBuilder ? 'Edit Strategy Builder' : 'Add Strategy Builder'}</h3>
                         <BuilderForm
                             initialData={editingBuilder}
                             onSubmit={handleBuilderSubmit}
@@ -275,8 +287,8 @@ export default function BuilderPage() {
             {/* Leg Modal */}
             {isLegModalOpen && selectedBuilderId && (
                 <div className="modal modal-open">
-                    <div className="modal-box w-11/12 max-w-3xl">
-                        <h3 className="font-bold text-lg mb-4">{editingLeg ? 'Edit Leg' : 'Add Leg'}</h3>
+                    <div className="modal-box w-11/12 max-w-3xl rounded-xl">
+                        <h3 className="font-semibold text-xl mb-4">{editingLeg ? 'Edit Leg' : 'Add Leg'}</h3>
                         <LegForm
                             initialData={editingLeg}
                             builderId={selectedBuilderId}

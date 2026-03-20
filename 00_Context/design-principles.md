@@ -16,7 +16,7 @@ Apply these principles across all UI so the product feels like a modern, profess
 ## Layout
 
 - **Page background** — Use `bg-base-200` (or equivalent surface) for full-page context; reserve `bg-base-100` for content containers and cards.
-- **Content width** — Constrain width where it helps focus: e.g. narrow forms (max ~380–400px), medium content (max-w-2xl), wide only for data-heavy tables/dashboards.
+- **Content width** — Constrain width where it helps focus: e.g. narrow forms (max ~380–400px), medium content (max-w-2xl), wide content (max-w-7xl) for data-heavy tables/dashboards.
 - **Centering** — Center narrow flows (auth, simple forms) with `flex items-center justify-center` and consistent vertical padding (`py-8` or similar).
 - **Cards / containers** — `rounded-xl`, light border (`border-base-300`), and minimum shadow by default. Prefer no shadow unless elevation is necessary; when needed use only subtle `shadow-sm`. Avoid heavy shadows or strong borders.
 
@@ -24,8 +24,8 @@ Apply these principles across all UI so the product feels like a modern, profess
 
 ## Typography
 
-- **Hierarchy** — One clear page/section title (e.g. `text-xl font-semibold`), optional short subtitle (`text-sm text-base-content/60`). Use smaller labels for form fields (`text-xs font-medium text-base-content/80`).
-- **Body** — Default size `text-sm` for form copy and secondary text; reserve `text-base` for primary content where needed.
+- **Hierarchy** — One clear page/section title (e.g. `text-2xl font-semibold`), optional short subtitle (`text-base text-base-content/60`). Use smaller labels for form fields (`text-sm font-medium text-base-content/80`).
+- **Body** — Default size `text-base` for form copy and secondary text; reserve `text-lg` for primary content where needed.
 - **Links & actions** — Primary actions use `text-primary` and `hover:underline` or button styles; keep link text concise.
 
 ---
@@ -33,9 +33,9 @@ Apply these principles across all UI so the product feels like a modern, profess
 ## Forms & inputs
 
 - **Fields** — Prefer compact inputs: `input-sm`, fixed height (e.g. `h-9`) for alignment. Use semantic `<form>`, `type="submit"`, and `autoComplete` where appropriate.
-- **Labels** — Small, above the field: `text-xs font-medium text-base-content/80`, tight margin below label (`mb-1.5`).
+- **Labels** — Small, above the field: `text-sm font-medium text-base-content/80`, tight margin below label (`mb-1.5`).
 - **Icons in inputs** — If used, place with `absolute` positioning; keep icon size modest (`h-4 w-4`) and color muted (`text-base-content/40`).
-- **Errors** — Inline, below the field: `text-xs text-error`. Clear single-line messages.
+- **Errors** — Inline, below the field: `text-sm text-error`. Clear single-line messages.
 - **Primary button** — Full-width in narrow forms when there’s one main action. Use `btn-primary btn-sm` with consistent height. Show loading state (e.g. spinner) instead of disabled-only when submitting.
 
 ---
@@ -57,7 +57,7 @@ Apply these principles across all UI so the product feels like a modern, profess
 
 ## Auth & focused flows
 
-- Auth and other focused flows (e.g. single-purpose forms) should feel calm: one main card, one primary CTA, minimal links (e.g. “Forgot password?”, “Sign up”). Secondary actions in a single line below the card, muted (`text-xs text-base-content/50`).
+- Auth and other focused flows (e.g. single-purpose forms) should feel calm: one main card, one primary CTA, minimal links (e.g. “Forgot password?”, “Sign up”). Secondary actions in a single line below the card, muted (`text-sm text-base-content/50`).
 
 ---
 

@@ -108,26 +108,24 @@ export default function ExitTaskControl() {
     }, []);
 
     return (
-        <div className="bg-base-200 rounded-lg p-4 ">
-            <div className="flex items-center justify-between">
+        <div className="bg-base-100/70 rounded-xl border border-base-300 py-3 px-4 flex-1 min-w-[200px]">
+            <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold">Exit Task</h2>
-                    <div className="flex items-center gap-2">
-                        <div className={`badge ${taskStatus.is_running ? "badge-success" : "badge-error"} gap-2`}>
-                            <div
-                                className={`w-2 h-2 rounded-full ${
-                                    taskStatus.is_running ? "bg-green-300 animate-pulse" : "bg-red-300"
-                                }`}
-                            ></div>
-                            {taskStatus.is_running ? "Running" : "Stopped"}
-                        </div>
-                        {taskStatus.task_id && (
-                            <span className="text-xs opacity-60">
-                                ID: {taskStatus.task_id.substring(0, 8)}...
-                            </span>
-                        )}
+                    <h2 className="text-base font-semibold">Exit Task</h2>
+                    <div className={`badge ${taskStatus.is_running ? "badge-success" : "badge-error"} gap-2`}>
+                        <div
+                            className={`w-2 h-2 rounded-full ${
+                                taskStatus.is_running ? "bg-green-300 animate-pulse" : "bg-red-300"
+                            }`}
+                        ></div>
+                        {taskStatus.is_running ? "Running" : "Stopped"}
                     </div>
+                    {taskStatus.task_id && (
+                        <span className="text-sm text-base-content/60">ID: {taskStatus.task_id.substring(0, 8)}...</span>
+                    )}
+                </div>
 
+                <div className="flex items-center gap-2">
                     <button
                         onClick={handleStartTask}
                         disabled={taskStatus.is_running || taskLoading}
@@ -142,9 +140,7 @@ export default function ExitTaskControl() {
                     >
                         {taskLoading ? <span className="loading loading-spinner loading-xs"></span> : "Stop"}
                     </button>
-
                 </div>
-                
             </div>
         </div>
     );

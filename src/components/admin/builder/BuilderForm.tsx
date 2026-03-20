@@ -112,8 +112,8 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         
         // Handle strategy_template_id change - auto-populate margin_required
         if (name === 'strategy_template_id') {
-            const templateId = parseInt(value);
-            const selectedTemplate = strategyTemplates.find(t => t.id === templateId);
+            const templateId = value === '' ? null : parseInt(value, 10);
+            const selectedTemplate = templateId != null ? strategyTemplates.find(t => t.id === templateId) : null;
             setFormData(prev => ({
                 ...prev,
                 [name]: templateId,
@@ -157,14 +157,15 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div className="form-control">
-                    <label className="label"><span className="label-text">Strategy Template</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Strategy Template</span></label>
                     <select 
                         name="strategy_template_id" 
-                        value={formData.strategy_template_id} 
+                        value={formData.strategy_template_id ?? ''} 
                         onChange={handleChange} 
-                        className="select select-bordered w-full"
+                        className="select select-bordered select-sm h-9 w-full"
                         disabled={loadingTemplates}
                     >
+                        <option value="">Select template...</option>
                         {strategyTemplates.map(template => (
                             <option key={template.id} value={template.id}>
                                 {template.name}
@@ -174,7 +175,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div>
                 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Name</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Name</span></label>
                     <input 
                         type="text" 
                         name="name" 
@@ -185,13 +186,13 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                                 handleSubmit(e);
                             }
                         }}
-                        className="input input-bordered w-full" 
+                        className="input input-bordered input-sm h-9 w-full" 
                         required 
                     />
                 </div>
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Exchange</span></label>
-                    <select name="exchange" value={formData.exchange} onChange={handleChange} className="select select-bordered w-full">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Exchange</span></label>
+                    <select name="exchange" value={formData.exchange} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
                         <option value="NSE">NSE</option>
                         <option value="BSE">BSE</option>
                         <option value="NFO">NFO</option>
@@ -201,8 +202,8 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     </select>
                 </div>
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Status</span></label>
-                    <select name="status" value={formData.status} onChange={handleChange} className="select select-bordered w-full">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Status</span></label>
+                    <select name="status" value={formData.status} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
                         <option value="CHECKING">CHECKING</option>
                         <option value="ACTIVE">ACTIVE</option>
                         <option value="EXIT_CHECKING">EXIT_CHECKING</option>
@@ -219,7 +220,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     <input type="number" name="strike_multiplier" value={formData.strike_multiplier} onChange={handleChange} className="input input-bordered w-full" />
                 </div> */}
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Entry WS (%)</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Entry WS (%)</span></label>
                     <input 
                         type="number" 
                         step="0.01" 
@@ -232,11 +233,11 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                                 handleSubmit(e);
                             }
                         }}
-                        className="input input-bordered w-full" 
+                        className="input input-bordered input-sm h-9 w-full" 
                     />
                 </div>
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Exit WS (%)</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Exit WS (%)</span></label>
                     <input 
                         type="number" 
                         step="0.01" 
@@ -249,19 +250,19 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                                 handleSubmit(e);
                             }
                         }}
-                        className="input input-bordered w-full" 
+                        className="input input-bordered input-sm h-9 w-full" 
                     />
                 </div>
 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Entry Condition</span></label>
-                    <select name="entry_condition" value={formData.entry_condition} onChange={handleChange} className="select select-bordered w-full">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Entry Condition</span></label>
+                    <select name="entry_condition" value={formData.entry_condition} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
                         <option value="LESS">LESS</option>
                         <option value="GREATER">GREATER</option>
                     </select>
                 </div>
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Exit PnL</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Exit PnL</span></label>
                     <input 
                         type="number" 
                         required 
@@ -274,14 +275,14 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                                 handleSubmit(e);
                             }
                         }}
-                        className="input input-bordered w-full" 
+                        className="input input-bordered input-sm h-9 w-full" 
                     />
                 </div>
 
                 
 
                 <div className="form-control">
-                    <label className="label"><span className="label-text">Margin Required</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Margin Required</span></label>
                     <input 
                         type="number" 
                         step="0.01" 
@@ -293,7 +294,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                                 handleSubmit(e);
                             }
                         }}
-                        className="input input-bordered w-full" 
+                        className="input input-bordered input-sm h-9 w-full" 
                         required
                     />
                     <label className="label">
@@ -302,8 +303,8 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div>
 
                 <div className="form-control">
-                    <label className="label cursor-pointer justify-start gap-4">
-                        <span className="label-text flex items-center gap-1">
+                    <label className="label cursor-pointer justify-start gap-4 py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80 flex items-center gap-1">
                             Multiplier Allowed
                             <span className="tooltip tooltip-right" data-tip="When enabled, each user's quantity_multiplier will be applied to leg quantities when creating trade cycle legs.">
                                 <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-base-300 text-base-content text-[10px] font-bold cursor-default select-none">i</span>
@@ -320,13 +321,13 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div>
 
                 <div className="form-control md:col-span-2">
-                    <label className="label"><span className="label-text">Supergroups</span></label>
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Supergroups</span></label>
                     <select 
                         name="supergroup_ids" 
                         multiple
                         value={formData.supergroup_ids?.map(id => id.toString()) || []} 
                         onChange={handleSupergroupChange} 
-                        className="select select-bordered w-full h-32"
+                        className="select select-bordered select-sm w-full h-28"
                         disabled={loadingSupergroups}
                     >
                         {supergroups.map(sg => (
@@ -342,9 +343,9 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
 
             </div>
 
-            <div className="flex justify-end space-x-2 mt-6">
-                <button type="button" onClick={onCancel} className="btn btn-ghost">Cancel</button>
-                <button type="submit" className="btn btn-primary">{initialData ? 'Update' : 'Create'}</button>
+            <div className="flex justify-end gap-2 mt-6">
+                <button type="button" onClick={onCancel} className="btn btn-ghost btn-sm">Cancel</button>
+                <button type="submit" className="btn btn-primary btn-sm">{initialData ? 'Update' : 'Create'}</button>
             </div>
         </form>
     );

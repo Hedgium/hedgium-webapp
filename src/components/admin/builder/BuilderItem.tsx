@@ -32,18 +32,18 @@ export default function BuilderItem({
     };
 
     return (
-        <div className="bg-base-100 rounded-lg p-4 mb-6 border border-base-300">
+        <div className="bg-base-100/80 rounded-xl p-4 mb-6 border border-base-300">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 pb-4 border-b border-base-200">
                 <div>
-                    <h3 className="text-lg font-bold text-primary flex items-center gap-2">
+                    <h3 className="text-xl font-semibold text-primary flex items-center gap-2">
                         {builder.name}
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${builder.status === 'ACTIVE' ? 'border-green-500 text-green-500' :
-                            builder.status === 'INACTIVE' ? 'border-red-500 text-red-500' : 'border-gray-500 text-gray-500'
+                        <span className={`text-sm px-2 py-0.5 rounded-full border ${builder.status === 'ACTIVE' ? 'border-success text-success' :
+                            builder.status === 'INACTIVE' ? 'border-error text-error' : 'border-base-content/40 text-base-content/60'
                             }`}>
                             {builder.status}
                         </span>
                     </h3>
-                    <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-400">
+                    <div className="flex flex-wrap gap-4 mt-2 text-base text-base-content/60">
                         <span>Exch: <span className="">{builder?.exchange}</span></span>
                         <span>Entry WS: <span className="">{builder?.entry_ws}%</span></span>
                         <span>Exit WS: <span className="">{builder?.exit_ws}%</span></span>
@@ -80,7 +80,7 @@ export default function BuilderItem({
 
             <div className="pl-0 md:pl-0">
                 <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Builder Legs</h4>
+                    <h4 className="text-sm font-semibold text-base-content/60 uppercase tracking-wider">Builder Legs</h4>
                     <button
                         onClick={() => onAddLeg(builder.id)}
                         className="btn btn-xs btn-outline btn-primary gap-1"
@@ -101,7 +101,7 @@ export default function BuilderItem({
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-4 bg-base-200/50 rounded-md text-gray-500 text-sm italic">
+                    <div className="text-center py-4 bg-base-200/50 rounded-lg text-base-content/60 text-base italic">
                         No legs configured yet.
                     </div>
                 )}

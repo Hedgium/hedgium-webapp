@@ -40,7 +40,7 @@ type TradeCycle = {
   is_master?: boolean | null;
   no_of_orders?: number | null;
   no_of_positions?: number | null;
-  pnl?: number | null;
+  total_pnl?: number | null;
 };
 
 type CompareResult = {
@@ -292,7 +292,7 @@ export default function TradeCycles({
     }
   }
 
-  const TRADE_CYCLE_STATES = ["LOCKED", "NEW", "ACTIVATED", "ADJUSTED", "CLOSED", "INACTIVE"] as const;
+  const TRADE_CYCLE_STATES = ["NEW","ACTIVATED", "ADJUSTED", "CLOSED", "INACTIVE"] as const;
 
   async function handleUpdateState(cycleId: number, newState: string) {
     if (updatingState === cycleId) return;
@@ -760,7 +760,8 @@ export default function TradeCycles({
                     <td>{cycle.profile.quantity_multiplier ?? 1}</td>
                     <td>
                       <span className="flex items-center gap-1">
-                        <select
+                        {cycle.state === "LOCKED" && <span className="text-sm">{cycle.state}</span>}
+                        {cycle.state !== "LOCKED" && <select
                           className="select select-bordered select-sm min-w-[7rem]"
                           value={cycle.state}
                           onChange={(e) => handleUpdateState(cycle.id, e.target.value)}
@@ -769,7 +770,7 @@ export default function TradeCycles({
                           {TRADE_CYCLE_STATES.map((s) => (
                             <option key={s} value={s}>{s}</option>
                           ))}
-                        </select>
+                        </select> }
                         {cycle.state === "LOCKED" && cycle.locked_reason && (
                           <span className="tooltip tooltip-right" data-tip={cycle.locked_reason}>
                             <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-warning text-warning-content text-[10px] font-bold cursor-default select-none">i</span>
@@ -799,8 +800,8 @@ export default function TradeCycles({
                     </td>
                     <td>{cycle.no_of_orders || 0}</td>
                     <td>{cycle.no_of_positions || 0}</td>
-                    <td className={cycle.pnl && cycle.pnl > 0 ? "text-green-400" : cycle.pnl && cycle.pnl < 0 ? "text-red-400" : ""}>
-                      {cycle.pnl !== null && cycle.pnl !== undefined ? formatMoneyIN(cycle.pnl) : formatMoneyIN(0)}
+                    <td className={cycle.total_pnl != null && cycle.total_pnl > 0 ? "text-green-400" : cycle.total_pnl != null && cycle.total_pnl < 0 ? "text-red-400" : ""}>
+                      {cycle.total_pnl !== null && cycle.total_pnl !== undefined ? formatMoneyIN(cycle.total_pnl) : formatMoneyIN(0)}
                     </td>
                     <td>
                       <div className="flex flex-col gap-1 w-full">
