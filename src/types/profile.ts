@@ -6,6 +6,7 @@ export interface User {
     mobile?: string | null;
     signup_step?: string | null;
     verified?: boolean | null;
+    last_login?: string | null;
     aadhar_number?: string | null;
     pan_number?: string | null;
     pan_document_url?: string | null;

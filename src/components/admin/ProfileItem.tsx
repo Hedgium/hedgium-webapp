@@ -3,15 +3,17 @@ import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
 import { formatMoneyIN } from '@/utils/formatNumber';
 import useAlert from '@/hooks/useAlert';
-import { RotateCw, Edit2, TrendingUp, KeyRound } from 'lucide-react';
+import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProfileItemProps {
     profile: Profile;
     onEdit?: (profile: Profile) => void;
+    onAddPlan?: (profile: Profile) => void;
+    onModifyPlan?: (profile: Profile) => void;
 }
 
-export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
+export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }: ProfileItemProps) {
     const [refreshing, setRefreshing] = useState(false);
     const [sendingReminder, setSendingReminder] = useState(false);
     const [equityMargin, setEquityMargin] = useState(profile.margin_equity);
@@ -184,9 +186,16 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
                     <p className="text-gray-400 text-sm">User</p>
-                    <p className="font-medium">{profile.user.email}</p>
-                    <p className="text-xs text-gray-500">{profile.user.first_name} {profile.user.last_name}</p>
-                    <p className="text-xs text-gray-500">ID: {profile.user_id}</p>
+                    <Link
+                        href={`/admin/profiles/${profile.id}`}
+                        className="font-medium link link-hover"
+                    >
+                        {profile.user.email}
+                    </Link>
+                    <p className="text-sm text-gray-500">{profile.user.first_name} {profile.user.last_name} · ID: {profile.user_id}</p>
+                    {profile.user.last_login && (
+                        <p className="text-sm text-gray-500">Last login: {new Date(profile.user.last_login).toLocaleString()}</p>
+                    )}
                 </div>
                 <div>
                     <p className="text-gray-400 text-sm">Aadhar / PAN / Documents</p>
@@ -218,12 +227,10 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
                 <div>
                     <p className="text-gray-400 text-sm">Broker</p>
                     <p className="font-medium">{profile.broker_name}</p>
-                    <p className="text-xs text-gray-500">HID:{profile.id}, BROKER ID:{profile.broker_user_id}</p>
+                    <p className="text-sm text-gray-500">HID: {profile.id}, BROKER ID: {profile.broker_user_id}</p>
 
                     {brokerLoggedIn ? (
-                        <span className="ml-auto text-xs text-green-400 flex items-center">
-                            ✓ Broker Logged In
-                        </span>
+                        <span className="text-sm text-green-400">✓ Broker Logged In</span>
                     ) : (
                         <div className="flex gap-2 flex-wrap">
                             <button
@@ -257,77 +264,104 @@ export default function ProfileItem({ profile, onEdit }: ProfileItemProps) {
 
                 </div>
                 <div>
-                    <p className="text-gray-400 text-sm">Margin Equity</p>
-                    <p className="font-medium">{formatMoneyIN(equityMargin, { decimals: 0 })}</p>
-                    <div className="flex space-x-2 mt-1">
-                        {brokerLoggedIn && <button
-                            onClick={handleRefreshMargin}
-                            disabled={refreshing}
-                            className={`btn btn-ghost btn-xs ${refreshing ? "animate-spin" : ""}`}
-                            title="Refresh Margin"
-                        >
-                            <RotateCw size={16} />
-                        </button>}
-                        {brokerLoggedIn && <Link
-                            href={`/admin/profiles/${profile.id}/live`}
-                            className="btn btn-ghost btn-xs text-green-400"
-                            title="View Live Positions"
-                        >
-                            <TrendingUp size={16} />
-                        </Link>}
+                    <p className="text-gray-400 text-sm">Margin & Action</p>
+                    <p className="text-sm font-medium">{formatMoneyIN(equityMargin, { decimals: 0 })}</p>
+                    <div className="flex flex-wrap gap-2 mt-1">
                         {brokerLoggedIn && (
-                            <button
-                                onClick={() => setIsBrokerTokenModalOpen(true)}
-                                className="btn btn-ghost btn-xs text-amber-400"
-                                title="Update Token"
-                            >
-                                <KeyRound size={16} />
-                            </button>
+                            <>
+                                <div className="tooltip tooltip-right" data-tip="Refresh Margin">
+                                    <button
+                                        onClick={handleRefreshMargin}
+                                        disabled={refreshing}
+                                        className={`btn btn-ghost btn-xs btn-square ${refreshing ? "animate-spin" : ""}`}
+                                        title="Refresh Margin"
+                                    >
+                                        <RotateCw size={16} />
+                                    </button>
+                                </div>
+                                <div className="tooltip tooltip-right" data-tip="View Live Positions">
+                                    <Link
+                                        href={`/admin/profiles/${profile.id}/live`}
+                                        className="btn btn-ghost btn-xs btn-square text-green-400"
+                                        title="View Live Positions"
+                                    >
+                                        <TrendingUp size={16} />
+                                    </Link>
+                                </div>
+                                <div className="tooltip tooltip-right" data-tip="Update Token">
+                                    <button
+                                        onClick={() => setIsBrokerTokenModalOpen(true)}
+                                        className="btn btn-ghost btn-xs btn-square text-amber-400"
+                                        title="Update Token"
+                                    >
+                                        <KeyRound size={16} />
+                                    </button>
+                                </div>
+                            </>
                         )}
                         {onEdit && (
-                            <button
-                                onClick={() => onEdit(profile)}
-                                className="btn btn-ghost btn-xs text-blue-400"
-                                title="Edit Profile"
-                            >
-                                <Edit2 size={16} />
-                            </button>
+                            <div className="tooltip tooltip-right" data-tip="Edit Profile">
+                                <button
+                                    onClick={() => onEdit(profile)}
+                                    className="btn btn-ghost btn-xs btn-square text-blue-400"
+                                    title="Edit Profile"
+                                >
+                                    <Edit2 size={16} />
+                                </button>
+                            </div>
+                        )}
+                        {onAddPlan && !profile.subscription && (
+                            <div className="tooltip tooltip-right" data-tip="Add Plan">
+                                <button
+                                    onClick={() => onAddPlan(profile)}
+                                    className="btn btn-ghost btn-xs btn-square text-primary"
+                                    title="Add Plan"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+                        )}
+                        {onModifyPlan && profile.subscription && (
+                            <div className="tooltip tooltip-right" data-tip="Modify Dates">
+                                <button
+                                    onClick={() => onModifyPlan(profile)}
+                                    className="btn btn-ghost btn-xs btn-square text-amber-400"
+                                    title="Modify Dates"
+                                >
+                                    <Calendar size={16} />
+                                </button>
+                            </div>
                         )}
                     </div>
-
                 </div>
                 <div>
                     <p className="text-gray-400 text-sm">Status</p>
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center space-x-2 flex-wrap">
-                            <span className={`px-2 my-1 py-1 rounded text-xs ${profile.is_active ? 'bg-blue-900 text-blue-300' : 'bg-gray-700 text-gray-300'}`}>
+                    <div className="flex flex-col gap-1.5">
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                            <span className={`px-2 py-0.5 rounded text-sm ${profile.is_active ? 'bg-blue-900 text-blue-300' : 'bg-gray-700 text-gray-300'}`}>
                                 {profile.is_active ? 'Active' : 'Inactive'}
                             </span>
-                            <span className={`px-2 my-1 py-1 rounded text-xs ${profile.auto_trade_allowed ? 'bg-purple-900 text-purple-300' : 'bg-gray-700 text-gray-300'}`}>
-                                {profile.auto_trade_allowed ? 'Auto Trade ON' : 'Auto Trade OFF'}
+                            <span className={`px-2 py-0.5 rounded text-sm ${profile.auto_trade_allowed ? 'bg-purple-900 text-purple-300' : 'bg-gray-700 text-gray-300'}`}>
+                                {profile.auto_trade_allowed ? 'Auto ON' : 'Auto OFF'}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded text-sm ${profile.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`} title="Profile verified">
+                                P ✓
+                            </span>
+                            <span className={`px-2 py-0.5 rounded text-sm ${profile.user.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`} title="User verified">
+                                U ✓
                             </span>
                         </div>
-                        <div className="flex flex-col gap-1">
-                            <span className={`px-2 py-1 rounded text-xs w-fit ${profile.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`} title="Profile (broker) verified">
-                                Profile: {profile.verified ? 'Verified' : 'Unverified'}
-                            </span>
-                            <span className={`px-2 py-1 rounded text-xs w-fit ${profile.user.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`} title="User (identity) verified">
-                                User: {profile.user.verified ? 'Verified' : 'Unverified'}
-                            </span>
-                        </div>
-                        {profile.subscription && (
-                            <div className="mt-1">
-                                <p className="text-xs text-gray-500">Plan: <span className="font-medium text-gray-300">{profile.subscription.plan.name}</span></p>
-                                <p className={`text-xs ${profile.subscription.is_valid ? 'text-green-400' : 'text-red-400'}`}>
-                                    Expires: {new Date(profile.subscription.end_date).toLocaleDateString()}
-                                    <span className="ml-1 opacity-75">
-                                        ({Math.ceil((new Date(profile.subscription.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days left)
+                        {profile.subscription ? (
+                            <div className="flex flex-wrap items-center gap-2 text-sm">
+                                <span className="text-gray-500">
+                                    Plan: <span className="font-medium text-gray-300">{profile.subscription.plan.name}</span>
+                                    <span className={`ml-1 ${profile.subscription.is_valid ? 'text-green-400' : 'text-red-400'}`}>
+                                        · {new Date(profile.subscription.end_date).toLocaleDateString()} ({Math.ceil((new Date(profile.subscription.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}d)
                                     </span>
-                                </p>
+                                </span>
                             </div>
-                        )}
-                        {!profile.subscription && (
-                            <p className="text-xs text-gray-500">No active subscription</p>
+                        ) : (
+                            <span className="text-sm text-gray-500">No subscription</span>
                         )}
                     </div>
                 </div>

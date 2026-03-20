@@ -86,8 +86,8 @@ export default function AdminSidebar() {
         <div className="flex flex-col gap-2">
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className={`btn btn-ghost justify-start normal-case gap-2 hover:bg-base-300/70 hover:border-none ${
-              isCollapsed ? "justify-center px-2" : ""
+            className={`btn btn-ghost  normal-case gap-2 hover:bg-base-300/70 hover:border-none ${
+              isCollapsed ? "justify-center px-2" : "justify-start"
             }`}
             aria-label="Toggle theme"
             title={isCollapsed ? "Toggle Theme" : undefined}
@@ -105,8 +105,8 @@ export default function AdminSidebar() {
               logout();
               router.push("/login");
             }}
-            className={`btn btn-ghost justify-start normal-case gap-2 text-error hover:bg-base-300/70 hover:border-none hover:text-error-content ${
-              isCollapsed ? "justify-center px-2" : ""
+            className={`btn btn-ghost  normal-case gap-2 text-error hover:bg-base-300/70 hover:border-none hover:text-error-content ${
+              isCollapsed ? "justify-center px-2" : "justify-start"
             }`}
             aria-label="Logout"
             title={isCollapsed ? "Logout" : undefined}
