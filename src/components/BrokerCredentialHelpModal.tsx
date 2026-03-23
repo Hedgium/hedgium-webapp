@@ -2,6 +2,22 @@
 
 import React from "react";
 import { BROKER_CREDENTIAL_HELP } from "@/data/brokerCredentialHelp";
+
+/** Renders text with URL-like patterns (e.g. prism.shoonya.com, https://trade.shoonya.com/) in bold. */
+function textWithBoldLinks(text: string): React.ReactNode {
+  const urlRegex = /(https?:\/\/[^\s]+|[\w.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+  let match;
+  while ((match = urlRegex.exec(text)) !== null) {
+    parts.push(text.slice(lastIndex, match.index));
+    parts.push(<strong key={key++} className="font-semibold">{match[0]}</strong>);
+    lastIndex = match.index + match[0].length;
+  }
+  parts.push(text.slice(lastIndex));
+  return <>{parts}</>;
+}
 import type { CredentialHelpItem } from "@/data/brokerCredentialHelp";
 
 const BROKER_DISPLAY_NAMES: Record<string, string> = {
@@ -60,7 +76,7 @@ export default function BrokerCredentialHelpModal({
                   {item.steps.map((step, i) => (
                     <li key={i} className="flex flex-col gap-2">
                       <span className="text-sm text-base-content/80">
-                        {step.text}
+                        {textWithBoldLinks(step.text)}
                       </span>
                       {step.imageUrl && (
                         <span className="block rounded-lg border border-base-300 overflow-hidden bg-base-200">

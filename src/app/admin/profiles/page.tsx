@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Profile } from "@/types/profile";
 import ProfileItem from "@/components/admin/ProfileItem";
+import UserWithoutProfileItem, { UserWithoutProfile } from "@/components/admin/UserWithoutProfileItem";
 import useAlert from "@/hooks/useAlert";
 import { Search } from "lucide-react";
 import ProfileItemSkeleton from "@/components/skeletons/ProfileItemSkeleton";
@@ -21,6 +22,7 @@ const SubscriptionPlanModal = dynamic(
 
 export default function ProfilesPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [usersWithoutProfiles, setUsersWithoutProfiles] = useState<UserWithoutProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [nextPage, setNextPage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,6 +32,7 @@ export default function ProfilesPage() {
   const [subscriptionFilter, setSubscriptionFilter] = useState<string>("");
   const [verifiedFilter, setVerifiedFilter] = useState<string>("");
   const [loggedInFilter, setLoggedInFilter] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"profiles" | "no-profiles">("profiles");
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
@@ -53,9 +56,11 @@ export default function ProfilesPage() {
       if (verifiedFilter) params.append("verified", verifiedFilter);
       if (loggedInFilter) params.append("logged_in", loggedInFilter);
 
+      params.append("include_users_without_profiles", "true");
       const response = await authFetch(`profiles/?${params.toString()}`);
       const data = await response.json();
       setProfiles(data.results || []);
+      setUsersWithoutProfiles(data.users_without_profiles || []);
       setNextPage(data.next);
     } catch (error) {
       console.error("Error fetching profiles:", error);
@@ -75,9 +80,14 @@ export default function ProfilesPage() {
     try {
       const url = new URL(nextPage);
       const path = url.pathname.replace(/^\/api\//, "") || "profiles/";
-      const response = await authFetch(path + url.search);
+      let query = url.search || "?";
+      if (!query.includes("include_users_without_profiles")) {
+        query += (query === "?" ? "" : "&") + "include_users_without_profiles=true";
+      }
+      const response = await authFetch(path + query);
       const data = await response.json();
       setProfiles((prev) => [...prev, ...(data.results || [])]);
+      setUsersWithoutProfiles(data.users_without_profiles || []);
       setNextPage(data.next);
     } catch (error) {
       console.error("Error fetching next page:", error);
@@ -216,9 +226,28 @@ export default function ProfilesPage() {
         </div>
       </div>
 
+      <div className="tabs tabs-boxed tabs-sm mb-4">
+        <button
+          type="button"
+          role="tab"
+          className={`tab ${activeTab === "profiles" ? "tab-active" : ""}`}
+          onClick={() => setActiveTab("profiles")}
+        >
+          Profiles {profiles.length > 0 && `(${profiles.length})`}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className={`tab ${activeTab === "no-profiles" ? "tab-active" : ""}`}
+          onClick={() => setActiveTab("no-profiles")}
+        >
+          Users without profiles {usersWithoutProfiles.length > 0 && `(${usersWithoutProfiles.length})`}
+        </button>
+      </div>
+
       {loading ? (
         <ProfileItemSkeleton />
-      ) : (
+      ) : activeTab === "profiles" ? (
         <div className="space-y-4">
           {profiles.map((profile) => (
             <ProfileItem
@@ -229,10 +258,33 @@ export default function ProfilesPage() {
               onModifyPlan={handleModifyPlan}
             />
           ))}
+          {profiles.length === 0 && usersWithoutProfiles.length === 0 && (
+            <p className="text-center text-base-content/60">No profiles or users found.</p>
+          )}
+          {profiles.length === 0 && usersWithoutProfiles.length > 0 && (
+            <p className="text-center text-base-content/60">No profiles. Switch to "Users without profiles" tab.</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {usersWithoutProfiles.map((item) => (
+            <UserWithoutProfileItem
+              key={`no-profile-${item.user_id}`}
+              item={item}
+              onUpdate={(updated) => {
+                setUsersWithoutProfiles((prev) =>
+                  prev.map((i) => (i.user_id === updated.user_id ? updated : i))
+                );
+              }}
+            />
+          ))}
+          {usersWithoutProfiles.length === 0 && (
+            <p className="text-center text-base-content/60">No users without profiles.</p>
+          )}
         </div>
       )}
 
-      {!loading && nextPage && (
+      {!loading && activeTab === "profiles" && nextPage && (
         <div className="flex justify-center mt-6">
           <button
             onClick={fetchNextPage}
@@ -241,10 +293,6 @@ export default function ProfilesPage() {
             Load More
           </button>
         </div>
-      )}
-
-      {!loading && profiles.length === 0 && (
-        <p className="text-center text-base-content/60">No profiles found.</p>
       )}
 
       {isEditModalOpen && editingProfile && (

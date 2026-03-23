@@ -6,6 +6,7 @@ import { authFetch } from "@/utils/api";
 import { useAuthStore } from "@/store/authStore";
 import useAlert from "@/hooks/useAlert";
 import SignUpStepper from "@/components/SignUpStepper";
+import OnboardingNav from "@/components/OnboardingNav";
 import { Loader2 } from "lucide-react";
 
 const CompleteProfile: React.FC = () => {
@@ -22,6 +23,16 @@ const CompleteProfile: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const panClean = panNumber.replace(/\s/g, "").toUpperCase();
+    const aadharClean = aadharNumber.replace(/\D/g, "");
+    if (panClean.length !== 10 || !/^[A-Z0-9]{10}$/.test(panClean)) {
+      alert.error("PAN must be exactly 10 alphanumeric characters", { duration: 3000 });
+      return;
+    }
+    if (aadharClean.length !== 12 || !/^\d{12}$/.test(aadharClean)) {
+      alert.error("Aadhaar must be exactly 12 digits", { duration: 3000 });
+      return;
+    }
     await saveProfile({ skip: false });
   };
 
@@ -33,7 +44,11 @@ const CompleteProfile: React.FC = () => {
     try {
       setSubmitting(true);
       const userDetails = !skip
-        ? { pan_number: panNumber, aadhar_number: aadharNumber, signup_step: "documents_uploaded" }
+        ? {
+            pan_number: panNumber.replace(/\s/g, "").toUpperCase(),
+            aadhar_number: aadharNumber.replace(/\D/g, ""),
+            signup_step: "documents_uploaded",
+          }
         : { kyc_skipped: true };
       updateUser({ kyc_skipped: skip });
 
@@ -79,8 +94,18 @@ const CompleteProfile: React.FC = () => {
     return digits.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
   };
 
+  const handlePanChange = (value: string) => {
+    const clean = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 10);
+    setPanNumber(clean);
+  };
+
+  const handleAadharChange = (value: string) => {
+    setAadharNumber(value.replace(/\D/g, "").slice(0, 12));
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-base-200 px-4 py-8">
+      <OnboardingNav backHref="/onboarding/verify-email" />
       <div className="w-full max-w-2xl mb-4">
         <SignUpStepper currentStepId="initiated" />
       </div>
@@ -101,20 +126,23 @@ const CompleteProfile: React.FC = () => {
               <label className="block text-xs font-medium text-base-content/80 mb-1.5">PAN number</label>
               <input
                 type="text"
-                className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 uppercase"
                 value={panNumber}
-                onChange={(e) => setPanNumber(e.target.value)}
-                placeholder="PAN number"
+                onChange={(e) => handlePanChange(e.target.value)}
+                placeholder="10 characters (e.g. ABCDE1234F)"
+                maxLength={10}
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-base-content/80 mb-1.5">Aadhaar number</label>
               <input
                 type="text"
+                inputMode="numeric"
                 className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
                 value={formatAadharNumber(aadharNumber)}
-                onChange={(e) => setAadharNumber(e.target.value)}
-                placeholder="Aadhaar number"
+                onChange={(e) => handleAadharChange(e.target.value)}
+                placeholder="12 digits"
+                maxLength={14}
               />
             </div>
             <div>

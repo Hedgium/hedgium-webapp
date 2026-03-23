@@ -80,11 +80,11 @@ function Adjustment({ adj, onDelete }) {
   }
 
   return (
-    <div className="border border-base-300 rounded-xl shadow mb-2 bg-base-100">
+    <div className="border border-base-300 rounded-xl mb-2 bg-base-100/70">
 
       {/* COLLAPSE HEADER */}
       <div
-        className="flex items-center justify-between p-4 cursor-pointer"
+        className="flex items-center justify-between px-4 py-2 cursor-pointer"
         onClick={() => setOpen(!open)}
       >
         <div className="flex items-center gap-4">
@@ -147,7 +147,7 @@ function Adjustment({ adj, onDelete }) {
 
       {/* COLLAPSE CONTENT */}
       {open && (
-        <div className="p-4 border-t border-base-300 rounded-xl bg-base-100">
+        <div className="px-4 py-2 border-t border-base-300 rounded-xl bg-base-100">
           {/* Notes */}
           {/* {adj.notes && (
             <p className="mb-3 text-sm text-gray-700">

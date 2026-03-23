@@ -192,7 +192,8 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                     >
                         {profile.user.email}
                     </Link>
-                    <p className="text-sm text-gray-500">{profile.user.first_name} {profile.user.last_name} · ID: {profile.user_id}</p>
+                    <p className="text-sm text-gray-500">{profile.user.first_name} {profile.user.last_name}</p>
+                    <p className="text-sm text-gray-500">ID: {profile.user_id}</p>
                     {profile.user.last_login && (
                         <p className="text-sm text-gray-500">Last login: {new Date(profile.user.last_login).toLocaleString()}</p>
                     )}

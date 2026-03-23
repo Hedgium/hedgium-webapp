@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import SignUpStepper from "@/components/SignUpStepper";
+import OnboardingNav from "@/components/OnboardingNav";
 import BrokerCredentialHelpModal from "@/components/BrokerCredentialHelpModal";
 import { Loader2, HelpCircle } from "lucide-react";
 
@@ -110,6 +111,7 @@ const BrokerSetup: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-base-200 px-4 py-8">
+      <OnboardingNav backHref="/onboarding/complete-profile" />
       <div className="w-full max-w-2xl mb-4">
         <SignUpStepper currentStepId="documents_uploaded" />
       </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
+import { useSearchParams } from "next/navigation";
 import { authFetch } from "@/utils/api";
 import { useAuthStore } from "@/store/authStore";
 import useAlert from "@/hooks/useAlert";
@@ -298,7 +299,7 @@ export default function AddBrokerPage() {
                     <label className="text-xs font-medium text-base-content/80">Broker User ID</label>
                     {brokerName && (
                       <button type="button" onClick={() => { setHelpField("broker_user_id"); setHelpOpen(true); }} className="text-primary hover:opacity-80 p-0.5">
-                        <HelpCircle className="h-3.5 w-3.5" />
+                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" />
                       </button>
                     )}
                   </div>
@@ -316,7 +317,7 @@ export default function AddBrokerPage() {
                     <label className="text-xs font-medium text-base-content/80">API Key</label>
                     {brokerName && (
                       <button type="button" onClick={() => { setHelpField("api_key"); setHelpOpen(true); }} className="text-primary hover:opacity-80 p-0.5">
-                        <HelpCircle className="h-3.5 w-3.5" />
+                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" />
                       </button>
                     )}
                   </div>
@@ -334,7 +335,7 @@ export default function AddBrokerPage() {
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label className="text-xs font-medium text-base-content/80">Secret Key</label>
                       <button type="button" onClick={() => { setHelpField("secret_key"); setHelpOpen(true); }} className="text-primary hover:opacity-80 p-0.5">
-                        <HelpCircle className="h-3.5 w-3.5" />
+                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" />
                       </button>
                     </div>
                     <input
@@ -352,7 +353,7 @@ export default function AddBrokerPage() {
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label className="text-xs font-medium text-base-content/80">TOTP Secret</label>
                       <button type="button" onClick={() => { setHelpField("broker_twofa"); setHelpOpen(true); }} className="text-primary hover:opacity-80 p-0.5">
-                        <HelpCircle className="h-3.5 w-3.5" />
+                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" />
                       </button>
                     </div>
                     <input

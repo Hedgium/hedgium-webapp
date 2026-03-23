@@ -5,7 +5,7 @@ import type { ComponentType, LazyExoticComponent } from "react";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { RotateCw, Eye } from "lucide-react";
+import { RotateCw, Eye, Plus, X, LayoutList, Zap, GitCompare } from "lucide-react";
 import Link from "next/link";
 
 // Lazy load the modal component
@@ -116,6 +116,7 @@ export default function TradeCycles({
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
+  const [showAddCyclesModal, setShowAddCyclesModal] = useState(false);
   const [selectedTradeCycleId, setSelectedTradeCycleId] = useState<number | null>(null);
   const [selectedTradeCycle, setSelectedTradeCycle] = useState<{ id: number; profile_id?: number } | null>(null);
 
@@ -195,14 +196,20 @@ export default function TradeCycles({
       const data = await res.json();
       console.log("Created cycles:", data);
       fetchTradeCycles();
-      setProfiles([]); // Clear search results
-      setSelectedProfiles([]); // Clear selected profiles
+      setProfiles([]);
+      setSelectedProfiles([]);
+      setShowAddCyclesModal(false);
 
       alert.success("Trade cycles created!", { duration: 3000 });
-
     } catch (error) {
       console.error("Create error:", error);
     }
+  }
+
+  function closeAddCyclesModal() {
+    setShowAddCyclesModal(false);
+    setProfiles([]);
+    setSelectedProfiles([]);
   }
 
   // Open modal for trade cycle details
@@ -631,6 +638,13 @@ export default function TradeCycles({
         <h4 className="text-xl font-semibold">Trade Cycles</h4>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setShowAddCyclesModal(true)}
+            className="btn btn-primary btn-sm gap-1.5"
+          >
+            <Plus size={16} />
+            Add trade cycles
+          </button>
+          <button
             onClick={handleCompareAll}
             disabled={comparingAll}
             className="btn btn-outline btn-sm"
@@ -653,73 +667,99 @@ export default function TradeCycles({
         </div>
       </div>
 
-      {/* Search */}
-      <div className="flex gap-3 mb-4">
-        <input
-          type="text"
-          placeholder="Search profiles to add as trade cycles..."
-          className="input input-bordered w-full"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        <button className="btn btn-secondary" onClick={searchTradeCycles}>
-          Search
-        </button>
-      </div>
-
-
-      {/* Searched Profiles */}
-      {profiles.length > 0 && (
-        <div>
-          <h3 className="font-bold mb-2">Profiles Found</h3>
-
-          <div className="overflow-x-auto shadow rounded-xl">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Select</th>
-                  <th>Email</th>
-                  <th>Broker</th>
-                  <th>Margin Equity</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {profiles.map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={selectedProfiles.includes(p.id)}
-                        onChange={() => toggleProfile(p.id)}
-                      />
-                    </td>
-                    <td>{p.user.email}</td>
-                    <td>{p.broker_name}</td>
-                    <td>{p.margin_equity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Add Trade Cycles Modal */}
+      {showAddCyclesModal && (
+        <div className="modal modal-open">
+          <div className="modal-box w-11/12 max-w-2xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-lg">Add trade cycles</h3>
+              <button
+                onClick={closeAddCyclesModal}
+                className="btn btn-ghost btn-sm btn-circle"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-sm text-base-content/60 mb-4">
+              Search for profiles and add them as trade cycles for this strategy.
+            </p>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                placeholder="Search by email..."
+                className="input input-bordered input-sm flex-1"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && searchTradeCycles()}
+              />
+              <button className="btn btn-primary btn-sm" onClick={searchTradeCycles}>
+                Search
+              </button>
+            </div>
+            {profiles.length > 0 ? (
+              <>
+                <div className="overflow-x-auto rounded-xl border border-base-300 mb-4 max-h-64 overflow-y-auto">
+                  <table className="table table-sm">
+                    <thead>
+                      <tr>
+                        <th className="w-10">Select</th>
+                        <th>Email</th>
+                        <th>Broker</th>
+                        <th>Margin</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {profiles.map((p) => (
+                        <tr key={p.id}>
+                          <td>
+                            <input
+                              type="checkbox"
+                              className="checkbox checkbox-sm"
+                              checked={selectedProfiles.includes(p.id)}
+                              onChange={() => toggleProfile(p.id)}
+                            />
+                          </td>
+                          <td>{p.user.email}</td>
+                          <td>{p.broker_name ?? "—"}</td>
+                          <td>{p.margin_equity != null ? formatMoneyIN(p.margin_equity, { decimals: 0 }) : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="modal-action justify-start pt-0">
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={addTradeCycles}
+                    disabled={selectedProfiles.length === 0}
+                  >
+                    Add {selectedProfiles.length > 0 ? `${selectedProfiles.length} ` : ""}selected as trade cycles
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-base-content/50 py-4">
+                Enter a search term and click Search to find profiles.
+              </p>
+            )}
           </div>
-
-          <button className="btn btn-primary btn-sm mt-4" onClick={addTradeCycles}>
-            Add Selected Profiles as Trade Cycles
-          </button>
-          <br />
-          <br />
+          <div
+            className="modal-backdrop"
+            onClick={closeAddCyclesModal}
+            onKeyDown={(e) => e.key === "Escape" && closeAddCyclesModal()}
+            role="button"
+            tabIndex={0}
+            aria-label="Close modal"
+          />
         </div>
       )}
-
-
 
       {/* Existing Cycles */}
       <div className="mb-8">
         {/* <h3 className="font-bold mb-2">Existing Trade Cycles</h3> */}
 
-        <div className="overflow-x-auto shadow rounded-xl">
+        <div className="overflow-x-auto rounded-xl border border-base-300">
           <table className="table">
             <thead>
               <tr>
@@ -800,95 +840,82 @@ export default function TradeCycles({
                     </td>
                     <td>{cycle.no_of_orders || 0}</td>
                     <td>{cycle.no_of_positions || 0}</td>
-                    <td className={cycle.total_pnl != null && cycle.total_pnl > 0 ? "text-green-400" : cycle.total_pnl != null && cycle.total_pnl < 0 ? "text-red-400" : ""}>
+                    <td className={cycle.total_pnl != null && cycle.total_pnl > 0 ? "text-emerald-600 dark:text-emerald-400" : cycle.total_pnl != null && cycle.total_pnl < 0 ? "text-red-600 dark:text-red-400" : ""}>
                       {cycle.total_pnl !== null && cycle.total_pnl !== undefined ? formatMoneyIN(cycle.total_pnl) : formatMoneyIN(0)}
                     </td>
-                    <td>
-                      <div className="flex flex-col gap-1 w-full">
-                        <Link href={`/admin/profiles/${cycle.profile.id}/live`} className="w-full">
+                    <td className="whitespace-nowrap">
+                      <div className="flex flex-row items-center gap-1">
+                        <Link href={`/admin/profiles/${cycle.profile.id}/live`}>
                           <button
-                            className="btn btn-outline btn-sm w-full"
-                            title="View Live Positions & Orders"
-                          >ViewLive
+                            className="btn btn-ghost btn-xs btn-square"
+                            title="View live positions & orders"
+                          >
+                            <Eye className="size-3.5" />
                           </button>
                         </Link>
-                        
                         <button
                           onClick={() => handleShowMore(cycle)}
-                          className="btn btn-sm w-full"
-                          title="View Trade Cycle Positions"
+                          className="btn btn-ghost btn-xs btn-square"
+                          title="View trade cycle positions"
                         >
-                          Positions
+                          <LayoutList className="size-3.5" />
                         </button>
-                        
                         {cycle.state === "LOCKED" && (
                           <button
                             onClick={() => handleValidateAndActivate(cycle.id)}
                             disabled={validatingCycleId === cycle.id}
-                            className="btn btn-primary btn-sm w-full"
-                            title="Validate and Activate"
+                            className="btn btn-primary btn-xs gap-1 shadow-none"
+                            title="Validate and activate"
                           >
                             {validatingCycleId === cycle.id ? (
-                              <span className="loading loading-spinner loading-xs"></span>
+                              <span className="loading loading-spinner loading-xs" />
                             ) : (
-                              "Activate"
+                              <><Zap className="size-3.5" /> Activate</>
                             )}
                           </button>
                         )}
-
-                        <div className="flex flex-col gap-0.5 w-full">
+                        {!cycle.is_master && (
                           <button
                             onClick={() => handleCompareMaster(cycle.id)}
-                            disabled={cycle.is_master || comparingCycleId === cycle.id}
-                            className="btn btn-outline btn-sm w-full"
-                            title={
-                              cycle.is_master
-                                ? "Master trade cycle cannot be compared to itself"
-                                : "Compare positions with master trade cycle"
-                            }
+                            disabled={comparingCycleId === cycle.id}
+                            className="btn btn-ghost btn-xs btn-square"
+                            title={cycle.is_master ? "Master cannot compare to itself" : "Compare with master"}
                           >
                             {comparingCycleId === cycle.id ? (
-                              <span className="loading loading-spinner loading-xs"></span>
+                              <span className="loading loading-spinner loading-xs" />
                             ) : (
-                              "Compare Master"
+                              <GitCompare className="size-3.5" />
                             )}
                           </button>
-                          {comparingCycleId === cycle.id && compareStepMessage && (
-                            <span className="text-xs opacity-80 text-center">
-                              {compareStepMessage}
+                        )}
+                        {!cycle.is_master && compareAllStatus[cycle.id] === "action_required" && (
+                          <button
+                            className="btn btn-error btn-xs btn-square"
+                            title="Action required"
+                            onClick={() => setCompareModalCycleId(cycle.id)}
+                          >
+                            <span className="text-[10px]">⚠</span>
+                          </button>
+                        )}
+                      </div>
+                      {comparingCycleId === cycle.id && compareStepMessage && (
+                        <span className="text-[10px] text-base-content/60 block mt-0.5">{compareStepMessage}</span>
+                      )}
+                      {!cycle.is_master && compareAllStatus[cycle.id] && compareAllStatus[cycle.id] !== "action_required" && (
+                        <span className="inline-block mt-0.5">
+                          {compareAllStatus[cycle.id] === "running" && (
+                            <span className="badge badge-ghost badge-xs gap-0.5">
+                              <span className="loading loading-spinner loading-xs" /> Checking
                             </span>
                           )}
-                          {!cycle.is_master && compareAllStatus[cycle.id] && (
-                            <>
-                              {compareAllStatus[cycle.id] === "running" && (
-                                <span className="flex items-center justify-center gap-1 text-xs opacity-70">
-                                  <span className="loading loading-spinner loading-xs"></span> Checking…
-                                </span>
-                              )}
-                              {compareAllStatus[cycle.id] === "action_required" && (
-                                <button
-                                  className="btn btn-xs btn-error w-full"
-                                  onClick={() => setCompareModalCycleId(cycle.id)}
-                                >
-                                  ⚠ Action Required
-                                </button>
-                              )}
-                              {compareAllStatus[cycle.id] === "no_action" && (
-                                <span className="badge badge-success badge-sm w-full justify-center">
-                                  ✓ No Action
-                                </span>
-                              )}
-                              {compareAllStatus[cycle.id] === "error" && (
-                                <span className="badge badge-error badge-outline badge-sm w-full justify-center">
-                                  Error
-                                </span>
-                              )}
-                            </>
+                          {compareAllStatus[cycle.id] === "no_action" && (
+                            <span className="badge badge-success badge-xs">✓ No action</span>
                           )}
-                        </div>
-
-                      
-                      </div>
+                          {compareAllStatus[cycle.id] === "error" && (
+                            <span className="badge badge-error badge-outline badge-xs">Error</span>
+                          )}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))
