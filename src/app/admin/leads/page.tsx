@@ -167,7 +167,7 @@ export default function AdminLeadsPage() {
 
   const openWhatsApp = (mobile: string) => {
     const num = mobile.replace(/\D/g, "");
-    const link = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, "")}?text=${encodeURIComponent(FOLLOW_UP_MESSAGE)}`;
+    const link = `https://wa.me/${num}?text=${encodeURIComponent(FOLLOW_UP_MESSAGE)}`;
     window.open(link, "_blank");
   };
 
