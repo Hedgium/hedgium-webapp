@@ -262,7 +262,7 @@ export default function ProfilesPage() {
             <p className="text-center text-base-content/60">No profiles or users found.</p>
           )}
           {profiles.length === 0 && usersWithoutProfiles.length > 0 && (
-            <p className="text-center text-base-content/60">No profiles. Switch to "Users without profiles" tab.</p>
+            <p className="text-center text-base-content/60">No profiles. Switch to &quot;Users without profiles&quot; tab.</p>
           )}
         </div>
       ) : (
