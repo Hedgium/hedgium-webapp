@@ -26,11 +26,11 @@ const SignUpStepper: React.FC<StepperProps> = ({ currentStepId }) => {
         {steps.map((step, idx) => (
           <li
             key={step.id}
-            className={`step ${
+            className={`step text-xs ${
               idx < currentIndex
-                ? "step-primary" // ✅ completed
+                ? "step-secondary" // ✅ completed
                 : idx === currentIndex
-                ? "step-primary" // ⏳ current
+                ? "step-secondary" // ⏳ current
                 : "" // 🔲 yet to be completed
             }`}
           >

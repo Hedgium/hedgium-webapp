@@ -1,20 +1,36 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import SignUpStepper from "@/components/SignUpStepper";
 import VerifyEmail from "@/components/VerifyEmail";
-import OnboardingNav from "@/components/OnboardingNav";
+import AuthFlowBrand from "@/components/AuthFlowBrand";
 
 export default function VerifyEmailPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-base-200 px-4 py-8">
-      <OnboardingNav backHref="/onboarding" />
-      <div className="w-full max-w-2xl mb-4">
+    <div className="flex w-full flex-col items-center">
+      <div className="w-full max-w-2xl space-y-4">
+        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
+          
+          <div className="flex justify-center justify-self-center">
+            <AuthFlowBrand className="mb-0" />
+          </div>
+          <span className="justify-self-end" aria-hidden />
+        </div>
         <SignUpStepper currentStepId="initiated" />
       </div>
 
-      <div className="w-full max-w-[380px]">
-        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+      <div className="mt-6 w-full max-w-[400px]">
+
+          <Link
+            href="/onboarding"
+            className="inline-flex min-h-10 w-fit items-center gap-1 rounded-lg px-2 py-2 text-sm font-medium text-base-content transition-colors hover:bg-base-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 justify-self-start"
+          >
+            <ChevronLeft className="size-4 shrink-0" aria-hidden />
+            Back
+          </Link>
+        <div className="rounded-xl border border-base-300 bg-base-100 p-6 shadow-sm">
           <VerifyEmail autoSendOnMount />
         </div>
       </div>

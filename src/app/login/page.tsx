@@ -6,6 +6,7 @@ import { useRouter } from "nextjs-toploader/app";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
+import AuthFlowBrand from "@/components/AuthFlowBrand";
 
 function getSafeNext(next: string | null): string | null {
   if (!next || typeof next !== "string") return null;
@@ -61,16 +62,18 @@ const LoginContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
-      <div className="w-full max-w-[380px]">
-        <div className="text-center mb-6">
-          <h1 className="text-xl font-semibold text-base-content tracking-tight">
-            Log in to <span className="text-primary">Hedgium</span>
-          </h1>
-          <p className="text-sm text-base-content/60 mt-1">Enter your credentials to continue</p>
-        </div>
+    <div className="w-full max-w-[400px]">
+      <AuthFlowBrand />
+      <div className="mb-6 text-center">
+        <h1 className="text-xl font-semibold tracking-tight text-base-content">
+          Log in to <span className="text-primary">Hedgium</span>
+        </h1>
+        <p className="mt-1 text-sm text-base-content/60">
+          Enter your credentials to continue
+        </p>
+      </div>
 
-        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+      <div className="rounded-xl border border-base-300 bg-base-100 p-6 shadow-sm">
           {accessToken ? (
             <div className="py-4 text-center">
               <p className="text-sm font-medium text-success">Login successful. Redirecting…</p>
@@ -128,11 +131,12 @@ const LoginContent: React.FC = () => {
           )}
         </div>
 
-        <p className="text-center text-xs text-base-content/50 mt-4">
-          Don&apos;t have an account?{" "}
-          <Link href="/onboarding" className="text-primary font-medium hover:underline">Sign up</Link>
-        </p>
-      </div>
+      <p className="mt-5 text-center text-xs text-base-content/50">
+        Don&apos;t have an account?{" "}
+        <Link href="/onboarding" className="font-medium text-primary hover:underline">
+          Sign up
+        </Link>
+      </p>
     </div>
   );
 };

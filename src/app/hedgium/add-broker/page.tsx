@@ -213,7 +213,7 @@ export default function AddBrokerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center px-4 py-8">
+    <div className="bg-base-200 flex flex-col items-center justify-center px-4 py-8 lg:py-12">
       <div className="w-full max-w-md">
 
         {/* Back button */}
@@ -288,9 +288,9 @@ export default function AddBrokerPage() {
                     className="select select-bordered select-sm w-full h-9 text-sm bg-base-100"
                   >
                     <option value="">Select broker</option>
+                    <option value="KOTAKNEO">Kotak Neo</option>
                     {/* <option value="ZERODHA">Zerodha</option> */}
                     <option value="SHOONYA">Shoonya</option>
-                    <option value="KOTAKNEO">Kotak Neo</option>
                   </select>
                 </div>
 

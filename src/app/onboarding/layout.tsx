@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
+import AuthFlowShell from "@/components/AuthFlowShell";
 
 export const metadata: Metadata = {
-  title: 'Onboarding',
-  description: 'Complete your Hedgium account setup.',
+  title: "Onboarding",
+  description: "Complete your Hedgium account setup.",
 };
 
 export default function OnboardingLayout({
@@ -10,5 +11,5 @@ export default function OnboardingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <AuthFlowShell>{children}</AuthFlowShell>;
 }

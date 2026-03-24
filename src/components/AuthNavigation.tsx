@@ -64,11 +64,11 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
                 <span className={`text-xs font-medium ${isLegends ? "text-warning" : "text-primary"} truncate`}>
                   Plan: {planName}
                 </span>
-                {!isLegends && user?.active_subscription?.plan?.name ? (
+                {/* {!isLegends && user?.active_subscription?.plan?.name ? (
                   <Link href="/hedgium/upgrade" className="text-[11px] text-primary hover:underline">
                     Upgrade
                   </Link>
-                ) : null}
+                ) : null} */}
               </div>
             </div>
           </div>

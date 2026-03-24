@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import useAlert from "@/hooks/useAlert";
 import SignUpStepper from "@/components/SignUpStepper";
 import OnboardingNav from "@/components/OnboardingNav";
+import AuthFlowBrand from "@/components/AuthFlowBrand";
 import { Loader2 } from "lucide-react";
 
 const CompleteProfile: React.FC = () => {
@@ -104,23 +105,25 @@ const CompleteProfile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-base-200 px-4 py-8">
-      <OnboardingNav backHref="/onboarding/verify-email" />
-      <div className="w-full max-w-2xl mb-4">
+    <div className="flex w-full flex-col items-center">
+      <div className="w-full max-w-2xl space-y-4">
+        <div className="flex justify-center">
+          <AuthFlowBrand className="mb-0" />
+        </div>
         <SignUpStepper currentStepId="initiated" />
       </div>
 
-      <div className="w-full max-w-[400px]">
-        <div className="text-center mb-6">
-          <h1 className="text-xl font-semibold text-base-content tracking-tight">
+      <div className="mt-6 w-full max-w-[400px]">
+        <div className="mb-6 text-center">
+          <h1 className="text-xl font-semibold tracking-tight text-base-content">
             Complete profile
           </h1>
-          <p className="text-sm text-base-content/60 mt-1">
+          <p className="mt-1 text-sm text-base-content/60">
             Add your details to continue
           </p>
         </div>
 
-        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+        <div className="rounded-xl border border-base-300 bg-base-100 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-base-content/80 mb-1.5">PAN number</label>

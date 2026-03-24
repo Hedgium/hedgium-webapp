@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
+import AuthFlowShell from "@/components/AuthFlowShell";
 
 export const metadata: Metadata = {
-  title: 'Login',
-  description: 'Sign in to your Hedgium account.',
+  title: "Login",
+  description: "Sign in to your Hedgium account.",
 };
 
 export default function LoginLayout({
@@ -10,5 +11,5 @@ export default function LoginLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <AuthFlowShell>{children}</AuthFlowShell>;
 }

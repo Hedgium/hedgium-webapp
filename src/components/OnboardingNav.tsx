@@ -6,25 +6,34 @@ import { ChevronLeft, Home } from "lucide-react";
 interface OnboardingNavProps {
   backHref: string;
   backLabel?: string;
+  /** Destination for the home shortcut (default: app dashboard). */
+  homeHref?: string;
+  homeLabel?: string;
 }
 
-export default function OnboardingNav({ backHref, backLabel = "Back" }: OnboardingNavProps) {
+const linkClass =
+  "inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-base-content transition-colors hover:bg-base-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30";
+
+export default function OnboardingNav({
+  backHref,
+  backLabel = "Back",
+  homeHref = "/hedgium/dashboard",
+  homeLabel = "Home",
+}: OnboardingNavProps) {
   return (
-    <div className="flex items-center justify-between w-full max-w-2xl mb-4">
-      <Link
-        href={backHref}
-        className="inline-flex items-center gap-1 text-sm text-base-content/70 hover:text-primary transition-colors"
-      >
-        <ChevronLeft className="size-4" />
+    <nav
+      className="flex w-full flex-nowrap items-stretch justify-between gap-1 rounded-xl border border-base-300 bg-base-100 px-1.5 py-1 shadow-sm sm:gap-2 sm:px-3 sm:py-1.5"
+      aria-label="Onboarding navigation"
+    >
+      <Link href={backHref} className={linkClass}>
+        <ChevronLeft className="size-4 shrink-0 opacity-80" aria-hidden />
         {backLabel}
       </Link>
-      <Link
-        href="/hedgium/dashboard"
-        className="inline-flex items-center gap-1 text-sm text-base-content/70 hover:text-primary transition-colors"
-      >
-        <Home className="size-4" />
-        Go to home
+      <span className="my-2 w-px shrink-0 self-stretch bg-base-300" aria-hidden />
+      <Link href={homeHref} className={linkClass}>
+        <Home className="size-4 shrink-0 opacity-80" aria-hidden />
+        {homeLabel}
       </Link>
-    </div>
+    </nav>
   );
 }

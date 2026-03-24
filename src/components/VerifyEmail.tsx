@@ -253,7 +253,7 @@ export default function VerifyEmail({
 
       <button
         type="button"
-        className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case mt-4"
+        className="btn btn-primary pointer-cursor btn-sm w-full h-9 text-sm font-medium normal-case mt-4"
         onClick={handleVerify}
         disabled={verifying || redirecting || otp.join("").length < OTP_LENGTH}
       >
@@ -269,7 +269,7 @@ export default function VerifyEmail({
             ) : (
               <button
                 type="button"
-                className="text-primary font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40"
+                className="text-primary pointer-cursor font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40"
                 onClick={sendOtp}
                 disabled={sending}
               >
@@ -281,7 +281,7 @@ export default function VerifyEmail({
         ) : (
           <button
             type="button"
-            className="text-primary font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40"
+            className="text-primary pointer-cursor font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40"
             onClick={sendOtp}
             disabled={sending}
           >
@@ -294,7 +294,7 @@ export default function VerifyEmail({
       {showSkip && (
         <button
           type="button"
-          className="btn btn-ghost btn-sm w-full text-base-content/50 hover:text-base-content/70 text-xs mt-2"
+          className="btn btn-ghost pointer-cursor btn-sm w-full text-base-content/50 hover:text-base-content/70 text-xs mt-2"
           onClick={handleSkip}
         >
           Skip for now

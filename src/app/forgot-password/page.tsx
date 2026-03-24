@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import AuthFlowBrand from "@/components/AuthFlowBrand";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import { myFetch } from "@/utils/api";
 
@@ -45,18 +46,18 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
-      <div className="w-full max-w-[380px]">
-        <div className="text-center mb-6">
-          <h1 className="text-xl font-semibold text-base-content tracking-tight">
-            Forgot <span className="text-primary">password</span>?
-          </h1>
-          <p className="text-sm text-base-content/60 mt-1">
-            Enter your email and we&apos;ll send a reset link
-          </p>
-        </div>
+    <div className="w-full max-w-[400px]">
+      <AuthFlowBrand />
+      <div className="mb-6 text-center">
+        <h1 className="text-xl font-semibold tracking-tight text-base-content">
+          Forgot <span className="text-primary">password</span>?
+        </h1>
+        <p className="mt-1 text-sm text-base-content/60">
+          Enter your email and we&apos;ll send a reset link
+        </p>
+      </div>
 
-        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+      <div className="rounded-xl border border-base-300 bg-base-100 p-6 shadow-sm">
           {message === "success" ? (
             <div className="space-y-4">
               <p className="text-sm text-success text-center">
@@ -111,16 +112,15 @@ export default function ForgotPasswordPage() {
             </form>
           )}
 
-          <p className="text-center mt-4">
-            <Link
-              href="/login"
-              className="text-xs text-base-content/50 hover:text-primary inline-flex items-center gap-1"
-            >
-              <ArrowLeft className="h-3 w-3" />
-              Back to login
-            </Link>
-          </p>
-        </div>
+        <p className="mt-4 text-center">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1 text-xs text-base-content/50 hover:text-primary"
+          >
+            <ArrowLeft className="h-3 w-3" />
+            Back to login
+          </Link>
+        </p>
       </div>
     </div>
   );

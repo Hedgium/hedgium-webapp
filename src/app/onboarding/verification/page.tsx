@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Clock, FileUp } from "lucide-react";
 import SignUpStepper from "@/components/SignUpStepper";
 import OnboardingNav from "@/components/OnboardingNav";
+import AuthFlowBrand from "@/components/AuthFlowBrand";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "nextjs-toploader/app";
 import { authFetch } from "@/utils/api";
@@ -65,14 +66,16 @@ const VerificationPending: React.FC = () => {
   }, [user, alert, router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-base-200 px-4 py-8">
-      <OnboardingNav backHref="/onboarding/complete-profile" />
-      <div className="w-full max-w-2xl mb-4">
+    <div className="flex w-full flex-col items-center">
+      <div className="w-full max-w-2xl space-y-4">
+        <div className="flex justify-center">
+          <AuthFlowBrand className="mb-0" />
+        </div>
         <SignUpStepper currentStepId="documents_uploaded" />
       </div>
 
-      <div className="w-full max-w-[380px]">
-        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6 text-center">
+      <div className="mt-6 w-full max-w-[400px]">
+        <div className="rounded-xl border border-base-300 bg-base-100 p-6 text-center">
           {redirecting ? (
             <p className="text-sm font-medium text-base-content/80">Redirecting to dashboard...</p>
           ) : (
@@ -86,7 +89,7 @@ const VerificationPending: React.FC = () => {
                 Verification pending
               </h1>
               <p className="text-sm text-base-content/60 mt-2">
-                Your profile is under review. We&apos;ll notify you once verification is complete.
+                Your profile is under review. We&apos;ll notify you once verification is complete. Please make sure to upload your documents in case you have not done it yet. You can skip this step for now and continue to the dashboard.
               </p>
               <div className="flex flex-col mt-4 flex-wrap gap-2 justify-center">
                 <button

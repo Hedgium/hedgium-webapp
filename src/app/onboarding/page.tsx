@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, Mail, Lock, Loader2, Phone } from "lucide-react";
 import Link from "next/link";
+import AuthFlowBrand from "@/components/AuthFlowBrand";
 import { myFetch } from "@/utils/api";
 import { useAuthStore } from "@/store/authStore";
 import useAlert from "@/hooks/useAlert";
@@ -112,18 +113,18 @@ function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
-      <div className="w-full max-w-[380px]">
-        <div className="text-center mb-6">
-          <h1 className="text-xl font-semibold text-base-content tracking-tight">
-            Sign up for <span className="text-primary">Hedgium</span>
-          </h1>
-          <p className="text-sm text-base-content/60 mt-1">
-            Create your account to get started
-          </p>
-        </div>
+    <div className="w-full max-w-[400px]">
+      <AuthFlowBrand />
+      <div className="mb-6 text-center">
+        <h1 className="text-xl font-semibold tracking-tight text-base-content">
+          Sign up for <span className="text-primary">Hedgium</span>
+        </h1>
+        <p className="mt-1 text-sm text-base-content/60">
+          Create your account to get started
+        </p>
+      </div>
 
-        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+      <div className="rounded-xl border border-base-300 bg-base-100 p-6">
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -234,13 +235,12 @@ function Onboarding() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-base-content/50 mt-4">
-          Already have an account?{" "}
-          <Link href="/login" className="text-primary font-medium hover:underline">
-            Log in
-          </Link>
-        </p>
-      </div>
+      <p className="mt-5 text-center text-xs text-base-content/50">
+        Already have an account?{" "}
+        <Link href="/login" className="font-medium text-primary hover:underline">
+          Log in
+        </Link>
+      </p>
     </div>
   );
 }

@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
+import AuthFlowShell from "@/components/AuthFlowShell";
 
 export const metadata: Metadata = {
-  title: 'Forgot Password',
-  description: 'Reset your Hedgium account password.',
+  title: "Forgot Password",
+  description: "Reset your Hedgium account password.",
 };
 
 export default function ForgotPasswordLayout({
@@ -10,5 +11,5 @@ export default function ForgotPasswordLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <AuthFlowShell>{children}</AuthFlowShell>;
 }
