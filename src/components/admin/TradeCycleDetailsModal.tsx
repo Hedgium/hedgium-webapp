@@ -34,9 +34,7 @@ interface TradeCycleDetails {
     totals?: {
         total_pnl: number;
         realised_total: number;
-        realised_today: number;
         unrealised_total: number;
-        unrealised_today: number;
         total_buy_qty: number;
         total_sell_qty: number;
     } | null;
