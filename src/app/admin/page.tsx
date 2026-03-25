@@ -3,7 +3,7 @@
 import { authFetch } from "@/utils/api";
 import Link from "next/link";
 import React from "react";
-import { CheckCircle, ChevronRight, LayoutList } from "lucide-react";
+import { CheckCircle, LayoutList } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 
 interface Version {
@@ -18,6 +18,10 @@ interface Strategy {
   trade_cycle_count: number;
   leg_count: number;
   total_pnl: number | null;
+  wpnl_total: number | string | null;
+  mid_wpnl_total: number | string | null;
+  atm_spread: number | string | null;
+  wpnl_spread_updated_at: string | null;
   completed: boolean;
   completed_at: string | null;
   versions: Version[];
@@ -91,6 +95,24 @@ export default function Page() {
     return val > 0 ? "text-emerald-600 dark:text-emerald-400" : val < 0 ? "text-red-600 dark:text-red-400" : "";
   };
 
+  const toNum = (v: number | string | null | undefined): number | null => {
+    if (v == null || v === "") return null;
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const formatSnapshotAt = (iso: string | null) => {
+    if (!iso) return null;
+    try {
+      return new Date(iso).toLocaleString(undefined, {
+        dateStyle: "short",
+        timeStyle: "short",
+      });
+    } catch {
+      return iso;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-base-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -143,13 +165,18 @@ export default function Page() {
                   <th className="font-medium text-base-content/70">Last adjustment</th>
                   <th className="font-medium text-base-content/70">Legs</th>
                   <th className="font-medium text-base-content/70 text-right">Total PnL</th>
-                  <th className="font-medium text-base-content/70 w-20"></th>
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap">WPNL</th>
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap">Mid WPNL</th>
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap">Spread</th>
+                  <th className="font-medium text-base-content/70 whitespace-nowrap min-w-[9rem]">
+                    Updated At
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {strategies.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={8} className="text-center py-16">
+                    <td colSpan={11} className="text-center py-16">
                       <p className="text-base-content/60">No strategies found.</p>
                       <p className="text-sm text-base-content/50 mt-1">
                         Try changing filters or create a new strategy.
@@ -166,10 +193,20 @@ export default function Page() {
                       className="hover:bg-base-200/50 transition-colors border-b border-base-300/30 last:border-0"
                     >
                       <td className="font-mono text-sm text-base-content/70">
+                        <Link
+                          href={`/admin/strategy/${strategy.id}`}
+                          className="link link-hover link-primary font-medium"
+                        >
                         {strategy.id}
+                        </Link>
                       </td>
                       <td>
-                        <span className="font-medium">{strategy.name}</span>
+                        <Link
+                          href={`/admin/strategy/${strategy.id}`}
+                          className="link link-hover link-primary font-medium"
+                        >
+                          {strategy.name}
+                        </Link>
                       </td>
                       <td>
                         {strategy.completed ? (
@@ -216,14 +253,39 @@ export default function Page() {
                             : "—"}
                         </span>
                       </td>
-                      <td>
-                        <Link
-                          href={`/admin/strategy/${strategy.id}`}
-                          className="btn btn-ghost btn-sm gap-1 text-primary hover:bg-primary/10"
+                      <td className="text-right">
+                        <span
+                          className={`font-semibold tabular-nums text-sm ${pnlColor(
+                            toNum(strategy.wpnl_total)
+                          )}`}
                         >
-                          View
-                          <ChevronRight className="size-4" />
-                        </Link>
+                          {toNum(strategy.wpnl_total) != null
+                            ? formatMoneyIN(toNum(strategy.wpnl_total)!)
+                            : "—"}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <span
+                          className={`font-semibold tabular-nums text-sm ${pnlColor(
+                            toNum(strategy.mid_wpnl_total)
+                          )}`}
+                        >
+                          {toNum(strategy.mid_wpnl_total) != null
+                            ? formatMoneyIN(toNum(strategy.mid_wpnl_total)!)
+                            : "—"}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <span className="font-semibold tabular-nums text-sm">
+                          {toNum(strategy.atm_spread) != null
+                            ? `${toNum(strategy.atm_spread)!.toFixed(2)}%`
+                            : "—"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-xs text-base-content/70 tabular-nums">
+                          {formatSnapshotAt(strategy.wpnl_spread_updated_at) ?? "—"}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -232,7 +294,7 @@ export default function Page() {
                 {loading && strategies.length === 0 &&
                   Array.from({ length: 3 }).map((_, i) => (
                     <tr key={`skeleton-${i}`} className="border-b border-base-300/30">
-                      {Array.from({ length: 8 }).map((_, j) => (
+                      {Array.from({ length: 11 }).map((_, j) => (
                         <td key={j}>
                           <div className="h-5 bg-base-300/40 rounded animate-pulse" />
                         </td>

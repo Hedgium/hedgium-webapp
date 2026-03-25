@@ -32,6 +32,10 @@ interface StrategyDetail {
   completed_at?: string | null;
   trade_cycle_count: number;
   total_pnl: number | null;
+  wpnl_total?: number | string | null;
+  mid_wpnl_total?: number | string | null;
+  atm_spread?: number | string | null;
+  wpnl_spread_updated_at?: string | null;
   adjustment_count: number;
   leg_count: number;
   versions: StrategyVersion[];
@@ -122,6 +126,12 @@ export default function StrategyDetail() {
         : "";
   };
 
+  const toNum = (v: number | string | null | undefined): number | null => {
+    if (v == null || v === "") return null;
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-base-200">
@@ -138,7 +148,7 @@ export default function StrategyDetail() {
 
   return (
     <div className="min-h-screen bg-base-200 overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link
           href="/admin"
           className="inline-flex items-center gap-1.5 text-sm text-base-content/70 hover:text-primary mb-6 transition-colors"
@@ -164,13 +174,42 @@ export default function StrategyDetail() {
                 )}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-base-content/60">
                   <span>Created: {strategy?.created_at ? formatDateTimeMinutes(strategy.created_at) : "—"}</span>
-                  <span>Adjustments: {Array.isArray(strategy?.versions) ? strategy.versions.length : 0}</span>
                   <span>Cycles: {strategy?.trade_cycle_count ?? 0}</span>
                   <span>
                     PnL:{" "}
                     <span className={pnlColor(strategy?.total_pnl ?? null)}>
                       {strategy?.total_pnl != null ? formatMoneyIN(Number(strategy.total_pnl)) : "—"}
                     </span>
+                  </span>
+                  <span>
+                    WPNL:{" "}
+                    <span className={pnlColor(toNum(strategy?.wpnl_total))}>
+                      {toNum(strategy?.wpnl_total) != null
+                        ? formatMoneyIN(toNum(strategy.wpnl_total)!)
+                        : "—"}
+                    </span>
+                  </span>
+                  <span>
+                    Mid WPNL:{" "}
+                    <span className={pnlColor(toNum(strategy?.mid_wpnl_total))}>
+                      {toNum(strategy?.mid_wpnl_total) != null
+                        ? formatMoneyIN(toNum(strategy.mid_wpnl_total)!)
+                        : "—"}
+                    </span>
+                  </span>
+                  <span>
+                    Spread:{" "}
+                    <span className="font-medium text-base-content/80 tabular-nums">
+                      {toNum(strategy?.atm_spread) != null
+                        ? `${toNum(strategy.atm_spread)!.toFixed(2)}%`
+                        : "—"}
+                    </span>
+                  </span>
+                  <span>
+                    WPNL/spread updated:{" "}
+                    {strategy?.wpnl_spread_updated_at
+                      ? formatDateTimeMinutes(strategy.wpnl_spread_updated_at)
+                      : "—"}
                   </span>
                 </div>
               </div>
@@ -204,7 +243,7 @@ export default function StrategyDetail() {
 
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold">Strategy adjustments</h2>
+            <h2 className="text-lg font-semibold">Strategy adjustments ({Array.isArray(strategy?.versions) ? strategy.versions.length : 0})</h2>
             {!strategy?.completed && (
               <button
                 onClick={() => setShowManualAdjustment(true)}

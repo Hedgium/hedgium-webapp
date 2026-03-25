@@ -5,7 +5,7 @@ import type { ComponentType, LazyExoticComponent } from "react";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { RotateCw, Eye, Plus, X, LayoutList, Zap, GitCompare } from "lucide-react";
+import { RotateCw, Eye, Plus, X, LayoutList, Zap, GitCompare, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 // Lazy load the modal component
@@ -15,6 +15,15 @@ const TradeCycleDetailsModal = lazy(
   ComponentType<{
     tradeCycleId: number;
     tradeCycle?: { id: number; profile_id?: number } | null;
+    onClose: () => void;
+  }>
+>;
+
+const ProfileLiveModal = lazy(
+  () => import("./ProfileLiveModal")
+) as LazyExoticComponent<
+  ComponentType<{
+    profileId: number | string;
     onClose: () => void;
   }>
 >;
@@ -119,6 +128,7 @@ export default function TradeCycles({
   const [showAddCyclesModal, setShowAddCyclesModal] = useState(false);
   const [selectedTradeCycleId, setSelectedTradeCycleId] = useState<number | null>(null);
   const [selectedTradeCycle, setSelectedTradeCycle] = useState<{ id: number; profile_id?: number } | null>(null);
+  const [liveModalProfileId, setLiveModalProfileId] = useState<number | null>(null);
 
   const alert = useAlert();
   // Toggle existing cycle selection
@@ -226,6 +236,10 @@ export default function TradeCycles({
   function handleCloseModal() {
     setShowModal(false);
     setSelectedTradeCycleId(null);
+  }
+
+  function handleCloseLiveModal() {
+    setLiveModalProfileId(null);
   }
 
   // Validate and activate trade cycle
@@ -635,7 +649,7 @@ export default function TradeCycles({
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-xl font-semibold">Trade Cycles</h4>
+        <h4 className="text-xl font-semibold">Trade Cycles ({trade_cycles.length})</h4>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowAddCyclesModal(true)}
@@ -845,14 +859,14 @@ export default function TradeCycles({
                     </td>
                     <td className="whitespace-nowrap">
                       <div className="flex flex-row items-center gap-1">
-                        <Link href={`/admin/profiles/${cycle.profile.id}/live`}>
-                          <button
-                            className="btn btn-ghost btn-xs btn-square"
-                            title="View live positions & orders"
-                          >
-                            <Eye className="size-3.5" />
-                          </button>
-                        </Link>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs btn-square"
+                          title="View live positions & orders"
+                          onClick={() => setLiveModalProfileId(cycle.profile.id)}
+                        >
+                          <Eye className="size-3.5" />
+                        </button>
                         <button
                           onClick={() => handleShowMore(cycle)}
                           className="btn btn-ghost btn-xs btn-square"
@@ -945,6 +959,18 @@ export default function TradeCycles({
             
             onClose={handleCloseModal}
           />
+        </Suspense>
+      )}
+
+      {liveModalProfileId !== null && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-base-100/80 backdrop-blur-sm">
+              <span className="loading loading-spinner loading-lg" />
+            </div>
+          }
+        >
+          <ProfileLiveModal profileId={liveModalProfileId} onClose={handleCloseLiveModal} />
         </Suspense>
       )}
 

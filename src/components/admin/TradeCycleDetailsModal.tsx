@@ -7,6 +7,7 @@ import useAlert from "@/hooks/useAlert";
 import PositionsTable, { Position } from "../positions/PositionsTable";
 import UnmappedOrdersTable, { UnmappedOrder } from "../positions/UnmappedOrdersTable";
 import PositionsSummary from "../positions/PositionsSummary";
+import TradeCycleDetailsModalSkeleton from "@/components/skeletons/TradeCycleDetailsModalSkeleton";
 import { formatMoneyIN } from "@/utils/formatNumber";
 
 interface TradeCycleDetails {
@@ -230,7 +231,9 @@ export default function TradeCycleDetailsModal({
                     <h3 id="trade-cycle-details-title" className="truncate text-lg font-semibold">
                         Trade cycle details
                     </h3>
-                    {data?.trade_cycle?.name ? (
+                    {loading ? (
+                        <div className="mt-1 h-4 max-w-xs animate-pulse rounded bg-base-300/70" aria-hidden />
+                    ) : data?.trade_cycle?.name ? (
                         <p className="truncate text-sm text-base-content/70">{data.trade_cycle.name}</p>
                     ) : null}
                 </div>
@@ -245,11 +248,7 @@ export default function TradeCycleDetailsModal({
             </header>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                {loading && (
-                    <div className="flex items-center justify-center py-12">
-                        <span className="loading loading-spinner loading-lg"></span>
-                    </div>
-                )}
+                {loading && <TradeCycleDetailsModalSkeleton />}
 
                 {error && (
                     <div className="alert alert-error mb-4">
