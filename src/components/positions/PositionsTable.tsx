@@ -46,7 +46,7 @@ export default function PositionsTable({
 
   return (
     <div className={`overflow-x-auto ${className}`}>
-      <table className="table table-zebra w-full text-sm">
+      <table className="table w-full text-sm">
         <thead>
           <tr className="text-xs text-gray-500 uppercase">
             <th>Instrument</th>

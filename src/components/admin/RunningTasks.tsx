@@ -68,81 +68,90 @@ export default function RunningTasks() {
   };
 
   return (
-    <div className="bg-base-100 rounded-lg shadow p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <Activity className="w-5 h-5" />
-          Running Tasks
-        </h2>
+    <div>
+      <div className="flex flex-col gap-3 border-b border-base-300/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
+        <p className="text-sm text-base-content/65">
+          Live tasks from the worker. Refresh to update the list.
+        </p>
         <button
+          type="button"
           onClick={fetchTasks}
-          className="btn btn-ghost btn-sm btn-circle"
+          className="btn btn-ghost btn-sm gap-2 self-start sm:self-auto"
           disabled={loading}
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+          Refresh
         </button>
       </div>
 
-      {loading ? (
-        <RunningTasksSkeleton />
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="table w-full">
-            <thead>
-              <tr>
-                <th>Task</th>
-                <th>Status</th>
-                <th>Queue</th>
-                <th>Started</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((task) => (
-                <tr key={task.task_id} className="hover">
-                  <td>
-                    <div className="font-medium">{task.name || task.task_id}</div>
-                    <div className="text-xs opacity-60">
-                      ID: {task.task_id.slice(0, 8)}...
-                    </div>
-                  </td>
-                  <td>
-                    <div className="badge badge-outline">{task.status}</div>
-                  </td>
-                  <td>{task.queue || "-"}</td>
-                  <td>
-                    {task.started_at
-                      ? new Date(task.started_at).toLocaleString()
-                      : "-"}
-                  </td>
-                  <td className="text-right">
-                    <button
-                      onClick={() => handleStopTask(task.task_id)}
-                      disabled={stoppingTaskId === task.task_id}
-                      className="btn btn-sm btn-error gap-2"
-                    >
-                      {stoppingTaskId === task.task_id ? (
-                        <span className="loading loading-spinner loading-xs"></span>
-                      ) : (
-                        <StopCircle className="w-4 h-4" />
-                      )}
-                      Stop
-                    </button>
-                  </td>
+      <div className="p-4 md:p-6 md:pt-4">
+        {loading ? (
+          <RunningTasksSkeleton />
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-base-300/60">
+            <table className="table table-zebra w-full text-sm">
+              <thead>
+                <tr className="border-b border-base-300/80 bg-base-200/40 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+                  <th className="font-semibold">Task</th>
+                  <th className="font-semibold">Status</th>
+                  <th className="font-semibold">Queue</th>
+                  <th className="font-semibold">Started</th>
+                  <th className="text-right font-semibold">Actions</th>
                 </tr>
-              ))}
-              {tasks.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={5} className="text-center text-gray-500 py-4">
-                    No running tasks.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {tasks.map((task) => (
+                  <tr key={task.task_id}>
+                    <td>
+                      <div className="font-medium text-base-content">{task.name || task.task_id}</div>
+                      <div className="mt-0.5 font-mono text-xs text-base-content/50">
+                        {task.task_id.slice(0, 8)}…
+                      </div>
+                    </td>
+                    <td>
+                      <span className="badge badge-sm badge-outline font-normal">{task.status}</span>
+                    </td>
+                    <td className="text-base-content/80">{task.queue || "—"}</td>
+                    <td className="whitespace-nowrap text-base-content/80">
+                      {task.started_at ? new Date(task.started_at).toLocaleString() : "—"}
+                    </td>
+                    <td className="text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleStopTask(task.task_id)}
+                        disabled={stoppingTaskId === task.task_id}
+                        className="btn btn-error btn-outline btn-sm gap-1.5"
+                      >
+                        {stoppingTaskId === task.task_id ? (
+                          <span className="loading loading-spinner loading-xs" />
+                        ) : (
+                          <StopCircle className="size-3.5" />
+                        )}
+                        Stop
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {tasks.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={5} className="bg-transparent py-14 text-center">
+                      <div className="mx-auto flex max-w-sm flex-col items-center gap-2">
+                        <div className="rounded-full bg-base-200/80 p-3 text-base-content/40">
+                          <Activity className="size-6" aria-hidden />
+                        </div>
+                        <p className="text-sm font-medium text-base-content">No running tasks</p>
+                        <p className="text-xs text-base-content/55">
+                          When workers pick up jobs, they will show up here.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-

@@ -7,12 +7,12 @@ interface ScheduledTasksSkeletonProps {
 export default function ScheduledTasksSkeleton({ count = 3 }: ScheduledTasksSkeletonProps) {
   return (
     <div className="overflow-x-auto animate-pulse">
-      <table className="table w-full">
+      <table className="table table-zebra w-full text-sm">
         <thead>
-          <tr>
-            <th>Task Name</th>
-            <th>Schedule</th>
-            <th className="text-right">Actions</th>
+          <tr className="border-b border-base-300/80 bg-base-200/40 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+            <th className="font-semibold">Task name</th>
+            <th className="font-semibold">Schedule</th>
+            <th className="text-right font-semibold">Actions</th>
           </tr>
         </thead>
         <tbody>

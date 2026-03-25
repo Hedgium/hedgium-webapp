@@ -5,7 +5,7 @@ import StrategyLegs from "./StrategyLegs";
 import { authFetch } from "@/utils/api";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import useAlert from "@/hooks/useAlert";
-import { Trash2 } from "lucide-react";
+import { ChevronRight, Trash2 } from "lucide-react";
 
 function Adjustment({ adj, onDelete }) {
   const [open, setOpen] = useState(false);
@@ -136,12 +136,11 @@ function Adjustment({ adj, onDelete }) {
             }
           </button>
 
-          {/* Arrow */}
-          <span className="transition-transform"
+          <ChevronRight
+            className="size-5 shrink-0 text-base-content/60 transition-transform duration-200"
             style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)" }}
-          >
-            ▶
-          </span>
+            aria-hidden
+          />
         </div>
       </div>
 
@@ -157,7 +156,7 @@ function Adjustment({ adj, onDelete }) {
 
           {/* Strategy Legs Table */}
           <div className="overflow-x-auto">
-            <table className="table table-zebra w-full">
+            <table className="table w-full">
               <thead>
                 <tr>
                   <th>Leg #</th>
