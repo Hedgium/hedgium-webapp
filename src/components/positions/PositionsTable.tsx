@@ -21,12 +21,17 @@ export interface Position {
 interface PositionsTableProps {
   positions: Position[];
   showOrdersCount?: boolean;
+  /** Staff-only: show a control to inspect stored trades for this position (admin UI). */
+  showAdminTradesAction?: boolean;
+  onAdminViewTrades?: (position: Position) => void;
   className?: string;
 }
 
 export default function PositionsTable({
   positions,
   showOrdersCount = false,
+  showAdminTradesAction = false,
+  onAdminViewTrades,
   className = "",
 }: PositionsTableProps) {
   const getPnLColor = (pnl: number) => {
@@ -52,6 +57,7 @@ export default function PositionsTable({
             <th>Realised</th>
             <th>PnL</th>
             {showOrdersCount && <th>Orders</th>}
+            {showAdminTradesAction && <th className="w-28">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -91,6 +97,19 @@ export default function PositionsTable({
                 {showOrdersCount && (
                   <td className="text-right">
                     {pos.orders?.length ?? 0}
+                  </td>
+                )}
+                {showAdminTradesAction && (
+                  <td>
+                    {onAdminViewTrades ? (
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-outline"
+                        onClick={() => onAdminViewTrades(pos)}
+                      >
+                        Trades
+                      </button>
+                    ) : null}
                   </td>
                 )}
               </tr>
