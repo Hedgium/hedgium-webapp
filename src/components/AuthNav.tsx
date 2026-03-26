@@ -51,7 +51,7 @@ export default function AuthNav() {
     <div className="navbar md:hidden sticky top-0 z-50 min-h-[3.25rem] border-b border-base-300/80 bg-base-100/95 px-3 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-base-100/80">
       <div className="flex-1 min-w-0">
         <Link
-          href="/hedgium/dashboard"
+          href="/hedgium/home"
           className="btn btn-ghost btn-sm normal-case h-auto min-h-0 py-2 px-2 text-lg font-bold text-primary gap-1.5"
         >
           <LineChart className="shrink-0" width={22} height={22} />

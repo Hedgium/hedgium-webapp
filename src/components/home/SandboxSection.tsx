@@ -59,11 +59,11 @@ export default function SandboxSection() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-[40%_60%] lg:items-start gap-8 lg:gap-10 pt-6 lg:pt-2">
-            {/* Left: Dashboard — graph centered with room */}
+            {/* Left: Home — graph centered with room */}
             <div className=" flex flex-col gap-4 min-w-0 lg:pr-6 xl:pr-8">
               
               <p className="text-sm md:text-base font-bold text-center tracking-[0.2em] text-base-content/55 uppercase border-b border-base-300 pb-2">
-                Dashboard
+                Home
               </p>
               <p className="text-sm md:text-base text-base-content/65">
                 Starting Notional Capital: 50,00,000
@@ -113,7 +113,7 @@ export default function SandboxSection() {
               </div>
             </div>
 
-            {/* Right: Current month P&L — same row as Dashboard (border replaces extra grid cell) */}
+            {/* Right: Current month P&L — same row as Home (border replaces extra grid cell) */}
             <div className="flex flex-col gap-3 min-w-0 lg:pl-8 xl:pl-10 lg:pr-6 xl:pr-8">
               <p className="text-sm md:text-base font-bold tracking-[0.2em] text-base-content/55 uppercase text-center border-b border-base-300 pb-2"
               >

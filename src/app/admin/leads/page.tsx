@@ -172,7 +172,7 @@ export default function AdminLeadsPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto lg:px-8">
       <h1 className="text-2xl font-bold mb-6">CTA Leads</h1>
 
       <div className="bg-base-200 rounded-lg p-4 mb-6">

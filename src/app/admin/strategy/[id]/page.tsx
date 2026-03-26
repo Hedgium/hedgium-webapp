@@ -135,7 +135,7 @@ export default function StrategyDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-base-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="h-8 bg-base-300/60 rounded w-24 mb-6 animate-pulse" />
           <div className="h-10 bg-base-300/60 rounded w-72 mb-2 animate-pulse" />
           <div className="h-4 bg-base-300/60 rounded w-40 mb-8 animate-pulse" />
@@ -174,7 +174,6 @@ export default function StrategyDetail() {
                 )}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-base-content/60">
                   <span>Created: {strategy?.created_at ? formatDateTimeMinutes(strategy.created_at) : "—"}</span>
-                  <span>Cycles: {strategy?.trade_cycle_count ?? 0}</span>
                   <span>
                     PnL:{" "}
                     <span className={pnlColor(strategy?.total_pnl ?? null)}>
@@ -190,7 +189,7 @@ export default function StrategyDetail() {
                     </span>
                   </span>
                   <span>
-                    Mid WPNL:{" "}
+                    Mid PNL:{" "}
                     <span className={pnlColor(toNum(strategy?.mid_wpnl_total))}>
                       {toNum(strategy?.mid_wpnl_total) != null
                         ? formatMoneyIN(toNum(strategy.mid_wpnl_total)!)

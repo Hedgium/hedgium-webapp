@@ -210,20 +210,26 @@ export default function MarketHeader() {
   }, [ticks, allInstruments, isWsStable]);
 
   return (
-    <section className="mb-2 pb-3">
-      <div className="flex items-center justify-between mb-2 px-1">
-        <p className="text-xs text-base-content/70">
-          Market Today
-        </p>
+    <section className="mb-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/50">
+            Market
+          </span>
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${source === "ws" ? "bg-success" : source === "api" ? "bg-info" : "bg-base-content/30"}`}
+            title={source === "ws" ? "Live" : source === "api" ? "Polling" : "Idle"}
+          />
+        </div>
         {lastUpdatedAt ? (
-          <span className="text-xs text-base-content/60">
-            Updated {new Date(lastUpdatedAt).toLocaleTimeString()}
+          <span className="text-xs tabular-nums text-base-content/50">
+            {new Date(lastUpdatedAt).toLocaleTimeString()}
           </span>
         ) : null}
       </div>
       <div
         ref={scrollRef}
-        className="flex flex-nowrap overflow-x-auto md:flex-wrap gap-4 justify-between scrollbar-hide snap-x snap-mandatory"
+        className="flex flex-nowrap overflow-x-auto md:flex-wrap gap-3 md:gap-4 justify-stretch scrollbar-hide snap-x snap-mandatory pb-0.5"
       >
         {loading ? (
           <>
@@ -233,24 +239,24 @@ export default function MarketHeader() {
           </>
         ) : marketData.length > 0 ? (
           marketData.map((item, index) => (
-            <div key={index} className="flex-1 min-w-[200px] snap-center">
-              <div className="bg-base-100 p-4 border border-base-300 rounded-xl">
-                <h3 className="font-semibold text-base lg:text-lg mb-1 text-base-content">{item.name}</h3>
-                <div className="flex items-center justify-between">
-                  <span className="text-xl font-bold text-base-content">
+            <div key={index} className="flex-1 min-w-[min(100%,220px)] snap-center">
+              <div className="group h-full rounded-2xl border border-base-300/80 bg-base-100/90 p-4 shadow-sm transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-0.5">
+                <h3 className="font-medium text-sm text-base-content/80 mb-2 tracking-tight">{item.name}</h3>
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+                  <span className="text-xl font-semibold tabular-nums tracking-tight text-base-content">
                     {item.value.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </span>
                   <div
-                    className={`flex items-center ${item.change >= 0 ? "text-success" : "text-error"
+                    className={`flex items-center text-sm font-medium tabular-nums shrink-0 ${item.change >= 0 ? "text-success" : "text-error"
                       }`}
                   >
                     {item.change >= 0 ? (
-                      <TrendingUp width={18} height={18} className="mr-1" />
+                      <TrendingUp width={16} height={16} className="mr-1 shrink-0" />
                     ) : (
-                      <TrendingDown width={18} height={18} className="mr-1" />
+                      <TrendingDown width={16} height={16} className="mr-1 shrink-0" />
                     )}
                     <span>
                       {item.change >= 0 ? "+" : ""}
@@ -262,13 +268,13 @@ export default function MarketHeader() {
             </div>
           ))
         ) : (
-          <div className="p-4 text-center w-full text-base-content/60">
+          <div className="p-6 text-center w-full rounded-2xl border border-dashed border-base-300/70 bg-base-200/30 text-sm text-base-content/60">
             {apiError ?? "No market data available"}
           </div>
         )}
       </div>
       {!loading && apiError && marketData.length > 0 && (
-        <p className="text-xs text-warning mt-2 px-1">{apiError}</p>
+        <p className="text-xs text-warning mt-3">{apiError}</p>
       )}
     </section>
   );

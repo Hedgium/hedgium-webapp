@@ -38,7 +38,7 @@ const KiteRedirectPage = () => {
           updateUser({"broker_logged_in":true})
 
           if (data.kite_login_device == "WEB") {
-            router.push("/hedgium/dashboard/")
+            router.push("/hedgium/home")
           } else if (data.kite_login_device == "ANDROID") {
             const appDeepLink =
               process.env.NEXT_PUBLIC_APP_DEEP_LINK ||
@@ -65,7 +65,7 @@ const KiteRedirectPage = () => {
       <div className="p-8 rounded shadow-lg bg-white text-center">
 
         {status === "loading" && <p className="text-blue-600">Processing Kite login...</p>}
-        {status === "success" && <p className="text-green-600">{message}. Redirecting to dashboard</p>}
+        {status === "success" && <p className="text-green-600">{message}. Redirecting to home</p>}
         {status === "error" && <p className="text-red-600">{message}</p>}
       </div>
     </div>

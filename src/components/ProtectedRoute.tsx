@@ -27,7 +27,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       case "broker_profile_added":
         return "/onboarding/verification";
       default:
-        return "/hedgium/dashboard/";
+        return "/hedgium/home";
     }
   };
 

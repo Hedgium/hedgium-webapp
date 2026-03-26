@@ -47,7 +47,7 @@ export default function KycStatusIndicator({ className = "", variant = "default"
         router.push("/onboarding/verification");
         break;
       default:
-        router.push("/hedgium/dashboard/");
+        router.push("/hedgium/home");
     }
   };
 

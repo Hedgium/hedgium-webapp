@@ -2,27 +2,23 @@ import React from "react";
 
 export default function TradeCyclePositionsSkeleton() {
   return (
-    <div className="card bg-base-100 border border-base-300 rounded-xl w-full shadow-sm animate-pulse">
-      <div className="card-body p-4 flex flex-col flex-1">
-        {/* Header Skeleton */}
-        <div className="flex justify-between items-start mb-3 pb-3 border-b border-base-300">
-          <div className="h-6 bg-base-300 rounded w-48"></div>
-          <div className="h-4 bg-base-300 rounded w-32"></div>
+    <div className="relative overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/90 shadow-sm animate-pulse">
+      <div className="flex flex-col p-5 md:p-6">
+        <div className="mb-4 flex flex-col gap-3 border-b border-base-300/50 pb-4 sm:flex-row sm:justify-between">
+          <div className="flex-1 space-y-2">
+            <div className="h-6 w-48 max-w-full rounded-lg bg-base-300/90" />
+            <div className="h-6 w-28 rounded-full bg-base-300/60" />
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <div className="h-3 w-14 rounded bg-base-300/60" />
+            <div className="h-3 w-20 rounded bg-base-300/50" />
+          </div>
         </div>
 
-        {/* Totals Summary Skeleton */}
-        <div className="h-12 bg-base-200 rounded-lg mb-3"></div>
+        <div className="mb-4 h-16 rounded-xl border border-base-300/40 bg-base-200/50" />
 
-        {/* Table Skeleton - Simple placeholder */}
-        <div className="h-48 bg-base-200 rounded-lg"></div>
-
-        {/* Footer Skeleton */}
-        {/* <div className="flex items-center justify-between mt-3 pt-3 border-t border-base-300">
-          <div className="h-8 bg-base-300 rounded w-24"></div>
-          <div className="h-8 bg-base-300 rounded w-24"></div>
-        </div> */}
+        <div className="h-40 rounded-xl border border-base-300/40 bg-base-200/40" />
       </div>
     </div>
   );
 }
-

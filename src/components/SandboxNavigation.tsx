@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useSandboxStore } from "@/store/sandboxStore";
 
 const tabs = [
-  { name: "Dashboard", href: "/sandbox/dashboard", icon: <Home className="h-5 w-5" /> },
+  { name: "Home", href: "/sandbox/dashboard", icon: <Home className="h-5 w-5" /> },
   { name: "Positions", href: "/sandbox/positions", icon: <Briefcase className="h-5 w-5" /> },
   { name: "Reports", href: "/sandbox/reports", icon: <FileText className="h-5 w-5" /> },
   { name: "Settings", href: "/sandbox/settings", icon: <Settings className="h-5 w-5" /> },
@@ -80,7 +80,7 @@ export default function SandboxNavigation({ sidebar = false }: { sidebar?: boole
 
         <div className="p-4 border-t border-base-300 flex flex-col gap-2">
           <Link
-            href="/hedgium/dashboard"
+            href="/hedgium/home"
             className="btn btn-ghost justify-start normal-case gap-2 hover:bg-base-300/70"
           >
             <LogIn className="h-4 w-4" />

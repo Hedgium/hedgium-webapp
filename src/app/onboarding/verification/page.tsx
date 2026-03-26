@@ -60,8 +60,8 @@ const VerificationPending: React.FC = () => {
   useEffect(() => {
     if (user?.signup_step === "verified") {
       setRedirecting(true);
-      alert.success("Verified. Redirecting to dashboard.");
-      router.push("/hedgium/dashboard");
+      alert.success("Verified. Redirecting to home.");
+      router.push("/hedgium/home");
     }
   }, [user, alert, router]);
 
@@ -77,7 +77,7 @@ const VerificationPending: React.FC = () => {
       <div className="mt-6 w-full max-w-[400px]">
         <div className="rounded-xl border border-base-300 bg-base-100 p-6 text-center">
           {redirecting ? (
-            <p className="text-sm font-medium text-base-content/80">Redirecting to dashboard...</p>
+            <p className="text-sm font-medium text-base-content/80">Redirecting to home...</p>
           ) : (
             <>
               <div className="flex justify-center mb-4">
@@ -89,7 +89,7 @@ const VerificationPending: React.FC = () => {
                 Verification pending
               </h1>
               <p className="text-sm text-base-content/60 mt-2">
-                Your profile is under review. We&apos;ll notify you once verification is complete. Please make sure to upload your documents in case you have not done it yet. You can skip this step for now and continue to the dashboard.
+                Your profile is under review. We&apos;ll notify you once verification is complete. Please make sure to upload your documents in case you have not done it yet. You can skip this step for now and continue to home.
               </p>
               <div className="flex flex-col mt-4 flex-wrap gap-2 justify-center">
                 <button

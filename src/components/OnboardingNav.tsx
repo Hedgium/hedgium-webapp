@@ -6,7 +6,7 @@ import { ChevronLeft, Home } from "lucide-react";
 interface OnboardingNavProps {
   backHref: string;
   backLabel?: string;
-  /** Destination for the home shortcut (default: app dashboard). */
+  /** Destination for the home shortcut (default: app home). */
   homeHref?: string;
   homeLabel?: string;
 }
@@ -17,7 +17,7 @@ const linkClass =
 export default function OnboardingNav({
   backHref,
   backLabel = "Back",
-  homeHref = "/hedgium/dashboard",
+  homeHref = "/hedgium/home",
   homeLabel = "Home",
 }: OnboardingNavProps) {
   return (

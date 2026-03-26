@@ -463,10 +463,10 @@ export default function AddBrokerPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => router.push("/hedgium/dashboard")}
+                    onClick={() => router.push("/hedgium/home")}
                     className="btn btn-primary btn-sm normal-case w-full"
                   >
-                    Go to Dashboard
+                    Go to Home
                   </button>
                 </>
               ) : (

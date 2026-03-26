@@ -27,7 +27,7 @@ export default function RootLayoutClient({
         const isSandbox = pathname?.startsWith('/sandbox');
         const isAdmin = pathname?.startsWith('/admin') || pathname?.startsWith('/myadmin');
         if (!isHedgium && !isSandbox && !isAdmin) {
-          router.push('/hedgium/dashboard/');
+          router.push('/hedgium/home');
         }
         return;
       }

@@ -1,6 +1,6 @@
 # Design Principles — Hedgium Frontend
 
-Apply these principles across all UI so the product feels like a modern, professional SaaS platform: clean, compact, and consistent.
+Apply these principles across all UI so the product feels like a modern, professional SaaS platform: clean, compact, and consistent. **Reference implementation:** Reports and Positions (`/hedgium/reports`, `/hedgium/positions`) — match their shell, surfaces, and typography unless a screen has a strong reason to differ.
 
 ---
 
@@ -13,54 +13,71 @@ Apply these principles across all UI so the product feels like a modern, profess
 
 ---
 
-## Layout
+## Layout (app pages — Reports / Positions pattern)
 
-- **Page background** — Use `bg-base-200` (or equivalent surface) for full-page context; reserve `bg-base-100` for content containers and cards.
-- **Content width** — Constrain width where it helps focus: e.g. narrow forms (max ~380–400px), medium content (max-w-2xl), wide content (max-w-7xl) for data-heavy tables/dashboards.
-- **Centering** — Center narrow flows (auth, simple forms) with `flex items-center justify-center` and consistent vertical padding (`py-8` or similar).
-- **Cards / containers** — `rounded-xl`, light border (`border-base-300`), and minimum shadow by default. Prefer no shadow unless elevation is necessary; when needed use only subtle `shadow-sm`. Avoid heavy shadows or strong borders.
+- **Page shell** — Full-height context: outer `relative min-h-screen`. Behind content, a fixed non-interactive layer (`pointer-events-none`, `-z-10`) with:
+  - Base wash: `bg-gradient-to-b from-base-200 via-base-200 to-base-300/80`
+  - Soft color orbs: large blurred circles (`blur-3xl` / `blur-2xl`) at low opacity using `bg-primary/10–12`, `bg-secondary/10`, `bg-accent/10` as appropriate
+  - Optional: very subtle grid or line texture masked to fade out toward the bottom (keep opacity low so it stays quiet)
+- **Content width** — Main app columns: `max-w-6xl` (e.g. Positions) or `max-w-7xl` (e.g. Reports, chart-heavy). Horizontal padding: `px-4 py-6 md:px-8 md:py-8` (or `py-8` / `py-10` for heavier pages). Use `space-y-8`–`space-y-10` between major sections.
+- **Narrow flows** — Auth and simple forms: center with `flex items-center justify-center`, `py-8` or similar; forms often `max-w-[380px]`–`max-w-md`.
+- **Cards & panels** — Primary surfaces: `rounded-2xl`, `border border-base-300/50`–`/70`, translucent fills like `bg-base-100/55`–`/80` or `bg-base-200/35` for nested stat tiles. Use `backdrop-blur-sm` or `backdrop-blur-md` where a panel should feel slightly lifted from the gradient. Nested KPI or table cells: often `rounded-xl` with the same border vocabulary.
+- **Depth without shadows** — **Do not use `shadow-*` (including `shadow-sm`, `shadow-inner`, or glow shadows) on app surfaces, cards, joins, or primary buttons.** Separation comes from borders, translucent backgrounds, blur, and spacing — not drop shadows. (Legacy screens may still have shadows; new work should converge on this rule.)
 
 ---
 
 ## Typography
 
-- **Hierarchy** — One clear page/section title (e.g. `text-2xl font-semibold`), optional short subtitle (`text-base text-base-content/60`). Use smaller labels for form fields (`text-sm font-medium text-base-content/80`).
-- **Body** — Default size `text-base` for form copy and secondary text; reserve `text-lg` for primary content where needed.
-- **Links & actions** — Primary actions use `text-primary` and `hover:underline` or button styles; keep link text concise.
+- **Page title** — e.g. `text-2xl font-bold tracking-tight text-base-content md:text-3xl` for a top-level heading, or `text-xl font-semibold md:text-2xl` for a strong section title (see Reports / Positions).
+- **Subtitle / helper** — One line under the title: `text-sm text-base-content/55` (or `/60` for slightly stronger emphasis).
+- **Section labels (“eyebrows”)** — Uppercase, tight tracking: `text-[11px]` or `text-xs font-semibold uppercase tracking-wider text-base-content/45`–`/50`.
+- **In-card headings** — `text-lg font-semibold` or `text-sm font-semibold uppercase tracking-wide text-base-content/80` for compact sub-blocks.
+- **KPIs & numbers** — `text-lg md:text-xl font-bold` (or `font-semibold`) with `tabular-nums`; use `text-success` / `text-error` / muted content for sign and context.
+- **Body & meta** — Secondary lines in panels: `text-sm text-base-content/55`–`/60`. Tags, dates, chips: `text-xs`–`text-[11px]` with `text-base-content/45`–`/70` as appropriate.
+- **Forms (labels)** — `text-sm font-medium text-base-content/80` above fields; inline errors `text-sm text-error`.
+- **Links & actions** — Primary actions: `btn` / `btn-primary`; text links can use `text-primary` with clear hover affordance.
 
 ---
 
 ## Forms & inputs
 
 - **Fields** — Prefer compact inputs: `input-sm`, fixed height (e.g. `h-9`) for alignment. Use semantic `<form>`, `type="submit"`, and `autoComplete` where appropriate.
-- **Labels** — Small, above the field: `text-sm font-medium text-base-content/80`, tight margin below label (`mb-1.5`).
 - **Icons in inputs** — If used, place with `absolute` positioning; keep icon size modest (`h-4 w-4`) and color muted (`text-base-content/40`).
-- **Errors** — Inline, below the field: `text-sm text-error`. Clear single-line messages.
-- **Primary button** — Full-width in narrow forms when there’s one main action. Use `btn-primary btn-sm` with consistent height. Show loading state (e.g. spinner) instead of disabled-only when submitting.
+- **Primary button** — In dense app UI, `btn-primary btn-sm` is common; show loading (e.g. spinner) instead of disabled-only when submitting.
 
 ---
 
 ## Color & theme
 
-- Use DaisyUI semantic tokens: `text-base-content`, `text-base-content/60` (muted), `text-primary`, `bg-base-100`, `bg-base-200`, `border-base-300`, `text-error`, `text-success`.
+- Use DaisyUI semantic tokens: `text-base-content`, `text-base-content/55`–`/60` (muted), `text-primary`, `bg-base-100`, `bg-base-200`, `border-base-300` (often with `/50`–`/70` opacity), `text-error`, `text-success`.
 - Avoid raw grays or hex in UI; prefer theme tokens so light/dark and future themes stay consistent.
+- Accent tints (e.g. `from-primary/10`, `border-primary/20`) for one highlighted KPI or focus state — sparingly.
+
+---
+
+## Controls & patterns (app)
+
+- **Icon + heading rows** — Section headers often pair a `h-5 w-5 text-primary` Lucide icon with the title.
+- **Segmented / toggle groups** — DaisyUI `join` + `join-item`, `btn btn-sm`, active `btn-primary`, inactive `btn-ghost` with `border border-base-300/60` — **no shadow on the join**.
+- **Icon-only actions** — e.g. `btn btn-circle btn-ghost` with `border border-base-300/70` for refresh / secondary actions.
+- **Lists & expandable rows** — Borders and hover via `border-primary/25` and slight motion (`hover:-translate-y-0.5`) if needed — not shadow.
 
 ---
 
 ## Feedback & state
 
-- **Loading** — Prefer simple **skeletons** when possible: use skeleton placeholders that mirror the layout of the content being loaded (cards, rows, text lines). Skeletons reduce layout shift and feel faster. Use a **spinner** (e.g. Loader2) for inline actions (buttons, form submit) or when the loading area is too small for a meaningful skeleton. Avoid “Loading...” text alone.
-- **Success / error** — Short, single-line messages. Use `text-success` / `text-error` and place near the relevant control or at top of form.
-- **Empty states** — Brief copy and optional single CTA; no large illustrations unless product-specific.
+- **Loading** — Prefer **skeletons** that mirror layout (cards, rows, chart areas). Use a **spinner** for small regions or button-level loading. Avoid bare “Loading...” copy alone.
+- **Success / error** — Short, single-line toasts or inline messages; `text-success` / `text-error`.
+- **Empty states** — Brief copy, optional single CTA (`btn-primary btn-sm`), dashed border container (`border-dashed border-base-300/70`) — no reliance on shadows.
 
 ---
 
 ## Auth & focused flows
 
-- Auth and other focused flows (e.g. single-purpose forms) should feel calm: one main card, one primary CTA, minimal links (e.g. “Forgot password?”, “Sign up”). Secondary actions in a single line below the card, muted (`text-sm text-base-content/50`).
+- Calm, single-focus: one main card, one primary CTA, minimal secondary links (`text-sm text-base-content/50`). Card can use `rounded-xl border border-base-300` and `bg-base-100` — **still avoid shadows** when aligning with the app shell above.
 
 ---
 
 ## Summary
 
-**Modern, clean, compact, professional.** Constrain width where it helps, use small typography and compact controls, rely on theme tokens, and keep patterns consistent across auth, app, and admin so the product feels like one coherent platform.
+**Modern, clean, compact, professional.** Use the Reports / Positions shell (gradient + soft blurs + optional grid), `max-w-6xl`–`max-w-7xl` content, `rounded-2xl` panels with light borders and translucent fills, and typography hierarchy as above. **No box shadows** — depth comes from borders, translucency, and backdrop blur. Keep patterns consistent so the product feels like one coherent platform.

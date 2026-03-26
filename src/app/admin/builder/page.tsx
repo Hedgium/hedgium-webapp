@@ -204,7 +204,7 @@ export default function BuilderPage() {
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 max-w-7xl mx-auto lg:px-8">
             {/* Header Section */}
             <div className="mb-6">
                 <div className="flex justify-between items-center mb-4 border-b border-base-300 pb-4">

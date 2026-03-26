@@ -33,7 +33,7 @@ const LoginContent: React.FC = () => {
 
   useEffect(() => {
     if (!isInitializing && accessToken) {
-      router.push(nextPath || "/hedgium/dashboard");
+      router.push(nextPath || "/hedgium/home");
     }
   }, [accessToken, isInitializing, router, nextPath]);
 
