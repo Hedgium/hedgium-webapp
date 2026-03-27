@@ -309,7 +309,7 @@ export function aggregateMarginSnapshots(
     .sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
 }
 
-type PnlSnapshotPoint = { snapshot_date: string; total_pnl: number };
+type PnlSnapshotPoint = { snapshot_date: string; pnl_total: number };
 
 export function aggregatePnlLevelSeries(
   data: PnlSnapshotPoint[],
@@ -317,12 +317,12 @@ export function aggregatePnlLevelSeries(
 ): PnlChartPoint[] {
   const sorted = [...data].sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
   if (period === "daily") {
-    return sorted.map((d) => ({ time: d.snapshot_date, value: d.total_pnl }));
+    return sorted.map((d) => ({ time: d.snapshot_date, value: d.pnl_total }));
   }
   const byKey = new Map<string, { time: string; value: number }>();
   for (const d of sorted) {
     const key = period === "weekly" ? getWeekKey(d.snapshot_date) : getMonthKey(d.snapshot_date);
-    byKey.set(key, { time: period === "weekly" ? key : `${key}-01`, value: d.total_pnl });
+    byKey.set(key, { time: period === "weekly" ? key : `${key}-01`, value: d.pnl_total });
   }
   return Array.from(byKey.values()).sort((a, b) => a.time.localeCompare(b.time));
 }

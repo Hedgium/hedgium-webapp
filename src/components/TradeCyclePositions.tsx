@@ -40,7 +40,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) =
   const [hasMoreOrders, setHasMoreOrders] = useState(false);
   const [allLoaded, setAllLoaded] = useState(false);
   const [totals, setTotals] = useState<{
-    total_pnl: number;
+    pnl_total: number;
     realised_total: number;
     unrealised_total: number;
     total_buy_qty: number;

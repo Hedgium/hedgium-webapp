@@ -31,11 +31,13 @@ interface StrategyDetail {
   completed: boolean;
   completed_at?: string | null;
   trade_cycle_count: number;
-  total_pnl: number | null;
   wpnl_total?: number | string | null;
   mid_wpnl_total?: number | string | null;
   atm_spread?: number | string | null;
-  wpnl_spread_updated_at?: string | null;
+  wpnl_updated_at?: string | null;
+  spread_updated_at?: string | null;
+  pnl_total?: number | string | null;
+  pnl_updated_at?: string | null;
   adjustment_count: number;
   leg_count: number;
   versions: StrategyVersion[];
@@ -176,8 +178,10 @@ export default function StrategyDetail() {
                   <span>Created: {strategy?.created_at ? formatDateTimeMinutes(strategy.created_at) : "—"}</span>
                   <span>
                     PnL:{" "}
-                    <span className={pnlColor(strategy?.total_pnl ?? null)}>
-                      {strategy?.total_pnl != null ? formatMoneyIN(Number(strategy.total_pnl)) : "—"}
+                    <span className={pnlColor(toNum(strategy?.pnl_total))}>
+                      {toNum(strategy?.pnl_total) != null
+                        ? formatMoneyIN(toNum(strategy.pnl_total)!)
+                        : "—"}
                     </span>
                   </span>
                   <span>
@@ -205,9 +209,21 @@ export default function StrategyDetail() {
                     </span>
                   </span>
                   <span>
-                    WPNL/spread updated:{" "}
-                    {strategy?.wpnl_spread_updated_at
-                      ? formatDateTimeMinutes(strategy.wpnl_spread_updated_at)
+                    WPNL updated:{" "}
+                    {strategy?.wpnl_updated_at
+                      ? formatDateTimeMinutes(strategy.wpnl_updated_at)
+                      : "—"}
+                  </span>
+                  <span>
+                    Spread updated:{" "}
+                    {strategy?.spread_updated_at
+                      ? formatDateTimeMinutes(strategy.spread_updated_at)
+                      : "—"}
+                  </span>
+                  <span>
+                    PnL updated:{" "}
+                    {strategy?.pnl_updated_at
+                      ? formatDateTimeMinutes(strategy.pnl_updated_at)
                       : "—"}
                   </span>
                 </div>

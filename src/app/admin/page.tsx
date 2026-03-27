@@ -17,11 +17,13 @@ interface Strategy {
   adjustment_count: number;
   trade_cycle_count: number;
   leg_count: number;
-  total_pnl: number | null;
   wpnl_total: number | string | null;
   mid_wpnl_total: number | string | null;
   atm_spread: number | string | null;
-  wpnl_spread_updated_at: string | null;
+  wpnl_updated_at: string | null;
+  spread_updated_at: string | null;
+  pnl_total: number | string | null;
+  pnl_updated_at: string | null;
   completed: boolean;
   completed_at: string | null;
   versions: Version[];
@@ -30,8 +32,8 @@ interface Strategy {
 const ORDER_OPTIONS = [
   { value: "-created_at", label: "Created (newest)" },
   { value: "created_at", label: "Created (oldest)" },
-  { value: "-total_pnl", label: "Total PnL (best first)" },
-  { value: "total_pnl", label: "Total PnL (worst first)" },
+  { value: "-pnl_total", label: "Total PnL (best first)" },
+  { value: "pnl_total", label: "Total PnL (worst first)" },
   { value: "name", label: "Name (A–Z)" },
   { value: "-name", label: "Name (Z–A)" },
 ] as const;
@@ -169,7 +171,7 @@ export default function Page() {
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap">Mid WPNL</th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap">Spread</th>
                   <th className="font-medium text-base-content/70 whitespace-nowrap min-w-[9rem]">
-                    Updated At
+                    WPNL / spread updated
                   </th>
                 </tr>
               </thead>
@@ -245,11 +247,11 @@ export default function Page() {
                       <td className="text-right">
                         <span
                           className={`font-semibold tabular-nums ${pnlColor(
-                            strategy.total_pnl
+                            toNum(strategy.pnl_total)
                           )}`}
                         >
-                          {strategy.total_pnl != null
-                            ? formatMoneyIN(Number(strategy.total_pnl))
+                          {toNum(strategy.pnl_total) != null
+                            ? formatMoneyIN(toNum(strategy.pnl_total)!)
                             : "—"}
                         </span>
                       </td>
@@ -283,9 +285,16 @@ export default function Page() {
                         </span>
                       </td>
                       <td>
-                        <span className="text-xs text-base-content/70 tabular-nums">
-                          {formatSnapshotAt(strategy.wpnl_spread_updated_at) ?? "—"}
-                        </span>
+                        <div className="text-xs text-base-content/70 tabular-nums space-y-0.5">
+                          <div>
+                            WPNL:{" "}
+                            {formatSnapshotAt(strategy.wpnl_updated_at) ?? "—"}
+                          </div>
+                          <div>
+                            Spread:{" "}
+                            {formatSnapshotAt(strategy.spread_updated_at) ?? "—"}
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   );

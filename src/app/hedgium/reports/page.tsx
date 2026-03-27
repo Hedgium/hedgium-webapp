@@ -60,7 +60,7 @@ type ReportsResponse = {
   next: string | null;
   previous: string | null;
   results: TradeCycleReport[];
-  summary: { total_count: number; total_pnl: number };
+  summary: { total_count: number; pnl_total: number };
 };
 
 type MarginSnapshot = {
@@ -71,13 +71,13 @@ type MarginSnapshot = {
 };
 
 /** From DailyPnlSnapshot API: level (total PnL as of date), not flow */
-type PnlSnapshotPoint = { snapshot_date: string; total_pnl: number };
+type PnlSnapshotPoint = { snapshot_date: string; pnl_total: number };
 
 type ChartPeriod = "daily" | "weekly" | "monthly";
 
 type CycleDetail = {
   positions: Position[];
-  totals: { total_pnl?: number };
+  totals: { pnl_total?: number };
   error?: boolean;
 };
 
@@ -149,12 +149,12 @@ function aggregatePnlLevelSeries(
 ): { time: string; value: number }[] {
   const sorted = [...data].sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
   if (period === "daily") {
-    return sorted.map((d) => ({ time: d.snapshot_date, value: d.total_pnl }));
+    return sorted.map((d) => ({ time: d.snapshot_date, value: d.pnl_total }));
   }
   const byKey = new Map<string, { time: string; value: number }>();
   for (const d of sorted) {
     const key = period === "weekly" ? getWeekKey(d.snapshot_date) : getMonthKey(d.snapshot_date);
-    byKey.set(key, { time: period === "weekly" ? key : `${key}-01`, value: d.total_pnl });
+    byKey.set(key, { time: period === "weekly" ? key : `${key}-01`, value: d.pnl_total });
   }
   return Array.from(byKey.values()).sort((a, b) => a.time.localeCompare(b.time));
 }
@@ -525,12 +525,12 @@ export default function ReportsPage() {
               {summary && (
                 <span
                   className={`rounded-full border px-3 py-1 text-sm font-semibold tabular-nums ${
-                    summary.total_pnl >= 0
+                    summary.pnl_total >= 0
                       ? "border-success/30 bg-success/10 text-success"
                       : "border-error/30 bg-error/10 text-error"
                   }`}
                 >
-                  Report total PnL {formatMoneyIN(summary?.total_pnl)}
+                  Report total PnL {formatMoneyIN(summary?.pnl_total)}
                 </span>
               )}
             </div>

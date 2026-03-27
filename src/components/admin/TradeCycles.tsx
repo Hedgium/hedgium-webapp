@@ -49,7 +49,7 @@ type TradeCycle = {
   is_master?: boolean | null;
   no_of_orders?: number | null;
   no_of_positions?: number | null;
-  total_pnl?: number | null;
+  pnl_total?: number | null;
 };
 
 type CompareResult = {
@@ -854,8 +854,8 @@ export default function TradeCycles({
                     </td>
                     <td>{cycle.no_of_orders || 0}</td>
                     <td>{cycle.no_of_positions || 0}</td>
-                    <td className={cycle.total_pnl != null && cycle.total_pnl > 0 ? "text-emerald-600 dark:text-emerald-400" : cycle.total_pnl != null && cycle.total_pnl < 0 ? "text-red-600 dark:text-red-400" : ""}>
-                      {cycle.total_pnl !== null && cycle.total_pnl !== undefined ? formatMoneyIN(cycle.total_pnl) : formatMoneyIN(0)}
+                    <td className={cycle.pnl_total != null && cycle.pnl_total > 0 ? "text-emerald-600 dark:text-emerald-400" : cycle.pnl_total != null && cycle.pnl_total < 0 ? "text-red-600 dark:text-red-400" : ""}>
+                      {cycle.pnl_total !== null && cycle.pnl_total !== undefined ? formatMoneyIN(cycle.pnl_total) : formatMoneyIN(0)}
                     </td>
                     <td className="whitespace-nowrap">
                       <div className="flex flex-row items-center gap-1">

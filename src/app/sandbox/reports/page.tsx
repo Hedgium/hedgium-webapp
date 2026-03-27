@@ -61,14 +61,14 @@ type ReportsResponse = {
   next: string | null;
   previous: string | null;
   results: TradeCycleReport[];
-  summary: { total_count: number; total_pnl: number };
+  summary: { total_count: number; pnl_total: number };
 };
 
-type PnlSnapshotPoint = { snapshot_date: string; total_pnl: number };
+type PnlSnapshotPoint = { snapshot_date: string; pnl_total: number };
 
 type CycleDetail = {
   positions: Position[];
-  totals: { total_pnl?: number };
+  totals: { pnl_total?: number };
   error?: boolean;
 };
 
@@ -375,10 +375,10 @@ export default function SandboxReportsPage() {
               {summary && (
                 <p
                   className={`text-sm text-base-content/60 ${
-                    summary.total_pnl >= 0 ? "text-success" : "text-error"
+                    summary.pnl_total >= 0 ? "text-success" : "text-error"
                   }`}
                 >
-                  Total PnL: {formatMoneyIN(summary?.total_pnl)}
+                  Total PnL: {formatMoneyIN(summary?.pnl_total)}
                 </p>
               )}
             </div>
@@ -450,17 +450,17 @@ export default function SandboxReportsPage() {
                               <p className="text-sm text-error">Failed to load positions. Try again.</p>
                             ) : (
                               <>
-                                {typeof cycleDetails[cycle.id].totals?.total_pnl === "number" && (
+                                {typeof cycleDetails[cycle.id].totals?.pnl_total === "number" && (
                                   <p className="text-sm mb-2">
                                     Total PnL:{" "}
                                     <span
                                       className={
-                                        cycleDetails[cycle.id].totals!.total_pnl >= 0
+                                        cycleDetails[cycle.id].totals!.pnl_total >= 0
                                           ? "text-success font-medium"
                                           : "text-error font-medium"
                                       }
                                     >
-                                      {formatMoneyIN(cycleDetails[cycle.id].totals!.total_pnl)}
+                                      {formatMoneyIN(cycleDetails[cycle.id].totals!.pnl_total)}
                                     </span>
                                   </p>
                                 )}

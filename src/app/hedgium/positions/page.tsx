@@ -152,7 +152,7 @@ export default function PositionsPage() {
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
-        {/* PnL summary — positions/pnl/summary/ (cycles scoped by total_updated_date on backend) */}
+        {/* PnL summary — positions/pnl/summary/ (cycles scoped by total_updated_at on backend) */}
         <section className="mb-8">
           <div className="relative overflow-hidden rounded-2xl border border-base-300/50 bg-base-100/70 p-4 backdrop-blur-md md:p-6">
             {/* <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" /> */}
