@@ -47,6 +47,10 @@ export interface Profile {
     user: User;
     broker_logged_in: boolean;
     subscription?: UserSubscription | null;
+    /** Static-IP proxy for order create/modify/cancel (admin). Empty host = off. */
+    proxy_host?: string | null;
+    proxy_port?: number | null;
+    proxy_username?: string | null;
 }
 
 export interface ProfileResponse {

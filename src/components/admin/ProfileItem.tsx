@@ -3,7 +3,7 @@ import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
 import { formatMoneyIN } from '@/utils/formatNumber';
 import useAlert from '@/hooks/useAlert';
-import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar } from 'lucide-react';
+import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProfileItemProps {
@@ -181,192 +181,303 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
 
     const u = profile.user as typeof profile.user & { aadhar_number?: string | null; pan_number?: string | null; pan_document_url?: string | null; aadhar_document_url?: string | null };
 
+    const proxyOn = Boolean((profile.proxy_host || "").trim());
+    const proxyHost = (profile.proxy_host || "").trim();
+    const daysLeft = profile.subscription
+        ? Math.ceil(
+              (new Date(profile.subscription.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          )
+        : null;
+
     return (
-        <div className="bg-base-100 rounded-lg p-4 mb-4 border border-base-300">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div>
-                    <p className="text-gray-400 text-sm">User</p>
-                    <Link
-                        href={`/admin/profiles/${profile.id}`}
-                        className="font-medium link link-hover"
-                    >
-                        {profile.user.email}
-                    </Link>
-                    <p className="text-sm text-gray-500">{profile.user.first_name} {profile.user.last_name}</p>
-                    <p className="text-sm text-gray-500">ID: {profile.user_id}</p>
-                    {profile.user.last_login && (
-                        <p className="text-sm text-gray-500">Last login: {new Date(profile.user.last_login).toLocaleString()}</p>
-                    )}
-                </div>
-                <div>
-                    <p className="text-gray-400 text-sm">Aadhar / PAN / Documents</p>
-                    <p className="text-xs text-gray-500">
-                        {u.aadhar_number ? <span>Aadhar: {u.aadhar_number}</span> : <span className="opacity-60">Aadhar: —</span>}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                        {u.pan_number ? <span>PAN: {u.pan_number}</span> : <span className="opacity-60">PAN: —</span>}
-                    </p>
-                    <div className="flex gap-2 mt-1 flex-wrap items-center">
-                        {u.pan_document_url ? (
-                            <a href={u.pan_document_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" title="View PAN">
-                                <img src={u.pan_document_url} alt="PAN" className="w-10 h-10 object-cover rounded border border-base-300" />
-                                <span className="link link-primary text-xs">PAN</span>
-                            </a>
-                        ) : (
-                            <span className="text-xs opacity-60">PAN —</span>
+        <div className="bg-base-100 rounded-xl p-4 mb-4 border border-base-300">
+            {/* lg: center uses 1fr so stats span all space between identity and a tight action column */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,17.5rem)_minmax(0,1fr)_auto] lg:items-start lg:gap-x-3">
+                {/* Identity + flags */}
+                <div className="min-w-0 space-y-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <Link
+                            href={`/admin/profiles/${profile.id}`}
+                            className="font-medium link link-hover break-all sm:break-normal lg:truncate lg:max-w-none"
+                        >
+                            {profile.user.email}
+                        </Link>
+                        <span className="text-base-content/40 hidden sm:inline">·</span>
+                        <span className="text-sm font-medium text-base-content/90">{profile.broker_name}</span>
+                        {proxyOn && (
+                            <span className="badge badge-success badge-xs whitespace-nowrap">Order proxy</span>
                         )}
-                        {u.aadhar_document_url ? (
-                            <a href={u.aadhar_document_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" title="View Aadhar">
-                                <img src={u.aadhar_document_url} alt="Aadhar" className="w-10 h-10 object-cover rounded border border-base-300" />
-                                <span className="link link-primary text-xs">Aadhar</span>
-                            </a>
+                        {brokerLoggedIn ? (
+                            <span className="badge badge-success badge-xs whitespace-nowrap">Broker in</span>
                         ) : (
-                            <span className="text-xs opacity-60">Aadhar —</span>
+                            <span className="badge badge-ghost badge-xs whitespace-nowrap">Broker out</span>
                         )}
                     </div>
+                    <p className="text-xs text-base-content/55">
+                        {profile.user.first_name} {profile.user.last_name}
+                        <span className="mx-1.5 opacity-40">·</span>
+                        User #{profile.user_id}
+                        {profile.user.last_login && (
+                            <>
+                                <span className="mx-1.5 opacity-40">·</span>
+                                Last login {new Date(profile.user.last_login).toLocaleString()}
+                            </>
+                        )}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                        <span className={`px-2 py-0.5 rounded text-xs ${profile.is_active ? "bg-primary/20 text-primary" : "bg-base-300 text-base-content/60"}`}>
+                            {profile.is_active ? "Active" : "Inactive"}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-xs ${profile.auto_trade_allowed ? "bg-secondary/20 text-secondary" : "bg-base-300 text-base-content/60"}`}>
+                            {profile.auto_trade_allowed ? "Auto ON" : "Auto OFF"}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-xs ${profile.verified ? "bg-success/20 text-success" : "bg-error/15 text-error"}`} title="Profile verified">
+                            P {profile.verified ? "✓" : "✗"}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-xs ${profile.user.verified ? "bg-success/20 text-success" : "bg-error/15 text-error"}`} title="User verified">
+                            U {profile.user.verified ? "✓" : "✗"}
+                        </span>
+                    </div>
                 </div>
-                <div>
-                    <p className="text-gray-400 text-sm">Broker</p>
-                    <p className="font-medium">{profile.broker_name}</p>
-                    <p className="text-sm text-gray-500">HID: {profile.id}, BROKER ID: {profile.broker_user_id}</p>
 
-                    {brokerLoggedIn ? (
-                        <span className="text-sm text-green-400">✓ Broker Logged In</span>
-                    ) : (
-                        <div className="flex gap-2 flex-wrap">
-                            <button
-                                onClick={handleSendLoginReminder}
-                                disabled={sendingReminder}
-                                className="btn btn-secondary btn-xs"
-                            >
-                                {sendingReminder ? 'Sending...' : 'Send Login Reminder'}
-                            </button>
-
-                            {(profile.broker_name === "SHOONYA" || profile.broker_name === "ZERODHA" || profile.broker_name === "KOTAKNEO") && (
-                                <button
-                                    onClick={() => setIsBrokerLoginModalOpen(true)}
-                                    className="btn btn-primary btn-xs"
-                                >
-                                    Login
-                                </button>
-                            )}
-                            
-                            {/* Set Broker Token Button - Available for all brokers */}
-                            <button
-                                onClick={() => setIsBrokerTokenModalOpen(true)}
-                                className="btn btn-outline btn-xs"
-                                title="Set broker access token directly"
-                            >
-                                Set Token
-                            </button>
+                {/* Grows with 1fr: stats use full width between identity and actions */}
+                <div className="min-w-0 w-full rounded-xl border border-base-300/70 bg-base-200/35 px-4 py-3">
+                    <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
+                        <div className="min-w-0">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">
+                                Margin equity
+                            </p>
+                            <p className="text-lg font-semibold tabular-nums leading-tight text-base-content">
+                                {formatMoneyIN(equityMargin, { decimals: 0 })}
+                            </p>
                         </div>
-
-                    )}
-
+                        <div className="min-w-0 border-t border-base-300/50 pt-3 sm:border-l sm:border-t-0 sm:border-base-300/50 sm:pl-6 sm:pt-0">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">
+                                IDs
+                            </p>
+                            <p className="font-mono text-xs text-base-content/85 leading-snug">
+                                HID {profile.id}
+                            </p>
+                            <p
+                                className="font-mono text-xs text-base-content/70 break-all sm:truncate"
+                                title={profile.broker_user_id || undefined}
+                            >
+                                Broker {profile.broker_user_id || "—"}
+                            </p>
+                        </div>
+                        <div className="min-w-0 border-t border-base-300/50 pt-3 sm:col-span-1 sm:border-l sm:border-t-0 sm:border-base-300/50 sm:pl-6 sm:pt-0">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">
+                                Proxy · plan
+                            </p>
+                            <p className="text-xs text-base-content/80 leading-snug">
+                                {proxyOn ? (
+                                    <span className="text-success break-all">
+                                        {proxyHost}:{profile.proxy_port ?? 443}
+                                        {(profile.proxy_username || "").trim() ? " · auth" : ""}
+                                    </span>
+                                ) : (
+                                    <span className="text-base-content/50">Orders direct</span>
+                                )}
+                            </p>
+                            {profile.subscription ? (
+                                <p className="text-xs text-base-content/70 mt-0.5" title={profile.subscription.plan.name}>
+                                    <span className="font-medium text-base-content/90">{profile.subscription.plan.name}</span>
+                                    <span className={profile.subscription.is_valid ? " text-success" : " text-warning"}>
+                                        {" "}
+                                        · {daysLeft !== null && daysLeft >= 0 ? `${daysLeft}d` : "ended"}
+                                    </span>
+                                </p>
+                            ) : (
+                                <p className="text-xs text-base-content/45 mt-0.5">No plan</p>
+                            )}
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <p className="text-gray-400 text-sm">Margin & Action</p>
-                    <p className="text-sm font-medium">{formatMoneyIN(equityMargin, { decimals: 0 })}</p>
-                    <div className="flex flex-wrap gap-2 mt-1">
+
+                {/* Narrow column: only as wide as controls (no empty 25% track) */}
+                <div className="flex min-w-0 flex-col gap-2 border-t border-base-300 pt-3 lg:border-t-0 lg:border-l lg:border-base-300 lg:pl-3 lg:pt-0">
+                    <div className="flex flex-wrap justify-end gap-1">
                         {brokerLoggedIn && (
                             <>
-                                <div className="tooltip tooltip-right" data-tip="Refresh Margin">
+                                <div className="tooltip tooltip-bottom lg:tooltip-left" data-tip="Refresh margin">
                                     <button
+                                        type="button"
                                         onClick={handleRefreshMargin}
                                         disabled={refreshing}
-                                        className={`btn btn-ghost btn-xs btn-square ${refreshing ? "animate-spin" : ""}`}
-                                        title="Refresh Margin"
+                                        className={`btn btn-ghost btn-sm btn-square ${refreshing ? "animate-spin" : ""}`}
+                                        aria-label="Refresh margin"
                                     >
-                                        <RotateCw size={16} />
+                                        <RotateCw size={18} />
                                     </button>
                                 </div>
-                                <div className="tooltip tooltip-right" data-tip="View Live Positions">
+                                <div className="tooltip tooltip-bottom lg:tooltip-left" data-tip="Live positions">
                                     <Link
                                         href={`/admin/profiles/${profile.id}/live`}
-                                        className="btn btn-ghost btn-xs btn-square text-green-400"
-                                        title="View Live Positions"
+                                        className="btn btn-ghost btn-sm btn-square text-success"
+                                        aria-label="Live positions"
                                     >
-                                        <TrendingUp size={16} />
+                                        <TrendingUp size={18} />
                                     </Link>
-                                </div>
-                                <div className="tooltip tooltip-right" data-tip="Update Token">
-                                    <button
-                                        onClick={() => setIsBrokerTokenModalOpen(true)}
-                                        className="btn btn-ghost btn-xs btn-square text-amber-400"
-                                        title="Update Token"
-                                    >
-                                        <KeyRound size={16} />
-                                    </button>
                                 </div>
                             </>
                         )}
+                        <div
+                            className="tooltip tooltip-bottom lg:tooltip-left"
+                            data-tip={brokerLoggedIn ? "Update token" : "Set access token"}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => setIsBrokerTokenModalOpen(true)}
+                                className="btn btn-ghost btn-sm btn-square text-warning"
+                                aria-label={brokerLoggedIn ? "Update token" : "Set access token"}
+                            >
+                                <KeyRound size={18} />
+                            </button>
+                        </div>
                         {onEdit && (
-                            <div className="tooltip tooltip-right" data-tip="Edit Profile">
+                            <div className="tooltip tooltip-bottom lg:tooltip-left" data-tip="Edit profile (incl. order proxy)">
                                 <button
+                                    type="button"
                                     onClick={() => onEdit(profile)}
-                                    className="btn btn-ghost btn-xs btn-square text-blue-400"
-                                    title="Edit Profile"
+                                    className="btn btn-ghost btn-sm btn-square text-info"
+                                    aria-label="Edit profile"
                                 >
-                                    <Edit2 size={16} />
+                                    <Edit2 size={18} />
                                 </button>
                             </div>
                         )}
                         {onAddPlan && !profile.subscription && (
-                            <div className="tooltip tooltip-right" data-tip="Add Plan">
+                            <div className="tooltip tooltip-bottom lg:tooltip-left" data-tip="Add plan">
                                 <button
+                                    type="button"
                                     onClick={() => onAddPlan(profile)}
-                                    className="btn btn-ghost btn-xs btn-square text-primary"
-                                    title="Add Plan"
+                                    className="btn btn-ghost btn-sm btn-square text-primary"
+                                    aria-label="Add plan"
                                 >
-                                    <Plus size={16} />
+                                    <Plus size={18} />
                                 </button>
                             </div>
                         )}
                         {onModifyPlan && profile.subscription && (
-                            <div className="tooltip tooltip-right" data-tip="Modify Dates">
+                            <div className="tooltip tooltip-bottom lg:tooltip-left" data-tip="Modify plan dates">
                                 <button
+                                    type="button"
                                     onClick={() => onModifyPlan(profile)}
-                                    className="btn btn-ghost btn-xs btn-square text-amber-400"
-                                    title="Modify Dates"
+                                    className="btn btn-ghost btn-sm btn-square text-warning"
+                                    aria-label="Modify plan dates"
                                 >
-                                    <Calendar size={16} />
+                                    <Calendar size={18} />
                                 </button>
                             </div>
                         )}
                     </div>
-                </div>
-                <div>
-                    <p className="text-gray-400 text-sm">Status</p>
-                    <div className="flex flex-col gap-1.5">
-                        <div className="flex flex-wrap gap-1.5 items-center">
-                            <span className={`px-2 py-0.5 rounded text-sm ${profile.is_active ? 'bg-blue-900 text-blue-300' : 'bg-gray-700 text-gray-300'}`}>
-                                {profile.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded text-sm ${profile.auto_trade_allowed ? 'bg-purple-900 text-purple-300' : 'bg-gray-700 text-gray-300'}`}>
-                                {profile.auto_trade_allowed ? 'Auto ON' : 'Auto OFF'}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded text-sm ${profile.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`} title="Profile verified">
-                                P ✓
-                            </span>
-                            <span className={`px-2 py-0.5 rounded text-sm ${profile.user.verified ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`} title="User verified">
-                                U ✓
-                            </span>
+                    {/* Desktop: stack broker actions under icons so the row stays one line tall */}
+                    {!brokerLoggedIn && (
+                        <div className="hidden w-full min-w-[11rem] flex-col gap-1.5 lg:flex">
+                            <button
+                                type="button"
+                                onClick={handleSendLoginReminder}
+                                disabled={sendingReminder}
+                                className="btn btn-secondary btn-sm w-full whitespace-normal"
+                            >
+                                {sendingReminder ? "Sending…" : "Send login reminder"}
+                            </button>
+                            {(profile.broker_name === "SHOONYA" ||
+                                profile.broker_name === "ZERODHA" ||
+                                profile.broker_name === "KOTAKNEO") && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsBrokerLoginModalOpen(true)}
+                                    className="btn btn-secondary btn-outline btn-sm w-full"
+                                >
+                                    Broker login
+                                </button>
+                            )}
                         </div>
+                    )}
+                </div>
+            </div>
+
+            {!brokerLoggedIn && (
+                <div className="mt-3 flex flex-wrap gap-2 lg:hidden">
+                    <button
+                        type="button"
+                        onClick={handleSendLoginReminder}
+                        disabled={sendingReminder}
+                        className="btn btn-secondary btn-sm"
+                    >
+                        {sendingReminder ? "Sending…" : "Send login reminder"}
+                    </button>
+                    {(profile.broker_name === "SHOONYA" || profile.broker_name === "ZERODHA" || profile.broker_name === "KOTAKNEO") && (
+                        <button
+                            type="button"
+                            onClick={() => setIsBrokerLoginModalOpen(true)}
+                            className="btn btn-primary btn-sm"
+                        >
+                            Broker login
+                        </button>
+                    )}
+                </div>
+            )}
+
+            <details className="group mt-3 rounded-lg border border-base-300/80 bg-base-200/25 open:bg-base-200/40">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-sm text-base-content/70 hover:text-base-content [&::-webkit-details-marker]:hidden">
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50 transition-transform group-open:rotate-180" />
+                    <span className="font-medium">KYC documents · subscription detail</span>
+                </summary>
+                <div className="border-t border-base-300/60 px-3 pb-3 pt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p className="text-xs font-medium text-base-content/50 mb-2">Aadhar / PAN</p>
+                        <p className="text-xs text-base-content/70">
+                            {u.aadhar_number ? <span>Aadhar: {u.aadhar_number}</span> : <span className="opacity-50">Aadhar: —</span>}
+                        </p>
+                        <p className="text-xs text-base-content/70">
+                            {u.pan_number ? <span>PAN: {u.pan_number}</span> : <span className="opacity-50">PAN: —</span>}
+                        </p>
+                        <div className="flex gap-2 mt-2 flex-wrap items-center">
+                            {u.pan_document_url ? (
+                                <a href={u.pan_document_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" title="View PAN">
+                                    <img src={u.pan_document_url} alt="PAN" className="w-10 h-10 object-cover rounded border border-base-300" />
+                                    <span className="link link-primary text-xs">PAN doc</span>
+                                </a>
+                            ) : (
+                                <span className="text-xs opacity-50">PAN doc —</span>
+                            )}
+                            {u.aadhar_document_url ? (
+                                <a href={u.aadhar_document_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" title="View Aadhar">
+                                    <img src={u.aadhar_document_url} alt="Aadhar" className="w-10 h-10 object-cover rounded border border-base-300" />
+                                    <span className="link link-primary text-xs">Aadhar doc</span>
+                                </a>
+                            ) : (
+                                <span className="text-xs opacity-50">Aadhar doc —</span>
+                            )}
+                        </div>
+                    </div>
+                    <div>
+                        <p className="text-xs font-medium text-base-content/50 mb-2">Subscription</p>
                         {profile.subscription ? (
-                            <div className="flex flex-wrap items-center gap-2 text-sm">
-                                <span className="text-gray-500">
-                                    Plan: <span className="font-medium text-gray-300">{profile.subscription.plan.name}</span>
-                                    <span className={`ml-1 ${profile.subscription.is_valid ? 'text-green-400' : 'text-red-400'}`}>
-                                        · {new Date(profile.subscription.end_date).toLocaleDateString()} ({Math.ceil((new Date(profile.subscription.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}d)
+                            <div className="text-sm text-base-content/80 space-y-1">
+                                <p>
+                                    <span className="font-medium">{profile.subscription.plan.name}</span>
+                                    <span className={`ml-2 ${profile.subscription.is_valid ? "text-success" : "text-warning"}`}>
+                                        {profile.subscription.is_valid ? "Valid" : "Expired"}
                                     </span>
-                                </span>
+                                </p>
+                                <p className="text-xs text-base-content/60">
+                                    {new Date(profile.subscription.start_date).toLocaleDateString()}
+                                    {" — "}
+                                    {new Date(profile.subscription.end_date).toLocaleDateString()}
+                                    <span className="ml-1">
+                                        ({Math.ceil((new Date(profile.subscription.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d left)
+                                    </span>
+                                </p>
                             </div>
                         ) : (
-                            <span className="text-sm text-gray-500">No subscription</span>
+                            <p className="text-sm text-base-content/50">No active subscription</p>
                         )}
                     </div>
                 </div>
-            </div>
+            </details>
 
             {/* Broker Login Modal (SHOONYA, ZERODHA) */}
             {isBrokerLoginModalOpen && (

@@ -297,7 +297,7 @@ export default function ProfilesPage() {
 
       {isEditModalOpen && editingProfile && (
         <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-3xl rounded-xl">
+          <div className="modal-box w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl">
             <h3 className="font-semibold text-xl mb-4">
               Edit Profile: {editingProfile.user.email}
             </h3>

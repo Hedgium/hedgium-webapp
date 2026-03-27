@@ -158,6 +158,18 @@ export default function ProfileDetailPage() {
           >
             {profile.broker_logged_in ? "Broker Logged In" : "Not Logged In"}
           </span>
+          <p className="text-xs text-base-content/50 mt-2">
+            Order proxy:{" "}
+            {(profile.proxy_host || "").trim() ? (
+              <span className="text-success font-medium">
+                On — {(profile.proxy_host || "").trim()}:
+                {profile.proxy_port ?? 443}
+                {(profile.proxy_username || "").trim() ? " · auth set" : ""}
+              </span>
+            ) : (
+              <span className="opacity-80">Off (direct)</span>
+            )}
+          </p>
         </div>
 
         <div className="bg-base-200 rounded-xl p-4 border border-base-300">
@@ -232,7 +244,7 @@ export default function ProfileDetailPage() {
 
       {isEditModalOpen && (
         <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-3xl rounded-xl">
+          <div className="modal-box w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl">
             <h3 className="font-semibold text-xl mb-4">
               Edit Profile: {profile.user.email}
             </h3>
