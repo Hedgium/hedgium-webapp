@@ -39,7 +39,7 @@ export default function SubscriptionPlanModal({
   onCancel,
 }: SubscriptionPlanModalProps) {
   const [plans, setPlans] = useState<SubscriptionPlanOption[]>([]);
-  const [loadingPlans, setLoadingPlans] = useState(mode === "add");
+  const [loadingPlans, setLoadingPlans] = useState(mode === "add" || mode === "modify");
   const [submitting, setSubmitting] = useState(false);
   const [planId, setPlanId] = useState<number | "">("");
   const [startDate, setStartDate] = useState("");
@@ -47,31 +47,31 @@ export default function SubscriptionPlanModal({
   const alert = useAlert();
 
   useEffect(() => {
-    if (mode === "add") {
-      const fetchPlans = async () => {
-        setLoadingPlans(true);
-        try {
-          const res = await authFetch("subscriptions/", {}, { page_size: 50 });
-          const data = await res.json();
-          setPlans(data.results || []);
-          if (data.results?.length && !planId) {
-            setPlanId(data.results[0].id);
-          }
-        } catch (err) {
-          console.error("Failed to fetch plans:", err);
-          alert.error("Failed to load subscription plans");
-        } finally {
-          setLoadingPlans(false);
+    if (mode !== "add" && mode !== "modify") return;
+    const fetchPlans = async () => {
+      setLoadingPlans(true);
+      try {
+        const res = await authFetch("subscriptions/", {}, { page_size: 50 });
+        const data = await res.json();
+        setPlans(data.results || []);
+        if (mode === "add" && data.results?.length && planId === "") {
+          setPlanId(data.results[0].id);
         }
-      };
-      fetchPlans();
-    }
+      } catch (err) {
+        console.error("Failed to fetch plans:", err);
+        alert.error("Failed to load subscription plans");
+      } finally {
+        setLoadingPlans(false);
+      }
+    };
+    fetchPlans();
   }, [mode]);
 
   useEffect(() => {
     if (mode === "modify" && subscription) {
       setStartDate(formatDateForInput(subscription.start_date));
       setEndDate(formatDateForInput(subscription.end_date));
+      setPlanId(subscription.plan.id);
     }
   }, [mode, subscription]);
 
@@ -104,11 +104,18 @@ export default function SubscriptionPlanModal({
         }
       } else {
         if (!subscription) return;
-        const payload: Record<string, string> = {};
+        if (planId === "" || typeof planId !== "number") {
+          alert.error("Please select a plan");
+          return;
+        }
+        const payload: Record<string, string | number> = {};
         if (startDate) payload.start_date = new Date(startDate).toISOString();
         if (endDate) payload.end_date = new Date(endDate).toISOString();
+        if (planId !== subscription.plan.id) {
+          payload.plan_id = planId;
+        }
         if (Object.keys(payload).length === 0) {
-          alert.error("Please provide at least start or end date");
+          alert.error("No changes to save");
           return;
         }
 
@@ -120,7 +127,7 @@ export default function SubscriptionPlanModal({
           }
         );
         if (res.ok) {
-          alert.success("Subscription dates updated");
+          alert.success("Subscription updated");
           onSuccess();
         } else {
           const err = await res.json();
@@ -135,7 +142,7 @@ export default function SubscriptionPlanModal({
     }
   };
 
-  const title = mode === "add" ? "Add Subscription Plan" : "Modify Subscription Dates";
+  const title = mode === "add" ? "Add Subscription Plan" : "Modify Subscription";
 
   return (
     <div className="modal modal-open">
@@ -146,10 +153,10 @@ export default function SubscriptionPlanModal({
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === "add" && (
+          {(mode === "add" || mode === "modify") && (
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Plan</span>
+                <span className="label-text">Subscription plan</span>
               </label>
               {loadingPlans ? (
                 <div className="h-10 bg-base-300 rounded-lg animate-pulse" />
@@ -169,12 +176,6 @@ export default function SubscriptionPlanModal({
                 </select>
               )}
             </div>
-          )}
-
-          {mode === "modify" && subscription && (
-            <p className="text-sm">
-              Current plan: <strong>{subscription.plan.name}</strong>
-            </p>
           )}
 
           <div className="form-control">
@@ -214,14 +215,14 @@ export default function SubscriptionPlanModal({
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={submitting || (mode === "add" && loadingPlans)}
+              disabled={submitting || ((mode === "add" || mode === "modify") && loadingPlans)}
             >
               {submitting ? (
                 <span className="loading loading-spinner loading-sm" />
               ) : mode === "add" ? (
                 "Add Plan"
               ) : (
-                "Update Dates"
+                "Save changes"
               )}
             </button>
           </div>

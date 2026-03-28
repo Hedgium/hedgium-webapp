@@ -359,12 +359,12 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                             </div>
                         )}
                         {onModifyPlan && profile.subscription && (
-                            <div className="tooltip tooltip-bottom lg:tooltip-left" data-tip="Modify plan dates">
+                            <div className="tooltip tooltip-bottom lg:tooltip-left" data-tip="Modify plan and dates">
                                 <button
                                     type="button"
                                     onClick={() => onModifyPlan(profile)}
                                     className="btn btn-ghost btn-sm btn-square text-warning"
-                                    aria-label="Modify plan dates"
+                                    aria-label="Modify subscription plan and dates"
                                 >
                                     <Calendar size={18} />
                                 </button>

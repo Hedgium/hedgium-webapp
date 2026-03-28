@@ -11,12 +11,8 @@ export default function VerifyEmailPage() {
   return (
     <div className="flex w-full flex-col items-center">
       <div className="w-full max-w-2xl space-y-4">
-        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
-          
-          <div className="flex justify-center justify-self-center">
-            <AuthFlowBrand className="mb-0" />
-          </div>
-          <span className="justify-self-end" aria-hidden />
+        <div className="flex w-full justify-center">
+          <AuthFlowBrand className="mb-0" />
         </div>
         <SignUpStepper currentStepId="initiated" />
       </div>
