@@ -58,6 +58,37 @@ function buildStrategiesUrl(params: {
   return `myadmin/strategies/?${search.toString()}`;
 }
 
+const CELERY_TERMINAL_STATUSES = new Set([
+  "SUCCESS",
+  "FAILURE",
+  "REVOKED",
+]);
+
+/** Poll until Celery reports a terminal state (or timeout). */
+async function waitForCeleryTaskComplete(
+  taskId: string,
+  options: { pollMs?: number; maxMs?: number } = {}
+): Promise<string> {
+  const pollMs = options.pollMs ?? 1500;
+  const maxMs = options.maxMs ?? 10 * 60 * 1000;
+  const started = Date.now();
+  for (;;) {
+    const res = await authFetch(
+      `tasks/status/${encodeURIComponent(taskId)}/`
+    );
+    if (!res.ok) {
+      throw new Error(`Task status request failed (${res.status})`);
+    }
+    const data = (await res.json()) as { status?: string };
+    const status = data.status ?? "UNKNOWN";
+    if (CELERY_TERMINAL_STATUSES.has(status)) return status;
+    if (Date.now() - started > maxMs) {
+      throw new Error("Timed out waiting for task");
+    }
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+}
+
 export default function Page() {
   const alert = useAlert();
   const [strategies, setStrategies] = React.useState<Strategy[]>([]);
@@ -102,7 +133,7 @@ export default function Page() {
 
   async function runRefreshActiveStrategyTasks() {
     setRefreshingMetrics(true);
-    alert.info("Queuing PnL, WPNL, and spread refresh tasks...");
+    alert.info("Running PnL, WPNL, and spread refresh tasks…");
     try {
       const ids: string[] = [];
       for (const taskName of REFRESH_ACTIVE_STRATEGY_TASKS) {
@@ -121,12 +152,30 @@ export default function Page() {
         }
         if (data.task_id) ids.push(data.task_id);
       }
-      
-      alert.success("Refresh tasks queued successfully");
+
+      if (ids.length !== REFRESH_ACTIVE_STRATEGY_TASKS.length) {
+        alert.error("Could not queue all refresh tasks (missing task ids)");
+        return;
+      }
+
+      const statuses = await Promise.all(
+        ids.map((id) => waitForCeleryTaskComplete(id))
+      );
+      const allOk = statuses.every((s) => s === "SUCCESS");
+      if (allOk) {
+        alert.success("PnL, WPNL, and spread refresh finished");
+      } else {
+        alert.error(
+          `One or more refresh tasks finished with errors (${statuses.join(", ")})`
+        );
+      }
       await fetchStrategies();
     } catch (e) {
       console.error(e);
-      alert.error("Failed to trigger refresh tasks");
+      alert.error(
+        e instanceof Error ? e.message : "Failed to run or wait for refresh tasks"
+      );
+      await fetchStrategies();
     } finally {
       setRefreshingMetrics(false);
     }
