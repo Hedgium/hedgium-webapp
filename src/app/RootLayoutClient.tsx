@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'nextjs-toploader/app';
 import { usePathname } from 'next/navigation';
+import { goToPostOnboarding } from '@/utils/nativeAppReturn';
 
 export default function RootLayoutClient({
   children,
@@ -27,7 +28,7 @@ export default function RootLayoutClient({
         const isSandbox = pathname?.startsWith('/sandbox');
         const isAdmin = pathname?.startsWith('/admin') || pathname?.startsWith('/myadmin');
         if (!isHedgium && !isSandbox && !isAdmin) {
-          router.push('/hedgium/home');
+          goToPostOnboarding(router);
         }
         return;
       }
