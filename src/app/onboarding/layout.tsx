@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import AuthFlowShell from "@/components/AuthFlowShell";
-import NativeAppReturnCapture from "@/components/NativeAppReturnCapture";
 
 export const metadata: Metadata = {
   title: "Onboarding",
@@ -13,12 +11,5 @@ export default function OnboardingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <>
-      <Suspense fallback={null}>
-        <NativeAppReturnCapture />
-      </Suspense>
-      <AuthFlowShell>{children}</AuthFlowShell>
-    </>
-  );
+  return <AuthFlowShell>{children}</AuthFlowShell>;
 }

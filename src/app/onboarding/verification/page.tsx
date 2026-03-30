@@ -9,7 +9,6 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "nextjs-toploader/app";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
-import { goToPostOnboarding } from "@/utils/nativeAppReturn";
 
 const VerificationPending: React.FC = () => {
   const { user, updateUser } = useAuthStore();
@@ -62,7 +61,7 @@ const VerificationPending: React.FC = () => {
     if (user?.signup_step === "verified") {
       setRedirecting(true);
       alert.success("Verified. Redirecting to home.");
-      void goToPostOnboarding(router);
+      router.push("/hedgium/home");
     }
   }, [user, alert, router]);
 

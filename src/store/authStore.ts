@@ -77,7 +77,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   keys: null,
   brokerNeedsRefresh: false,
 
-
   userKeyGet: async () => {
     const res = await fetch("/api/proxy/users/userkey/", {
       headers: { Authorization: `Bearer ${get().accessToken}` },
@@ -214,7 +213,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     // console.log("Logout Called");
     get().stopAutoRefresh();
-    const accessT =  get().accessToken
+    const accessT = get().accessToken;
     set({ accessToken: null, user: null });
 
     await fetch("/api/proxy/users/auth/logout/", {
