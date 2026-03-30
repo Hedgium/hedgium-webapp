@@ -3,7 +3,7 @@
 import { authFetch } from "@/utils/api";
 import Link from "next/link";
 import React from "react";
-import { CheckCircle, LayoutList, RefreshCw } from "lucide-react";
+import { CheckCircle, LayoutList, ListRestart, RefreshCw } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 
@@ -21,6 +21,7 @@ interface Version {
 interface Strategy {
   id: number;
   name: string;
+  created_at: string;
   adjustment_count: number;
   trade_cycle_count: number;
   leg_count: number;
@@ -68,6 +69,7 @@ export default function Page() {
 
   async function fetchStrategies() {
     setLoading(true);
+    setStrategies([]);
     const url = buildStrategiesUrl({ completed, orderBy });
     const res = await authFetch(url);
     const data = await res.json();
@@ -100,6 +102,7 @@ export default function Page() {
 
   async function runRefreshActiveStrategyTasks() {
     setRefreshingMetrics(true);
+    alert.info("Queuing PnL, WPNL, and spread refresh tasks...");
     try {
       const ids: string[] = [];
       for (const taskName of REFRESH_ACTIVE_STRATEGY_TASKS) {
@@ -118,11 +121,8 @@ export default function Page() {
         }
         if (data.task_id) ids.push(data.task_id);
       }
-      alert.success(
-        ids.length
-          ? `Queued PnL, WPNL, and spread refresh (task IDs: ${ids.join(", ")})`
-          : "Refresh tasks queued"
-      );
+      
+      alert.success("Refresh tasks queued successfully");
       await fetchStrategies();
     } catch (e) {
       console.error(e);
@@ -160,7 +160,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-base-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
@@ -198,22 +198,34 @@ export default function Page() {
           </div>
         </header>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <p className="text-sm text-base-content/65">
-            Enqueue Celery jobs to refresh total PnL (profiles tied to active strategies), WPNL, and ATM
-            spread for all ACTIVE builders. Data updates after workers finish.
-          </p>
-          <button
-            type="button"
-            onClick={runRefreshActiveStrategyTasks}
-            disabled={refreshingMetrics || loading}
-            className="btn btn-primary btn-sm gap-2 shrink-0"
-          >
-            <RefreshCw
-              className={`size-4 ${refreshingMetrics ? "animate-spin" : ""}`}
-            />
-            Refresh metrics
-          </button>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 mb-4">
+          
+          <div className="flex items-center justify-end gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => void fetchStrategies()}
+              disabled={loading}
+              className="btn btn-ghost btn-sm btn-square"
+              title="Reload strategies list"
+              aria-label="Reload strategies list"
+            >
+              <ListRestart
+                className={`size-4 ${loading ? "animate-spin" : ""}`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={runRefreshActiveStrategyTasks}
+              disabled={refreshingMetrics || loading}
+              className="btn btn-ghost btn-sm btn-square"
+              title="Queue PnL, WPNL, and spread refresh jobs"
+              aria-label="Queue PnL, WPNL, and spread refresh jobs"
+            >
+              <RefreshCw
+                className={`size-4 ${refreshingMetrics ? "animate-spin" : ""}`}
+              />
+            </button>
+          </div>
         </div>
 
         <div className="rounded-xl border border-base-300/50 bg-base-100 overflow-hidden">
@@ -223,6 +235,9 @@ export default function Page() {
                 <tr className="border-b border-base-300/50">
                   <th className="font-medium text-base-content/70">ID</th>
                   <th className="font-medium text-base-content/70">Name</th>
+                  <th className="font-medium text-base-content/70 whitespace-nowrap min-w-[9rem]">
+                    Created
+                  </th>
                   <th className="font-medium text-base-content/70">Status</th>
                   <th className="font-medium text-base-content/70">Allocated</th>
                   <th className="font-medium text-base-content/70">Last adjustment</th>
@@ -231,15 +246,15 @@ export default function Page() {
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap">WPNL</th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap">Mid WPNL</th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap">Spread</th>
-                  <th className="font-medium text-base-content/70 whitespace-nowrap min-w-[9rem]">
-                    WPNL / spread updated
+                  <th className="font-medium text-base-content/70 whitespace-nowrap min-w-[10rem]">
+                    PnL / WPNL / spread updated
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {strategies.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={11} className="text-center py-16">
+                    <td colSpan={12} className="text-center py-16">
                       <p className="text-base-content/60">No strategies found.</p>
                       <p className="text-sm text-base-content/50 mt-1">
                         Try changing filters or create a new strategy.
@@ -270,6 +285,9 @@ export default function Page() {
                         >
                           {strategy.name}
                         </Link>
+                      </td>
+                      <td className="text-xs text-base-content/70 tabular-nums whitespace-nowrap">
+                        {formatSnapshotAt(strategy.created_at) ?? "—"}
                       </td>
                       <td>
                         {strategy.completed ? (
@@ -348,6 +366,10 @@ export default function Page() {
                       <td>
                         <div className="text-xs text-base-content/70 tabular-nums space-y-0.5">
                           <div>
+                            PnL:{" "}
+                            {formatSnapshotAt(strategy.pnl_updated_at) ?? "—"}
+                          </div>
+                          <div>
                             WPNL:{" "}
                             {formatSnapshotAt(strategy.wpnl_updated_at) ?? "—"}
                           </div>
@@ -364,7 +386,7 @@ export default function Page() {
                 {loading && strategies.length === 0 &&
                   Array.from({ length: 3 }).map((_, i) => (
                     <tr key={`skeleton-${i}`} className="border-b border-base-300/30">
-                      {Array.from({ length: 11 }).map((_, j) => (
+                      {Array.from({ length: 12 }).map((_, j) => (
                         <td key={j}>
                           <div className="h-5 bg-base-300/40 rounded animate-pulse" />
                         </td>
