@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { authFetch } from "@/utils/api";
 import { useAuthStore } from "@/store/authStore";
 import useAlert from "@/hooks/useAlert";
+import { returnToNativeAppOr } from "@/utils/nativeAppReturn";
 import BrokerCredentialHelpModal from "@/components/BrokerCredentialHelpModal";
 import {
   CheckCircle,
@@ -463,7 +464,8 @@ export default function AddBrokerPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => router.push("/hedgium/home")}
+                    type="button"
+                    onClick={() => void returnToNativeAppOr(router, "/hedgium/home")}
                     className="btn btn-primary btn-sm normal-case w-full"
                   >
                     Go to Home

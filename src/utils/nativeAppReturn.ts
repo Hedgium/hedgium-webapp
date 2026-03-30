@@ -32,28 +32,45 @@ export function getPersistedAppReturnUri(): string | null {
   return raw;
 }
 
+async function redirectToNativeWithOptionalOneTimeToken(uri: string): Promise<void> {
+  try {
+    const res = await authFetch("users/token/create-token/", { method: "GET" });
+    if (res.ok) {
+      const data = (await res.json()) as { token?: string };
+      if (data.token) {
+        const sep = uri.includes("?") ? "&" : "?";
+        window.location.assign(
+          `${uri}${sep}one_time_token=${encodeURIComponent(data.token)}`
+        );
+        return;
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+  window.location.assign(uri);
+}
+
+/**
+ * If the user opened the site from the native app (redirect_uri was stored),
+ * send them back to the app (with optional one-time session handoff JWT).
+ * Otherwise navigate to webFallbackHref in the SPA.
+ */
+export async function returnToNativeAppOr(
+  router: { push: (href: string) => void },
+  webFallbackHref = "/hedgium/home"
+): Promise<void> {
+  const uri = getPersistedAppReturnUri();
+  if (uri) {
+    await redirectToNativeWithOptionalOneTimeToken(uri);
+    return;
+  }
+  router.push(webFallbackHref);
+}
+
+/** @deprecated Use returnToNativeAppOr — kept for onboarding call sites */
 export async function goToPostOnboarding(router: {
   push: (href: string) => void;
 }): Promise<void> {
-  const uri = getPersistedAppReturnUri();
-  if (uri) {
-    try {
-      const res = await authFetch("users/token/create-token/", { method: "GET" });
-      if (res.ok) {
-        const data = (await res.json()) as { token?: string };
-        if (data.token) {
-          const sep = uri.includes("?") ? "&" : "?";
-          window.location.assign(
-            `${uri}${sep}one_time_token=${encodeURIComponent(data.token)}`
-          );
-          return;
-        }
-      }
-    } catch {
-      /* fall through: still return to app without session handoff */
-    }
-    window.location.assign(uri);
-    return;
-  }
-  router.push("/hedgium/home");
+  return returnToNativeAppOr(router, "/hedgium/home");
 }
