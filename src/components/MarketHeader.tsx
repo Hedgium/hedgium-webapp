@@ -211,7 +211,7 @@ export default function MarketHeader() {
 
   return (
     <section className="mb-0">
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/50">
             Market
@@ -240,7 +240,7 @@ export default function MarketHeader() {
         ) : marketData.length > 0 ? (
           marketData.map((item, index) => (
             <div key={index} className="flex-1 min-w-[min(100%,220px)] snap-center">
-              <div className="group h-full rounded-2xl border border-base-300/80 bg-base-100/90 p-4 shadow-sm transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-0.5">
+              <div className="group h-full rounded-2xl border border-base-300/80 bg-base-100/80 p-4 transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-0.5">
                 <h3 className="font-medium text-sm text-base-content/80 mb-2 tracking-tight">{item.name}</h3>
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
                   <span className="text-xl font-semibold tabular-nums tracking-tight text-base-content">

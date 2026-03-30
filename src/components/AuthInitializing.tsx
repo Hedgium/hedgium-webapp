@@ -138,7 +138,7 @@ export default function AuthInitializingProvider({
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
         <div className="w-full max-w-[400px]">
-          <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6 text-center space-y-4">
+          <div className="bg-base-100 rounded-xl border border-base-300 p-6 text-center space-y-4">
             <div className="flex justify-center">
               <AlertCircle className="w-12 h-12 text-error" />
             </div>

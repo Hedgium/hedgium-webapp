@@ -90,9 +90,9 @@ export default function HomePage() {
 
 
         {/* Market */}
-        <div className="mb-8 rounded-2xl border border-base-300/50 bg-base-100/55 p-4 backdrop-blur-md md:p-6">
           <MarketHeader />
-        </div>
+
+        <br />
 
         {/* Strategies */}
         <section className="space-y-6">

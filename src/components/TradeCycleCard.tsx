@@ -112,14 +112,11 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
 
   return (
     <article
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/90 transition-all duration-200 ${
-        isActive ? "ring-1 ring-primary/10 hover:border-primary/25" : ""
+      className={`group relative flex flex-col overflow-hidden rounded-2xl bg-base-100/80  transition-all duration-200 ${
+        isActive ? " hover:border-primary/25" : ""
       } hover:-translate-y-0.5 ${isLocked ? "opacity-[0.92]" : ""}`}
     >
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent opacity-80"
-        aria-hidden
-      />
+
 
       <div className="flex flex-1 flex-col p-4 md:p-4">
         {/* Header */}

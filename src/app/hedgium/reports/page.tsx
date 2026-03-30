@@ -349,7 +349,7 @@ export default function ReportsPage() {
 
   return (
     <div className="relative min-h-screen">
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+      {/* <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
         <div className="absolute inset-0 bg-gradient-to-b from-base-200 via-base-200 to-base-300/80" />
         <div className="absolute -top-24 right-[-10%] h-[28rem] w-[28rem] rounded-full bg-primary/12 blur-3xl" />
         <div className="absolute top-1/3 -left-32 h-[22rem] w-[22rem] rounded-full bg-secondary/10 blur-3xl" />
@@ -358,7 +358,7 @@ export default function ReportsPage() {
           className="absolute inset-0 opacity-[0.35] bg-[linear-gradient(to_right,oklch(var(--bc)/0.04)_1px,transparent_1px),linear-gradient(to_bottom,oklch(var(--bc)/0.04)_1px,transparent_1px)] bg-[size:32px_32px]"
           style={{ maskImage: "linear-gradient(to bottom, black 0%, transparent 85%)" }}
         />
-      </div>
+      </div> */}
       <div className="relative mx-auto max-w-7xl space-y-10 px-4 py-8 md:px-8 md:py-10">
         {loading ? (
           <ReportsSummarySkeleton />
