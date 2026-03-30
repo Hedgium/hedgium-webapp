@@ -3,8 +3,15 @@
 import { authFetch } from "@/utils/api";
 import Link from "next/link";
 import React from "react";
-import { CheckCircle, LayoutList } from "lucide-react";
+import { CheckCircle, LayoutList, RefreshCw } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
+import useAlert from "@/hooks/useAlert";
+
+const REFRESH_ACTIVE_STRATEGY_TASKS = [
+  "refresh-pnl-active-strategies",
+  "refresh-wpnl-active-strategies",
+  "refresh-worst-spread-active-strategies",
+] as const;
 
 interface Version {
   version: number;
@@ -51,9 +58,11 @@ function buildStrategiesUrl(params: {
 }
 
 export default function Page() {
+  const alert = useAlert();
   const [strategies, setStrategies] = React.useState<Strategy[]>([]);
   const [next, setNext] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [refreshingMetrics, setRefreshingMetrics] = React.useState(false);
   const [orderBy, setOrderBy] = React.useState("-created_at");
   const [completed, setCompleted] = React.useState("");
 
@@ -88,6 +97,40 @@ export default function Page() {
   React.useEffect(() => {
     fetchStrategies();
   }, [completed, orderBy]);
+
+  async function runRefreshActiveStrategyTasks() {
+    setRefreshingMetrics(true);
+    try {
+      const ids: string[] = [];
+      for (const taskName of REFRESH_ACTIVE_STRATEGY_TASKS) {
+        const response = await authFetch(
+          `core/tasks/run/?task_name=${encodeURIComponent(taskName)}`,
+          { method: "POST" }
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          alert.error(
+            typeof data.error === "string"
+              ? data.error
+              : `Failed to enqueue: ${taskName}`
+          );
+          return;
+        }
+        if (data.task_id) ids.push(data.task_id);
+      }
+      alert.success(
+        ids.length
+          ? `Queued PnL, WPNL, and spread refresh (task IDs: ${ids.join(", ")})`
+          : "Refresh tasks queued"
+      );
+      await fetchStrategies();
+    } catch (e) {
+      console.error(e);
+      alert.error("Failed to trigger refresh tasks");
+    } finally {
+      setRefreshingMetrics(false);
+    }
+  }
 
   const lastAdjustment = (s: Strategy): Version | null =>
     s.versions?.length ? s.versions[0] : null;
@@ -154,6 +197,24 @@ export default function Page() {
             </select>
           </div>
         </header>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <p className="text-sm text-base-content/65">
+            Enqueue Celery jobs to refresh total PnL (profiles tied to active strategies), WPNL, and ATM
+            spread for all ACTIVE builders. Data updates after workers finish.
+          </p>
+          <button
+            type="button"
+            onClick={runRefreshActiveStrategyTasks}
+            disabled={refreshingMetrics || loading}
+            className="btn btn-primary btn-sm gap-2 shrink-0"
+          >
+            <RefreshCw
+              className={`size-4 ${refreshingMetrics ? "animate-spin" : ""}`}
+            />
+            Refresh metrics
+          </button>
+        </div>
 
         <div className="rounded-xl border border-base-300/50 bg-base-100 overflow-hidden">
           <div className="overflow-x-auto">
