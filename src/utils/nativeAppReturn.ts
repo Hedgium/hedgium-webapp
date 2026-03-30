@@ -1,3 +1,5 @@
+import { authFetch } from "@/utils/api";
+
 const STORAGE_KEY = "hedgium_native_return_uri";
 
 const ALLOWED_PROTOCOLS = new Set(["hedgiumapp:", "exp:"]);
@@ -30,9 +32,26 @@ export function getPersistedAppReturnUri(): string | null {
   return raw;
 }
 
-export function goToPostOnboarding(router: { push: (href: string) => void }): void {
+export async function goToPostOnboarding(router: {
+  push: (href: string) => void;
+}): Promise<void> {
   const uri = getPersistedAppReturnUri();
   if (uri) {
+    try {
+      const res = await authFetch("users/token/create-token/", { method: "GET" });
+      if (res.ok) {
+        const data = (await res.json()) as { token?: string };
+        if (data.token) {
+          const sep = uri.includes("?") ? "&" : "?";
+          window.location.assign(
+            `${uri}${sep}one_time_token=${encodeURIComponent(data.token)}`
+          );
+          return;
+        }
+      }
+    } catch {
+      /* fall through: still return to app without session handoff */
+    }
     window.location.assign(uri);
     return;
   }

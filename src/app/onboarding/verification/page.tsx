@@ -62,7 +62,7 @@ const VerificationPending: React.FC = () => {
     if (user?.signup_step === "verified") {
       setRedirecting(true);
       alert.success("Verified. Redirecting to home.");
-      goToPostOnboarding(router);
+      void goToPostOnboarding(router);
     }
   }, [user, alert, router]);
 
