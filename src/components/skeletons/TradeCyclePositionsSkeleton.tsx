@@ -2,7 +2,7 @@ import React from "react";
 
 export default function TradeCyclePositionsSkeleton() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/90 shadow-sm animate-pulse">
+    <div className="relative overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/90 animate-pulse">
       <div className="flex flex-col p-5 md:p-6">
         <div className="mb-4 flex flex-col gap-3 border-b border-base-300/50 pb-4 sm:flex-row sm:justify-between">
           <div className="flex-1 space-y-2">

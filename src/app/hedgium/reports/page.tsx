@@ -364,10 +364,17 @@ export default function ReportsPage() {
           <ReportsSummarySkeleton />
         ) : (
           (pnlSummary || allocationSummary) && (
-            <section className="rounded-2xl border border-base-300/50 bg-base-100/55 p-4 backdrop-blur-sm md:p-6">
-              <div className="flex items-center gap-2 border-b border-base-300/50 pb-4 mb-5">
-                <BarChart3 className="h-5 w-5 text-primary" aria-hidden />
-                <h2 className="text-xl font-semibold tracking-tight text-base-content">At a glance</h2>
+            <section className="space-y-6">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary shrink-0" aria-hidden />
+                  <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">
+                    At a glance
+                  </h2>
+                </div>
+                <p className="max-w-xl text-sm text-base-content/55">
+                  PnL summary and allocated trade cycle counts by period.
+                </p>
               </div>
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10">
                 {pnlSummary && (
@@ -430,12 +437,14 @@ export default function ReportsPage() {
         )}
 
         <section className="space-y-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <Calendar className="h-7 w-7 text-primary shrink-0" aria-hidden />
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-base-content md:text-3xl">Reports</h2>
-              <p className="text-sm text-base-content/55">Margin and PnL trends, then past trade cycles</p>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary shrink-0" aria-hidden />
+              <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">Reports</h2>
             </div>
+            <p className="max-w-xl text-sm text-base-content/55">
+              Margin and PnL trends, then past trade cycles
+            </p>
           </div>
         </section>
 
@@ -505,11 +514,11 @@ export default function ReportsPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-base-300/50 bg-base-100/40 p-4 backdrop-blur-sm md:p-6">
-          <div className="mb-6 flex flex-col gap-4 border-b border-base-300/50 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <section className="space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Layers className="h-5 w-5 text-primary" aria-hidden />
+                <Layers className="h-5 w-5 text-primary shrink-0" aria-hidden />
                 <h3 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">
                   All trade cycles
                 </h3>

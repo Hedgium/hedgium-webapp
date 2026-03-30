@@ -98,7 +98,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) =
   return (
     <div
       id={tradeCycle.id}
-      className="group relative w-full overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20"
+      className="group relative w-full overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20"
     >
       {/* <div
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"

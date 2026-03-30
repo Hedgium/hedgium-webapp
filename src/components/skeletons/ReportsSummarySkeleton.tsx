@@ -8,18 +8,16 @@ const VALUE_WIDTHS = ["w-[5.5rem]", "w-24", "w-20", "w-[4.75rem]"] as const;
 export default function ReportsSummarySkeleton() {
   return (
     <section
-      className="relative overflow-hidden rounded-2xl border border-base-300/50 bg-base-100/55 p-4 backdrop-blur-sm md:p-6 animate-pulse"
+      className="space-y-6 animate-pulse"
       aria-busy="true"
       aria-label="Loading summary"
     >
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"
-        aria-hidden
-      />
-
-      <div className="mb-5 flex items-center gap-2 border-b border-base-300/50 pb-4">
-        <div className="h-5 w-5 shrink-0 rounded-md bg-base-300/70" aria-hidden />
-        <div className="h-6 w-36 max-w-[45%] rounded-md bg-base-300/80" aria-hidden />
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-5 shrink-0 rounded-md bg-base-300/70" aria-hidden />
+          <div className="h-7 w-44 max-w-[70%] rounded-md bg-base-300/80 md:h-8" aria-hidden />
+        </div>
+        <div className="h-4 max-w-xl rounded-md bg-base-300/45" aria-hidden />
       </div>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10">

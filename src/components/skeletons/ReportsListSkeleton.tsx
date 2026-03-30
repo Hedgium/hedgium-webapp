@@ -4,7 +4,7 @@ export default function ReportsListSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-4 animate-pulse">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="bg-base-100 rounded-xl border border-base-300 p-4">
+        <div key={i} className="rounded-2xl border border-base-300/70 bg-base-100/95 p-4 md:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-2">
               <div className="h-4 w-40 bg-base-300 rounded" />
