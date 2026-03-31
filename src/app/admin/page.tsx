@@ -286,18 +286,18 @@ export default function Page() {
                   <th className="font-medium text-base-content/70">Name</th>
                   <th className="font-medium text-base-content/70">Status</th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
-                    PnL &amp; Spread
+                    Total PnL
                   </th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
-                    WPNL &amp; MidPNL
+                    Spread
                   </th>
-                  <th className="font-medium text-base-content/70 whitespace-nowrap min-w-[10rem]">
-                    updated_at
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
+                    WPNL &amp; Mid WPNL
                   </th>
                   <th className="font-medium text-base-content/70">Last adjustment</th>
                   <th className="font-medium text-base-content/70">Allocated</th>
                   <th className="font-medium text-base-content/70 whitespace-nowrap min-w-[9rem]">
-                    created_at
+                    Created At
                   </th>
                 </tr>
               </thead>
@@ -348,10 +348,10 @@ export default function Page() {
                           </span>
                         )}
                       </td>
-                      <td className="text-right">
-                        <div className="flex flex-col items-end gap-0.5 text-sm">
+                      <td className="text-right align-top min-w-[7rem]">
+                        <div className="flex flex-col items-end gap-1 min-w-[7rem]">
                           <span
-                            className={`font-semibold tabular-nums ${pnlColor(
+                            className={`font-semibold tabular-nums text-sm whitespace-nowrap ${pnlColor(
                               toNum(strategy.pnl_total)
                             )}`}
                           >
@@ -359,15 +359,25 @@ export default function Page() {
                               ? formatMoneyIN(toNum(strategy.pnl_total)!)
                               : "—"}
                           </span>
-                          <span className="font-semibold tabular-nums text-xs text-base-content/80">
+                          <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
+                            {formatSnapshotAt(strategy.pnl_updated_at) ?? "—"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="text-right align-top min-w-[7rem]">
+                        <div className="flex flex-col items-end gap-1 min-w-[7rem]">
+                          <span className="font-semibold tabular-nums text-sm whitespace-nowrap">
                             {toNum(strategy.atm_spread) != null
                               ? `${toNum(strategy.atm_spread)!.toFixed(2)}%`
                               : "—"}
                           </span>
+                          <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
+                            {formatSnapshotAt(strategy.spread_updated_at) ?? "—"}
+                          </span>
                         </div>
                       </td>
                       <td className="text-right">
-                        <div className="flex flex-col items-end gap-0.5 text-sm">
+                        <div className="flex flex-col items-end gap-1 text-sm">
                           <span
                             className={`font-semibold tabular-nums ${pnlColor(
                               toNum(strategy.wpnl_total)
@@ -386,22 +396,9 @@ export default function Page() {
                               ? formatMoneyIN(toNum(strategy.mid_wpnl_total)!)
                               : "—"}
                           </span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="text-xs text-base-content/70 tabular-nums space-y-0.5">
-                          <div>
-                            PnL:{" "}
-                            {formatSnapshotAt(strategy.pnl_updated_at) ?? "—"}
-                          </div>
-                          <div>
-                            WPNL:{" "}
+                          <span className="text-[10px] text-base-content/60 tabular-nums leading-tight">
                             {formatSnapshotAt(strategy.wpnl_updated_at) ?? "—"}
-                          </div>
-                          <div>
-                            Spread:{" "}
-                            {formatSnapshotAt(strategy.spread_updated_at) ?? "—"}
-                          </div>
+                          </span>
                         </div>
                       </td>
                       <td>
