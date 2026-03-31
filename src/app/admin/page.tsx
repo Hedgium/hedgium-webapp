@@ -210,7 +210,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-base-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <LayoutList className="size-6 text-primary" />
@@ -284,26 +284,27 @@ export default function Page() {
                 <tr className="border-b border-base-300/50">
                   <th className="font-medium text-base-content/70">ID</th>
                   <th className="font-medium text-base-content/70">Name</th>
-                  <th className="font-medium text-base-content/70 whitespace-nowrap min-w-[9rem]">
-                    Created
-                  </th>
                   <th className="font-medium text-base-content/70">Status</th>
-                  <th className="font-medium text-base-content/70">Allocated</th>
-                  <th className="font-medium text-base-content/70">Last adjustment</th>
-                  <th className="font-medium text-base-content/70">Legs</th>
-                  <th className="font-medium text-base-content/70 text-right">Total PnL</th>
-                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap">WPNL</th>
-                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap">Mid WPNL</th>
-                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap">Spread</th>
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
+                    PnL &amp; Spread
+                  </th>
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
+                    WPNL &amp; MidPNL
+                  </th>
                   <th className="font-medium text-base-content/70 whitespace-nowrap min-w-[10rem]">
-                    PnL / WPNL / spread updated
+                    updated_at
+                  </th>
+                  <th className="font-medium text-base-content/70">Last adjustment</th>
+                  <th className="font-medium text-base-content/70">Allocated</th>
+                  <th className="font-medium text-base-content/70 whitespace-nowrap min-w-[9rem]">
+                    created_at
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {strategies.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={12} className="text-center py-16">
+                    <td colSpan={9} className="text-center py-16">
                       <p className="text-base-content/60">No strategies found.</p>
                       <p className="text-sm text-base-content/50 mt-1">
                         Try changing filters or create a new strategy.
@@ -335,9 +336,6 @@ export default function Page() {
                           {strategy.name}
                         </Link>
                       </td>
-                      <td className="text-xs text-base-content/70 tabular-nums whitespace-nowrap">
-                        {formatSnapshotAt(strategy.created_at) ?? "—"}
-                      </td>
                       <td>
                         {strategy.completed ? (
                           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
@@ -350,7 +348,62 @@ export default function Page() {
                           </span>
                         )}
                       </td>
-                      <td>{strategy.trade_cycle_count}</td>
+                      <td className="text-right">
+                        <div className="flex flex-col items-end gap-0.5 text-sm">
+                          <span
+                            className={`font-semibold tabular-nums ${pnlColor(
+                              toNum(strategy.pnl_total)
+                            )}`}
+                          >
+                            {toNum(strategy.pnl_total) != null
+                              ? formatMoneyIN(toNum(strategy.pnl_total)!)
+                              : "—"}
+                          </span>
+                          <span className="font-semibold tabular-nums text-xs text-base-content/80">
+                            {toNum(strategy.atm_spread) != null
+                              ? `${toNum(strategy.atm_spread)!.toFixed(2)}%`
+                              : "—"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex flex-col items-end gap-0.5 text-sm">
+                          <span
+                            className={`font-semibold tabular-nums ${pnlColor(
+                              toNum(strategy.wpnl_total)
+                            )}`}
+                          >
+                            {toNum(strategy.wpnl_total) != null
+                              ? formatMoneyIN(toNum(strategy.wpnl_total)!)
+                              : "—"}
+                          </span>
+                          <span
+                            className={`font-semibold tabular-nums text-xs ${pnlColor(
+                              toNum(strategy.mid_wpnl_total)
+                            )}`}
+                          >
+                            {toNum(strategy.mid_wpnl_total) != null
+                              ? formatMoneyIN(toNum(strategy.mid_wpnl_total)!)
+                              : "—"}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="text-xs text-base-content/70 tabular-nums space-y-0.5">
+                          <div>
+                            PnL:{" "}
+                            {formatSnapshotAt(strategy.pnl_updated_at) ?? "—"}
+                          </div>
+                          <div>
+                            WPNL:{" "}
+                            {formatSnapshotAt(strategy.wpnl_updated_at) ?? "—"}
+                          </div>
+                          <div>
+                            Spread:{" "}
+                            {formatSnapshotAt(strategy.spread_updated_at) ?? "—"}
+                          </div>
+                        </div>
+                      </td>
                       <td>
                         {last ? (
                           <span className="inline-flex items-center gap-1.5">
@@ -371,62 +424,9 @@ export default function Page() {
                           <span className="text-base-content/50">—</span>
                         )}
                       </td>
-                      <td>{strategy.leg_count ?? 0}</td>
-                      <td className="text-right">
-                        <span
-                          className={`font-semibold tabular-nums ${pnlColor(
-                            toNum(strategy.pnl_total)
-                          )}`}
-                        >
-                          {toNum(strategy.pnl_total) != null
-                            ? formatMoneyIN(toNum(strategy.pnl_total)!)
-                            : "—"}
-                        </span>
-                      </td>
-                      <td className="text-right">
-                        <span
-                          className={`font-semibold tabular-nums text-sm ${pnlColor(
-                            toNum(strategy.wpnl_total)
-                          )}`}
-                        >
-                          {toNum(strategy.wpnl_total) != null
-                            ? formatMoneyIN(toNum(strategy.wpnl_total)!)
-                            : "—"}
-                        </span>
-                      </td>
-                      <td className="text-right">
-                        <span
-                          className={`font-semibold tabular-nums text-sm ${pnlColor(
-                            toNum(strategy.mid_wpnl_total)
-                          )}`}
-                        >
-                          {toNum(strategy.mid_wpnl_total) != null
-                            ? formatMoneyIN(toNum(strategy.mid_wpnl_total)!)
-                            : "—"}
-                        </span>
-                      </td>
-                      <td className="text-right">
-                        <span className="font-semibold tabular-nums text-sm">
-                          {toNum(strategy.atm_spread) != null
-                            ? `${toNum(strategy.atm_spread)!.toFixed(2)}%`
-                            : "—"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="text-xs text-base-content/70 tabular-nums space-y-0.5">
-                          <div>
-                            PnL:{" "}
-                            {formatSnapshotAt(strategy.pnl_updated_at) ?? "—"}
-                          </div>
-                          <div>
-                            WPNL:{" "}
-                            {formatSnapshotAt(strategy.wpnl_updated_at) ?? "—"}
-                          </div>
-                          <div>
-                            Spread:{" "}
-                            {formatSnapshotAt(strategy.spread_updated_at) ?? "—"}
-                          </div>
-                        </div>
+                      <td>{strategy.trade_cycle_count}</td>
+                      <td className="text-xs text-base-content/70 tabular-nums whitespace-nowrap">
+                        {formatSnapshotAt(strategy.created_at) ?? "—"}
                       </td>
                     </tr>
                   );
@@ -435,7 +435,7 @@ export default function Page() {
                 {loading && strategies.length === 0 &&
                   Array.from({ length: 3 }).map((_, i) => (
                     <tr key={`skeleton-${i}`} className="border-b border-base-300/30">
-                      {Array.from({ length: 12 }).map((_, j) => (
+                      {Array.from({ length: 9 }).map((_, j) => (
                         <td key={j}>
                           <div className="h-5 bg-base-300/40 rounded animate-pulse" />
                         </td>
