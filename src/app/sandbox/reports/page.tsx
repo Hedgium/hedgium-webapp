@@ -12,7 +12,11 @@ import {
   Wallet,
   ChevronDown,
   ChevronUp,
+  BarChart3,
+  Layers,
+  ArrowRight,
 } from "lucide-react";
+import SandboxPageShell from "@/components/sandbox/SandboxPageShell";
 import { sandboxFetch } from "@/utils/sandboxApi";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionsTable, { type Position } from "@/components/positions/PositionsTable";
@@ -78,6 +82,20 @@ function formatDate(d: string) {
     month: "short",
     year: "numeric",
   });
+}
+
+function stateChipClass(state: string): string {
+  const u = state.toUpperCase();
+  if (u === "ADJUSTED" || u === "COMPLETED") {
+    return "border-success/35 bg-success/10 text-success";
+  }
+  if (u === "CLOSED" || u === "STOPPED") {
+    return "border-error/30 bg-error/10 text-error";
+  }
+  if (u === "NEW" || u === "ACTIVATED" || u === "PENDING") {
+    return "border-warning/35 bg-warning/10 text-warning";
+  }
+  return "border-base-300/70 bg-base-200/50 text-base-content/80";
 }
 
 export default function SandboxReportsPage() {
@@ -244,31 +262,44 @@ export default function SandboxReportsPage() {
   if (!sandboxPlan) return null;
 
   return (
-    <div className="p-4 md:px-8 bg-base-200 min-h-screen">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <SandboxPageShell>
+      <div className="space-y-10">
         {loading ? (
           <ReportsSummarySkeleton />
         ) : (
           (pnlSummary || allocationSummary) && (
-            <section className="border-base-300">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <section className="space-y-6">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+                  <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">
+                    At a glance
+                  </h2>
+                </div>
+                <p className="max-w-xl text-sm text-base-content/55">
+                  Sandbox PnL summary and allocated trade cycle counts by period.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10">
                 {pnlSummary && (
                   <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <TrendingUp className="w-5 h-5 text-primary" />
-                      <h4 className="font-medium">PnL Summary</h4>
+                    <div className="mb-3 flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
+                      <h3 className="text-sm font-semibold uppercase tracking-wide text-base-content/80">
+                        PnL summary
+                      </h3>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       {Object.entries(pnlSummary).map(([period, value]) => (
                         <div
                           key={period}
-                          className="p-3 bg-base-100 rounded-lg border border-base-300"
+                          className="rounded-xl border border-base-300/50 bg-base-100/80 p-3"
                         >
-                          <span className="text-xs text-base-content/60 uppercase">
+                          <span className="text-xs text-base-content/55 uppercase">
                             {period.replace(/_/g, " ")}
                           </span>
                           <p
-                            className={`font-semibold ${
+                            className={`mt-1 font-semibold tabular-nums ${
                               value != null && value >= 0 ? "text-success" : "text-error"
                             }`}
                           >
@@ -281,20 +312,22 @@ export default function SandboxReportsPage() {
                 )}
                 {allocationSummary && (
                   <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Briefcase className="w-5 h-5 text-primary" />
-                      <h4 className="font-medium">Allocated Trade Cycles</h4>
+                    <div className="mb-3 flex items-center gap-2">
+                      <Briefcase className="h-5 w-5 text-primary" aria-hidden />
+                      <h3 className="text-sm font-semibold uppercase tracking-wide text-base-content/80">
+                        Allocated trade cycles
+                      </h3>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       {Object.entries(allocationSummary).map(([period, value]) => (
                         <div
                           key={period}
-                          className="p-3 bg-base-100 rounded-lg border border-base-300"
+                          className="rounded-xl border border-base-300/50 bg-base-100/80 p-3"
                         >
-                          <span className="text-xs text-base-content/60 uppercase">
+                          <span className="text-xs text-base-content/55 uppercase">
                             {period.replace(/_/g, " ")}
                           </span>
-                          <p className="font-semibold text-primary">
+                          <p className="mt-1 font-semibold tabular-nums text-primary">
                             {value != null ? value : 0}
                           </p>
                         </div>
@@ -307,79 +340,37 @@ export default function SandboxReportsPage() {
           )
         )}
 
-        <section className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-semibold">Reports</h2>
-          </div>
-        </section>
 
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-base-content/70">Chart view:</span>
-            <div className="join">
-              {allowedPeriods.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  className={`btn btn-sm join-item ${chartPeriod === p ? "btn-primary" : "btn-ghost"}`}
-                  onClick={() => setChartPeriod(p)}
-                >
-                  {p === "daily" ? "Daily (1M)" : p === "weekly" ? "Weekly (6M)" : "Monthly (2Y)"}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-base-100 rounded-xl border border-base-300 p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Wallet className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Margin</h3>
-              </div>
-              {loadingCharts ? (
-                <ReportsChartSkeleton />
-              ) : marginChartData.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-base-content/60">
-                  No margin data in selected range
-                </div>
-              ) : (
-                <div className="h-64">
-                  <MarginLineChart data={marginChartData} period={effectivePeriod} />
-                </div>
-              )}
-            </div>
-            <div className="bg-base-100 rounded-xl border border-base-300 p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">PnL</h3>
-              </div>
-              {loadingCharts ? (
-                <ReportsChartSkeleton />
-              ) : pnlChartData.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-base-content/60">
-                  No PnL data in selected range
-                </div>
-              ) : (
-                <div className="h-64">
-                  <PnlLineChart data={pnlChartData} period={effectivePeriod} />
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
 
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Past Trade Cycles ({reportsData?.count})</h3>
-            <div className="flex items-center gap-2">
+        <section className="space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Layers className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+                <h3 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">
+                  All trade cycles
+                </h3>
+              </div>
+              <p className="max-w-xl text-sm text-base-content/55">
+                Expand a row to see stored positions. PnL is from the report aggregate.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 md:justify-end">
+              <span className="rounded-full border border-base-300/60 bg-base-200/40 px-3 py-1 text-xs font-medium tabular-nums text-base-content/70">
+                {reportsData?.count != null
+                  ? `${results.length} on page · ${reportsData.count} total`
+                  : "—"}
+              </span>
               {summary && (
-                <p
-                  className={`text-sm text-base-content/60 ${
-                    summary.pnl_total >= 0 ? "text-success" : "text-error"
+                <span
+                  className={`rounded-full border px-3 py-1 text-sm font-semibold tabular-nums ${
+                    summary.pnl_total >= 0
+                      ? "border-success/30 bg-success/10 text-success"
+                      : "border-error/30 bg-error/10 text-error"
                   }`}
                 >
-                  Total PnL: {formatMoneyIN(summary?.pnl_total)}
-                </p>
+                  Report total PnL {formatMoneyIN(summary?.pnl_total)}
+                </span>
               )}
             </div>
           </div>
@@ -387,121 +378,149 @@ export default function SandboxReportsPage() {
           {loadingReports ? (
             <ReportsListSkeleton />
           ) : results.length === 0 ? (
-            <div className="text-center py-16 bg-base-100 rounded-lg shadow">
-              <Briefcase className="w-12 h-12 mx-auto text-base-content/40 mb-3" />
-              <h3 className="text-lg font-semibold mb-1">No Trade Cycles</h3>
-              <p className="text-base-content/60">No trade cycles found.</p>
+            <div className="rounded-xl border border-dashed border-base-300/70 bg-base-200/20 py-14 text-center">
+              <Briefcase className="mx-auto mb-3 h-11 w-11 text-base-content/30" aria-hidden />
+              <p className="font-medium text-base-content">No trade cycles</p>
+              <p className="mt-1 text-sm text-base-content/55">Nothing in this report yet.</p>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4">
-                {results.map((cycle) => (
-                  <div
-                    key={cycle.id}
-                    className="bg-base-100 rounded-xl border border-base-300 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
-                  >
+              <div className="flex flex-col gap-4">
+                {results.map((cycle) => {
+                  const expanded = expandedCycleId === cycle.id;
+                  return (
                     <div
-                      className="p-4 cursor-pointer"
-                      onClick={() => toggleCycleDetails(cycle.id)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === "Enter" && toggleCycleDetails(cycle.id)}
+                      key={cycle.id}
+                      className="group relative overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/95 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25"
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base-content/60">
-                            {expandedCycleId === cycle.id ? (
-                              <ChevronUp className="w-4 h-4" />
+                      <button
+                        type="button"
+                        className="flex w-full flex-col gap-3 p-4 text-left md:flex-row md:items-center md:justify-between md:gap-4 md:p-6"
+                        onClick={() => toggleCycleDetails(cycle.id)}
+                        aria-expanded={expanded}
+                      >
+                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                          <span
+                            className={`mt-0.5 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-base-300/60 bg-base-200/50 text-base-content/60 transition-colors group-hover:border-primary/30 group-hover:bg-base-200 ${expanded ? "text-primary" : ""}`}
+                          >
+                            {expanded ? (
+                              <ChevronUp className="h-4 w-4" aria-hidden />
                             ) : (
-                              <ChevronDown className="w-4 h-4" />
+                              <ChevronDown className="h-4 w-4" aria-hidden />
                             )}
                           </span>
-                          <div>
-                            <h4 className="font-semibold">{cycle.name}</h4>
-                            <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-base-content/70">
-                              <span>ID: {cycle.id}</span>
-                              <span>·</span>
-                              <span>{formatDate(cycle.created_at)}</span>
-                              <span className="badge badge-sm badge-outline">{cycle.state}</span>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold leading-snug text-base-content md:text-lg">
+                              {cycle.name}
+                            </h4>
+                            {cycle.description ? (
+                              <p className="mt-0.5 line-clamp-2 text-sm text-base-content/55">
+                                {cycle.description}
+                              </p>
+                            ) : null}
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <span className="inline-flex items-center rounded-full border border-base-300/60 px-2 py-0.5 text-[11px] font-medium tabular-nums text-base-content/60">
+                                #{cycle.id}
+                              </span>
+                              <span className="text-xs text-base-content/45">
+                                {formatDate(cycle.created_at)}
+                              </span>
+                              <span
+                                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${stateChipClass(cycle.state)}`}
+                              >
+                                {cycle.state}
+                              </span>
                             </div>
                           </div>
                         </div>
-                        <div
-                          className={`font-bold ${
-                            cycle.pnl >= 0 ? "text-success" : "text-error"
-                          }`}
-                        >
-                          {formatMoneyIN(cycle.pnl)}
+                        <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-t border-base-300/40 pt-3 md:flex-col md:items-end md:border-t-0 md:pt-0">
+                          <div
+                            className={`text-right text-lg font-bold tabular-nums md:text-xl ${
+                              cycle.pnl >= 0 ? "text-success" : "text-error"
+                            }`}
+                          >
+                            {formatMoneyIN(cycle.pnl)}
+                          </div>
+                          <span className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-primary">
+                            {expanded ? "Hide" : "Positions"}
+                            <ArrowRight
+                              className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-90" : ""}`}
+                              aria-hidden
+                            />
+                          </span>
                         </div>
-                      </div>
-                      <p className="text-xs text-base-content/50 mt-2">
-                        {expandedCycleId === cycle.id ? "Hide positions" : "View positions"}
-                      </p>
+                      </button>
+                      {expanded && (
+                        <div className="border-t border-base-300/60 bg-gradient-to-b from-base-200/40 to-base-200/20 px-4 py-5 md:px-5">
+                          {loadingDetails[cycle.id] ? (
+                            <div className="flex items-center justify-center py-10">
+                              <Loader2 className="h-7 w-7 animate-spin text-primary" aria-hidden />
+                            </div>
+                          ) : cycleDetails[cycle.id] ? (
+                            <div className="space-y-4">
+                              {cycleDetails[cycle.id].error ? (
+                                <p className="text-sm text-error">Failed to load positions. Try again.</p>
+                              ) : (
+                                <>
+                                  {typeof cycleDetails[cycle.id].totals?.pnl_total === "number" && (
+                                    <p className="text-sm">
+                                      Total PnL:{" "}
+                                      <span
+                                        className={
+                                          cycleDetails[cycle.id].totals!.pnl_total >= 0
+                                            ? "font-medium text-success"
+                                            : "font-medium text-error"
+                                        }
+                                      >
+                                        {formatMoneyIN(cycleDetails[cycle.id].totals!.pnl_total)}
+                                      </span>
+                                    </p>
+                                  )}
+                                  <PositionsTable positions={cycleDetails[cycle.id].positions} />
+                                </>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-base-content/60">No positions.</p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {expandedCycleId === cycle.id && (
-                      <div className="border-t border-base-300 bg-base-200/50 p-4">
-                        {loadingDetails[cycle.id] ? (
-                          <div className="flex items-center justify-center py-8">
-                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                          </div>
-                        ) : cycleDetails[cycle.id] ? (
-                          <div>
-                            {cycleDetails[cycle.id].error ? (
-                              <p className="text-sm text-error">Failed to load positions. Try again.</p>
-                            ) : (
-                              <>
-                                {typeof cycleDetails[cycle.id].totals?.pnl_total === "number" && (
-                                  <p className="text-sm mb-2">
-                                    Total PnL:{" "}
-                                    <span
-                                      className={
-                                        cycleDetails[cycle.id].totals!.pnl_total >= 0
-                                          ? "text-success font-medium"
-                                          : "text-error font-medium"
-                                      }
-                                    >
-                                      {formatMoneyIN(cycleDetails[cycle.id].totals!.pnl_total)}
-                                    </span>
-                                  </p>
-                                )}
-                                <PositionsTable positions={cycleDetails[cycle.id].positions} />
-                              </>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-base-content/60">No positions.</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              <div className="flex items-center justify-center gap-4 mt-6">
-                <button
-                  className="btn btn-ghost btn-sm"
-                  disabled={!reportsData?.previous}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  <ChevronLeft className="w-4 h-4" /> Previous
-                </button>
-                <span className="text-sm text-base-content/70">
-                  Page {page}
-                  {reportsData?.count != null &&
-                    ` of ${Math.ceil(reportsData.count / pageSize) || 1}`}
-                </span>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  disabled={!reportsData?.next}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Next <ChevronRight className="w-4 h-4" />
-                </button>
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <div className="join border border-base-300/60">
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm join-item gap-1 rounded-none border-0 first:rounded-l-lg last:rounded-r-lg"
+                    disabled={!reportsData?.previous}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" aria-hidden />
+                    Previous
+                  </button>
+                  <span className="join-item flex items-center border-x border-base-300/60 bg-base-200/30 px-4 text-sm tabular-nums text-base-content/80">
+                    Page {page}
+                    {reportsData?.count != null &&
+                      ` of ${Math.ceil(reportsData.count / pageSize) || 1}`}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm join-item gap-1 rounded-none border-0 first:rounded-l-lg last:rounded-r-lg"
+                    disabled={!reportsData?.next}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" aria-hidden />
+                  </button>
+                </div>
               </div>
             </>
           )}
         </section>
       </div>
-    </div>
+    </SandboxPageShell>
   );
 }

@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useSandboxStore } from "@/store/sandboxStore";
 
 const tabs = [
-  { name: "Home", href: "/sandbox/dashboard", icon: <Home className="h-5 w-5" /> },
+  { name: "Home", href: "/sandbox/home", icon: <Home className="h-5 w-5" /> },
   { name: "Positions", href: "/sandbox/positions", icon: <Briefcase className="h-5 w-5" /> },
   { name: "Reports", href: "/sandbox/reports", icon: <FileText className="h-5 w-5" /> },
   { name: "Settings", href: "/sandbox/settings", icon: <Settings className="h-5 w-5" /> },
@@ -47,7 +47,7 @@ export default function SandboxNavigation({ sidebar = false }: { sidebar?: boole
                   clearSandboxPlan();
                   router.push("/sandbox");
                 }}
-                className="flex items-center gap-1.5 text-xs text-warning font-medium truncate hover:underline mt-0.5 text-left"
+                className="flex items-center cursor-pointer gap-1.5 text-xs text-warning font-medium truncate hover:underline mt-0.5 text-left"
               >
                 <RefreshCw className="w-3.5 h-3.5 shrink-0" />
                 Plan: {sandboxPlan || "—"} (change)

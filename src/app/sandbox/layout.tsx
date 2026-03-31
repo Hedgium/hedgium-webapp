@@ -9,7 +9,7 @@ import AuthInitializingProvider from "@/components/AuthInitializing";
 import { useSandboxStore } from "@/store/sandboxStore";
 
 const BANNER =
-  "Sandbox – sample data from other users on this plan. Past performance does not guarantee future results.";
+  "Sandbox — sample data from other users on this plan. Past performance does not guarantee future results.";
 
 export default function SandboxLayout({
   children,
@@ -26,7 +26,7 @@ export default function SandboxLayout({
       <NotificationProvider>
         <AuthInitializingProvider requireAuth={true}>
           <div className="flex flex-col h-screen">
-            <div className="shrink-0 bg-primary/10 border-b border-primary/20 px-4 py-2 text-center text-sm text-base-content">
+            <div className="shrink-0 border-b border-primary/20 bg-gradient-to-r from-primary/12 via-primary/8 to-secondary/10 px-4 py-2.5 text-center text-xs font-medium leading-snug text-base-content/90 backdrop-blur-sm md:text-sm">
               {BANNER}
             </div>
             <div className="flex flex-1 overflow-hidden">

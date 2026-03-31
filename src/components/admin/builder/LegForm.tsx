@@ -239,7 +239,10 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
 
     async function fetchDepthToken() {
+        // console.log(instrumentData);
         const data = await fetchTokenPrice(instrumentData?.instrument_token.toString());
+
+        console.log(data);
 
         if (formData.action == "BUY") {
             setFormData(prev => ({
