@@ -181,7 +181,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
 
     const u = profile.user as typeof profile.user & { aadhar_number?: string | null; pan_number?: string | null; pan_document_url?: string | null; aadhar_document_url?: string | null };
 
-    const proxyOn = Boolean((profile.proxy_host || "").trim());
+    const proxyOn = Boolean(((profile.proxy_username && profile.proxy_host) || "").trim());
     const proxyHost = (profile.proxy_host || "").trim();
     const daysLeft = profile.subscription
         ? Math.ceil(
