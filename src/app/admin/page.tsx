@@ -388,7 +388,7 @@ export default function Page() {
                               : "—"}
                           </span>
                           <span
-                            className={`font-semibold tabular-nums text-xs ${pnlColor(
+                            className={`font-semibold tabular-nums ${pnlColor(
                               toNum(strategy.mid_wpnl_total)
                             )}`}
                           >

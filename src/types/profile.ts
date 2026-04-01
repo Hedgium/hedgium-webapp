@@ -36,6 +36,8 @@ export interface Profile {
     broker_name: string;
     broker_user_id: string;
     margin_equity: number;
+    /** ISO datetime when margin_equity last changed (broker refresh, admin, bulk task). */
+    margin_updated_at?: string | null;
     order_value_factor: number;
     quantity_multiplier: number;
     verified: boolean;
