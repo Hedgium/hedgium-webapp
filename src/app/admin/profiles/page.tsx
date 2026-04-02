@@ -165,7 +165,7 @@ export default function ProfilesPage() {
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
             <div className="relative flex-1 md:flex-initial md:w-56">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search size={18} className="text-base-content/60" />
+                <Search size={18} className="text-base-content/60 z-10" />
               </div>
               <input
                 type="text"
