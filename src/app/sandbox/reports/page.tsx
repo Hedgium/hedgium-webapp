@@ -24,13 +24,17 @@ import ReportsSummarySkeleton from "@/components/skeletons/ReportsSummarySkeleto
 import ReportsListSkeleton from "@/components/skeletons/ReportsListSkeleton";
 import ReportsChartSkeleton from "@/components/skeletons/ReportsChartSkeleton";
 import {
-  MarginLineChart,
-  PnlLineChart,
+  ReportsMarginChart,
+  ReportsPnlMonthlyBarChart,
   getChartDateRange,
+  getPnlBarChartDateRange,
   aggregateMarginSnapshots,
-  aggregatePnlLevelSeries,
+  buildPnlMonthlyBars,
+  parseMarginSnapshotsResponse,
+  parsePnlSnapshotsResponse,
   type ChartPeriod,
   type MarginSnapshot,
+  type PnlSnapshotRow,
 } from "@/components/reports/ReportCharts";
 import { useSandboxStore } from "@/store/sandboxStore";
 
@@ -67,8 +71,6 @@ type ReportsResponse = {
   results: TradeCycleReport[];
   summary: { total_count: number; pnl_total: number };
 };
-
-type PnlSnapshotPoint = { snapshot_date: string; pnl_total: number };
 
 type CycleDetail = {
   positions: Position[];
@@ -109,7 +111,7 @@ export default function SandboxReportsPage() {
   const [reportsData, setReportsData] = useState<ReportsResponse | null>(null);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("daily");
   const [marginSnapshots, setMarginSnapshots] = useState<MarginSnapshot[]>([]);
-  const [pnlSnapshots, setPnlSnapshots] = useState<PnlSnapshotPoint[]>([]);
+  const [pnlSnapshots, setPnlSnapshots] = useState<PnlSnapshotRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingReports, setLoadingReports] = useState(true);
   const [loadingCharts, setLoadingCharts] = useState(true);
@@ -152,20 +154,24 @@ export default function SandboxReportsPage() {
     if (!sandboxPlan) return;
     setLoadingCharts(true);
     try {
-      const params = new URLSearchParams();
-      params.set("date_from", chartRange.from);
-      params.set("date_to", chartRange.to);
+      const marginParams = new URLSearchParams();
+      marginParams.set("date_from", chartRange.from);
+      marginParams.set("date_to", chartRange.to);
+      const pnlParams = new URLSearchParams();
+      const pnlRange = getPnlBarChartDateRange();
+      pnlParams.set("date_from", pnlRange.from);
+      pnlParams.set("date_to", pnlRange.to);
       const [marginRes, pnlRes] = await Promise.all([
-        sandboxFetch(`margin-snapshots/?${params}`, sandboxPlan),
-        sandboxFetch(`pnl-snapshots/?${params}`, sandboxPlan),
+        sandboxFetch(`margin-snapshots/?${marginParams}`, sandboxPlan),
+        sandboxFetch(`pnl-snapshots/?${pnlParams}`, sandboxPlan),
       ]);
       if (marginRes.ok) {
-        const data = await marginRes.json();
-        setMarginSnapshots(data.results || []);
+        const data: unknown = await marginRes.json();
+        setMarginSnapshots(parseMarginSnapshotsResponse(data));
       } else setMarginSnapshots([]);
       if (pnlRes.ok) {
-        const data = await pnlRes.json();
-        setPnlSnapshots(data.results || []);
+        const data: unknown = await pnlRes.json();
+        setPnlSnapshots(parsePnlSnapshotsResponse(data));
       } else setPnlSnapshots([]);
     } catch (e) {
       console.error("Error fetching chart data:", e);
@@ -221,7 +227,7 @@ export default function SandboxReportsPage() {
   }, [sandboxPlan]);
 
   const marginChartData = aggregateMarginSnapshots(marginSnapshots, effectivePeriod);
-  const pnlChartData = aggregatePnlLevelSeries(pnlSnapshots, effectivePeriod);
+  const pnlChartData = buildPnlMonthlyBars(pnlSnapshots, 12);
 
   const summary = reportsData?.summary;
   const results = reportsData?.results ?? [];
@@ -340,7 +346,81 @@ export default function SandboxReportsPage() {
           )
         )}
 
+        <section className="space-y-1">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+              <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">Reports</h2>
+            </div>
+            <p className="max-w-xl text-sm text-base-content/55">
+              Sandbox margin and PnL trends, then past trade cycles
+            </p>
+          </div>
+        </section>
 
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium text-base-content/80">Chart view</span>
+            <div className="join">
+              {allowedPeriods.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className={`btn btn-sm join-item rounded-lg ${chartPeriod === p ? "btn-primary" : "btn-ghost border border-base-300/60"}`}
+                  onClick={() => setChartPeriod(p)}
+                >
+                  {p === "daily" ? "Daily (1M)" : p === "weekly" ? "Weekly (6M)" : "Monthly (2Y)"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-base-300/60 bg-base-100/80 p-4 md:p-6 backdrop-blur-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-primary" aria-hidden />
+                <h3 className="text-lg font-semibold">
+                  Margin
+                  {effectivePeriod === "daily" && " (1 month)"}
+                  {effectivePeriod === "weekly" && " (6 months, weekly avg)"}
+                  {effectivePeriod === "monthly" && " (2 years, monthly avg)"}
+                </h3>
+              </div>
+              {loadingCharts ? (
+                <ReportsChartSkeleton />
+              ) : marginChartData.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-base-content/60">
+                  No margin data in selected range
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ReportsMarginChart data={marginChartData} period={effectivePeriod} />
+                </div>
+              )}
+            </div>
+            <div className="rounded-2xl border border-base-300/60 bg-base-100/80 p-4 md:p-6 backdrop-blur-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
+                <h3
+                  className="text-lg font-semibold"
+                  title="Bars are month-on-month change in total PnL (daily snapshots). Summary cards use different rules—for example “last month” filters positions by when totals were last updated, not this chart’s change."
+                >
+                  PnL (monthly)
+                </h3>
+              </div>
+              {loadingCharts ? (
+                <ReportsChartSkeleton />
+              ) : pnlChartData.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-base-content/60">
+                  No PnL snapshot data yet
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ReportsPnlMonthlyBarChart data={pnlChartData} />
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
 
         <section className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

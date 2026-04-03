@@ -11,7 +11,7 @@
 //   // v5+ series type identifiers:
 //   AreaSeries,
 //   LineSeries,
-// } from 'lightweight-charts';
+// } from 'lightweight-charts'; // package removed from project — reinstall if re-enabling this component
 
 // interface ChartDataItem {
 //   time: Time;

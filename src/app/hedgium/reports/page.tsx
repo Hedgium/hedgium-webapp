@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Loader2,
   TrendingUp,
@@ -16,12 +16,16 @@ import {
   ArrowRight,
 } from "lucide-react";
 import {
-  createChart,
-  ColorType,
-  type IChartApi,
-  type ISeriesApi,
-  LineSeries,
-} from "lightweight-charts";
+  ReportsMarginChart,
+  ReportsPnlMonthlyBarChart,
+  getChartDateRange,
+  getPnlBarChartDateRange,
+  aggregateMarginSnapshots,
+  buildPnlMonthlyBars,
+  parseMarginSnapshotsResponse,
+  parsePnlSnapshotsResponse,
+} from "@/components/reports/ReportCharts";
+import type { ChartPeriod, PnlSnapshotRow } from "@/components/reports/ReportCharts";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionsTable, { type Position } from "@/components/positions/PositionsTable";
@@ -70,11 +74,6 @@ type MarginSnapshot = {
   utilised?: number;
 };
 
-/** From DailyPnlSnapshot API: level (total PnL as of date), not flow */
-type PnlSnapshotPoint = { snapshot_date: string; pnl_total: number };
-
-type ChartPeriod = "daily" | "weekly" | "monthly";
-
 type CycleDetail = {
   positions: Position[];
   totals: { pnl_total?: number };
@@ -87,76 +86,6 @@ function formatDate(d: string) {
     month: "short",
     year: "numeric",
   });
-}
-
-function getChartDateRange(period: ChartPeriod): { from: string; to: string } {
-  const now = new Date();
-  const to = now.toISOString().slice(0, 10);
-  let from: string;
-  if (period === "daily") {
-    const d = new Date(now);
-    d.setMonth(d.getMonth() - 1);
-    from = d.toISOString().slice(0, 10);
-  } else if (period === "weekly") {
-    const d = new Date(now);
-    d.setMonth(d.getMonth() - 6);
-    from = d.toISOString().slice(0, 10);
-  } else {
-    const d = new Date(now);
-    d.setFullYear(d.getFullYear() - 2);
-    from = d.toISOString().slice(0, 10);
-  }
-  return { from, to };
-}
-
-function getWeekKey(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00");
-  const start = new Date(d);
-  start.setDate(d.getDate() - d.getDay());
-  return start.toISOString().slice(0, 10);
-}
-
-function getMonthKey(dateStr: string): string {
-  return dateStr.slice(0, 7); // "YYYY-MM"
-}
-
-function aggregateMarginSnapshots(
-  data: MarginSnapshot[],
-  period: ChartPeriod
-): MarginSnapshot[] {
-  if (period === "daily" || data.length === 0) return data;
-  const byKey = new Map<string, { net: number[]; utilised: number[] }>();
-  for (const row of data) {
-    const key = period === "weekly" ? getWeekKey(row.snapshot_date) : getMonthKey(row.snapshot_date);
-    const entry = byKey.get(key) ?? { net: [], utilised: [] };
-    entry.net.push(row.net);
-    entry.utilised.push(Number(row.utilised ?? 0));
-    byKey.set(key, entry);
-  }
-  return Array.from(byKey.entries())
-    .map(([key, v]) => ({
-      snapshot_date: period === "weekly" ? key : `${key}-01`,
-      net: v.net.reduce((a, b) => a + b, 0) / v.net.length,
-      utilised: v.utilised.reduce((a, b) => a + b, 0) / v.utilised.length,
-    }))
-    .sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
-}
-
-/** Aggregate DailyPnlSnapshot (level series): daily = as-is; weekly/monthly = last value in each period */
-function aggregatePnlLevelSeries(
-  data: PnlSnapshotPoint[],
-  period: ChartPeriod
-): { time: string; value: number }[] {
-  const sorted = [...data].sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
-  if (period === "daily") {
-    return sorted.map((d) => ({ time: d.snapshot_date, value: d.pnl_total }));
-  }
-  const byKey = new Map<string, { time: string; value: number }>();
-  for (const d of sorted) {
-    const key = period === "weekly" ? getWeekKey(d.snapshot_date) : getMonthKey(d.snapshot_date);
-    byKey.set(key, { time: period === "weekly" ? key : `${key}-01`, value: d.pnl_total });
-  }
-  return Array.from(byKey.values()).sort((a, b) => a.time.localeCompare(b.time));
 }
 
 function stateChipClass(state: string): string {
@@ -182,7 +111,7 @@ export default function ReportsPage() {
   const [reportsData, setReportsData] = useState<ReportsResponse | null>(null);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("daily");
   const [marginSnapshots, setMarginSnapshots] = useState<MarginSnapshot[]>([]);
-  const [pnlSnapshots, setPnlSnapshots] = useState<PnlSnapshotPoint[]>([]);
+  const [pnlSnapshots, setPnlSnapshots] = useState<PnlSnapshotRow[]>([]);
   const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingReports, setLoadingReports] = useState(true);
@@ -229,22 +158,26 @@ export default function ReportsPage() {
   const fetchChartsData = useCallback(async () => {
     setLoadingCharts(true);
     try {
-      const params = new URLSearchParams();
-      params.set("date_from", chartRange.from);
-      params.set("date_to", chartRange.to);
+      const marginParams = new URLSearchParams();
+      marginParams.set("date_from", chartRange.from);
+      marginParams.set("date_to", chartRange.to);
+      const pnlParams = new URLSearchParams();
+      const pnlRange = getPnlBarChartDateRange();
+      pnlParams.set("date_from", pnlRange.from);
+      pnlParams.set("date_to", pnlRange.to);
       const [marginRes, pnlRes] = await Promise.all([
-        authFetch(`profiles/margin-snapshots/?${params}`),
-        authFetch(`profiles/pnl-snapshots/?${params}`),
+        authFetch(`profiles/margin-snapshots/?${marginParams}`),
+        authFetch(`profiles/pnl-snapshots/?${pnlParams}`),
       ]);
       if (marginRes.ok) {
-        const data = await marginRes.json();
-        setMarginSnapshots(data.results || []);
+        const data: unknown = await marginRes.json();
+        setMarginSnapshots(parseMarginSnapshotsResponse(data));
       } else {
         setMarginSnapshots([]);
       }
       if (pnlRes.ok) {
-        const data = await pnlRes.json();
-        setPnlSnapshots(data.results || []);
+        const data: unknown = await pnlRes.json();
+        setPnlSnapshots(parsePnlSnapshotsResponse(data));
       } else {
         setPnlSnapshots([]);
       }
@@ -258,7 +191,7 @@ export default function ReportsPage() {
   }, [chartRange.from, chartRange.to]);
 
   const marginChartData = aggregateMarginSnapshots(marginSnapshots, effectivePeriod);
-  const pnlChartData = aggregatePnlLevelSeries(pnlSnapshots, effectivePeriod);
+  const pnlChartData = buildPnlMonthlyBars(pnlSnapshots, 12);
 
   useEffect(() => {
     fetchReports();
@@ -484,7 +417,7 @@ export default function ReportsPage() {
                 </div>
               ) : (
                 <div className="h-64">
-                  <MarginLineChart data={marginChartData} period={effectivePeriod} />
+                  <ReportsMarginChart data={marginChartData} period={effectivePeriod} />
                 </div>
               )}
             </div>
@@ -492,22 +425,22 @@ export default function ReportsPage() {
             <div className="rounded-2xl border border-base-300/60 bg-base-100/80 p-4 md:p-6 backdrop-blur-sm">
               <div className="mb-4 flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
-                <h3 className="text-lg font-semibold">
-                  PnL
-                  {effectivePeriod === "daily" && " (1 month)"}
-                  {effectivePeriod === "weekly" && " (6 months, weekly)"}
-                  {effectivePeriod === "monthly" && " (2 years, monthly)"}
+                <h3
+                  className="text-lg font-semibold"
+                  title="Bars are month-on-month change in total PnL (daily snapshots). Summary cards use different rules—for example “last month” filters positions by when totals were last updated, not this chart’s change."
+                >
+                  PnL (monthly)
                 </h3>
               </div>
               {loadingCharts ? (
                 <ReportsChartSkeleton />
               ) : pnlChartData.length === 0 ? (
                 <div className="h-64 flex items-center justify-center text-base-content/60">
-                  No PnL data in selected range
+                  No PnL snapshot data yet
                 </div>
               ) : (
                 <div className="h-64">
-                  <PnlLineChart data={pnlChartData} period={effectivePeriod} />
+                  <ReportsPnlMonthlyBarChart data={pnlChartData} />
                 </div>
               )}
             </div>
@@ -681,230 +614,5 @@ export default function ReportsPage() {
 
       </div>
     </div>
-  );
-}
-
-/** Convert any CSS color (oklch, hsl, etc.) to rgb() for lightweight-charts */
-function toChartColor(cssColor: string, fallback: string): string {
-  if (typeof document === "undefined") return fallback;
-  if (!cssColor || cssColor === "rgba(0, 0, 0, 0)") return fallback;
-  if (/^rgb(a?)\(/.test(cssColor) || /^#[0-9A-Fa-f]{3,8}$/.test(cssColor)) return cssColor;
-  const canvas = document.createElement("canvas");
-  canvas.width = 1;
-  canvas.height = 1;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return fallback;
-  ctx.fillStyle = cssColor;
-  ctx.fillRect(0, 0, 1, 1);
-  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-  return `rgb(${r},${g},${b})`;
-}
-
-/** Resolve a CSS color expression (e.g. with var()) to a value lightweight-charts can parse */
-function resolveChartColor(expression: string, fallback: string): string {
-  if (typeof document === "undefined") return fallback;
-  const div = document.createElement("div");
-  div.style.color = expression;
-  div.style.display = "none";
-  document.body.appendChild(div);
-  const resolved = getComputedStyle(div).color;
-  document.body.removeChild(div);
-  return toChartColor(resolved || "", fallback);
-}
-
-/** Parse chart time (string YYYY-MM-DD or number) to Date for formatting */
-function parseChartTime(time: string | number): Date {
-  if (typeof time === "string") return new Date(time + "T12:00:00");
-  return new Date(time * 1000);
-}
-
-/** X-axis label formatter: dates for daily, week for weekly, month for monthly */
-function getTickMarkFormatter(period: ChartPeriod) {
-  return (time: string | number, _tickMarkType: unknown, locale: string): string | null => {
-    const d = parseChartTime(time);
-    if (period === "daily") {
-      return d.toLocaleDateString(locale, { day: "numeric", month: "short" });
-    }
-    if (period === "weekly") {
-      return "W/c " + d.toLocaleDateString(locale, { day: "numeric", month: "short" });
-    }
-    return d.toLocaleDateString(locale, { month: "short", year: "numeric" });
-  };
-}
-
-function MarginLineChart({ data, period }: { data: MarginSnapshot[]; period: ChartPeriod }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const netSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
-  const utilisedSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
-
-  useEffect(() => {
-    if (!containerRef.current || data.length === 0) return;
-
-    const textColor = resolveChartColor("hsl(var(--bc) / 0.9)", "#374151");
-    const gridColor = resolveChartColor("hsl(var(--bc) / 0.15)", "rgba(0,0,0,0.1)");
-    const netColor = resolveChartColor("hsl(var(--p))", "#244061");
-    const utilisedColor = resolveChartColor("hsl(var(--wa))", "#ea580c");
-
-    const chart = createChart(containerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
-        textColor,
-      },
-      grid: {
-        vertLines: { color: gridColor },
-        horzLines: { color: gridColor },
-      },
-      width: containerRef.current.clientWidth,
-      height: 256,
-      rightPriceScale: {
-        borderVisible: false,
-        scaleMargins: { top: 0.1, bottom: 0.1 },
-      },
-      timeScale: {
-        timeVisible: false,
-        secondsVisible: false,
-        borderVisible: false,
-        tickMarkFormatter: getTickMarkFormatter(period),
-        tickMarkMaxCharacterLength: period === "monthly" ? 12 : period === "weekly" ? 10 : 8,
-      },
-      crosshair: {
-        vertLine: { labelVisible: true },
-        horzLine: { labelVisible: true },
-      },
-    });
-
-    const netSeries = chart.addSeries(LineSeries, {
-      color: netColor,
-      lineWidth: 2,
-      title: "Net",
-    });
-    const utilisedSeries = chart.addSeries(LineSeries, {
-      color: utilisedColor,
-      lineWidth: 2,
-      title: "Utilised",
-    });
-
-    const netData = data.map((d) => ({
-      time: d.snapshot_date as string,
-      value: Number(d.net),
-    }));
-    const utilisedData = data.map((d) => ({
-      time: d.snapshot_date as string,
-      value: Number(d.utilised ?? 0),
-    }));
-
-    netSeries.setData(netData);
-    utilisedSeries.setData(utilisedData);
-
-    chart.timeScale().fitContent();
-
-    chartRef.current = chart;
-    netSeriesRef.current = netSeries;
-    utilisedSeriesRef.current = utilisedSeries;
-
-    const handleResize = () => {
-      if (containerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: containerRef.current.clientWidth });
-      }
-    };
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
-        netSeriesRef.current = null;
-        utilisedSeriesRef.current = null;
-      }
-    };
-  }, [data, period]);
-
-  if (data.length === 0) return null;
-
-  return (
-    <div className="w-full" ref={containerRef} style={{ minHeight: "256px" }} />
-  );
-}
-
-type PnlChartPoint = { time: string; value: number };
-
-function PnlLineChart({ data, period }: { data: PnlChartPoint[]; period: ChartPeriod }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<"Line"> | null>(null);
-
-  useEffect(() => {
-    if (!containerRef.current || data.length === 0) return;
-
-    const textColor = resolveChartColor("hsl(var(--bc) / 0.9)", "#374151");
-    const gridColor = resolveChartColor("hsl(var(--bc) / 0.15)", "rgba(0,0,0,0.1)");
-    const lastValue = data[data.length - 1]?.value ?? 0;
-    const lineColor =
-      lastValue >= 0
-        ? resolveChartColor("hsl(var(--su))", "#22c55e")
-        : resolveChartColor("hsl(var(--er))", "#ef4444");
-
-    const chart = createChart(containerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
-        textColor,
-      },
-      grid: {
-        vertLines: { color: gridColor },
-        horzLines: { color: gridColor },
-      },
-      width: containerRef.current.clientWidth,
-      height: 256,
-      rightPriceScale: {
-        borderVisible: false,
-        scaleMargins: { top: 0.1, bottom: 0.1 },
-      },
-      timeScale: {
-        timeVisible: false,
-        secondsVisible: false,
-        borderVisible: false,
-        tickMarkFormatter: getTickMarkFormatter(period),
-        tickMarkMaxCharacterLength: period === "monthly" ? 12 : period === "weekly" ? 10 : 8,
-      },
-      crosshair: {
-        vertLine: { labelVisible: true },
-        horzLine: { labelVisible: true },
-      },
-    });
-
-    const series = chart.addSeries(LineSeries, {
-      color: lineColor,
-      lineWidth: 2,
-      title: "Cumulative PnL",
-    });
-    series.setData(data.map((d) => ({ time: d.time as string, value: d.value })));
-    chart.timeScale().fitContent();
-
-    chartRef.current = chart;
-    seriesRef.current = series;
-
-    const handleResize = () => {
-      if (containerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: containerRef.current.clientWidth });
-      }
-    };
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
-        seriesRef.current = null;
-      }
-    };
-  }, [data, period]);
-
-  if (data.length === 0) return null;
-
-  return (
-    <div className="w-full" ref={containerRef} style={{ minHeight: "256px" }} />
   );
 }
