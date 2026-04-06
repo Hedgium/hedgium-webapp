@@ -123,7 +123,7 @@ const WHY_HEDGIUM_TABS = [
               <Check className="w-3.5 h-3.5 text-primary-content" strokeWidth={2.5} />
             </div>
             <p className="text-sm font-semibold md:text-lg xl:text-xl text-base-content/90 leading-snug pt-1">
-              All strategies are approve / pre-approved by the client
+              All strategies are approved / pre-approved by the client
               and trade execution control is always with the client
             </p>
           </div>

@@ -247,10 +247,6 @@ export default function Footer() {
 
           <p>© {new Date().getFullYear()} Hedgium. All rights reserved.</p>
 
-          <p className="text-center md:text-right max-w-md">
-            In a market dominated by directional risk, we focus on systematic
-            probability-driven alpha.
-          </p>
 
         </div>
       </div>
