@@ -20,7 +20,13 @@ export default function RootLayoutClient({
 
   useEffect(() => {
     if (!isInitializing && accessToken) {
-      if (pathname === '/onboarding/verify-email') return;
+      // During "initiated", allow signup form (/onboarding) and verify-email without forcing redirect
+      if (
+        user?.signup_step === 'initiated' &&
+        (pathname === '/onboarding/verify-email' || pathname === '/onboarding')
+      ) {
+        return;
+      }
 
       if (user?.kyc_skipped) {
         const isHedgium = pathname?.includes('hedgium');

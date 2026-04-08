@@ -1,18 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User, Mail, Lock, Loader2, Phone } from "lucide-react";
 import Link from "next/link";
 import AuthFlowBrand from "@/components/AuthFlowBrand";
-import { myFetch } from "@/utils/api";
+import { myFetch, authFetch } from "@/utils/api";
 import { useAuthStore } from "@/store/authStore";
 import useAlert from "@/hooks/useAlert";
 
 function Onboarding() {
   const router = useRouter();
   const alert = useAlert();
-  const { login, updateUser } = useAuthStore();
+  const { login, updateUser, accessToken, user, fetchUser } = useAuthStore();
+
+  /** Logged-in user returning from verify-email to edit details before OTP */
+  const isEditingExisting =
+    Boolean(accessToken && user && user.signup_step === "initiated");
 
   const [first_name, setFirstName] = useState("");
   const [last_name, setLastName] = useState("");
@@ -31,6 +35,14 @@ function Onboarding() {
   const [error, setError] = useState("");
 
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  useEffect(() => {
+    if (!isEditingExisting || !user) return;
+    setFirstName(user.first_name ?? "");
+    setLastName(user.last_name ?? "");
+    setEmail(user.email ?? "");
+    setMobile((user.mobile ?? "").replace(/\D/g, "").slice(0, 10));
+  }, [isEditingExisting, user]);
 
   async function handleRegister(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -65,21 +77,69 @@ function Onboarding() {
       setMobileError("Enter a valid 10-digit mobile number");
       valid = false;
     }
-    if (!password) {
-      setPasswordError("Password is required");
-      valid = false;
-    } else if (password.length < 6) {
-      setPasswordError("At least 6 characters");
-      valid = false;
-    }
-    if (!confirmPassword) {
-      setConfirmPasswordError("Confirm your password");
-      valid = false;
-    } else if (confirmPassword !== password) {
-      setConfirmPasswordError("Passwords do not match");
-      valid = false;
+    if (!isEditingExisting) {
+      if (!password) {
+        setPasswordError("Password is required");
+        valid = false;
+      } else if (password.length < 6) {
+        setPasswordError("At least 6 characters");
+        valid = false;
+      }
+      if (!confirmPassword) {
+        setConfirmPasswordError("Confirm your password");
+        valid = false;
+      } else if (confirmPassword !== password) {
+        setConfirmPasswordError("Passwords do not match");
+        valid = false;
+      }
     }
     if (!valid) return;
+
+    if (isEditingExisting) {
+      setRegistering(true);
+      try {
+        const res = await authFetch("users/me/", {
+          method: "PUT",
+          body: JSON.stringify({
+            first_name,
+            last_name,
+            email,
+            mobile: mobile.trim(),
+            username: email,
+          }),
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          updateUser({
+            first_name: updated.first_name,
+            last_name: updated.last_name,
+            email: updated.email,
+            mobile: updated.mobile,
+            username: updated.username,
+          });
+          await fetchUser();
+          alert.success("Details updated. Continue to verify your email.", {
+            duration: 3000,
+          });
+          setRedirecting(true);
+          router.push("/onboarding/verify-email");
+          return;
+        }
+        const errorRes = await res.json().catch(() => ({}));
+        setError(
+          errorRes?.detail ||
+            (typeof errorRes === "object" && errorRes !== null
+              ? JSON.stringify(errorRes)
+              : "Update failed")
+        );
+      } catch (err) {
+        console.error(err);
+        alert.error("Something went wrong", { duration: 5000 });
+      } finally {
+        setRegistering(false);
+      }
+      return;
+    }
 
     setRegistering(true);
     try {
@@ -117,10 +177,20 @@ function Onboarding() {
       <AuthFlowBrand />
       <div className="mb-6 text-center">
         <h1 className="text-xl font-semibold tracking-tight text-base-content">
-          Sign up for <span className="text-primary">Hedgium</span>
+          {isEditingExisting ? (
+            <>
+              Update your <span className="text-primary">details</span>
+            </>
+          ) : (
+            <>
+              Sign up for <span className="text-primary">Hedgium</span>
+            </>
+          )}
         </h1>
         <p className="mt-1 text-sm text-base-content/60">
-          Create your account to get started
+          {isEditingExisting
+            ? "Change your details if needed, then continue to email verification."
+            : "Create your account to get started"}
         </p>
       </div>
 
@@ -191,37 +261,41 @@ function Onboarding() {
               {mobileError && <p className="mt-1 text-xs text-error">{mobileError}</p>}
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-base-content/80 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${passwordError ? "input-error" : ""}`}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </div>
-              {passwordError && <p className="mt-1 text-xs text-error">{passwordError}</p>}
-            </div>
+            {!isEditingExisting && (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-base-content/80 mb-1.5">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${passwordError ? "input-error" : ""}`}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  {passwordError && <p className="mt-1 text-xs text-error">{passwordError}</p>}
+                </div>
 
-            <div>
-              <label className="block text-xs font-medium text-base-content/80 mb-1.5">Confirm password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${confirmPasswordError ? "input-error" : ""}`}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </div>
-              {confirmPasswordError && <p className="mt-1 text-xs text-error">{confirmPasswordError}</p>}
-            </div>
+                <div>
+                  <label className="block text-xs font-medium text-base-content/80 mb-1.5">Confirm password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${confirmPasswordError ? "input-error" : ""}`}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  {confirmPasswordError && <p className="mt-1 text-xs text-error">{confirmPasswordError}</p>}
+                </div>
+              </>
+            )}
 
             {error && <p className="text-xs text-error text-center py-1">{error}</p>}
 
@@ -230,17 +304,25 @@ function Onboarding() {
               className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case"
               disabled={registering || redirecting}
             >
-              {redirecting ? "Redirecting..." : registering ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
+              {redirecting
+                ? "Redirecting..."
+                : registering
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : isEditingExisting
+                    ? "Save & continue to verification"
+                    : "Create account"}
             </button>
           </form>
         </div>
 
-      <p className="mt-5 text-center text-xs text-base-content/50">
-        Already have an account?{" "}
-        <Link href="/login" className="font-medium text-primary hover:underline">
-          Log in
-        </Link>
-      </p>
+      {!isEditingExisting && (
+        <p className="mt-5 text-center text-xs text-base-content/50">
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium text-primary hover:underline">
+            Log in
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
