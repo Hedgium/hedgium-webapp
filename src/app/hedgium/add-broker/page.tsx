@@ -70,7 +70,7 @@ export default function AddBrokerPage() {
     if (profileId && broker) {
       setSavedProfileId(Number(profileId));
       setSavedBrokerName(broker);
-      setStep("login");
+      // setStep("login");
     }
   }, [searchParams]);
 

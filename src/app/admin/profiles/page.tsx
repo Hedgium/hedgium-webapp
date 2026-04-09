@@ -276,6 +276,13 @@ export default function ProfilesPage() {
                   prev.map((i) => (i.user_id === updated.user_id ? updated : i))
                 );
               }}
+              onProfileCreated={(profile) => {
+                setUsersWithoutProfiles((prev) => prev.filter((i) => i.user_id !== item.user_id));
+                setProfiles((prev) => [
+                  { ...profile, user: { ...item.user, ...profile.user } },
+                  ...prev,
+                ]);
+              }}
             />
           ))}
           {usersWithoutProfiles.length === 0 && (

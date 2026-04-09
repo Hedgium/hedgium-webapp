@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { User } from "@/types/profile";
-import { Edit2 } from "lucide-react";
+import { User, Profile } from "@/types/profile";
+import { Edit2, UserPlus } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 
@@ -16,6 +16,7 @@ export interface UserWithoutProfile {
 interface UserWithoutProfileItemProps {
   item: UserWithoutProfile;
   onUpdate?: (updated: UserWithoutProfile) => void;
+  onProfileCreated?: (profile: Profile) => void;
 }
 
 const SIGNUP_STEPS = [
@@ -26,9 +27,17 @@ const SIGNUP_STEPS = [
   { value: "verified", label: "Verified" },
 ];
 
-export default function UserWithoutProfileItem({ item, onUpdate }: UserWithoutProfileItemProps) {
+export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreated }: UserWithoutProfileItemProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [addProfileModalOpen, setAddProfileModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submittingProfile, setSubmittingProfile] = useState(false);
+  const [proxyForm, setProxyForm] = useState({
+    proxy_host: "",
+    proxy_port: "",
+    proxy_username: "",
+    proxy_password: "",
+  });
   const [formData, setFormData] = useState({
     first_name: item.user.first_name || "",
     last_name: item.user.last_name || "",
@@ -82,6 +91,59 @@ export default function UserWithoutProfileItem({ item, onUpdate }: UserWithoutPr
       verified: item.user.verified ?? false,
     });
     setEditModalOpen(true);
+  };
+
+  const openAddProfile = () => {
+    setProxyForm({
+      proxy_host: "",
+      proxy_port: "",
+      proxy_username: "",
+      proxy_password: "",
+    });
+    setAddProfileModalOpen(true);
+  };
+
+  const handleAddProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingProfile(true);
+    try {
+      const body: Record<string, unknown> = { user_id: item.user_id };
+      const host = proxyForm.proxy_host.trim();
+      if (host) body.proxy_host = host;
+      const portStr = proxyForm.proxy_port.trim();
+      if (portStr) {
+        const p = parseInt(portStr, 10);
+        if (!Number.isFinite(p) || p < 1 || p > 65535) {
+          alert.error("Proxy port must be between 1 and 65535");
+          setSubmittingProfile(false);
+          return;
+        }
+        body.proxy_port = p;
+      }
+      const u = proxyForm.proxy_username.trim();
+      if (u) body.proxy_username = u;
+      const pwd = proxyForm.proxy_password.trim();
+      if (pwd) body.proxy_password = pwd;
+
+      const res = await authFetch("profiles/admin/bootstrap-user/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const profile = (await res.json()) as Profile;
+        onProfileCreated?.(profile);
+        alert.success("Profile created");
+        setAddProfileModalOpen(false);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert.error((err as { detail?: string }).detail || "Failed to create profile");
+      }
+    } catch {
+      alert.error("Failed to create profile");
+    } finally {
+      setSubmittingProfile(false);
+    }
   };
 
   return (
@@ -157,6 +219,16 @@ export default function UserWithoutProfileItem({ item, onUpdate }: UserWithoutPr
           <div>
             <p className="text-gray-400 text-sm">Action</p>
             <div className="flex flex-wrap gap-2 mt-1">
+              <div className="tooltip tooltip-right" data-tip="Add profile (proxy)">
+                <button
+                  type="button"
+                  onClick={openAddProfile}
+                  className="btn btn-ghost btn-xs btn-square text-success"
+                  title="Add profile (proxy)"
+                >
+                  <UserPlus size={16} />
+                </button>
+              </div>
               <div className="tooltip tooltip-right" data-tip="Edit user">
                 <button
                   type="button"
@@ -171,6 +243,91 @@ export default function UserWithoutProfileItem({ item, onUpdate }: UserWithoutPr
           </div>
         </div>
       </div>
+
+      {addProfileModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box w-11/12 max-w-lg rounded-xl">
+            <h3 className="font-semibold text-lg mb-2">Add profile: {user.email}</h3>
+            <p className="text-sm text-base-content/60 mb-4">
+              Creates a shell profile with default broker settings. Optional order API proxy below; leave empty for direct
+              connection. You can edit the full profile later from the Profiles tab.
+            </p>
+            <form onSubmit={handleAddProfileSubmit} className="space-y-4">
+              <div className="rounded-xl border border-base-300 bg-base-200/30 p-4 space-y-4">
+                <h4 className="text-sm font-semibold text-base-content/80">Order API proxy (static IP)</h4>
+                <p className="text-xs text-base-content/60">
+                  Used for create / modify / cancel order requests. Omit host for no proxy.
+                </p>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Proxy host</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={proxyForm.proxy_host}
+                    onChange={(e) => setProxyForm((f) => ({ ...f, proxy_host: e.target.value }))}
+                    className="input input-bordered input-sm w-full font-mono"
+                    placeholder="e.g. proxy.example.com (empty = off)"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">Proxy port</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={proxyForm.proxy_port}
+                      onChange={(e) => setProxyForm((f) => ({ ...f, proxy_port: e.target.value }))}
+                      className="input input-bordered input-sm w-full"
+                      placeholder="443"
+                      min={1}
+                      max={65535}
+                    />
+                  </div>
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">Proxy username</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={proxyForm.proxy_username}
+                      onChange={(e) => setProxyForm((f) => ({ ...f, proxy_username: e.target.value }))}
+                      className="input input-bordered input-sm w-full"
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Proxy password</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={proxyForm.proxy_password}
+                    onChange={(e) => setProxyForm((f) => ({ ...f, proxy_password: e.target.value }))}
+                    className="input input-bordered input-sm w-full"
+                    autoComplete="new-password"
+                  />
+                </div>
+              </div>
+              <div className="modal-action pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAddProfileModalOpen(false)}
+                  className="btn btn-ghost btn-sm"
+                >
+                  Cancel
+                </button>
+                <button type="submit" disabled={submittingProfile} className="btn btn-primary btn-sm">
+                  {submittingProfile ? "Creating…" : "Create profile"}
+                </button>
+              </div>
+            </form>
+          </div>
+          <div className="modal-backdrop" onClick={() => setAddProfileModalOpen(false)} />
+        </div>
+      )}
 
       {editModalOpen && (
         <div className="modal modal-open">
