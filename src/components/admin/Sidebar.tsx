@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Sun, Moon, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
@@ -12,6 +12,7 @@ const tabs = [
   { name: "Strategies", href: "/admin", icon: <LineChart className="h-5 w-5" /> },
   { name: "Builder", href: "/admin/builder", icon: <Layers className="h-5 w-5" /> },
   { name: "Profiles", href: "/admin/profiles", icon: <Users className="h-5 w-5" /> },
+  { name: "Proxy pool", href: "/admin/proxy-pool", icon: <Network className="h-5 w-5" /> },
   { name: "Leads", href: "/admin/leads", icon: <MessageCircle className="h-5 w-5" /> },
   { name: "Tasks", href: "/admin/tasks", icon: <ListTodo className="h-5 w-5" /> },
   { name: "Payments", href: "/admin/payments", icon: <CreditCard className="h-5 w-5" /> },

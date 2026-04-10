@@ -20,8 +20,8 @@ const SettingsPage: React.FC = () => {
     { id: "profile", label: "Profile", icon: <User className="h-5 w-5" /> },
     { id: "password", label: "Password", icon: <Shield className="h-5 w-5" /> },
     { id: "theme", label: "Theme", icon: <Palette className="h-5 w-5" /> },
-    { id: "notifications", label: "Notifications", icon: <Bell className="h-5 w-5" /> },
-    { id: "subscription", label: "Subscription", icon: <CreditCard className="h-5 w-5" /> },
+    // { id: "notifications", label: "Notifications", icon: <Bell className="h-5 w-5" /> },
+    // { id: "subscription", label: "Subscription", icon: <CreditCard className="h-5 w-5" /> },
   ];
 
   return (

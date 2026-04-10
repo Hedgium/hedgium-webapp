@@ -53,6 +53,14 @@ export interface Profile {
     proxy_host?: string | null;
     proxy_port?: number | null;
     proxy_username?: string | null;
+    /** Assigned broker proxy pool row (staff list/detail). */
+    broker_proxy_pool?: {
+        id: number;
+        ip_address: string;
+        host: string;
+        port: number;
+        username?: string | null;
+    } | null;
 }
 
 export interface ProfileResponse {
