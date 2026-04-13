@@ -10,6 +10,20 @@ import { ArrowLeft, RefreshCw, Plus, Edit2, X, LogOut, TrendingUp, TrendingDown 
 import { Profile } from "@/types/profile";
 import { LivePosition } from "@/types/positions";
 
+function formatDateTimeCell(value: string | Date | null | undefined): string {
+  if (value == null || value === "") return "—";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 interface LiveOrder {
   order_id: string;
   exchange_order_id?: string;
@@ -61,6 +75,10 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   const [orders, setOrders] = useState<LiveOrder[]>([]);
   const [loadingPositions, setLoadingPositions] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  /** When live positions were last fetched (shown when broker does not send per-row time). */
+  const [positionsFetchedAt, setPositionsFetchedAt] = useState<string | null>(null);
+  /** When live orders were last fetched (fallback when order has no timestamp). */
+  const [ordersFetchedAt, setOrdersFetchedAt] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [showPlaceOrderForm, setShowPlaceOrderForm] = useState(false);
@@ -108,6 +126,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
 
       if (data.status === "success") {
         setPositions(data.data?.net || []);
+        setPositionsFetchedAt(new Date().toISOString());
       } else {
         alert.error("Failed to fetch live positions");
       }
@@ -127,6 +146,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
 
       if (data.status === "success") {
         setOrders(data.data || []);
+        setOrdersFetchedAt(new Date().toISOString());
       } else {
         alert.error("Failed to fetch live orders");
       }
@@ -399,6 +419,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 <thead>
                   <tr>
                     <th>Instrument</th>
+                    <th className="whitespace-nowrap">Date & time</th>
                     <th>Qty(B/S)</th>
                     <th>Avg Price</th>
                     <th>LTP</th>
@@ -412,6 +433,13 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                   {positions.map((position: LivePosition, index: number) => (
                     <tr key={index}>
                       <td className="font-medium">{position.tradingsymbol}</td>
+                      <td className="whitespace-nowrap text-xs text-base-content/80">
+                        {formatDateTimeCell(
+                          position.updated_at ??
+                            position.last_price_update ??
+                            positionsFetchedAt
+                        )}
+                      </td>
                       <td>
                         {position.quantity} ({position.buy_quantity}/{position.sell_quantity})
                       </td>
@@ -490,6 +518,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
               <thead>
                 <tr>
                   <th>Order ID</th>
+                  <th className="whitespace-nowrap">Date & time</th>
                   <th>Instrument</th>
                   <th>Type</th>
                   <th>Transaction</th>
@@ -505,6 +534,9 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 {orders.map((order: LiveOrder) => (
                   <tr key={order.order_id}>
                     <td className="font-mono text-xs">{order.order_id}</td>
+                    <td className="whitespace-nowrap text-xs text-base-content/80">
+                      {formatDateTimeCell(order.order_timestamp ?? ordersFetchedAt)}
+                    </td>
                     <td className="font-medium">{order.tradingsymbol}</td>
                     <td>{order.order_type}</td>
                     <td>

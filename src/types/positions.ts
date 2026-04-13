@@ -1,6 +1,9 @@
 export interface LivePosition {
   tradingsymbol: string;
   exchange?: string;
+  /** Broker may expose last update / day position time when available */
+  last_price_update?: string;
+  updated_at?: string;
   quantity: number;
   average_price?: number;
   last_price?: number;

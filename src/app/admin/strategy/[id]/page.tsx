@@ -9,7 +9,7 @@ import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { CheckCircle, ChevronLeft, Plus, Layers, RotateCcw } from "lucide-react";
+import { CheckCircle, ChevronLeft, Plus, Layers, RotateCcw, RotateCw } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
 import StrategyTradeCyclesSkeleton from "@/components/skeletons/StrategyTradeCyclesSkeleton";
 import ManualAdjustmentModal from "@/components/admin/strategy/ManualAdjustmentModal";
@@ -52,14 +52,20 @@ export default function StrategyDetail() {
   const [completingStrategy, setCompletingStrategy] = useState(false);
   const [uncompletingStrategy, setUncompletingStrategy] = useState(false);
   const [showManualAdjustment, setShowManualAdjustment] = useState(false);
+  const [strategyRefreshing, setStrategyRefreshing] = useState(false);
   const alert = useAlert();
 
   const params = useParams<{ id: string }>();
   const { id } = params;
   const strategyId = Number(id);
 
-  async function fetchStrategyData() {
-    setLoading(true);
+  async function fetchStrategyData(opts?: { silent?: boolean }) {
+    const silent = opts?.silent ?? false;
+    if (silent) {
+      setStrategyRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const res = await authFetch(`myadmin/strategies/${id}/`);
       const data = await res.json();
@@ -67,7 +73,11 @@ export default function StrategyDetail() {
     } catch (error) {
       console.error("Error fetching strategy data:", error);
     } finally {
-      setLoading(false);
+      if (silent) {
+        setStrategyRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   }
 
@@ -102,7 +112,7 @@ export default function StrategyDetail() {
 
       if (res.ok && data.status === "success") {
         alert.success(data.message || "Strategy marked as completed successfully");
-        await fetchStrategyData();
+        await fetchStrategyData({ silent: true });
         await fetchTradeCycles();
       } else {
         alert.error(data.message || "Failed to complete strategy");
@@ -136,7 +146,7 @@ export default function StrategyDetail() {
 
       if (res.ok && data.status === "success") {
         alert.success(data.message || "Strategy is active again");
-        await fetchStrategyData();
+        await fetchStrategyData({ silent: true });
         await fetchTradeCycles();
       } else {
         alert.error(data.message || "Failed to undo completion");
@@ -310,19 +320,35 @@ export default function StrategyDetail() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-semibold">Strategy adjustments ({Array.isArray(strategy?.versions) ? strategy.versions.length : 0})</h2>
-            {!strategy?.completed && (
+            <div className="flex items-center gap-1">
+              
+              {!strategy?.completed && (
+                <button
+                  type="button"
+                  onClick={() => setShowManualAdjustment(true)}
+                  className="btn btn-ghost btn-sm gap-1.5 text-primary hover:bg-primary/10"
+                >
+                  <Plus className="size-4" />
+                  Manual adjustment
+                </button>
+              )}
+
+
               <button
-                onClick={() => setShowManualAdjustment(true)}
-                className="btn btn-ghost btn-sm gap-1.5 text-primary hover:bg-primary/10"
+                type="button"
+                onClick={() => fetchStrategyData({ silent: true })}
+                disabled={strategyRefreshing}
+                className={`btn btn-ghost btn-sm ${strategyRefreshing ? "animate-spin" : ""}`}
+                title="Refresh strategy & adjustments"
               >
-                <Plus className="size-4" />
-                Manual adjustment
+                <RotateCw size={18} />
               </button>
-            )}
+
+            </div>
           </div>
           <Adjustments
             adjustments={strategy?.versions ?? []}
-            onRefresh={fetchStrategyData}
+            onRefresh={() => fetchStrategyData({ silent: true })}
           />
         </div>
 
@@ -345,7 +371,7 @@ export default function StrategyDetail() {
           <ManualAdjustmentModal
             strategyId={strategyId}
             onClose={() => setShowManualAdjustment(false)}
-            onSuccess={fetchStrategyData}
+            onSuccess={() => fetchStrategyData({ silent: true })}
           />
         )}
       </div>
