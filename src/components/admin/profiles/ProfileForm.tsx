@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Search, UserCircle2, X } from 'lucide-react';
 import { Profile } from '@/types/profile';
+import { authFetch } from '@/utils/api';
 
 export type ProfileFormPayload = Partial<Profile> & {
     mobile?: string | null;
     signup_step?: string | null;
     user_verified?: boolean;
     proxy_password?: string;
+    relationship_manager_id?: number | null;
+};
+
+type RmSearchUser = {
+    id: number;
+    email: string;
+    first_name: string;
+    last_name: string;
+    mobile?: string | null;
 };
 
 interface ProfileFormProps {
@@ -53,6 +63,60 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         proxy_password: '',
     });
 
+    const [relationshipManagerId, setRelationshipManagerId] = useState<number | null>(
+        () => initialData.relationship_manager?.id ?? null
+    );
+    /** Snapshot of selected RM for display after pick (search results are cleared). */
+    const [rmPick, setRmPick] = useState<RmSearchUser | null>(() =>
+        initialData.relationship_manager
+            ? {
+                  id: initialData.relationship_manager.id,
+                  email: initialData.relationship_manager.email || '',
+                  first_name: initialData.relationship_manager.first_name || '',
+                  last_name: initialData.relationship_manager.last_name || '',
+                  mobile: initialData.relationship_manager.mobile ?? null,
+              }
+            : null
+    );
+    const [rmSearch, setRmSearch] = useState('');
+    const [debouncedRmSearch, setDebouncedRmSearch] = useState('');
+    const [rmResults, setRmResults] = useState<RmSearchUser[]>([]);
+    const [rmSearchLoading, setRmSearchLoading] = useState(false);
+
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedRmSearch(rmSearch.trim()), 350);
+        return () => clearTimeout(t);
+    }, [rmSearch]);
+
+    useEffect(() => {
+        if (debouncedRmSearch.length < 2) {
+            setRmResults([]);
+            setRmSearchLoading(false);
+            return;
+        }
+        let cancelled = false;
+        setRmSearchLoading(true);
+        (async () => {
+            try {
+                const params = new URLSearchParams({ q: debouncedRmSearch });
+                const res = await authFetch(`profiles/relationship-manager-search/?${params}`);
+                const data = await res.json();
+                if (!cancelled && res.ok && Array.isArray(data.results)) {
+                    setRmResults(data.results as RmSearchUser[]);
+                } else if (!cancelled) {
+                    setRmResults([]);
+                }
+            } catch {
+                if (!cancelled) setRmResults([]);
+            } finally {
+                if (!cancelled) setRmSearchLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [debouncedRmSearch]);
+
     useEffect(() => {
         if (!initialData) return;
         const u = initialData.user;
@@ -76,6 +140,18 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             proxy_username: initialData.proxy_username ?? '',
             proxy_password: '',
         });
+        setRelationshipManagerId(initialData.relationship_manager?.id ?? null);
+        setRmPick(
+            initialData.relationship_manager
+                ? {
+                      id: initialData.relationship_manager.id,
+                      email: initialData.relationship_manager.email || '',
+                      first_name: initialData.relationship_manager.first_name || '',
+                      last_name: initialData.relationship_manager.last_name || '',
+                      mobile: initialData.relationship_manager.mobile ?? null,
+                  }
+                : null
+        );
     }, [initialData]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -117,7 +193,28 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         if (pwd) {
             payload.proxy_password = pwd;
         }
+        payload.relationship_manager_id = relationshipManagerId;
         onSubmit(payload);
+    };
+
+    const rmDisplay =
+        relationshipManagerId != null
+            ? rmPick && rmPick.id === relationshipManagerId
+                ? rmPick
+                : {
+                      id: relationshipManagerId,
+                      email: '',
+                      first_name: '',
+                      last_name: '',
+                      mobile: null as string | null,
+                  }
+            : null;
+
+    const pickRm = (u: RmSearchUser) => {
+        setRelationshipManagerId(u.id);
+        setRmPick(u);
+        setRmSearch('');
+        setRmResults([]);
     };
 
     return (
@@ -126,8 +223,50 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                 Essentials below. Open a section for user account fields, order proxy, or sizing.
             </p>
 
-            <div className="rounded-xl border border-base-300 bg-base-100 p-4 space-y-4">
-                <h3 className="text-sm font-semibold text-base-content/80">Profile essentials</h3>
+
+            <FormCollapse title="User account (admin)">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="form-control">
+                        <label className="label"><span className="label-text">Mobile</span></label>
+                        <input
+                            type="text"
+                            name="mobile"
+                            value={formData.mobile}
+                            onChange={handleChange}
+                            className="input input-bordered w-full"
+                            placeholder="User mobile"
+                        />
+                    </div>
+                    <div className="form-control">
+                        <label className="label"><span className="label-text">Verification step</span></label>
+                        <select
+                            name="signup_step"
+                            value={formData.signup_step}
+                            onChange={handleChange}
+                            className="select select-bordered w-full"
+                        >
+                            {SIGNUP_STEPS.map((s) => (
+                                <option key={s.value} value={s.value}>{s.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-control md:col-span-2">
+                        <label className="label cursor-pointer justify-start gap-4">
+                            <span className="label-text">User verified</span>
+                            <input
+                                type="checkbox"
+                                name="user_verified"
+                                checked={formData.user_verified}
+                                onChange={handleChange}
+                                className="checkbox"
+                            />
+                        </label>
+                    </div>
+                </div>
+            </FormCollapse>
+
+
+            <FormCollapse title="Profile essentials">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="form-control md:col-span-2">
                         <label className="label"><span className="label-text">Broker</span></label>
@@ -197,48 +336,9 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                         </label>
                     </div>
                 </div>
-            </div>
-
-            <FormCollapse title="User account (admin)">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">Mobile</span></label>
-                        <input
-                            type="text"
-                            name="mobile"
-                            value={formData.mobile}
-                            onChange={handleChange}
-                            className="input input-bordered w-full"
-                            placeholder="User mobile"
-                        />
-                    </div>
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">Verification step</span></label>
-                        <select
-                            name="signup_step"
-                            value={formData.signup_step}
-                            onChange={handleChange}
-                            className="select select-bordered w-full"
-                        >
-                            {SIGNUP_STEPS.map((s) => (
-                                <option key={s.value} value={s.value}>{s.label}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-control md:col-span-2">
-                        <label className="label cursor-pointer justify-start gap-4">
-                            <span className="label-text">User verified</span>
-                            <input
-                                type="checkbox"
-                                name="user_verified"
-                                checked={formData.user_verified}
-                                onChange={handleChange}
-                                className="checkbox"
-                            />
-                        </label>
-                    </div>
-                </div>
             </FormCollapse>
+
+         
 
             <FormCollapse title="Order API proxy (static IP)">
                 <p className="text-xs text-base-content/60 mb-3">
@@ -346,6 +446,87 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                         />
                     </div>
                 </div>
+            </FormCollapse>
+
+
+            <FormCollapse title="Relationship manager">
+                <p className="text-xs text-base-content/60 mb-3">
+                    Search staff by email, name, username, or mobile. Clear to remove the assignment.
+                </p>
+                {relationshipManagerId != null && rmDisplay ? (
+                    <div className="flex flex-wrap items-start justify-between gap-2 rounded-lg border border-base-300 bg-base-200/40 p-3 mb-3">
+                        <div className="flex gap-2 min-w-0">
+                            <UserCircle2 className="size-5 shrink-0 text-base-content/50 mt-0.5" />
+                            <div className="min-w-0 text-sm">
+                                <p className="font-medium truncate">
+                                    {(rmDisplay.first_name || '').trim()} {(rmDisplay.last_name || '').trim()}
+                                    {!String((rmDisplay.first_name || '') + (rmDisplay.last_name || '')).trim() && (
+                                        <span className="text-base-content/50">User #{relationshipManagerId}</span>
+                                    )}
+                                </p>
+                                {(rmDisplay.email || '').trim() ? (
+                                    <p className="text-base-content/70 truncate">{rmDisplay.email}</p>
+                                ) : null}
+                                {rmDisplay.mobile ? (
+                                    <p className="text-base-content/60">{rmDisplay.mobile}</p>
+                                ) : null}
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-xs gap-1 shrink-0"
+                            onClick={() => {
+                                setRelationshipManagerId(null);
+                                setRmPick(null);
+                                setRmSearch('');
+                                setRmResults([]);
+                            }}
+                        >
+                            <X className="size-3.5" />
+                            Clear
+                        </button>
+                    </div>
+                ) : (
+                    <p className="text-sm text-base-content/50 mb-3">No relationship manager assigned.</p>
+                )}
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="z-10 size-4 text-base-content/40" />
+                    </div>
+                    <input
+                        type="search"
+                        value={rmSearch}
+                        onChange={(e) => setRmSearch(e.target.value)}
+                        className="input input-bordered input-sm w-full pl-9"
+                        placeholder="Type at least 2 characters to search…"
+                        autoComplete="off"
+                    />
+                    {rmSearchLoading && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 loading loading-spinner loading-xs" />
+                    )}
+                </div>
+                {rmResults.length > 0 && (
+                    <ul className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-base-300 bg-base-100 divide-y divide-base-200">
+                        {rmResults.map((u) => (
+                            <li key={u.id}>
+                                <button
+                                    type="button"
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-base-200 transition-colors"
+                                    onClick={() => pickRm(u)}
+                                >
+                                    <span className="font-medium">
+                                        {u.first_name} {u.last_name}
+                                    </span>
+                                    <span className="text-base-content/60"> · </span>
+                                    <span className="text-base-content/80 break-all">{u.email}</span>
+                                    {u.mobile ? (
+                                        <span className="block text-xs text-base-content/55">{u.mobile}</span>
+                                    ) : null}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </FormCollapse>
 
             <div className="flex justify-end gap-2 pt-2">

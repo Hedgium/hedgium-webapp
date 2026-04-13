@@ -224,6 +224,15 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                             </>
                         )}
                     </p>
+                    {profile.relationship_manager && (
+                        <p className="text-xs text-base-content/50">
+                            <span className="font-medium text-base-content/65">RM:</span>{' '}
+                            {profile.relationship_manager.first_name}{' '}
+                            {profile.relationship_manager.last_name}
+                            <span className="mx-1 opacity-40">·</span>
+                            {profile.relationship_manager.email}
+                        </p>
+                    )}
                     <div className="flex flex-wrap gap-1.5 items-center">
                         <span className={`px-2 py-0.5 rounded text-xs ${profile.is_active ? "bg-primary/20 text-primary" : "bg-base-300 text-base-content/60"}`}>
                             {profile.is_active ? "Active" : "Inactive"}

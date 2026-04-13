@@ -9,7 +9,7 @@ import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { CheckCircle, ChevronLeft, Plus, Layers } from "lucide-react";
+import { CheckCircle, ChevronLeft, Plus, Layers, RotateCcw } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
 import StrategyTradeCyclesSkeleton from "@/components/skeletons/StrategyTradeCyclesSkeleton";
 import ManualAdjustmentModal from "@/components/admin/strategy/ManualAdjustmentModal";
@@ -50,6 +50,7 @@ export default function StrategyDetail() {
   const [loading, setLoading] = useState(true);
   const [tradeCyclesLoading, setTradeCyclesLoading] = useState(false);
   const [completingStrategy, setCompletingStrategy] = useState(false);
+  const [uncompletingStrategy, setUncompletingStrategy] = useState(false);
   const [showManualAdjustment, setShowManualAdjustment] = useState(false);
   const alert = useAlert();
 
@@ -111,6 +112,40 @@ export default function StrategyDetail() {
       alert.error("Error completing strategy");
     } finally {
       setCompletingStrategy(false);
+    }
+  }
+
+  async function uncompleteStrategy() {
+    if (
+      !confirm(
+        "Undo “mark complete” for this strategy?\n\n" +
+          "The strategy will show as active again and a linked builder (if any) will return from Exited to Active. " +
+          "Trade cycles that were closed together with that completion (same time window) will be reopened; " +
+          "cycles that were already closed before that stay closed."
+      )
+    ) {
+      return;
+    }
+
+    setUncompletingStrategy(true);
+    try {
+      const res = await authFetch(`myadmin/strategies/${id}/uncomplete/`, {
+        method: "POST",
+      });
+      const data = await res.json();
+
+      if (res.ok && data.status === "success") {
+        alert.success(data.message || "Strategy is active again");
+        await fetchStrategyData();
+        await fetchTradeCycles();
+      } else {
+        alert.error(data.message || "Failed to undo completion");
+      }
+    } catch (error) {
+      console.error("Error undoing strategy completion:", error);
+      alert.error("Error undoing strategy completion");
+    } finally {
+      setUncompletingStrategy(false);
     }
   }
 
@@ -229,12 +264,28 @@ export default function StrategyDetail() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               {strategy?.completed ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
-                  <CheckCircle className="size-4" />
-                  Completed
-                </span>
+                <>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
+                    <CheckCircle className="size-4" />
+                    Completed
+                  </span>
+                  <button
+                    type="button"
+                    onClick={uncompleteStrategy}
+                    disabled={uncompletingStrategy}
+                    className="btn btn-outline btn-sm gap-1.5"
+                    title="Clear completed flag; reopens cycles closed in that completion window"
+                  >
+                    {uncompletingStrategy ? (
+                      <span className="loading loading-spinner size-4" />
+                    ) : (
+                      <RotateCcw className="size-4" />
+                    )}
+                    Undo complete
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={completeStrategy}

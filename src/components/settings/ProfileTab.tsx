@@ -6,6 +6,21 @@ import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import VerifyEmail from "@/components/VerifyEmail";
 
+/** Shown if API omits relationship_manager (should be set on the server). */
+const DEFAULT_RELATIONSHIP_MANAGER = {
+  displayName: "Kamlesh Ramchandani",
+  email: "kamlesh.ramchandani@hedgium.in",
+  phone: "8454838304",
+};
+
+type RelationshipManagerInfo = {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  mobile?: string | null;
+};
+
 const ProfileTab: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
@@ -13,10 +28,12 @@ const ProfileTab: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [autoTradeAllowed, setAutoTradeAllowed] = useState(false);
   const [profileId, setProfileId] = useState<number | null>(null);
+  const [relationshipManager, setRelationshipManager] =
+    useState<RelationshipManagerInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [verifyEmailModalOpen, setVerifyEmailModalOpen] = useState(false);
 
-  /** 🔍 Fetch active profile to get auto_trade_allowed */
+  /** Load active profile (auto trade + relationship manager) from /profiles/me/ */
   const fetchProfile = async () => {
     if (!user) return;
 
@@ -24,12 +41,20 @@ const ProfileTab: React.FC = () => {
     setError(null);
 
     try {
-      const res = await authFetch("profiles/check-profile/");
+      const res = await authFetch("profiles/me/");
       const data = await res.json();
+
+      if (res.status === 404) {
+        setAutoTradeAllowed(false);
+        setProfileId(null);
+        setRelationshipManager(null);
+        return;
+      }
 
       if (res.ok) {
         setAutoTradeAllowed(data.auto_trade_allowed ?? false);
         setProfileId(data.id ?? null);
+        setRelationshipManager(data.relationship_manager ?? null);
       }
     } catch (err) {
       console.error("Profile fetch failed:", err);
@@ -121,31 +146,65 @@ const ProfileTab: React.FC = () => {
           <p className="text-sm text-base-content/70">Phone</p>
           <p className="font-medium">{user.mobile || "—"}</p>
         </div>
-        
+
         {loading ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 py-2">
             <span className="loading loading-spinner loading-sm"></span>
-            <span className="text-sm text-base-content/70">Loading settings...</span>
-          </div>
-        ) : profileId ? (
-          <div className="form-control">
-            <label className="label cursor-pointer justify-start gap-4">
-              <span className="label-text font-medium">Auto Trade Allowed</span>
-              <input
-                type="checkbox"
-                className="toggle toggle-primary"
-                checked={autoTradeAllowed}
-                onChange={toggleAutoTrade}
-              />
-            </label>
-            <p className="text-xs text-base-content/60 mt-1">
-              Enable automatic trading for your strategies
-            </p>
+            <span className="text-sm text-base-content/70">Loading profile settings…</span>
           </div>
         ) : (
-          <div className="text-sm text-base-content/70">
-            No active profile found. Please connect a broker first.
-          </div>
+          <>
+            <div className="pt-2 border-t border-base-300">
+              <p className="text-sm text-base-content/70 mb-2">Relationship manager</p>
+              {(() => {
+                const rm = relationshipManager;
+                const displayName = rm
+                  ? `${rm.first_name || ""} ${rm.last_name || ""}`.trim() ||
+                    DEFAULT_RELATIONSHIP_MANAGER.displayName
+                  : DEFAULT_RELATIONSHIP_MANAGER.displayName;
+                const email = rm?.email?.trim() || DEFAULT_RELATIONSHIP_MANAGER.email;
+                const phone =
+                  (rm?.mobile && String(rm.mobile).trim()) ||
+                  DEFAULT_RELATIONSHIP_MANAGER.phone;
+                return (
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">{displayName}</p>
+                    <p>
+                      <a className="link link-primary" href={`mailto:${email}`}>
+                        {email}
+                      </a>
+                    </p>
+                    <p>
+                      <a className="link link-primary" href={`tel:${phone.replace(/\s/g, "")}`}>
+                        {phone}
+                      </a>
+                    </p>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {profileId ? (
+              <div className="form-control">
+                <label className="label cursor-pointer justify-start gap-4">
+                  <span className="label-text font-medium">Auto Trade Allowed</span>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-primary"
+                    checked={autoTradeAllowed}
+                    onChange={toggleAutoTrade}
+                  />
+                </label>
+                <p className="text-xs text-base-content/60 mt-1">
+                  Enable automatic trading for your strategies
+                </p>
+              </div>
+            ) : (
+              <div className="text-sm text-base-content/70">
+                No active profile found. Please connect a broker first.
+              </div>
+            )}
+          </>
         )}
 
         {error && (

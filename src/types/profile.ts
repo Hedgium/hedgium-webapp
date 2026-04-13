@@ -61,6 +61,8 @@ export interface Profile {
         port: number;
         username?: string | null;
     } | null;
+    /** Hedgium relationship manager (staff). */
+    relationship_manager?: User | null;
 }
 
 export interface ProfileResponse {
