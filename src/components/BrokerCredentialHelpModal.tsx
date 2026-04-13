@@ -71,7 +71,10 @@ export default function BrokerCredentialHelpModal({
     ? allItems.filter((item) => item.field === field)
     : allItems;
   const brokerName = BROKER_DISPLAY_NAMES[brokerKey] ?? brokerKey;
-  const titleLabel = items.length === 1 ? items[0].label : null;
+  const singleItem = items.length === 1 ? items[0] : null;
+  const modalHeading =
+    singleItem?.modalTitle ??
+    (singleItem ? `How to get ${singleItem.label}` : `How to get ${brokerName} credentials`);
 
   if (!open) return null;
 
@@ -79,9 +82,7 @@ export default function BrokerCredentialHelpModal({
     <dialog open className="modal modal-open z-[100]">
       <div className="modal-box relative z-[101] flex max-h-[85vh] w-11/12 max-w-3xl flex-col p-6">
         <h3 className="shrink-0 text-lg font-semibold text-base-content">
-          {titleLabel
-            ? `How to get ${titleLabel}`
-            : `How to get ${brokerName} credentials`}
+          {modalHeading}
         </h3>
         {items.length === 0 ? (
           <p className="mt-2 shrink-0 text-sm text-base-content/70">

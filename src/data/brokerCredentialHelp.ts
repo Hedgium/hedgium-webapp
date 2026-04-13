@@ -12,6 +12,8 @@ export type CredentialHelpStep = {
 export type CredentialHelpItem = {
   field: string;
   label: string;
+  /** When set (single-item modal), used as the full H3 title instead of "How to get {label}". */
+  modalTitle?: string;
   steps: CredentialHelpStep[];
 };
 
@@ -156,6 +158,22 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
         {
           text: "Confirm when you see **TOTP successfully registered**.",
           imageUrl: "/images/onboarding/kotakneo_totp_4.png",
+        },
+      ],
+    },
+    {
+      field: "whitelist_ip",
+      label: "Whitelist static IP",
+      modalTitle: "How to whitelist static IP?",
+      steps: [
+        { text: "Log in to **Kotak Neo** (app or **neo.kotaksecurities.com**)." },
+        { text: "Open **More**." },
+        { text: "Open **Trade API**." },
+        {
+          text: "If you have not already created one, tap **Create API Application** (or equivalent) to create your API app.",
+        },
+        {
+          text: "Tap **Add IP** (or **Add IP address**) and enter your **primary static IP** shown above — the same IP Hedgium uses for your order requests.",
         },
       ],
     },
