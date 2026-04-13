@@ -162,7 +162,7 @@ export default function AuthInitializingProvider({
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
         <div className="w-full max-w-[400px]">
-          <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+          <div className="bg-base-100 rounded-xl border border-base-300 p-6">
             {/* Header */}
             <div className="text-center mb-6">
               <h2 className="text-xl font-semibold text-base-content tracking-tight">

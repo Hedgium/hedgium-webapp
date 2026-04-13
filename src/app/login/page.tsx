@@ -73,7 +73,7 @@ const LoginContent: React.FC = () => {
         </p>
       </div>
 
-      <div className="rounded-xl border border-base-300 bg-base-100 p-6 shadow-sm">
+      <div className="rounded-xl border border-base-300 bg-base-100 p-6">
           {accessToken ? (
             <div className="py-4 text-center">
               <p className="text-sm font-medium text-success">Login successful. Redirecting…</p>
