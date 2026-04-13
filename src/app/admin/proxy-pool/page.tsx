@@ -42,16 +42,18 @@ export default function AdminProxyPoolPage() {
       const data = await res.json();
       const list = (data.results || []) as Array<{
         id: number | null;
-        user?: { email?: string };
+        user?: { email?: string; first_name?: string; last_name?: string };
         broker_name?: string;
       }>;
       const opts: ProfileOption[] = [];
       for (const p of list) {
         if (p.id == null) continue;
         const email = p.user?.email || "";
+        const name = [p.user?.first_name, p.user?.last_name].filter(Boolean).join(" ").trim();
+        const namePart = name ? `${name} · ` : "";
         opts.push({
           id: p.id,
-          label: `#${p.id} ${email} · ${p.broker_name || ""}`.trim(),
+          label: `#${p.id} ${namePart}${email} · ${p.broker_name || ""}`.trim(),
         });
       }
       setProfileOptions(opts);
@@ -312,14 +314,20 @@ export default function AdminProxyPoolPage() {
                     {r.username ? "••••••••" : "—"}
                   </td>
                   <td>{r.is_active ? "Yes" : "No"}</td>
-                  <td className="text-sm">
+                  <td className="text-sm max-w-[280px]">
                     {r.assigned_profile ? (
-                      <span>
-                        #{r.assigned_profile.id}{" "}
-                        <span className="text-base-content/60">
-                          ({r.assigned_profile.broker_user_id} · {r.assigned_profile.broker_name})
-                        </span>
-                      </span>
+                      <div className="space-y-0.5">
+                        <div className="font-medium text-base-content/90">
+                          {[r.assigned_profile.first_name, r.assigned_profile.last_name]
+                            .filter(Boolean)
+                            .join(" ")
+                            .trim() || "—"}
+                        </div>
+                        <div className="text-base-content/60 text-xs break-all">
+                          #{r.assigned_profile.id} · {r.assigned_profile.broker_user_id ?? "—"} ·{" "}
+                          {r.assigned_profile.broker_name}
+                        </div>
+                      </div>
                     ) : (
                       "—"
                     )}

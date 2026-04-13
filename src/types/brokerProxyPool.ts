@@ -3,6 +3,8 @@ export type BrokerProxyPoolAssignedProfile = {
   user_id: number;
   broker_name: string;
   broker_user_id?: string | null;
+  first_name?: string;
+  last_name?: string;
 };
 
 export type BrokerProxyPool = {
