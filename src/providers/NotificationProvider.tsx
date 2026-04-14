@@ -54,6 +54,9 @@ export default function NotificationProvider({ children }: { children: React.Rea
   useEffect(() => {
     if (!accessToken) return;
 
+    // Load alerts via HTTP regardless of WebSocket — WS is only for live pushes.
+    void fetchNotifications();
+
     const connectWebSocket = () => {
       if (wsRef.current) return; // already connected or connecting
 
@@ -66,7 +69,6 @@ export default function NotificationProvider({ children }: { children: React.Rea
       wsRef.current.onopen = () => {
         console.log("✅ WebSocket connected");
         retryCountRef.current = 0; // reset retry count
-        fetchNotifications(); // load initial notifications
       };
 
       wsRef.current.onmessage = (event) => {
@@ -103,7 +105,7 @@ export default function NotificationProvider({ children }: { children: React.Rea
       wsRef.current = null;
       retryCountRef.current = 0;
     };
-  }, [accessToken]);
+  }, [accessToken, fetchNotifications]);
 
   return <>{children}</>;
 }

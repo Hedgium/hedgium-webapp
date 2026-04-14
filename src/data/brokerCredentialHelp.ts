@@ -167,10 +167,9 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
       modalTitle: "How to whitelist static IP?",
       steps: [
         { text: "Log in to **Kotak Neo** (app or **neo.kotaksecurities.com**)." },
-        { text: "Open **More**." },
-        { text: "Open **Trade API**." },
+        { text: "Navigate to: **More → TradeAPI → API Dashboard**", imageUrl: "/images/onboarding/kotakneo_api_1.png" },
         {
-          text: "If you have not already created one, tap **Create API Application** (or equivalent) to create your API app.",
+          text: "If you have not already created one, tap **Create API Application** to create your API app.",
         },
         {
           text: "Tap **Add IP** (or **Add IP address**) and enter your **primary static IP** shown above — the same IP Hedgium uses for your order requests.",
