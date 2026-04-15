@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StrategyBuilder, StrategyBuilderCreate, StrategyBuilderUpdate, StrategyTemplate } from '@/types/builder';
 import { authFetch } from '@/utils/api';
 
@@ -12,7 +12,7 @@ interface SuperGroup {
 
 interface BuilderFormProps {
     initialData?: StrategyBuilder;
-    onSubmit: (data: StrategyBuilderCreate | StrategyBuilderUpdate) => void;
+    onSubmit: (data: StrategyBuilderCreate | StrategyBuilderUpdate) => void | Promise<void>;
     onCancel: () => void;
 }
 
@@ -34,6 +34,8 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
     const [loadingSupergroups, setLoadingSupergroups] = useState(false);
     const [strategyTemplates, setStrategyTemplates] = useState<StrategyTemplate[]>([]);
     const [loadingTemplates, setLoadingTemplates] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const submittingRef = useRef(false);
 
     useEffect(() => {
         if (initialData) {
@@ -145,15 +147,23 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         }));
     };
 
-    const handleSubmit = (e?: React.FormEvent | React.KeyboardEvent) => {
+    const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
         if (e) {
             e.preventDefault();
         }
-        onSubmit(formData as StrategyBuilderCreate);
+        if (submittingRef.current) return;
+        submittingRef.current = true;
+        setIsSubmitting(true);
+        try {
+            await Promise.resolve(onSubmit(formData as StrategyBuilderCreate));
+        } finally {
+            submittingRef.current = false;
+            setIsSubmitting(false);
+        }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isSubmitting}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div className="form-control">
@@ -344,8 +354,16 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
-                <button type="button" onClick={onCancel} className="btn btn-ghost btn-sm">Cancel</button>
-                <button type="submit" className="btn btn-primary btn-sm">{initialData ? 'Update' : 'Create'}</button>
+                <button type="button" onClick={onCancel} disabled={isSubmitting} className="btn btn-ghost btn-sm">
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`btn btn-primary btn-sm min-w-[5.5rem]${isSubmitting ? ' loading' : ''}`}
+                >
+                    {initialData ? 'Update' : 'Create'}
+                </button>
             </div>
         </form>
     );

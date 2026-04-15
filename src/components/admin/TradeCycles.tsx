@@ -6,7 +6,7 @@ import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { RotateCw, Eye, Plus, X, LayoutList, Zap, GitCompare, ExternalLink } from "lucide-react";
-import Link from "next/link";
+// import Link from "next/link";
 
 // Lazy load the modal component
 const TradeCycleDetailsModal = lazy(

@@ -29,7 +29,8 @@ interface QuotePayload {
   instrument_token?: number;
 }
 
-// Configuration: Add or remove instruments here
+// Configuration: Add or remove instruments here.
+// Keep Zerodha tokens in sync with hedgium_backend/livefeed/constants.py INDEX_BENCHMARK_INSTRUMENTS.
 const STATIC_INSTRUMENTS = [
   { name: "NIFTY 50", token: 256265, mode: "FULL" },
   { name: "SENSEX", token: 265, mode: "FULL" },
