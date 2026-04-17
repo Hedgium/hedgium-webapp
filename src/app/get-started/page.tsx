@@ -258,7 +258,7 @@ export default function GetStartedPage() {
         {/* Top: Back to home */}
         <div className="px-4 pt-4 pb-2 border-b border-base-300">
           <Link
-            href="/"
+            href="/welcome"
             className="inline-flex items-center gap-1.5 text-sm text-base-content/70 hover:text-base-content transition"
           >
             <Home className="w-3.5 h-3.5" />

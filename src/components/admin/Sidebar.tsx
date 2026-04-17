@@ -104,7 +104,7 @@ export default function AdminSidebar() {
           <button
             onClick={() => {
               logout();
-              router.push("/login");
+              router.push("/");
             }}
             className={`btn btn-ghost  normal-case gap-2 text-error hover:bg-base-300/70 hover:border-none hover:text-error-content ${
               isCollapsed ? "justify-center px-2" : "justify-start"

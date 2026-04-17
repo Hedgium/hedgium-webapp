@@ -80,7 +80,7 @@ export default function SandboxNavigation({ sidebar = false }: { sidebar?: boole
 
         <div className="p-4 border-t border-base-300 flex flex-col gap-2">
           <Link
-            href="/hedgium/home"
+            href="/home"
             className="btn btn-ghost justify-start normal-case gap-2 hover:bg-base-300/70"
           >
             <LogIn className="h-4 w-4" />
@@ -96,7 +96,7 @@ export default function SandboxNavigation({ sidebar = false }: { sidebar?: boole
           <button
             onClick={() => {
               logout();
-              router.push("/login");
+              router.push("/");
             }}
             className="btn btn-ghost justify-start normal-case gap-2 text-error hover:bg-base-300/70"
           >

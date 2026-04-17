@@ -5,10 +5,10 @@ import { X, Menu, LogIn } from "lucide-react";
 import Link from "next/link";
 
 const NAV_LINKS = [
-  { label: "What We Do", href: "/#what-we-do" },
-  { label: "Unlock Potential", href: "/#unlock-potential" },
-  { label: "Why Hedgium", href: "/#why-hedgium" },
-  { label: "Fees", href: "/#fees" },
+  { label: "What We Do", href: "/welcome#what-we-do" },
+  { label: "Unlock Potential", href: "/welcome#unlock-potential" },
+  { label: "Why Hedgium", href: "/welcome#why-hedgium" },
+  { label: "Fees", href: "/welcome#fees" },
 ] as const;
 
 export default function Navbar() {
@@ -30,7 +30,7 @@ export default function Navbar() {
       <div className="navbar px-0 max-w-8xl mx-auto">
       <div className="navbar-start relative z-[100]">
         <Link
-          href="/"
+          href="/welcome"
           className="flex items-center text-base-content hover:opacity-90 transition-opacity"
           aria-label="Hedgium home"
         >
@@ -67,7 +67,7 @@ export default function Navbar() {
         </Link>
 
         <Link
-          href="/login"
+          href="/"
           className="hidden lg:flex items-center gap-1.5 text-base-content hover:text-primary text-sm font-medium uppercase tracking-wide shrink-0"
         >
           <LogIn className="h-5 w-5 shrink-0" aria-hidden />
@@ -109,7 +109,7 @@ export default function Navbar() {
               <li>
                 
               <Link
-              href="/login"
+              href="/"
               className="items-center gap-1.5 text-base-content hover:text-primary text-sm font-medium tracking-wide shrink-0"
             >
               {/* <LogIn className="h-5 w-5 shrink-0" aria-hidden /> */}

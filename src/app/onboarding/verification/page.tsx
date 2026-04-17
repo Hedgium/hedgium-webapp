@@ -18,25 +18,9 @@ const VerificationPending: React.FC = () => {
   const [uploadRedirecting, setUploadRedirecting] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
-  const handleUploadDocuments = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setUploadRedirecting(true);
-      const res = await authFetch("users/me/", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ signup_step: "email_verified" }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Failed to update");
-      }
-      updateUser({ signup_step: "email_verified" });
-      router.push("/onboarding/complete-profile");
-    } catch (e) {
-      alert.error(e instanceof Error ? e.message : "Something went wrong", { duration: 3000 });
-      setUploadRedirecting(false);
-    }
+  const handleUploadDocuments = () => {
+    setUploadRedirecting(true);
+    router.push("/onboarding/complete-profile");
   };
 
   const handleSkip = async (e: React.FormEvent) => {
@@ -61,7 +45,7 @@ const VerificationPending: React.FC = () => {
     if (user?.signup_step === "verified") {
       setRedirecting(true);
       alert.success("Verified. Redirecting to home.");
-      router.push("/hedgium/home");
+      router.push("/home");
     }
   }, [user, alert, router]);
 

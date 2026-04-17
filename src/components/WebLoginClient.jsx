@@ -25,7 +25,7 @@ export default function WebLoginClient({ loginUrl, token }) {
           window.location.href = loginUrl;
         } catch (err) {
           console.error("Login failed:", err);
-          router.push("/login");
+          router.push("/");
         }
       }
     };

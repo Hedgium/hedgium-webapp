@@ -17,7 +17,7 @@ const linkClass =
 export default function OnboardingNav({
   backHref,
   backLabel = "Back",
-  homeHref = "/hedgium/home",
+  homeHref = "/home",
   homeLabel = "Home",
 }: OnboardingNavProps) {
   return (

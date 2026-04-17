@@ -12,11 +12,11 @@ import { useNotificationStore } from "@/store/notificationStore";
 import KycStatusIndicator from "@/components/KycStatusIndicator";
 
 const tabs = [
-  { name: "Home", href: "/hedgium/home", icon: <Home className="h-5 w-5" /> },
-  { name: "Positions", href: "/hedgium/positions", icon: <Briefcase className="h-5 w-5" /> },
-  { name: "Reports", href: "/hedgium/reports", icon: <FileText className="h-5 w-5" /> },
-  { name: "Alerts", href: "/hedgium/alerts", icon: <Bell className="h-5 w-5" /> },
-  { name: "Settings", href: "/hedgium/settings", icon: <Settings className="h-5 w-5" /> },
+  { name: "Home", href: "/home", icon: <Home className="h-5 w-5" /> },
+  { name: "Positions", href: "/positions", icon: <Briefcase className="h-5 w-5" /> },
+  { name: "Reports", href: "/reports", icon: <FileText className="h-5 w-5" /> },
+  { name: "Alerts", href: "/alerts", icon: <Bell className="h-5 w-5" /> },
+  { name: "Settings", href: "/settings", icon: <Settings className="h-5 w-5" /> },
 ];
 
 export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean }) {
@@ -65,7 +65,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
                   Plan: {planName}
                 </span>
                 {/* {!isLegends && user?.active_subscription?.plan?.name ? (
-                  <Link href="/hedgium/upgrade" className="text-[11px] text-primary hover:underline">
+                  <Link href="/upgrade" className="text-[11px] text-primary hover:underline">
                     Upgrade
                   </Link>
                 ) : null} */}
@@ -76,7 +76,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
 
 
         {/* <div className="p-4 border-b border-base-300">
-          <Link href="/hedgium/home" className="flex items-center gap-2 text-xl font-bold text-primary">
+          <Link href="/home" className="flex items-center gap-2 text-xl font-bold text-primary">
             <LineChart width="26" height="26" className="text-primary" />
             <span>Hedgium</span>
           </Link>
@@ -143,7 +143,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
             <button
               onClick={() => {
                 logout();
-                router.push("/login");
+                router.push("/");
               }}
               className="btn btn-ghost justify-start normal-case gap-2 text-error hover:bg-base-300/70 hover:border-none hover:text-error-content"
               aria-label="Logout"

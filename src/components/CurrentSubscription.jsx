@@ -33,7 +33,7 @@ export default function CurrentSubscription() {
 
         {!isLegends && (
           <Link
-            href="/hedgium/upgrade"
+            href="/upgrade"
             className="btn btn-sm btn-primary btn-outline"
           >
             Upgrade

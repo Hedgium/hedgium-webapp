@@ -47,7 +47,7 @@ export default function Custom404() {
             </p>
             
             <div className="card-actions justify-center mt-6">
-              <Link href="/" className="btn btn-primary">
+              <Link href="/welcome" className="btn btn-primary">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5 mr-2"

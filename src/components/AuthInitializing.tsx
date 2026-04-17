@@ -10,11 +10,14 @@ type InitState = "checking-login" | "login-status" | "redirecting" | "error";
 interface AuthInitializingProviderProps {
   children: ReactNode;
   requireAuth?: boolean;
+  /** On `/` login: show session check until init finishes so the form does not flash first. */
+  deferLoginFormUntilAuthReady?: boolean;
 }
 
 export default function AuthInitializingProvider({ 
   children, 
-  requireAuth = true 
+  requireAuth = true,
+  deferLoginFormUntilAuthReady = false,
 }: AuthInitializingProviderProps) {
   const { accessToken, isInitializing, user } = useAuthStore();
   const router = useRouter();
@@ -22,6 +25,7 @@ export default function AuthInitializingProvider({
   const [initState, setInitState] = useState<InitState>("checking-login");
   const [hasTimedOut, setHasTimedOut] = useState(false);
   const [showChildren, setShowChildren] = useState(false);
+  const [loginDeferTimedOut, setLoginDeferTimedOut] = useState(false);
 
   useEffect(() => {
     // Reset timeout flag when initialization starts
@@ -30,6 +34,25 @@ export default function AuthInitializingProvider({
       setInitState("checking-login");
     }
   }, [isInitializing]);
+
+  // Entering a protected route: clear any stale gate state from a prior public route
+  useEffect(() => {
+    if (!requireAuth) return;
+    setHasTimedOut(false);
+    setInitState("checking-login");
+    setShowChildren(false);
+  }, [requireAuth]);
+
+  useEffect(() => {
+    setLoginDeferTimedOut(false);
+  }, [pathname, deferLoginFormUntilAuthReady]);
+
+  // If session init hangs, still allow the login form (degraded UX beats infinite spinner)
+  useEffect(() => {
+    if (!deferLoginFormUntilAuthReady || !isInitializing) return;
+    const t = setTimeout(() => setLoginDeferTimedOut(true), 12000);
+    return () => clearTimeout(t);
+  }, [deferLoginFormUntilAuthReady, isInitializing]);
 
   useEffect(() => {
     // Determine current state based on auth store values
@@ -43,15 +66,15 @@ export default function AuthInitializingProvider({
         setInitState("login-status");
       }
     } else if (!isInitializing && !accessToken && initState !== "error") {
-      // No token after initialization - show error and redirect
-      setInitState("error");
-      setShowChildren(false);
-      // Redirect to login after showing error briefly, preserving the intended destination
-      if (requireAuth) {
-        setTimeout(() => {
-          router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-        }, 1500);
+      if (!requireAuth) {
+        return;
       }
+      // No token after initialization - show error and redirect
+      // setInitState("error");
+      setShowChildren(false);
+      setTimeout(() => {
+        router.replace(`/?next=${encodeURIComponent(pathname)}`);
+      }, 1500);
     }
   }, [isInitializing, accessToken, router, pathname, requireAuth, initState]);
 
@@ -79,15 +102,14 @@ export default function AuthInitializingProvider({
 
   // Timeout handling - if initialization takes too long, redirect to login
   useEffect(() => {
+    if (!requireAuth) return;
+
     const timeout = setTimeout(() => {
       if (isInitializing) {
         setHasTimedOut(true);
-        // Redirect to login after a short delay to show error state, preserving the intended destination
-        if (requireAuth) {
-          setTimeout(() => {
-            router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-          }, 1500);
-        }
+        setTimeout(() => {
+          router.replace(`/?next=${encodeURIComponent(pathname)}`);
+        }, 1500);
       }
     }, 10000); // 10 second timeout
 
@@ -97,7 +119,7 @@ export default function AuthInitializingProvider({
   // Handle redirect when not logged in (for protected routes)
   useEffect(() => {
     if (requireAuth && !isInitializing && !accessToken) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      router.replace(`/?next=${encodeURIComponent(pathname)}`);
     }
   }, [requireAuth, isInitializing, accessToken, router, pathname]);
 
@@ -126,15 +148,39 @@ export default function AuthInitializingProvider({
   const currentStateIndex = states.findIndex((s) => s.key === initState);
   const currentState = states[currentStateIndex] || states[0];
 
-  // If not requiring auth and no token, just render children
-  if (!requireAuth && !isInitializing && !accessToken) {
+  // Only block on actual session bootstrap — not on `accessToken` alone, or we never leave
+  // this screen when RootLayoutClient does not redirect (and logged-in users would spin forever).
+  const showLoginSessionCheck =
+    deferLoginFormUntilAuthReady &&
+    !loginDeferTimedOut &&
+    isInitializing;
+
+  // Public routes (except `/` login): never block on the auth gate
+  if (!requireAuth && !deferLoginFormUntilAuthReady) {
     return <>{children}</>;
   }
 
-  // Show loading UI if initializing, showing login status, or redirecting (but not ready to show children)
-  const showLoading = isInitializing || initState === "login-status" || (initState === "redirecting" && !showChildren);
+  // Login at `/`: session check first, then form (same loading UI as protected routes below)
+  if (!requireAuth && deferLoginFormUntilAuthReady && !showLoginSessionCheck) {
+    return <>{children}</>;
+  }
 
-  if (hasTimedOut || initState === "error") {
+  const protectedLoading =
+    isInitializing ||
+    initState === "login-status" ||
+    (initState === "redirecting" && !showChildren);
+  const showLoading =
+    (requireAuth && protectedLoading) ||
+    (!requireAuth && deferLoginFormUntilAuthReady && showLoginSessionCheck);
+
+  const loadingTitle =
+    !requireAuth && deferLoginFormUntilAuthReady ? "Checking session" : "Initializing";
+  const loadingSubtitle =
+    !requireAuth && deferLoginFormUntilAuthReady
+      ? "One moment while we verify your account…"
+      : "Please wait while we set things up";
+
+  if (requireAuth && (hasTimedOut || initState === "error")) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
         <div className="w-full max-w-[400px]">
@@ -157,20 +203,16 @@ export default function AuthInitializingProvider({
     );
   }
 
-  // Show loading UI
   if (showLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
         <div className="w-full max-w-[400px]">
           <div className="bg-base-100 rounded-xl border border-base-300 p-6">
-            {/* Header */}
             <div className="text-center mb-6">
               <h2 className="text-xl font-semibold text-base-content tracking-tight">
-                Initializing
+                {loadingTitle}
               </h2>
-              <p className="text-sm text-base-content/60 mt-1">
-                Please wait while we set things up
-              </p>
+              <p className="text-sm text-base-content/60 mt-1">{loadingSubtitle}</p>
             </div>
 
             {/* State Steps */}

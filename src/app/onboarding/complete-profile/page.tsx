@@ -1,19 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "nextjs-toploader/app";
 import { authFetch } from "@/utils/api";
 import { useAuthStore } from "@/store/authStore";
 import useAlert from "@/hooks/useAlert";
 import SignUpStepper from "@/components/SignUpStepper";
-import OnboardingNav from "@/components/OnboardingNav";
 import AuthFlowBrand from "@/components/AuthFlowBrand";
 import { Loader2 } from "lucide-react";
 
 const CompleteProfile: React.FC = () => {
   const router = useRouter();
   const alert = useAlert();
-  const { updateUser } = useAuthStore();
+  const { updateUser, user } = useAuthStore();
+
+  useEffect(() => {
+    if (user?.signup_step === "email_verified") {
+      router.replace("/onboarding/terms");
+    }
+  }, [user, router]);
 
   const [panNumber, setPanNumber] = useState("");
   const [aadharNumber, setAadharNumber] = useState("");
@@ -61,7 +66,7 @@ const CompleteProfile: React.FC = () => {
 
       if (!detailsRes.ok) {
         const errorData = await detailsRes.json();
-        throw new Error(errorData.message || detailsRes.statusText);
+        throw new Error(errorData.detail || errorData.message || detailsRes.statusText);
       }
 
       if (!skip) {
@@ -110,7 +115,7 @@ const CompleteProfile: React.FC = () => {
         <div className="flex justify-center">
           <AuthFlowBrand className="mb-0" />
         </div>
-        <SignUpStepper currentStepId="initiated" />
+        <SignUpStepper currentStepId="documents_uploaded" />
       </div>
 
       <div className="mt-6 w-full max-w-[400px]">

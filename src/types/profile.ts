@@ -5,6 +5,8 @@ export interface User {
     last_name: string;
     mobile?: string | null;
     signup_step?: string | null;
+    terms_accepted_at?: string | null;
+    terms_version?: string | null;
     verified?: boolean | null;
     last_login?: string | null;
     aadhar_number?: string | null;

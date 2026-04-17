@@ -36,6 +36,8 @@ export interface User {
   email_verified?: boolean;
   verified: boolean;
   signup_step: string;
+  terms_accepted_at?: string | null;
+  terms_version?: string | null;
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
   kyc_skipped: boolean;
@@ -204,6 +206,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ user });
       } else {
         set({ user: null });
+        if (res.status === 401 || res.status === 403) {
+          get().stopAutoRefresh();
+          set({ accessToken: null });
+        }
       }
     } catch {
       set({ user: null });

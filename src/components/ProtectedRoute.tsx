@@ -12,7 +12,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!isInitializing && !accessToken) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      router.replace(`/?next=${encodeURIComponent(pathname)}`);
     }
   }, [isInitializing, accessToken, router, pathname]);
 
@@ -22,12 +22,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const kycRoute = () => {
     switch (user?.signup_step) {
       case "initiated":
+        return "/onboarding/verify-email";
+      case "email_verified":
+        return "/onboarding/terms";
+      case "terms_accepted":
         return "/onboarding/complete-profile";
       case "documents_uploaded":
       case "broker_profile_added":
         return "/onboarding/verification";
       default:
-        return "/hedgium/home";
+        return "/home";
     }
   };
 

@@ -172,7 +172,8 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
           text: "If you have not already created one, tap **Create API Application** to create your API app.",
         },
         {
-          text: "Tap **Add IP** (or **Add IP address**) and enter your **primary static IP** shown above — the same IP Hedgium uses for your order requests.",
+          text: "Tap **Add IP** and enter your **primary static IP** — the same IP Hedgium uses for your order requests.",
+          imageUrl: "/images/onboarding/kotakneo_ip2.png",
         },
       ],
     },

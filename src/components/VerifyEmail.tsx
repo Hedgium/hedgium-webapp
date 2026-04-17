@@ -38,8 +38,8 @@ export interface VerifyEmailProps {
  */
 export default function VerifyEmail({
   email: emailProp,
-  successPath = "/onboarding/complete-profile",
-  skipPath = "/onboarding/complete-profile",
+  successPath = "/onboarding/terms",
+  skipPath = "/onboarding/terms",
   autoSendOnMount = true,
   showSkip = true,
   className,
@@ -269,7 +269,7 @@ export default function VerifyEmail({
             ) : (
               <button
                 type="button"
-                className="text-primary pointer-cursor font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40"
+                className="text-primary cursor-pointer font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40"
                 onClick={sendOtp}
                 disabled={sending}
               >
@@ -281,7 +281,7 @@ export default function VerifyEmail({
         ) : (
           <button
             type="button"
-            className="text-primary pointer-cursor font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40"
+            className="text-primary cursor-pointer font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40"
             onClick={sendOtp}
             disabled={sending}
           >

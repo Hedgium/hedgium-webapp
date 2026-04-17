@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
                 If an account exists for that email, we&apos;ve sent a reset link. Check your inbox and spam folder.
               </p>
               <Link
-                href="/login"
+                href="/"
                 className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
 
         <p className="mt-4 text-center">
           <Link
-            href="/login"
+            href="/"
             className="inline-flex items-center gap-1 text-xs text-base-content/50 hover:text-primary"
           >
             <ArrowLeft className="h-3 w-3" />

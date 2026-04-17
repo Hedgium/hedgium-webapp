@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
               Your password has been reset. You can now log in with your new password.
             </p>
             <Link
-              href="/login"
+              href="/"
               className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -167,7 +167,7 @@ export default function ResetPasswordPage() {
 
           <p className="text-center mt-4">
             <Link
-              href="/login"
+              href="/"
               className="text-xs text-base-content/50 hover:text-primary inline-flex items-center gap-1"
             >
               <ArrowLeft className="h-3 w-3" />

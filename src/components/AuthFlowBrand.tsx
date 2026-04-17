@@ -8,7 +8,7 @@ type AuthFlowBrandProps = {
 export default function AuthFlowBrand({ className = "mb-5" }: AuthFlowBrandProps) {
   return (
     <Link
-      href="/"
+      href="/welcome"
       className={`block rounded-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${className}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

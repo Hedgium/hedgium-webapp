@@ -1,6 +1,6 @@
 # Design Principles — Hedgium Frontend
 
-Apply these principles across all UI so the product feels like a modern, professional SaaS platform: clean, compact, and consistent. **Reference implementation:** Reports and Positions (`/hedgium/reports`, `/hedgium/positions`) — match their shell, surfaces, and typography unless a screen has a strong reason to differ.
+Apply these principles across all UI so the product feels like a modern, professional SaaS platform: clean, compact, and consistent. **Reference implementation:** Reports and Positions (`/reports`, `/positions`) — match their shell, surfaces, and typography unless a screen has a strong reason to differ.
 
 ---
 

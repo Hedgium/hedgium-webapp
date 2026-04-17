@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 type MaxWidth = "3xl" | "6xl" | "7xl";
 
 /**
- * Visual shell aligned with /hedgium/* pages: ambient gradient, grid texture, constrained content width.
+ * Visual shell aligned with main app pages: ambient gradient, grid texture, constrained content width.
  */
 export default function SandboxPageShell({
   children,

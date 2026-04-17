@@ -256,7 +256,7 @@ export default function PositionsPage() {
                 <p className="mt-2 text-sm leading-relaxed text-base-content/60">
                   When you have active cycles, positions will show here. You can also try reloading after syncing your broker.
                 </p>
-                <Link href="/hedgium/home" className="btn btn-primary btn-sm mt-6 gap-2 rounded-full">
+                <Link href="/home" className="btn btn-primary btn-sm mt-6 gap-2 rounded-full">
                   Go to home
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </Link>

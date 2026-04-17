@@ -181,10 +181,10 @@ export default function BrokerLoginStatus() {
                   if (broker.hasProfile && broker.profileId && broker.name) {
                     // Skip credentials — pass existing profile to the login step
                     router.push(
-                      `/hedgium/add-broker?profileId=${broker.profileId}&broker=${broker.name}`
+                      `/add-broker?profileId=${broker.profileId}&broker=${broker.name}`
                     );
                   } else {
-                    router.push("/hedgium/add-broker");
+                    router.push("/add-broker");
                   }
                 }}
                 className="btn btn-primary btn-sm gap-1.5"
@@ -240,7 +240,11 @@ export default function BrokerLoginStatus() {
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-base-100 p-6 rounded-xl shadow-xl max-w-md w-full">
-            <h3 className="font-bold text-lg mb-4">Login to {broker.name}</h3>
+            <h3 className="font-bold text-lg mb-2">Login to {broker.name}</h3>
+            <p className="text-sm text-base-content/70 mb-4">
+              Your {broker.name === "KOTAKNEO" ? "MPIN" : "password"} is only used to
+              sign in with your broker for this session. We do not store it.
+            </p>
 
             <div className="space-y-3">
               <div>

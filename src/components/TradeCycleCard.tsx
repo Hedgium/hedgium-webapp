@@ -158,7 +158,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
               This strategy is not available in your current plan.
             </p>
             <div className="mx-auto mt-5 flex max-w-xs flex-col gap-2">
-              <Link href="/hedgium/settings" className="btn btn-primary btn-sm gap-2 rounded-full">
+              <Link href="/settings" className="btn btn-primary btn-sm gap-2 rounded-full">
                 <ExternalLink className="h-4 w-4" aria-hidden />
                 Upgrade account
               </Link>
@@ -239,7 +239,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
           <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-base-300/50 pt-4">
             {cycle.state !== "NEW" && (
               <Link
-                href={isSandbox ? "/sandbox/positions" : "/hedgium/positions"}
+                href={isSandbox ? "/sandbox/positions" : "/positions"}
                 className="btn btn-primary btn-sm gap-1.5 rounded-full px-5 shadow-sm shadow-primary/15"
               >
                 View positions

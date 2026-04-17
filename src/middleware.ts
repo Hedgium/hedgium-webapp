@@ -8,7 +8,7 @@ export function middleware(request: NextRequest) {
     const session = request.cookies.get('__app_session');
 
     if (!session?.value) {
-      const loginUrl = new URL('/login', request.url);
+      const loginUrl = new URL('/', request.url);
       loginUrl.searchParams.set('next', pathname);
       return NextResponse.redirect(loginUrl);
     }

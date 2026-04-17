@@ -36,7 +36,7 @@ export default function SubscriptionTab(){
                 {!user?.active_subscription && <div className="space-y-6">
                   <div className="card bg-base-200 p-4">
                     <p>No active subscription.</p>
-                    <a href="/hedgium/upgrade" className="btn btn-outline btn-sm mt-4">Upgrade now</a>
+                    <a href="/upgrade" className="btn btn-outline btn-sm mt-4">Upgrade now</a>
                   </div>
                   <div>
                     
