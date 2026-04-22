@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { authFetch } from "@/utils/api";
 import Adjustments from "@/components/admin/Adjustments";
@@ -9,10 +10,15 @@ import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { CheckCircle, ChevronLeft, Plus, Layers, RotateCcw, RotateCw } from "lucide-react";
+import { CheckCircle, ChevronLeft, Plus, Layers, Table2, RotateCcw, RotateCw } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
 import StrategyTradeCyclesSkeleton from "@/components/skeletons/StrategyTradeCyclesSkeleton";
 import ManualAdjustmentModal from "@/components/admin/strategy/ManualAdjustmentModal";
+
+const StrategyOptionChainModal = dynamic(
+  () => import("@/components/admin/strategy/StrategyOptionChainModal"),
+  { ssr: false, loading: () => null }
+);
 
 interface StrategyVersion {
   id: number;
@@ -25,6 +31,8 @@ interface StrategyDetail {
   name: string;
   description?: string | null;
   margin_required: number;
+  exchange?: string;
+  underlying_names?: string[];
   created_at: string;
   source?: string | null;
   is_active: boolean;
@@ -42,6 +50,8 @@ interface StrategyDetail {
   leg_count: number;
   versions: StrategyVersion[];
   multiplier_allowed?: boolean;
+  /** Uppercase symbol -> Zerodha underlying instrument_token from builder legs */
+  underlying_instrument_tokens?: Record<string, number>;
 }
 
 export default function StrategyDetail() {
@@ -52,6 +62,7 @@ export default function StrategyDetail() {
   const [completingStrategy, setCompletingStrategy] = useState(false);
   const [uncompletingStrategy, setUncompletingStrategy] = useState(false);
   const [showManualAdjustment, setShowManualAdjustment] = useState(false);
+  const [showOptionChainModal, setShowOptionChainModal] = useState(false);
   const [strategyRefreshing, setStrategyRefreshing] = useState(false);
   const alert = useAlert();
 
@@ -275,6 +286,20 @@ export default function StrategyDetail() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowOptionChainModal(true)}
+                disabled={!strategy?.underlying_names?.length}
+                title={
+                  strategy?.underlying_names?.length
+                    ? "Live option chain and Greeks"
+                    : "No underlyings on this strategy"
+                }
+                className="btn btn-outline btn-sm gap-1.5 border-base-content/20"
+              >
+                <Table2 className="size-4" />
+                Option chains
+              </button>
               {strategy?.completed ? (
                 <>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
@@ -318,10 +343,11 @@ export default function StrategyDetail() {
         <hr className="border-base-300/60 mb-6" />
 
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold">Strategy adjustments ({Array.isArray(strategy?.versions) ? strategy.versions.length : 0})</h2>
-            <div className="flex items-center gap-1">
-              
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 mb-2">
+            <h2 className="text-lg font-semibold min-w-0 shrink sm:pr-2">
+              Strategy adjustments ({Array.isArray(strategy?.versions) ? strategy.versions.length : 0})
+            </h2>
+            <div className="flex flex-wrap items-center gap-1 shrink-0">
               {!strategy?.completed && (
                 <button
                   type="button"
@@ -332,8 +358,6 @@ export default function StrategyDetail() {
                   Manual adjustment
                 </button>
               )}
-
-
               <button
                 type="button"
                 onClick={() => fetchStrategyData({ silent: true })}
@@ -372,6 +396,17 @@ export default function StrategyDetail() {
             strategyId={strategyId}
             onClose={() => setShowManualAdjustment(false)}
             onSuccess={() => fetchStrategyData({ silent: true })}
+          />
+        )}
+
+        {showOptionChainModal && strategy && (
+          <StrategyOptionChainModal
+            strategyId={strategyId}
+            strategyName={strategy.name}
+            exchange={strategy.exchange ?? "NFO"}
+            underlyingNames={strategy.underlying_names ?? []}
+            underlyingInstrumentTokens={strategy.underlying_instrument_tokens ?? {}}
+            onClose={() => setShowOptionChainModal(false)}
           />
         )}
       </div>

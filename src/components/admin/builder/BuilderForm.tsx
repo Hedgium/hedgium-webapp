@@ -28,7 +28,14 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         strategy_template_id: null, // Default or fetch from API
         margin_required: 0,
         multiplier_allowed: false,
-        supergroup_ids: []
+        supergroup_ids: [],
+        delta_band_min: null,
+        delta_band_max: null,
+        num_lots_delta_band_adjust: null,
+        shift_enabled: false,
+        shift_strike_distance_itm: null,
+        shift_strike_distance_otm: null,
+        sell_exposure_limit_lacs: null,
     });
     const [supergroups, setSupergroups] = useState<SuperGroup[]>([]);
     const [loadingSupergroups, setLoadingSupergroups] = useState(false);
@@ -50,7 +57,32 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 strategy_template_id: initialData.strategy_template?.id || 1,
                 margin_required: initialData.margin_required || 0,
                 multiplier_allowed: initialData.multiplier_allowed ?? false,
-                supergroup_ids: initialData.supergroup_ids || []
+                supergroup_ids: initialData.supergroup_ids || [],
+                delta_band_min:
+                    initialData.delta_band_min === undefined || initialData.delta_band_min === null
+                        ? null
+                        : Number(initialData.delta_band_min),
+                delta_band_max:
+                    initialData.delta_band_max === undefined || initialData.delta_band_max === null
+                        ? null
+                        : Number(initialData.delta_band_max),
+                num_lots_delta_band_adjust:
+                    initialData.num_lots_delta_band_adjust == null
+                        ? null
+                        : Number(initialData.num_lots_delta_band_adjust),
+                shift_enabled: initialData.shift_enabled ?? false,
+                shift_strike_distance_itm:
+                    initialData.shift_strike_distance_itm == null
+                        ? null
+                        : Number(initialData.shift_strike_distance_itm),
+                shift_strike_distance_otm:
+                    initialData.shift_strike_distance_otm == null
+                        ? null
+                        : Number(initialData.shift_strike_distance_otm),
+                sell_exposure_limit_lacs:
+                    initialData.sell_exposure_limit_lacs == null
+                        ? null
+                        : Number(initialData.sell_exposure_limit_lacs),
             });
         }
     }, [initialData]);
@@ -124,6 +156,27 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             return;
         }
 
+        const nullableNumeric = new Set([
+            'delta_band_min',
+            'delta_band_max',
+            'num_lots_delta_band_adjust',
+            'shift_strike_distance_itm',
+            'shift_strike_distance_otm',
+            'sell_exposure_limit_lacs',
+        ]);
+        if (nullableNumeric.has(name)) {
+            if (value === '') {
+                setFormData(prev => ({ ...prev, [name]: null }));
+                return;
+            }
+            const n = parseFloat(value);
+            setFormData(prev => ({
+                ...prev,
+                [name]: Number.isFinite(n) ? n : null,
+            }));
+            return;
+        }
+
         if (type === 'checkbox') {
             setFormData(prev => ({
                 ...prev,
@@ -162,10 +215,28 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         }
     };
 
-    return (
-        <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isSubmitting}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    const optionalNumberValue = (v: unknown): string | number => {
+        if (v == null) return '';
+        if (typeof v === 'number') return Number.isNaN(v) ? '' : v;
+        return '';
+    };
 
+    return (
+        <form onSubmit={handleSubmit} className="space-y-3" aria-busy={isSubmitting}>
+            <div className="join join-vertical w-full border border-base-300 rounded-box overflow-hidden bg-base-100">
+            <div className="collapse collapse-arrow join-item border-0 !rounded-none min-h-0">
+                <input
+                    type="checkbox"
+                    defaultChecked
+                    aria-label="Show or hide General"
+                    className="min-h-0"
+                />
+                <div className="collapse-title min-h-0 py-3 text-sm font-semibold text-base-content after:!top-1/2 after:!-translate-y-1/2">
+                    General
+                </div>
+                <div className="collapse-content pt-0">
+                <div className="px-0 pb-4 sm:px-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="form-control">
                     <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Strategy Template</span></label>
                     <select 
@@ -352,8 +423,160 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div>
 
             </div>
+            </div>
+            </div>
+            </div>
 
-            <div className="flex justify-end gap-2 mt-6">
+            <div className="collapse collapse-arrow join-item border-0 !rounded-none border-t border-base-300 min-h-0">
+                <input
+                    type="checkbox"
+                    defaultChecked
+                    aria-label="Show or hide Adjustment"
+                    className="min-h-0"
+                />
+                <div className="collapse-title min-h-0 py-3 text-sm font-semibold text-base-content after:!top-1/2 after:!-translate-y-1/2">
+                    Adjustment
+                </div>
+                <div className="collapse-content pt-0">
+                <div className="px-0 pb-4 sm:px-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-control md:col-span-2">
+                    <label className="label py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80">
+                            Delta band (Greeks task, per underlying)
+                        </span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label className="label py-0">
+                                <span className="label-text text-xs text-base-content/70">Min (net delta)</span>
+                            </label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="delta_band_min"
+                                value={optionalNumberValue(formData.delta_band_min)}
+                                onChange={handleChange}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSubmit(e);
+                                }}
+                                placeholder="e.g. -200 (empty = off)"
+                                className="input input-bordered input-sm h-9 w-full"
+                            />
+                        </div>
+                        <div>
+                            <label className="label py-0">
+                                <span className="label-text text-xs text-base-content/70">Max (net delta)</span>
+                            </label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="delta_band_max"
+                                value={optionalNumberValue(formData.delta_band_max)}
+                                onChange={handleChange}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSubmit(e);
+                                }}
+                                placeholder="e.g. 200 (both required to enable)"
+                                className="input input-bordered input-sm h-9 w-full"
+                            />
+                        </div>
+                    </div>
+                    <label className="label">
+                        <span className="label-text-alt">
+                            Leave either field empty to disable. Net delta per underlying is compared to these bounds directly.
+                        </span>
+                    </label>
+                </div>
+
+                <div className="form-control">
+                    <label className="label py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80">Lots per delta-band adjustment</span>
+                    </label>
+                    <input
+                        type="number"
+                        step="1"
+                        min="0"
+                        name="num_lots_delta_band_adjust"
+                        value={optionalNumberValue(formData.num_lots_delta_band_adjust)}
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSubmit(e);
+                        }}
+                        placeholder="e.g. 1 (required for auto push)"
+                        className="input input-bordered input-sm h-9 w-full"
+                    />
+                </div>
+
+                <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-4 py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80">Shift (ITM/OTM → ATM) enabled</span>
+                        <input
+                            type="checkbox"
+                            name="shift_enabled"
+                            checked={formData.shift_enabled ?? false}
+                            onChange={handleChange}
+                            className="toggle toggle-primary"
+                        />
+                    </label>
+                </div>
+
+                <div className="form-control">
+                    <label className="label py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80">Shift distance ITM (strikes)</span>
+                    </label>
+                    <input
+                        type="number"
+                        step="any"
+                        name="shift_strike_distance_itm"
+                        value={optionalNumberValue(formData.shift_strike_distance_itm)}
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSubmit(e);
+                        }}
+                        className="input input-bordered input-sm h-9 w-full"
+                    />
+                </div>
+                <div className="form-control">
+                    <label className="label py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80">Shift distance OTM (strikes)</span>
+                    </label>
+                    <input
+                        type="number"
+                        step="any"
+                        name="shift_strike_distance_otm"
+                        value={optionalNumberValue(formData.shift_strike_distance_otm)}
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSubmit(e);
+                        }}
+                        className="input input-bordered input-sm h-9 w-full"
+                    />
+                </div>
+
+                <div className="form-control md:col-span-2">
+                    <label className="label py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80">Sell exposure limit (lacs)</span>
+                    </label>
+                    <input
+                        type="number"
+                        step="any"
+                        name="sell_exposure_limit_lacs"
+                        value={optionalNumberValue(formData.sell_exposure_limit_lacs)}
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSubmit(e);
+                        }}
+                        className="input input-bordered input-sm h-9 w-full max-w-md"
+                    />
+                </div>
+            </div>
+            </div>
+            </div>
+            </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={onCancel} disabled={isSubmitting} className="btn btn-ghost btn-sm">
                     Cancel
                 </button>

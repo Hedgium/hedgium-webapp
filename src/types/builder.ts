@@ -43,6 +43,15 @@ export interface StrategyBuilder {
     strategy_template: StrategyTemplate;
     builder_legs: BuilderLeg[];
     supergroup_ids: number[];
+    /** Per-underlying Greeks band: net delta lower bound (null with max = disabled) */
+    delta_band_min?: number | null;
+    /** Per-underlying Greeks band: net delta upper bound */
+    delta_band_max?: number | null;
+    num_lots_delta_band_adjust?: number | null;
+    shift_enabled?: boolean;
+    shift_strike_distance_itm?: number | null;
+    shift_strike_distance_otm?: number | null;
+    sell_exposure_limit_lacs?: number | null;
 }
 
 export interface StrategyBuilderCreate {
@@ -59,6 +68,13 @@ export interface StrategyBuilderCreate {
     margin_required?: number;
     multiplier_allowed?: boolean;
     supergroup_ids?: number[];
+    delta_band_min?: number | null;
+    delta_band_max?: number | null;
+    num_lots_delta_band_adjust?: number | null;
+    shift_enabled?: boolean;
+    shift_strike_distance_itm?: number | null;
+    shift_strike_distance_otm?: number | null;
+    sell_exposure_limit_lacs?: number | null;
 }
 
 export interface StrategyBuilderUpdate {
@@ -74,6 +90,13 @@ export interface StrategyBuilderUpdate {
     margin_required?: number;
     multiplier_allowed?: boolean;
     supergroup_ids?: number[];
+    delta_band_min?: number | null;
+    delta_band_max?: number | null;
+    num_lots_delta_band_adjust?: number | null;
+    shift_enabled?: boolean;
+    shift_strike_distance_itm?: number | null;
+    shift_strike_distance_otm?: number | null;
+    sell_exposure_limit_lacs?: number | null;
 }
 
 export interface BuilderLegCreate {
