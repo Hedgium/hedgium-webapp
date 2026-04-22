@@ -3,7 +3,7 @@ import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
 import { formatMoneyIN } from '@/utils/formatNumber';
 import useAlert from '@/hooks/useAlert';
-import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown } from 'lucide-react';
+import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProfileItemProps {
@@ -27,7 +27,8 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
     const [isBrokerTokenModalOpen, setIsBrokerTokenModalOpen] = useState(false);
     const [brokerAccessToken, setBrokerAccessToken] = useState("");
     const [isSettingBrokerToken, setIsSettingBrokerToken] = useState(false);
-    
+    const [isClearingBrokerToken, setIsClearingBrokerToken] = useState(false);
+
     const [brokerLoggedIn, setBrokerLoggedIn] = useState(profile.broker_logged_in);
 
     const alert = useAlert();
@@ -179,6 +180,34 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
         }
     };
 
+    const handleBrokerLogout = async () => {
+        setIsClearingBrokerToken(true);
+        try {
+            const response = await authFetch("users/clear-broker-token/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ profile_id: profile.id }),
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok && data.status === "success") {
+                alert.success(data.message || "Broker access token cleared");
+                setBrokerLoggedIn(false);
+            } else {
+                const msg =
+                    (data as { detail?: string; message?: string }).detail ||
+                    (data as { detail?: string; message?: string }).message ||
+                    "Failed to clear broker token";
+                alert.error(msg);
+            }
+        } catch (error) {
+            console.error("Broker logout error:", error);
+            alert.error("An error occurred while clearing the broker token");
+        } finally {
+            setIsClearingBrokerToken(false);
+        }
+    };
+
     const u = profile.user as typeof profile.user & { aadhar_number?: string | null; pan_number?: string | null; pan_document_url?: string | null; aadhar_document_url?: string | null };
 
     const proxyOn = Boolean(((profile.proxy_username && profile.proxy_host) || "").trim());
@@ -327,6 +356,21 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                                     >
                                         <TrendingUp size={18} />
                                     </Link>
+                                </div>
+                                <div className="tooltip tooltip-bottom lg:tooltip-left" data-tip="Broker logout (clear access token)">
+                                    <button
+                                        type="button"
+                                        onClick={handleBrokerLogout}
+                                        disabled={isClearingBrokerToken}
+                                        className="btn btn-ghost btn-sm btn-square text-error"
+                                        aria-label="Broker logout"
+                                    >
+                                        {isClearingBrokerToken ? (
+                                            <span className="loading loading-spinner loading-sm" />
+                                        ) : (
+                                            <LogOut size={18} />
+                                        )}
+                                    </button>
                                 </div>
                             </>
                         )}
