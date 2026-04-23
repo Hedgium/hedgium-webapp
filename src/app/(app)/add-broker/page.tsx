@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   Network,
   Copy,
+  Lock,
 } from "lucide-react";
 
 type Step = "credentials" | "login" | "result";
@@ -469,6 +470,11 @@ export default function AddBrokerPage() {
                   </div>
                 )}
 
+                <p className="mt-2 flex items-start gap-1.5 text-xs leading-snug text-base-content/55">
+                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+                  <span>Hedgium encrypts sensitive credentials at rest using strong cryptographic standards, with secure key management practices to prevent unauthorized access.</span>
+                </p>
+
                 <button
                   type="submit"
                   disabled={submitting}
@@ -484,15 +490,16 @@ export default function AddBrokerPage() {
           {step === "login" && (
             <div className="p-6 space-y-4">
               <p className="text-sm text-base-content/70">
-                Credentials saved. Log in to your{" "}
+                Log in to your{" "}
                 <span className="font-medium text-base-content">{savedBrokerName}</span> account
                 to verify the connection and fetch your margin.
               </p>
               
               <div>
-                <label className="block text-xs font-medium text-base-content/80 mb-1.5">
+                <label className="block text-sm font-medium text-base-content/80 mb-1.5">
                   {savedBrokerName === "KOTAKNEO" ? "MPIN" : "Password"}
                 </label>
+                
                 <input
                   type="password"
                   value={brokerPassword}
@@ -501,6 +508,12 @@ export default function AddBrokerPage() {
                   placeholder={`Enter ${savedBrokerName === "KOTAKNEO" ? "MPIN" : "password"}`}
                   onKeyDown={(e) => { if (e.key === "Enter") handleLogin(); }}
                 />
+
+                <p className="text-xs pt-2 leading-snug text-base-content/55 mb-1.5">
+                  Hedgium does not store your{" "}
+                  {savedBrokerName === "KOTAKNEO" ? "MPIN" : "password"} on our servers—it is only
+                  used for this login.
+                </p>
                 {loginError && (
                   <div className="flex items-center gap-1.5 text-error text-sm mt-2">
                     <AlertCircle className="h-4 w-4 shrink-0" />
