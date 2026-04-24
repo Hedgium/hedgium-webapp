@@ -15,6 +15,8 @@ export interface Position {
   realised_total: number;
   unrealised_total?: number;
   pnl: number;
+  /** Operator or system note (e.g. broker vs trades reconciliation) */
+  note?: string | null;
   orders?: Array<{ id: number }>;
 }
 
@@ -56,6 +58,7 @@ export default function PositionsTable({
             <th>Unrealised</th>
             <th>Realised</th>
             <th>PnL</th>
+            <th className="min-w-[8rem] max-w-[14rem]">Note</th>
             {showOrdersCount && <th>Orders</th>}
             {showAdminTradesAction && <th className="w-28">Actions</th>}
           </tr>
@@ -93,6 +96,12 @@ export default function PositionsTable({
                     )}
                     {formatMoneyIN(pos.pnl)}
                   </div>
+                </td>
+                <td
+                  className="max-w-[14rem] truncate text-xs text-base-content/80"
+                  title={pos.note?.trim() || undefined}
+                >
+                  {pos.note?.trim() ? pos.note.trim() : "—"}
                 </td>
                 {showOrdersCount && (
                   <td className="text-right">
