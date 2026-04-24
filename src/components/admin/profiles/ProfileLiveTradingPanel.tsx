@@ -6,7 +6,20 @@ import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import { placeOrder, modifyOrder, cancelOrder } from "@/services/liveTradingActions";
 import useAlert from "@/hooks/useAlert";
-import { ArrowLeft, RefreshCw, Plus, Edit2, X, LogOut, TrendingUp, TrendingDown } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  RefreshCw,
+  Plus,
+  Edit2,
+  X,
+  LogOut,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  ClipboardList,
+  ArrowRightLeft,
+} from "lucide-react";
 import { Profile } from "@/types/profile";
 import { LivePosition } from "@/types/positions";
 
@@ -43,6 +56,36 @@ interface LiveOrder {
   average_price?: number;
 }
 
+/** Broker trade book row (normalized across integrations). */
+interface LiveTrade {
+  trade_id?: string;
+  order_id?: string;
+  exchange_order_id?: string;
+  exchange?: string;
+  tradingsymbol?: string;
+  instrument_token?: number;
+  product?: string;
+  average_price?: number;
+  quantity?: number;
+  transaction_type?: string;
+  fill_timestamp?: string;
+  order_timestamp?: string;
+  exchange_timestamp?: string;
+}
+
+type LivePanelTab = "positions" | "orders" | "trades";
+
+const LIVE_TAB_CONFIG: {
+  id: LivePanelTab;
+  label: string;
+  shortLabel: string;
+  icon: LucideIcon;
+}[] = [
+  { id: "positions", label: "Positions", shortLabel: "Pos", icon: Wallet },
+  { id: "orders", label: "Orders", shortLabel: "Ord", icon: ClipboardList },
+  { id: "trades", label: "Trades", shortLabel: "Trd", icon: ArrowRightLeft },
+];
+
 interface OrderFormData {
   exchange: string;
   tradingsymbol: string;
@@ -71,14 +114,19 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   const router = useRouter();
   const alert = useAlert();
 
+  const [activeTab, setActiveTab] = useState<LivePanelTab>("positions");
   const [positions, setPositions] = useState<LivePosition[]>([]);
   const [orders, setOrders] = useState<LiveOrder[]>([]);
+  const [trades, setTrades] = useState<LiveTrade[]>([]);
   const [loadingPositions, setLoadingPositions] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [loadingTrades, setLoadingTrades] = useState(false);
   /** When live positions were last fetched (shown when broker does not send per-row time). */
   const [positionsFetchedAt, setPositionsFetchedAt] = useState<string | null>(null);
   /** When live orders were last fetched (fallback when order has no timestamp). */
   const [ordersFetchedAt, setOrdersFetchedAt] = useState<string | null>(null);
+  /** When live trades were last fetched (fallback when trade has no fill time). */
+  const [tradesFetchedAt, setTradesFetchedAt] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [showPlaceOrderForm, setShowPlaceOrderForm] = useState(false);
@@ -158,11 +206,32 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     }
   }, [profileId]);
 
+  const fetchTrades = useCallback(async () => {
+    setLoadingTrades(true);
+    try {
+      const response = await authFetch(`orders/live/trades/${profileId}/`);
+      const data = await response.json();
+
+      if (data.status === "success") {
+        setTrades(Array.isArray(data.data) ? data.data : []);
+        setTradesFetchedAt(new Date().toISOString());
+      } else {
+        alert.error(data.message || "Failed to fetch live trades");
+      }
+    } catch (error) {
+      console.error("Error fetching live trades:", error);
+      alert.error("Error fetching live trades");
+    } finally {
+      setLoadingTrades(false);
+    }
+  }, [profileId]);
+
   useEffect(() => {
     fetchProfile();
     fetchPositions();
     fetchOrders();
-  }, [fetchProfile, fetchPositions, fetchOrders]);
+    fetchTrades();
+  }, [fetchProfile, fetchPositions, fetchOrders, fetchTrades]);
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,6 +262,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
           price: 0,
         });
         fetchOrders();
+        fetchTrades();
       } else {
         alert.error(data.message || "Failed to place order");
       }
@@ -224,6 +294,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         setShowModifyOrderForm(false);
         setSelectedOrder(null);
         fetchOrders();
+        fetchTrades();
       } else {
         alert.error(data.message || "Failed to modify order");
       }
@@ -244,6 +315,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
       if (data.status === "success" || ok) {
         alert.success("Order cancelled successfully");
         fetchOrders();
+        fetchTrades();
       } else {
         alert.error(data.message || "Failed to cancel order");
       }
@@ -302,6 +374,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         setExitQuantity(0);
         fetchPositions();
         fetchOrders();
+        fetchTrades();
       } else {
         alert.error(data.message || "Failed to exit position");
       }
@@ -333,7 +406,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="text-2xl font-bold">Live Positions & Orders</h1>
+              <h1 className="text-2xl font-bold">Live trading</h1>
               {profile && (
                 <p className="text-sm text-gray-400">
                   {profile.user?.email} - {profile.broker_name}
@@ -358,23 +431,82 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         </div>
       )}
 
-      <div className="mb-6 rounded-lg bg-base-100 p-6">
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="text-xl font-semibold">Live Positions</h2>
-          <div>
-            <span className="badge badge-md badge-outline">
-              {positions.length} {positions.length === 1 ? "Position" : "Positions"}
-            </span>
-            <button
-              type="button"
-              onClick={fetchPositions}
-              disabled={loadingPositions}
-              className="btn btn-ghost btn-sm"
-            >
-              <RefreshCw size={16} className={loadingPositions ? "animate-spin" : ""} />
-            </button>
-          </div>
+      <div className="mb-5">
+        <div
+          role="tablist"
+          aria-label="Live broker data"
+          className="flex w-full gap-1 rounded-2xl border border-base-300/70 bg-gradient-to-b from-base-200/80 to-base-200/40 shadow-inner sm:gap-1.5"
+        >
+          {LIVE_TAB_CONFIG.map(({ id, label, shortLabel, icon: Icon }) => {
+            const isActive = activeTab === id;
+            const count =
+              id === "positions" ? positions.length : id === "orders" ? orders.length : trades.length;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`live-panel-${id}`}
+                id={`live-tab-${id}`}
+                onClick={() => setActiveTab(id)}
+                className={`flex cursor-pointer min-h-[48px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-2 outline-none transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-200 sm:flex-row sm:gap-2.5 sm:px-4 sm:py-2.5 ${
+                  isActive
+                    ? "bg-base-100 text-base-content shadow-md ring-1 ring-base-300/60 dark:ring-base-content/15"
+                    : "text-base-content/50 hover:bg-base-100/35 hover:text-base-content/90 active:scale-[0.98]"
+                }`}
+              >
+                <Icon
+                  className={`size-[18px] shrink-0 transition-colors sm:size-5 ${
+                    isActive ? "text-primary" : "text-base-content/45"
+                  }`}
+                  strokeWidth={isActive ? 2.25 : 2}
+                  aria-hidden
+                />
+                <span className="max-w-full truncate text-[11px] font-semibold tracking-tight sm:text-sm">
+                  <span className="sm:hidden">{shortLabel}</span>
+                  <span className="hidden sm:inline">{label}</span>
+                </span>
+                <span
+                  className={`rounded-full px-1.5 py-px text-[10px] font-bold tabular-nums sm:px-2 sm:py-0.5 sm:text-xs ${
+                    isActive
+                      ? "bg-primary/12 text-primary"
+                      : "bg-base-300/35 text-base-content/65"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
+      </div>
+
+      <div
+        className="mb-6 rounded-lg bg-base-100 p-6"
+        role="tabpanel"
+        id={`live-panel-${activeTab}`}
+        aria-labelledby={`live-tab-${activeTab}`}
+      >
+        {activeTab === "positions" && (
+          <>
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h2 className="text-xl font-semibold">Live positions</h2>
+              <div>
+                <span className="badge badge-md badge-outline">
+                  {positions.length} {positions.length === 1 ? "position" : "positions"}
+                </span>
+                <button
+                  type="button"
+                  onClick={fetchPositions}
+                  disabled={loadingPositions}
+                  className="btn btn-ghost btn-sm"
+                  title="Refresh positions"
+                >
+                  <RefreshCw size={16} className={loadingPositions ? "animate-spin" : ""} />
+                </button>
+              </div>
+            </div>
         {loadingPositions ? (
           <div className="py-8 text-center">
             <span className="loading loading-spinner loading-lg"></span>
@@ -489,25 +621,28 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         ) : (
           <p className="py-8 text-center text-gray-400">No positions found</p>
         )}
-      </div>
+          </>
+        )}
 
-      <div className="rounded-lg bg-base-100 p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Live Orders</h2>
-          <div>
-            <span className="badge badge-md badge-outline">
-              {orders.length} {orders.length === 1 ? "Order" : "Orders"}
-            </span>
-            <button
-              type="button"
-              onClick={fetchOrders}
-              disabled={loadingOrders}
-              className="btn btn-ghost btn-sm"
-            >
-              <RefreshCw size={16} className={loadingOrders ? "animate-spin" : ""} />
-            </button>
-          </div>
-        </div>
+        {activeTab === "orders" && (
+          <>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Live orders</h2>
+              <div>
+                <span className="badge badge-md badge-outline">
+                  {orders.length} {orders.length === 1 ? "order" : "orders"}
+                </span>
+                <button
+                  type="button"
+                  onClick={fetchOrders}
+                  disabled={loadingOrders}
+                  className="btn btn-ghost btn-sm"
+                  title="Refresh orders"
+                >
+                  <RefreshCw size={16} className={loadingOrders ? "animate-spin" : ""} />
+                </button>
+              </div>
+            </div>
         {loadingOrders ? (
           <div className="py-8 text-center">
             <span className="loading loading-spinner loading-lg"></span>
@@ -600,6 +735,102 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
           </div>
         ) : (
           <p className="py-8 text-center text-gray-400">No orders found</p>
+        )}
+          </>
+        )}
+
+        {activeTab === "trades" && (
+          <>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Live trades</h2>
+              <div>
+                <span className="badge badge-md badge-outline">
+                  {trades.length} {trades.length === 1 ? "trade" : "trades"}
+                </span>
+                <button
+                  type="button"
+                  onClick={fetchTrades}
+                  disabled={loadingTrades}
+                  className="btn btn-ghost btn-sm"
+                  title="Refresh trades"
+                >
+                  <RefreshCw size={16} className={loadingTrades ? "animate-spin" : ""} />
+                </button>
+              </div>
+            </div>
+            {loadingTrades ? (
+              <div className="py-8 text-center">
+                <span className="loading loading-spinner loading-lg"></span>
+              </div>
+            ) : trades.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="table table-zebra w-full">
+                  <thead>
+                    <tr>
+                      <th>Trade ID</th>
+                      <th className="whitespace-nowrap">Fill time</th>
+                      <th>Instrument</th>
+                      <th>Exch.</th>
+                      <th>Side</th>
+                      <th>Qty</th>
+                      <th>Avg price</th>
+                      <th>Product</th>
+                      <th>Order ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trades.map((trade: LiveTrade, index: number) => (
+                      <tr
+                        key={
+                          trade.trade_id
+                            ? String(trade.trade_id)
+                            : `${trade.order_id ?? "o"}-${index}`
+                        }
+                      >
+                        <td className="max-w-[10rem] truncate font-mono text-xs" title={trade.trade_id}>
+                          {trade.trade_id ?? "—"}
+                        </td>
+                        <td className="whitespace-nowrap text-xs text-base-content/80">
+                          {formatDateTimeCell(
+                            trade.fill_timestamp ??
+                              trade.exchange_timestamp ??
+                              trade.order_timestamp ??
+                              tradesFetchedAt
+                          )}
+                        </td>
+                        <td className="font-medium">{trade.tradingsymbol ?? "—"}</td>
+                        <td className="text-xs">{trade.exchange ?? "—"}</td>
+                        <td>
+                          <span
+                            className={
+                              (trade.transaction_type || "").toUpperCase() === "BUY"
+                                ? "text-green-400"
+                                : "text-red-400"
+                            }
+                          >
+                            {trade.transaction_type ?? "—"}
+                          </span>
+                        </td>
+                        <td>{trade.quantity ?? "—"}</td>
+                        <td>
+                          {trade.average_price != null &&
+                          !Number.isNaN(Number(trade.average_price))
+                            ? formatMoneyIN(Number(trade.average_price))
+                            : "—"}
+                        </td>
+                        <td className="text-xs">{trade.product ?? "—"}</td>
+                        <td className="max-w-[8rem] truncate font-mono text-xs" title={trade.order_id}>
+                          {trade.order_id ?? "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="py-8 text-center text-gray-400">No trades found</p>
+            )}
+          </>
         )}
       </div>
 
