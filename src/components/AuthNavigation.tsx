@@ -173,7 +173,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
 
             {/* Unread indicator for Alerts */}
             {tab.name === "Alerts" && unreadCount > 0 && (
-              <span className="absolute top-0 right-0 -mt-1 -mr-1 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full">
+              <span className="absolute top-0 right-0 mt-0 mr-2 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full">
                 {unreadCount}
               </span>
             )}
