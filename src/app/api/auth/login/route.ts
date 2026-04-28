@@ -1,6 +1,5 @@
 // app/api/auth/login/route.ts
 import { NextResponse } from 'next/server';
-import { getSessionCookie } from '@/utils/sessions';
 
 export async function POST(request: Request) {
   // 1️⃣ Verify origin
@@ -11,11 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden - bad origin' }, { status: 403 });
   }
 
-  // 2️⃣ Verify session cookie
-  const session = await getSessionCookie();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized - no valid session' }, { status: 401 });
-  }
+  // 2️⃣ Backend login (no __app_session required — user is not logged in yet)
 
   // 3️⃣ Continue with backend login
   const { username, password } = await request.json();

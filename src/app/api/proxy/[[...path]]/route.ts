@@ -20,6 +20,30 @@ export async function PATCH(request: Request) {
   return handleProxyRequest(request);
 }
 
+/** Backend paths that must work without __app_session (login, signup, public APIs). */
+function isSessionExempt(normalizedPath: string, method: string): boolean {
+  if (normalizedPath === "users/auth/login/" && method === "POST") return true;
+  if (normalizedPath === "users/token/refresh/" && method === "POST") return true;
+  if (
+    normalizedPath.startsWith("users/token/exchange-token/") &&
+    method === "GET"
+  )
+    return true;
+  if (
+    normalizedPath === "users/password-reset/request/" &&
+    method === "POST"
+  )
+    return true;
+  if (
+    normalizedPath === "users/password-reset/confirm/" &&
+    method === "POST"
+  )
+    return true;
+  if (normalizedPath === "users/" && method === "POST") return true;
+  if (normalizedPath === "leads/" && method === "POST") return true;
+  return false;
+}
+
 async function handleProxyRequest(request: Request) {
   const { pathname, search } = new URL(request.url);
   const pathSegments = pathname.split("/").slice(3);
@@ -45,12 +69,14 @@ async function handleProxyRequest(request: Request) {
     );
   }
 
-  const session = await getSessionCookie();
-  if (!session) {
-    return NextResponse.json(
-      { error: "Unauthorized - no valid session" },
-      { status: 401 }
-    );
+  if (!isSessionExempt(normalizedPath, request.method)) {
+    const session = await getSessionCookie();
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized - no valid session" },
+        { status: 401 }
+      );
+    }
   }
 
   try {

@@ -54,8 +54,9 @@ export default function AuthNav() {
           href="/home"
           className="btn btn-ghost btn-sm normal-case h-auto min-h-0 py-2 px-2 text-lg font-bold text-primary gap-1.5"
         >
-          <LineChart className="shrink-0" width={22} height={22} />
-          <span className="truncate">Hedgium</span>
+          <img src="/images/logos/Hedgium icon cropped.png" alt="Hedgium" className="h-10 w-auto" />
+          {/* <LineChart className="shrink-0" width={22} height={22} />
+          <span className="truncate">Hedgium</span> */}
         </Link>
       </div>
 
@@ -69,7 +70,7 @@ export default function AuthNav() {
             type="button"
             aria-expanded={menuOpen}
             aria-haspopup="true"
-            className="btn btn-primary btn-circle btn-sm w-9 h-9 min-h-9 p-0 text-xs font-bold border-0"
+            className="btn btn-primary btn-circle btn-sm w-8 h-8 min-h-8 p-0 text-xs font-bold border-0"
             onClick={() => setMenuOpen((o) => !o)}
           >
             <span className="flex h-full w-full items-center justify-center rounded-full">
@@ -92,11 +93,11 @@ export default function AuthNav() {
                 >
                   Plan: {planName}
                 </span>
-                {!isLegends && user?.active_subscription?.plan?.name ? (
+                {/* {!isLegends && user?.active_subscription?.plan?.name ? (
                   <Link href="/upgrade" className="text-[11px] text-primary hover:underline">
                     Upgrade
                   </Link>
-                ) : null}
+                ) : null} */}
               </div>
             </li>
             <li>

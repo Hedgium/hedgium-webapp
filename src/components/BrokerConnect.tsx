@@ -172,7 +172,7 @@ export default function BrokerLoginStatus() {
 
           ) : !broker.hasProfile || !broker.verified ? (
             /* No profile OR setup not completed */
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <span className="text-sm text-base-content/60">
                 {broker.hasProfile ? "Broker setup incomplete" : "No broker connected"}
               </span>
@@ -197,7 +197,7 @@ export default function BrokerLoginStatus() {
           ) : (
             /* Verified profile */
             <>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <span>Broker:</span>
                 {broker.loggedIn ? (
                   <span className="font-medium">{broker.name}</span>
@@ -218,7 +218,7 @@ export default function BrokerLoginStatus() {
               </div>
 
               {broker.margin != null && broker.loggedIn && (
-                <p className="flex items-center gap-2">
+                <p className="flex items-center gap-1">
                   <span className="font-medium">Margin:</span>{" "}
                   {formatMoneyIN(broker.margin, { decimals: 0 })}
                   <button
