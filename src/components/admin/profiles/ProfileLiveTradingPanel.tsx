@@ -17,11 +17,12 @@ import {
   TrendingUp,
   TrendingDown,
   Wallet,
+  Briefcase,
   ClipboardList,
   ArrowRightLeft,
 } from "lucide-react";
 import { Profile } from "@/types/profile";
-import { LivePosition } from "@/types/positions";
+import { LiveHolding, LivePosition } from "@/types/positions";
 
 function formatDateTimeCell(value: string | Date | null | undefined): string {
   if (value == null || value === "") return "—";
@@ -73,7 +74,7 @@ interface LiveTrade {
   exchange_timestamp?: string;
 }
 
-type LivePanelTab = "positions" | "orders" | "trades";
+type LivePanelTab = "positions" | "holdings" | "orders" | "trades";
 
 const LIVE_TAB_CONFIG: {
   id: LivePanelTab;
@@ -82,6 +83,7 @@ const LIVE_TAB_CONFIG: {
   icon: LucideIcon;
 }[] = [
   { id: "positions", label: "Positions", shortLabel: "Pos", icon: Wallet },
+  { id: "holdings", label: "Holdings", shortLabel: "Hold", icon: Briefcase },
   { id: "orders", label: "Orders", shortLabel: "Ord", icon: ClipboardList },
   { id: "trades", label: "Trades", shortLabel: "Trd", icon: ArrowRightLeft },
 ];
@@ -116,13 +118,18 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
 
   const [activeTab, setActiveTab] = useState<LivePanelTab>("positions");
   const [positions, setPositions] = useState<LivePosition[]>([]);
+  const [holdings, setHoldings] = useState<LiveHolding[]>([]);
   const [orders, setOrders] = useState<LiveOrder[]>([]);
   const [trades, setTrades] = useState<LiveTrade[]>([]);
   const [loadingPositions, setLoadingPositions] = useState(false);
+  const [loadingHoldings, setLoadingHoldings] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [loadingTrades, setLoadingTrades] = useState(false);
+  const [refreshingMargin, setRefreshingMargin] = useState(false);
   /** When live positions were last fetched (shown when broker does not send per-row time). */
   const [positionsFetchedAt, setPositionsFetchedAt] = useState<string | null>(null);
+  /** When live holdings were last fetched (fallback when row has no timestamp). */
+  const [holdingsFetchedAt, setHoldingsFetchedAt] = useState<string | null>(null);
   /** When live orders were last fetched (fallback when order has no timestamp). */
   const [ordersFetchedAt, setOrdersFetchedAt] = useState<string | null>(null);
   /** When live trades were last fetched (fallback when trade has no fill time). */
@@ -206,6 +213,44 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     }
   }, [profileId]);
 
+  const fetchHoldings = useCallback(async () => {
+    setLoadingHoldings(true);
+    try {
+      const response = await authFetch(`positions/live/holdings/${profileId}/`);
+      const data = await response.json();
+
+      if (data.status === "success") {
+        setHoldings(Array.isArray(data.data) ? data.data : []);
+        setHoldingsFetchedAt(new Date().toISOString());
+      } else {
+        alert.error("Failed to fetch live holdings");
+      }
+    } catch (error) {
+      console.error("Error fetching live holdings:", error);
+      alert.error("Error fetching live holdings");
+    } finally {
+      setLoadingHoldings(false);
+    }
+  }, [profileId]);
+
+  const refreshMarginForProfile = useCallback(async () => {
+    setRefreshingMargin(true);
+    try {
+      const response = await authFetch(`profiles/refresh-margin/${profileId}/`);
+      const data = await response.json();
+      if (!response.ok) {
+        alert.error(data?.detail || "Failed to refresh margin");
+        return;
+      }
+      setProfile((prev) => (prev ? { ...prev, ...data } : data));
+    } catch (error) {
+      console.error("Error refreshing margin:", error);
+      alert.error("Error refreshing margin");
+    } finally {
+      setRefreshingMargin(false);
+    }
+  }, [profileId]);
+
   const fetchTrades = useCallback(async () => {
     setLoadingTrades(true);
     try {
@@ -229,9 +274,10 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   useEffect(() => {
     fetchProfile();
     fetchPositions();
+    fetchHoldings();
     fetchOrders();
     fetchTrades();
-  }, [fetchProfile, fetchPositions, fetchOrders, fetchTrades]);
+  }, [fetchProfile, fetchPositions, fetchHoldings, fetchOrders, fetchTrades]);
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -431,6 +477,26 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         </div>
       )}
 
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-base-200 p-3">
+        <span className="text-sm text-base-content/70">Margin</span>
+        <span className="badge badge-lg badge-primary">
+          {profile?.margin_equity != null ? formatMoneyIN(profile.margin_equity) : "—"}
+        </span>
+        <span className="text-xs text-base-content/60">
+          Updated: {formatDateTimeCell(profile?.margin_updated_at ?? null)}
+        </span>
+        <button
+          type="button"
+          className="btn btn-ghost btn-xs"
+          onClick={refreshMarginForProfile}
+          disabled={refreshingMargin}
+          title="Refresh margin"
+        >
+          <RefreshCw size={14} className={refreshingMargin ? "animate-spin" : ""} />
+          Refresh
+        </button>
+      </div>
+
       <div className="mb-5">
         <div
           role="tablist"
@@ -439,8 +505,13 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         >
           {LIVE_TAB_CONFIG.map(({ id, label, shortLabel, icon: Icon }) => {
             const isActive = activeTab === id;
-            const count =
-              id === "positions" ? positions.length : id === "orders" ? orders.length : trades.length;
+            const count = id === "positions"
+              ? positions.length
+              : id === "holdings"
+                ? holdings.length
+                : id === "orders"
+                  ? orders.length
+                  : trades.length;
             return (
               <button
                 key={id}
@@ -736,6 +807,76 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         ) : (
           <p className="py-8 text-center text-gray-400">No orders found</p>
         )}
+          </>
+        )}
+
+        {activeTab === "holdings" && (
+          <>
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h2 className="text-xl font-semibold">Live holdings</h2>
+              <div className="flex items-center gap-2">
+                <span className="badge badge-md badge-outline">
+                  {holdings.length} {holdings.length === 1 ? "holding" : "holdings"}
+                </span>
+                <button
+                  type="button"
+                  onClick={fetchHoldings}
+                  disabled={loadingHoldings}
+                  className="btn btn-ghost btn-sm"
+                  title="Refresh holdings"
+                >
+                  <RefreshCw size={16} className={loadingHoldings ? "animate-spin" : ""} />
+                </button>
+              </div>
+            </div>
+            {loadingHoldings ? (
+              <div className="py-8 text-center">
+                <span className="loading loading-spinner loading-lg"></span>
+              </div>
+            ) : holdings.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="table table-zebra w-full">
+                  <thead>
+                    <tr>
+                      <th>Instrument</th>
+                      <th className="whitespace-nowrap">Date & time</th>
+                      <th>Qty</th>
+                      <th>Available</th>
+                      <th>Avg Price</th>
+                      <th>LTP</th>
+                      <th>Close</th>
+                      <th>Current Value</th>
+                      <th>P&L</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {holdings.map((holding: LiveHolding, index: number) => (
+                      <tr key={`${holding.exchange ?? "NA"}-${holding.tradingsymbol}-${index}`}>
+                        <td className="font-medium">{holding.tradingsymbol}</td>
+                        <td className="whitespace-nowrap text-xs text-base-content/80">
+                          {formatDateTimeCell(holdingsFetchedAt)}
+                        </td>
+                        <td>{holding.quantity ?? "-"}</td>
+                        <td>{holding.available_quantity ?? "-"}</td>
+                        <td>
+                          {holding.average_price != null ? formatMoneyIN(holding.average_price) : "-"}
+                        </td>
+                        <td>{holding.last_price != null ? formatMoneyIN(holding.last_price) : "-"}</td>
+                        <td>{holding.close_price != null ? formatMoneyIN(holding.close_price) : "-"}</td>
+                        <td>
+                          {holding.current_value != null ? formatMoneyIN(holding.current_value) : "-"}
+                        </td>
+                        <td className={holding.pnl != null && holding.pnl >= 0 ? "text-green-400" : "text-red-400"}>
+                          {holding.pnl != null ? formatMoneyIN(holding.pnl) : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="py-8 text-center text-gray-400">No holdings found</p>
+            )}
           </>
         )}
 

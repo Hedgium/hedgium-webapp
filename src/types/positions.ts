@@ -23,3 +23,15 @@ export interface LivePositionsData {
     net: LivePosition[];
   };
 }
+
+export interface LiveHolding {
+  tradingsymbol: string;
+  exchange?: string;
+  quantity: number;
+  available_quantity?: number;
+  average_price?: number;
+  last_price?: number;
+  close_price?: number;
+  pnl?: number;
+  current_value?: number;
+}
