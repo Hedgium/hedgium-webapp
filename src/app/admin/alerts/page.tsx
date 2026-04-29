@@ -20,13 +20,17 @@ export default function AdminAlertsPage() {
   } = useNotificationStore();
 
   const [filterNotifications, setFilterNotifications] = useState<typeof notifications>([]);
-  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [filter, setFilter] = useState<
+    "all" | "unread" | "INFO" | "SUCCESS" | "WARNING" | "ERROR"
+  >("all");
 
   useEffect(() => {
     if (filter === "all") {
       setFilterNotifications(notifications);
-    } else {
+    } else if (filter === "unread") {
       setFilterNotifications(notifications.filter((n) => !n.read));
+    } else {
+      setFilterNotifications(notifications.filter((n) => n.type === filter));
     }
   }, [filter, notifications]);
 
@@ -63,6 +67,10 @@ export default function AdminAlertsPage() {
   }
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const infoCount = notifications.filter((n) => n.type === "INFO").length;
+  const successCount = notifications.filter((n) => n.type === "SUCCESS").length;
+  const warningCount = notifications.filter((n) => n.type === "WARNING").length;
+  const errorCount = notifications.filter((n) => n.type === "ERROR").length;
 
   return (
     <div className="relative min-h-screen">
@@ -139,6 +147,62 @@ export default function AdminAlertsPage() {
                     ({unreadCount})
                   </span>
                 </button>
+
+                <button
+                  type="button"
+                  className={`btn btn-sm join-item rounded-lg ${
+                    filter === "INFO"
+                      ? "btn-primary"
+                      : "btn-ghost border border-base-300/60"
+                  }`}
+                  onClick={() => setFilter("INFO")}
+                >
+                  INFO
+                  <span className="ml-1 tabular-nums opacity-80">({infoCount})</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn btn-sm join-item rounded-lg ${
+                    filter === "SUCCESS"
+                      ? "btn-primary"
+                      : "btn-ghost border border-base-300/60"
+                  }`}
+                  onClick={() => setFilter("SUCCESS")}
+                >
+                  SUCCESS
+                  <span className="ml-1 tabular-nums opacity-80">
+                    ({successCount})
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn btn-sm join-item rounded-lg ${
+                    filter === "WARNING"
+                      ? "btn-primary"
+                      : "btn-ghost border border-base-300/60"
+                  }`}
+                  onClick={() => setFilter("WARNING")}
+                >
+                  WARNING
+                  <span className="ml-1 tabular-nums opacity-80">
+                    ({warningCount})
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn btn-sm join-item rounded-lg ${
+                    filter === "ERROR"
+                      ? "btn-primary"
+                      : "btn-ghost border border-base-300/60"
+                  }`}
+                  onClick={() => setFilter("ERROR")}
+                >
+                  ERROR
+                  <span className="ml-1 tabular-nums opacity-80">({errorCount})</span>
+                </button>
               </div>
             </div>
           </div>
@@ -149,12 +213,16 @@ export default function AdminAlertsPage() {
               <p className="font-medium text-base-content">
                 {filter === "unread"
                   ? "No unread notifications"
-                  : "No notifications yet"}
+                  : filter === "all"
+                    ? "No notifications yet"
+                    : `No ${filter} notifications`}
               </p>
               <p className="mt-1 text-sm text-base-content/55">
                 {filter === "unread"
                   ? "All caught up! No unread alerts."
-                  : "You’ll see strategy and system messages here."}
+                  : filter === "all"
+                    ? "You’ll see strategy and system messages here."
+                    : "No matching notifications for this type."}
               </p>
             </div>
           ) : (
@@ -181,7 +249,7 @@ export default function AdminAlertsPage() {
                           <div
                             className="flex w-3 shrink-0 justify-center pt-1.5"
                             title={
-                              showDot ? "Was unread when you opened this page" : undefined
+                              showDot ? "Unread" : undefined
                             }
                           >
                             {showDot ? (
