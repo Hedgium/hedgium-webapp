@@ -1,12 +1,13 @@
 // app/providers/NotificationProvider.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
+import useAlertStore from "@/store/alertStore";
 
 export default function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const { accessToken, user } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const { addNotification, fetchNotifications } = useNotificationStore();
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -74,6 +75,33 @@ export default function NotificationProvider({ children }: { children: React.Rea
       wsRef.current.onmessage = (event) => {
         const newNotification = JSON.parse(event.data);
         addNotification(newNotification);
+
+        // Pop-up toast for fresh, unread alerts.
+        // Use getState() directly to avoid stale closure on the alert functions.
+        if (newNotification?.read) return;
+
+        const type = newNotification?.type as
+          | "INFO"
+          | "SUCCESS"
+          | "WARNING"
+          | "ERROR"
+          | undefined;
+
+        const message = newNotification?.message || "";
+        const title = newNotification?.title || "Alert";
+        const preview = message.length > 120 ? `${message.slice(0, 120)}…` : message;
+        const text = `${title}: ${preview}`;
+
+        const alertType =
+          type === "SUCCESS" ? "success"
+          : type === "WARNING" ? "warning"
+          : type === "ERROR" ? "error"
+          : "info";
+
+        const duration =
+          type === "ERROR" ? 8000 : type === "WARNING" ? 7000 : 6000;
+
+        useAlertStore.getState().addAlert({ type: alertType, message: text, duration });
       };
 
       wsRef.current.onclose = () => {
@@ -105,7 +133,9 @@ export default function NotificationProvider({ children }: { children: React.Rea
       wsRef.current = null;
       retryCountRef.current = 0;
     };
-  }, [accessToken, fetchNotifications]);
+    // fetchNotifications and addNotification are stable Zustand actions — safe to omit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
 
   return <>{children}</>;
 }

@@ -10,8 +10,8 @@ export interface Notification {
   message: string;
   timestamp: string;
   read: boolean;
-  related_model_name: "strategy" | "position" | "order";
-  related_model_id: number;
+  related_model_name: string | null;
+  related_model_id: number | null;
 }
 
 interface NotificationState {

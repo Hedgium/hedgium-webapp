@@ -68,7 +68,7 @@ export default function WhatWeDoSection() {
                 <span className="text-primary font-bold">market-neutral alpha</span> for clients.
               </p>
               <div className="flex flex-col gap-2">
-                <Link href="/get-started?ref=schedule_call" className="btn btn-primary btn-md lg:btn-lg xl:btn-xl 2xl:btn-2xl gap-2 w-fit">
+                <Link href="/get-started" className="btn btn-primary btn-md lg:btn-lg xl:btn-xl 2xl:btn-2xl gap-2 w-fit">
                   <Calendar className="w-6 h-6" aria-hidden />
                   Set up a Free Call
                 </Link>
