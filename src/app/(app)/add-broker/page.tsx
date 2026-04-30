@@ -78,28 +78,46 @@ export default function AddBrokerPage() {
     }
   };
 
-  const applyWhitelistIpFromPayload = (data: Record<string, unknown>) => {
+  /** Same resolution as admin/settings: use API top-level field, then pool, then legacy numeric proxy_host. */
+  const resolveWhitelistIpFromPayload = (data: Record<string, unknown>): string | null => {
     const direct = data.order_proxy_whitelist_ip;
-    if (typeof direct === "string" && direct.trim()) {
-      setOrderProxyWhitelistIp(direct.trim());
-      return;
-    }
+    if (typeof direct === "string" && direct.trim()) return direct.trim();
     const pool = data.broker_proxy_pool as { ip_address?: string } | null | undefined;
     const fromPool = pool?.ip_address;
-    if (typeof fromPool === "string" && fromPool.trim()) {
-      setOrderProxyWhitelistIp(fromPool.trim());
+    if (typeof fromPool === "string" && fromPool.trim()) return fromPool.trim();
+    const ph = data.proxy_host;
+    if (typeof ph === "string" && ph.trim()) {
+      const t = ph.trim();
+      if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(t)) return t;
     }
+    return null;
   };
 
-  // Load whitelist IP when an active profile already exists
+  const applyWhitelistIpFromPayload = (data: Record<string, unknown>) => {
+    const ip = resolveWhitelistIpFromPayload(data);
+    if (ip) setOrderProxyWhitelistIp(ip);
+  };
+
+  // Load whitelist IP. Try 3 endpoints in order, stopping as soon as an IP is found:
+  //   1. profiles/me/         – active profile with pool attached (normal case)
+  //   3. profiles/my-pool-ip/ – any profile (active or inactive), always returns 200 with IP or null.
+  //      Ensures the IP banner is visible even before the profile is activated / verified.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await authFetch("profiles/check-profile/");
-        if (cancelled || !res.ok) return;
-        const data = await res.json();
-        applyWhitelistIpFromPayload(data as Record<string, unknown>);
+        for (const endpoint of ["profiles/me/", "profiles/my-pool-ip/"]) {
+          if (cancelled) return;
+          const res = await authFetch(endpoint);
+          if (cancelled) return;
+          if (!res.ok) continue;
+          const data = (await res.json()) as Record<string, unknown>;
+          const ip = resolveWhitelistIpFromPayload(data);
+          if (ip) {
+            setOrderProxyWhitelistIp(ip);
+            return;
+          }
+        }
       } catch {
         /* ignore */
       }
@@ -150,13 +168,24 @@ export default function AddBrokerPage() {
       credPayload.broker_twofa = brokerTwofa;
 
       // If a profile already exists (in-session or on server), update it via PUT
-      // so the user can correct wrong credentials without creating a duplicate
+      // so the user can correct wrong credentials without creating a duplicate.
+      // Only allow create when server explicitly confirms "no profile" (404).
       let existingProfileId = savedProfileId;
+      let canCreateProfile = !existingProfileId;
       if (!existingProfileId) {
         const checkRes = await authFetch("profiles/check-profile/");
         if (checkRes.ok) {
-          const existing = await checkRes.json();
-          existingProfileId = existing.id || null;
+          const existing = (await checkRes.json()) as Record<string, unknown>;
+          existingProfileId = (existing.id as number) || null;
+          canCreateProfile = false;
+          applyWhitelistIpFromPayload(existing);
+        } else if (checkRes.status === 404) {
+          canCreateProfile = true;
+        } else {
+          const err = await checkRes.json().catch(() => ({}));
+          throw new Error(
+            err.detail || err.message || "Could not confirm existing profile. Please try again."
+          );
         }
       }
 
@@ -176,7 +205,7 @@ export default function AddBrokerPage() {
           const err = await res.json().catch(() => ({}));
           setFormError(err.detail || err.message || "Failed to update broker credentials");
         }
-      } else {
+      } else if (canCreateProfile) {
         // No existing profile — create a new one
         const res = await authFetch("profiles/", {
           method: "POST",
@@ -192,6 +221,8 @@ export default function AddBrokerPage() {
           const err = await res.json().catch(() => ({}));
           setFormError(err.detail || err.message || "Failed to save broker credentials");
         }
+      } else {
+        setFormError("Could not identify your existing profile. Please try again.");
       }
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Something went wrong");

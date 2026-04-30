@@ -3,17 +3,20 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network } from "lucide-react";
+import { Bell, Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network, CandlestickChart } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
+import { useNotificationStore } from "@/store/notificationStore";
 
 const tabs = [
   { name: "Strategies", href: "/admin", icon: <LineChart className="h-5 w-5" /> },
   { name: "Builder", href: "/admin/builder", icon: <Layers className="h-5 w-5" /> },
   { name: "Profiles", href: "/admin/profiles", icon: <Users className="h-5 w-5" /> },
+  { name: "Market", href: "/admin/market", icon: <CandlestickChart className="h-5 w-5" /> },
   { name: "Proxy pool", href: "/admin/proxy-pool", icon: <Network className="h-5 w-5" /> },
   { name: "Leads", href: "/admin/leads", icon: <MessageCircle className="h-5 w-5" /> },
+  { name: "Alerts", href: "/admin/alerts", icon: <Bell className="h-5 w-5" /> },
   { name: "Tasks", href: "/admin/tasks", icon: <ListTodo className="h-5 w-5" /> },
   { name: "Payments", href: "/admin/payments", icon: <CreditCard className="h-5 w-5" /> },
 ];
@@ -23,7 +26,14 @@ export default function AdminSidebar() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { logout } = useAuthStore();
+  const { unreadCount, fetchNotifications } = useNotificationStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Always fetch on mount so the unread badge is correct immediately.
+  useEffect(() => {
+    void fetchNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load sidebar state from localStorage on mount
   useEffect(() => {
@@ -73,8 +83,24 @@ export default function AdminSidebar() {
                   aria-current={active ? "page" : undefined}
                   title={isCollapsed ? tab.name : undefined}
                 >
-                  {tab.icon}
+                  <span className="relative flex items-center">
+                    {tab.icon}
+                    {/* Unread indicator for Admin Alerts */}
+                    
+                  </span>
                   {!isCollapsed && <span className="font-medium">{tab.name}</span>}
+
+                  {tab.name === "Alerts" && unreadCount > 0 && (
+                      <span
+                        className={`${
+                          isCollapsed
+                            ? "absolute -top-2 -right-2"
+                            : "ml-2 relative"
+                        } inline-flex items-center justify-center min-w-[1.25rem] px-2 py-0.5 rounded-full text-[10px] font-bold bg-error text-error-content`}
+                      >
+                        {unreadCount}
+                      </span>
+                    )}
                 </Link>
               </li>
             );

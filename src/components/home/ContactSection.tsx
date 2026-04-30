@@ -1,4 +1,4 @@
-import { Mail, Phone, MapPin, Calendar, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Calendar, MessageCircle, Link } from "lucide-react";
 
 export default function ContactSection() {
   return (
@@ -21,11 +21,7 @@ export default function ContactSection() {
               {`Let’s get started`}
             </p>
 
-            <button className="btn btn-primary lg:btn-md gap-2">
-              <Calendar size={18} />
-              Schedule an expert call
-            </button>
-
+            <Link href="/get-started" className="btn btn-primary lg:btn-md gap-2"><Calendar size={18} /> Schedule an expert call</Link>
           </div>
         </div>
 

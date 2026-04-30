@@ -80,6 +80,7 @@ export default function StrategyDetail() {
     try {
       const res = await authFetch(`myadmin/strategies/${id}/`);
       const data = await res.json();
+      // console.log(data);
       setStrategy(data);
     } catch (error) {
       console.error("Error fetching strategy data:", error);

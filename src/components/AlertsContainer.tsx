@@ -39,21 +39,23 @@ const AlertsContainer = () => {
   };
 
   return (
-    <div className="toast toast-top toast-end z-1000 mt-16">
+    <div className="toast toast-top toast-end z-[1000] mt-16">
       {alerts.map((alert) => (
         <div
           key={alert.id}
-          className={`alert alert-${alert.type} shadow-lg mb-2 flex flex-row items-center justify-between`}
+          className={`alert alert-${alert.type} shadow-lg mb-2 flex flex-row items-center justify-between w-[22rem] max-w-[90vw]`}
         >
-          <div className="flex items-center flex-1">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="flex-shrink-0">
               {getIcon(alert.type)}
             </div>
-            <span className="ml-2">{alert.message}</span>
+            <span className="break-words whitespace-pre-wrap text-sm leading-snug">
+              {alert.message}
+            </span>
           </div>
           {!alert.hideClose && (
             <button
-              className="btn btn-ghost btn-sm btn-circle ml-4 flex-shrink-0"
+              className="btn btn-ghost btn-sm btn-circle ml-2 flex-shrink-0"
               onClick={() => removeAlert(alert.id)}
             >
               ✕

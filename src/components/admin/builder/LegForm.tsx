@@ -325,9 +325,10 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                 if (response.ok) {
                     const data = await response.json();
                     if (data.strike_step) {
+                        const numericStep = Number(data.strike_step);
                         setFormData(prev => ({
                             ...prev,
-                            strike_step: data.strike_step
+                            strike_step: Number.isFinite(numericStep) ? numericStep : prev.strike_step
                         }));
                     }
                 }

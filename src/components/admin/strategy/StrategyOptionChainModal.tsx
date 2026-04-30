@@ -207,7 +207,6 @@ export default function StrategyOptionChainModal({
       try {
         const qp: Record<string, string> = {
           underlying_symbol: underlying,
-          exchange: exchange || "NFO",
         };
         if (exp) qp.expiry = exp;
         const res = await authFetch("optionchain/", {}, qp);

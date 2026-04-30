@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import AdminSidebar from '@/components/admin/Sidebar';
+import AlertsContainer from '@/components/AlertsContainer';
 import NotificationProvider from '@/providers/NotificationProvider';
 import { ShieldX, LogOut } from 'lucide-react';
 
@@ -56,6 +57,7 @@ export default function AdminLayoutClient({
               <div className="flex-1">{children}</div>
             </main>
           </div>
+          <AlertsContainer />
         </div>
       )}
     </NotificationProvider>
