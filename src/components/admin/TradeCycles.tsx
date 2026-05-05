@@ -126,6 +126,7 @@ export default function TradeCycles({
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [showAddCyclesModal, setShowAddCyclesModal] = useState(false);
+  const [isAddingCycles, setIsAddingCycles] = useState(false);
   const [selectedTradeCycleId, setSelectedTradeCycleId] = useState<number | null>(null);
   const [selectedTradeCycle, setSelectedTradeCycle] = useState<{ id: number; profile_id?: number } | null>(null);
   const [liveModalProfileId, setLiveModalProfileId] = useState<number | null>(null);
@@ -199,6 +200,7 @@ export default function TradeCycles({
       return;
     }
 
+    setIsAddingCycles(true);
     try {
       alert.info("Creating trade cycles...", { duration: 3000 });
       const res = await authFetch(`myadmin/create-trade-cycles/${id}/${selectedProfiles.join(",")}/`);
@@ -213,6 +215,8 @@ export default function TradeCycles({
       alert.success("Trade cycles created!", { duration: 3000 });
     } catch (error) {
       console.error("Create error:", error);
+    } finally {
+      setIsAddingCycles(false);
     }
   }
 
@@ -746,8 +750,11 @@ export default function TradeCycles({
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={addTradeCycles}
-                    disabled={selectedProfiles.length === 0}
+                    disabled={selectedProfiles.length === 0 || isAddingCycles}
                   >
+                    {isAddingCycles ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : null}
                     Add {selectedProfiles.length > 0 ? `${selectedProfiles.length} ` : ""}selected as trade cycles
                   </button>
                 </div>
