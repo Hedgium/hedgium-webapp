@@ -35,6 +35,11 @@ const MakeAdjustmentsTaskControl = dynamic(
     { ssr: false, loading: () => <div className="h-20 min-w-[200px] bg-base-300 rounded-xl animate-pulse" /> }
 );
 
+const MystreamControl = dynamic(
+    () => import("@/components/admin/builder/MystreamControl"),
+    { ssr: false, loading: () => <div className="h-14 min-w-[240px] bg-base-300 rounded-xl animate-pulse" /> }
+);
+
 export default function BuilderPage() {
     const [builders, setBuilders] = useState<StrategyBuilder[]>([]);
     const [loading, setLoading] = useState(false);
@@ -251,6 +256,7 @@ export default function BuilderPage() {
                     <BuilderTaskControl />
                     <ExitTaskControl />
                     <MakeAdjustmentsTaskControl />
+                    <MystreamControl />
                 </div>
             </div>
 

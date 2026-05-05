@@ -126,6 +126,9 @@ export default function StrategyOptionChainModal({
   const [editingRowId, setEditingRowId] = useState<number | null>(null);
   const [refreshingChains, setRefreshingChains] = useState(false);
   const [greeksTaskLoading, setGreeksTaskLoading] = useState(false);
+  /** ``auto`` = same subset as ``run_mystream --mode auto`` (book expiries + strike_distance window); ``full`` = all DB rows. */
+  const [chainViewMode, setChainViewMode] = useState<"auto" | "full">("auto");
+  const [autoMeta, setAutoMeta] = useState<{ max_abs_strike_distance: number | null; position_expiry_count: number } | null>(null);
 
   /** Keep latest rows for pollLive without putting `rows` in useCallback deps (avoids new pollLive on every loadChain → interval churn). */
   const rowsRef = useRef(rows);
@@ -207,8 +210,13 @@ export default function StrategyOptionChainModal({
       try {
         const qp: Record<string, string> = {
           underlying_symbol: underlying,
+          view_mode: chainViewMode,
         };
         if (exp) qp.expiry = exp;
+        if (exchange) qp.exchange = exchange;
+        if (chainViewMode === "auto" && Number.isFinite(strategyId) && strategyId > 0) {
+          qp.strategy_id = String(strategyId);
+        }
         const res = await authFetch("optionchain/", {}, qp);
         const data = await res.json();
         if (myId !== chainRequestIdRef.current) return;
@@ -219,7 +227,7 @@ export default function StrategyOptionChainModal({
         if (!silent && myId === chainRequestIdRef.current) setLoading(false);
       }
     },
-    [underlying, exchange]
+    [underlying, exchange, chainViewMode, strategyId]
   );
 
   const refreshOptionChains = useCallback(async () => {
@@ -233,12 +241,32 @@ export default function StrategyOptionChainModal({
     setDraftManualSpot({});
     setRefreshingChains(true);
     try {
-      const exRes = await authFetch("optionchain/expiries/", {}, {
+      const exQp: Record<string, string> = {
         underlying_symbol: underlying,
         exchange: exchange || "NFO",
-      });
+        view_mode: chainViewMode,
+      };
+      if (chainViewMode === "auto" && Number.isFinite(strategyId) && strategyId > 0) {
+        exQp.strategy_id = String(strategyId);
+      }
+      const exRes = await authFetch("optionchain/expiries/", {}, exQp);
       const exData = await exRes.json();
       const list: string[] = Array.isArray(exData.expiries) ? exData.expiries : [];
+      const meta = exData?.meta;
+      if (chainViewMode === "auto" && meta && typeof meta === "object") {
+        setAutoMeta({
+          max_abs_strike_distance:
+            typeof meta.max_abs_strike_distance === "number"
+              ? meta.max_abs_strike_distance
+              : null,
+          position_expiry_count:
+            typeof meta.position_expiry_count === "number"
+              ? meta.position_expiry_count
+              : 0,
+        });
+      } else {
+        setAutoMeta(null);
+      }
       setExpiries(list);
       const prev = selectedExpiryRef.current;
       const nextExp = prev && list.includes(prev) ? prev : list[0] ?? null;
@@ -250,12 +278,13 @@ export default function StrategyOptionChainModal({
       const chainRid = ++chainRequestIdRef.current;
       await loadChain({ silent: true, expiryOverride: nextExp, requestId: chainRid });
     } catch {
+      setAutoMeta(null);
       setExpiries([]);
       setRows([]);
     } finally {
       setRefreshingChains(false);
     }
-  }, [loadChain, underlying, exchange]);
+  }, [loadChain, underlying, exchange, chainViewMode, strategyId]);
 
   const queueRefreshChainGreeks = useCallback(async () => {
     if (!Number.isFinite(strategyId) || strategyId <= 0) {
@@ -379,12 +408,32 @@ export default function StrategyOptionChainModal({
     (async () => {
       let chainRid: number | undefined;
       try {
-        const exRes = await authFetch("optionchain/expiries/", {}, {
+        const exQp: Record<string, string> = {
           underlying_symbol: underlying,
           exchange: exchange || "NFO",
-        });
+          view_mode: chainViewMode,
+        };
+        if (chainViewMode === "auto" && Number.isFinite(strategyId) && strategyId > 0) {
+          exQp.strategy_id = String(strategyId);
+        }
+        const exRes = await authFetch("optionchain/expiries/", {}, exQp);
         const exData = await exRes.json();
         const list: string[] = Array.isArray(exData.expiries) ? exData.expiries : [];
+        const meta = exData?.meta;
+        if (chainViewMode === "auto" && meta && typeof meta === "object") {
+          setAutoMeta({
+            max_abs_strike_distance:
+              typeof meta.max_abs_strike_distance === "number"
+                ? meta.max_abs_strike_distance
+                : null,
+            position_expiry_count:
+              typeof meta.position_expiry_count === "number"
+                ? meta.position_expiry_count
+                : 0,
+          });
+        } else {
+          setAutoMeta(null);
+        }
         if (bootId !== tableBootstrapIdRef.current) return;
         setExpiries(list);
         const prev = selectedExpiryRef.current;
@@ -395,6 +444,7 @@ export default function StrategyOptionChainModal({
         await loadChain({ silent: true, expiryOverride: nextExp, requestId: chainRid });
       } catch {
         if (bootId === tableBootstrapIdRef.current) {
+          setAutoMeta(null);
           setExpiries([]);
           setRows([]);
         }
@@ -404,7 +454,7 @@ export default function StrategyOptionChainModal({
         }
       }
     })();
-  }, [underlying, exchange, tab, loadChain]);
+  }, [underlying, exchange, tab, loadChain, chainViewMode, strategyId]);
 
   useEffect(() => {
     setEditingRowId(null);
@@ -412,7 +462,7 @@ export default function StrategyOptionChainModal({
     setDraftGamma({});
     setDraftSource({});
     setDraftManualSpot({});
-  }, [underlying, selectedExpiry, tab]);
+  }, [underlying, selectedExpiry, tab, chainViewMode]);
 
   useEffect(() => {
     if (rows.length === 0) return;
@@ -549,7 +599,27 @@ export default function StrategyOptionChainModal({
             ))}
           </div>
         )}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-1 justify-end items-center gap-2 shrink-0 flex-wrap">
+          <div
+            className="join join-horizontal"
+            title="Auto: expiries and strikes aligned with run_mystream --mode auto (open book, strike_distance window ±(max_abs+10)). Full: all expiries/strikes in DB."
+          >
+            <button
+              type="button"
+              className={`btn btn-xs join-item ${chainViewMode === "auto" ? "btn-active" : "btn-ghost"}`}
+              onClick={() => setChainViewMode("auto")}
+            >
+              Auto
+            </button>
+            <button
+              type="button"
+              className={`btn btn-xs join-item ${chainViewMode === "full" ? "btn-active" : "btn-ghost"}`}
+              onClick={() => setChainViewMode("full")}
+            >
+              Full
+            </button>
+          </div>
+
           <label className="text-sm text-base-content/70 whitespace-nowrap">Expiry</label>
           <select
             className="select select-bordered select-sm max-w-[11rem]"
@@ -576,7 +646,7 @@ export default function StrategyOptionChainModal({
             {greeksTaskLoading ? (
               <span className="loading loading-spinner loading-xs" />
             ) : null}
-            Refresh AUTO greeks
+            Refresh greeks
           </button>
           <button
             type="button"
