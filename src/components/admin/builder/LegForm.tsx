@@ -393,7 +393,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                         placeholder="Search Symbol (e.g., NIFTY, BANKNIFTY)..."
                     />
 
-                    <label className="label py-0"><span className="label-text text-sm text-base-content/60">Token: {formData.token}, Price: {currentPrice}</span></label>
+                    <label className="label py-0"><span className="label-text text-sm text-base-content/60">Token: {formData.token}, Price: {currentPrice}, Strike Step: {formData.strike_step}</span></label>
 
                 </div>
 
@@ -414,6 +414,11 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                         <option value="FIXED">FIXED</option>
                         <option value="DYNAMIC">DYNAMIC</option>
                     </select>
+                    <label className="label py-0">
+                        <span className="label-text text-sm text-base-content/60">
+                            ATM: {currentPrice !== null ? calculateATMStrike(currentPrice, formData.strike_step, 1) : '-'}
+                        </span>
+                    </label>
 
                 </div>
 
