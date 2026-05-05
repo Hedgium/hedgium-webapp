@@ -143,6 +143,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
     // Validate instrument whenever relevant fields change
     useEffect(() => {
+        // console.log(formData.symbol);
         const validateInstrument = async () => {
             // Check if all required fields are filled
             if (!formData.symbol || !formData.expiry || !formData.strike || !formData.option_type) {
@@ -163,7 +164,8 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
             try {
                 const dateFormatted = formatDateForAPI(formData.expiry);
-                const response = await authFetch('market/instruments/validate?security=' + formData.symbol + '&date=' + dateFormatted + '&strike=' + formData.strike.toString() + '&option=' + formData.option_type + '&exchange=' + effectiveExchange);
+                // console.log(formData.symbol, dateFormatted, formData.strike.toString(), formData.option_type, effectiveExchange);
+                const response = await authFetch('market/instruments/validate?security=' + encodeURIComponent(formData.symbol) + '&date=' + dateFormatted + '&strike=' + formData.strike.toString() + '&option=' + formData.option_type + '&exchange=' + effectiveExchange);
                 const data = await response.json();
 
                 setInstrumentData(data);
@@ -242,7 +244,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         // console.log(instrumentData);
         const data = await fetchTokenPrice(instrumentData?.instrument_token.toString());
 
-        console.log(data);
+        // console.log(data);
 
         if (formData.action == "BUY") {
             setFormData(prev => ({
@@ -312,7 +314,6 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
             let symbol = '';
             if (effectiveExchange === "MCX") { symbol = lastWord; } else { symbol = firstWord; }
-            
             setFormData(prev => ({
                 ...prev,
                 symbol: symbol,
