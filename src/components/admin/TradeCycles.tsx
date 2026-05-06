@@ -126,6 +126,7 @@ export default function TradeCycles({
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [showAddCyclesModal, setShowAddCyclesModal] = useState(false);
+  const [isAddingCycles, setIsAddingCycles] = useState(false);
   const [selectedTradeCycleId, setSelectedTradeCycleId] = useState<number | null>(null);
   const [selectedTradeCycle, setSelectedTradeCycle] = useState<{ id: number; profile_id?: number } | null>(null);
   const [liveModalProfileId, setLiveModalProfileId] = useState<number | null>(null);
@@ -199,6 +200,7 @@ export default function TradeCycles({
       return;
     }
 
+    setIsAddingCycles(true);
     try {
       alert.info("Creating trade cycles...", { duration: 3000 });
       const res = await authFetch(`myadmin/create-trade-cycles/${id}/${selectedProfiles.join(",")}/`);
@@ -213,6 +215,8 @@ export default function TradeCycles({
       alert.success("Trade cycles created!", { duration: 3000 });
     } catch (error) {
       console.error("Create error:", error);
+    } finally {
+      setIsAddingCycles(false);
     }
   }
 
@@ -390,16 +394,7 @@ export default function TradeCycles({
     const cycle = trade_cycles.find((c) => c.id === cycleId);
     if (!cycle?.profile?.id) return null;
     try {
-      const infoRes = await authFetch(`trade-cycles/${cycleId}/master-info/`);
-      const info = await infoRes.json();
-      if (!infoRes.ok) return null;
-      const { master_profile_id, trade_cycle_profile_id } = info as {
-        master_profile_id: number;
-        trade_cycle_profile_id: number;
-      };
-      await refreshProfilePositionsAndWait(master_profile_id);
-      await refreshProfilePositionsAndWait(trade_cycle_profile_id);
-      const res = await authFetch(`trade-cycles/${cycleId}/match-master-positions/`, {
+      const res = await authFetch(`trade-cycles/${cycleId}/match-master-positions-live/`, {
         method: "POST",
       });
       const data = await res.json();
@@ -746,8 +741,11 @@ export default function TradeCycles({
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={addTradeCycles}
-                    disabled={selectedProfiles.length === 0}
+                    disabled={selectedProfiles.length === 0 || isAddingCycles}
                   >
+                    {isAddingCycles ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : null}
                     Add {selectedProfiles.length > 0 ? `${selectedProfiles.length} ` : ""}selected as trade cycles
                   </button>
                 </div>

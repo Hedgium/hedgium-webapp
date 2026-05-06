@@ -30,15 +30,6 @@ const ExitTaskControl = dynamic(
     { ssr: false, loading: () => <div className="h-14 w-40 bg-base-300 rounded-xl animate-pulse" /> }
 );
 
-const MakeAdjustmentsTaskControl = dynamic(
-    () => import("@/components/admin/builder/MakeAdjustmentsTaskControl"),
-    { ssr: false, loading: () => <div className="h-20 min-w-[200px] bg-base-300 rounded-xl animate-pulse" /> }
-);
-
-const MystreamControl = dynamic(
-    () => import("@/components/admin/builder/MystreamControl"),
-    { ssr: false, loading: () => <div className="h-14 min-w-[240px] bg-base-300 rounded-xl animate-pulse" /> }
-);
 
 export default function BuilderPage() {
     const [builders, setBuilders] = useState<StrategyBuilder[]>([]);
@@ -255,8 +246,6 @@ export default function BuilderPage() {
                 <div className="flex flex-wrap gap-4 mb-4">
                     <BuilderTaskControl />
                     <ExitTaskControl />
-                    <MakeAdjustmentsTaskControl />
-                    <MystreamControl />
                 </div>
             </div>
 
