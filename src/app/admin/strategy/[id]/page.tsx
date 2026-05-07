@@ -26,6 +26,12 @@ interface StrategyVersion {
   title: string | null;
 }
 
+interface SpotSnapshot {
+  underlying: string;
+  spot_price: number | string;
+  captured_at: string;
+}
+
 interface StrategyDetail {
   id: number;
   name: string;
@@ -52,6 +58,8 @@ interface StrategyDetail {
   multiplier_allowed?: boolean;
   /** Uppercase symbol -> Zerodha underlying instrument_token from builder legs */
   underlying_instrument_tokens?: Record<string, number>;
+  latest_spot_snapshots?: SpotSnapshot[];
+  recent_spot_snapshots?: SpotSnapshot[];
 }
 
 export default function StrategyDetail() {
@@ -284,6 +292,25 @@ export default function StrategyDetail() {
                       : "—"}
                   </span>
                 </div>
+                {!!strategy?.latest_spot_snapshots?.length && (
+                  <div className="mt-2">
+                    <div className="text-xs text-base-content/60 mb-1">Latest spot baseline</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {strategy.latest_spot_snapshots.map((s) => (
+                        <span
+                          key={`${s.underlying}-${s.captured_at}`}
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-base-300/50 text-xs"
+                          title={formatDateTimeMinutes(s.captured_at)}
+                        >
+                          <span className="font-semibold">{s.underlying}</span>
+                          <span className="tabular-nums">
+                            {toNum(s.spot_price) != null ? toNum(s.spot_price)!.toFixed(2) : "—"}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -376,6 +403,39 @@ export default function StrategyDetail() {
             onRefresh={() => fetchStrategyData({ silent: true })}
           />
         </div>
+
+        {!!strategy?.recent_spot_snapshots?.length && (
+          <>
+            <hr className="border-base-300/60 mb-6" />
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-2">Spot snapshot history</h2>
+              <div className="rounded-lg border border-base-300/70 bg-base-100 overflow-x-auto">
+                <table className="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Captured At</th>
+                      <th>Underlying</th>
+                      <th className="text-right">Spot Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {strategy.recent_spot_snapshots.map((row, idx) => (
+                      <tr key={`${row.underlying}-${row.captured_at}-${idx}`}>
+                        <td className="text-xs text-base-content/70">
+                          {formatDateTimeMinutes(row.captured_at)}
+                        </td>
+                        <td className="font-medium">{row.underlying}</td>
+                        <td className="text-right tabular-nums">
+                          {toNum(row.spot_price) != null ? toNum(row.spot_price)!.toFixed(2) : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
 
         <hr className="border-base-300/60 mb-6" />
 
