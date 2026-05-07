@@ -34,6 +34,7 @@ interface Strategy {
   pnl_updated_at: string | null;
   greek_delta: number | string | null;
   greek_gamma: number | string | null;
+  greek_updated_at: string | null;
   completed: boolean;
   completed_at: string | null;
   versions: Version[];
@@ -449,6 +450,9 @@ export default function Page() {
                             className="font-medium text-base-content/70 text-[13px]"
                           >
                             {formatGreek(strategy.greek_gamma)}
+                          </span>
+                          <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
+                            {formatSnapshotAt(strategy.greek_updated_at) ?? "—"}
                           </span>
                         </div>
                       </td>
