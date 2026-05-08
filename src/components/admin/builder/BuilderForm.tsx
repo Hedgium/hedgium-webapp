@@ -31,6 +31,8 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         supergroup_ids: [],
         delta_band_min: null,
         delta_band_max: null,
+        spot_dev_pct_min: null,
+        spot_dev_pct_max: null,
         num_lots_delta_band_adjust: null,
         shift_enabled: false,
         shift_strike_distance_itm: null,
@@ -66,6 +68,14 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     initialData.delta_band_max === undefined || initialData.delta_band_max === null
                         ? null
                         : Number(initialData.delta_band_max),
+                spot_dev_pct_min:
+                    initialData.spot_dev_pct_min === undefined || initialData.spot_dev_pct_min === null
+                        ? null
+                        : Number(initialData.spot_dev_pct_min),
+                spot_dev_pct_max:
+                    initialData.spot_dev_pct_max === undefined || initialData.spot_dev_pct_max === null
+                        ? null
+                        : Number(initialData.spot_dev_pct_max),
                 num_lots_delta_band_adjust:
                     initialData.num_lots_delta_band_adjust == null
                         ? null
@@ -159,6 +169,8 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         const nullableNumeric = new Set([
             'delta_band_min',
             'delta_band_max',
+            'spot_dev_pct_min',
+            'spot_dev_pct_max',
             'num_lots_delta_band_adjust',
             'shift_strike_distance_itm',
             'shift_strike_distance_otm',
@@ -485,6 +497,55 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     <label className="label">
                         <span className="label-text-alt">
                             Leave either field empty to disable. Net delta per underlying is compared to these bounds directly.
+                        </span>
+                    </label>
+                </div>
+
+                <div className="form-control md:col-span-2">
+                    <label className="label py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80">
+                            Spot deviation band (%) from last captured spot
+                        </span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label className="label py-0">
+                                <span className="label-text text-xs text-base-content/70">Min deviation %</span>
+                            </label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="spot_dev_pct_min"
+                                value={optionalNumberValue(formData.spot_dev_pct_min)}
+                                onChange={handleChange}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSubmit(e);
+                                }}
+                                placeholder="e.g. -1.5"
+                                className="input input-bordered input-sm h-9 w-full"
+                            />
+                        </div>
+                        <div>
+                            <label className="label py-0">
+                                <span className="label-text text-xs text-base-content/70">Max deviation %</span>
+                            </label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="spot_dev_pct_max"
+                                value={optionalNumberValue(formData.spot_dev_pct_max)}
+                                onChange={handleChange}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSubmit(e);
+                                }}
+                                placeholder="e.g. 1.5 (both required to enable)"
+                                className="input input-bordered input-sm h-9 w-full"
+                            />
+                        </div>
+                    </div>
+                    <label className="label">
+                        <span className="label-text-alt">
+                            Leave either field empty to disable spot deviation checks.
                         </span>
                     </label>
                 </div>

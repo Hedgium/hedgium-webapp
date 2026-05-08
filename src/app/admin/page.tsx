@@ -32,6 +32,9 @@ interface Strategy {
   spread_updated_at: string | null;
   pnl_total: number | string | null;
   pnl_updated_at: string | null;
+  greek_delta: number | string | null;
+  greek_gamma: number | string | null;
+  greek_updated_at: string | null;
   completed: boolean;
   completed_at: string | null;
   versions: Version[];
@@ -91,6 +94,10 @@ async function waitForCeleryTaskComplete(
 
 export default function Page() {
   const alert = useAlert();
+  /** useAlert returns a new function each render — keep a ref so intervals don't reset. */
+  const alertRef = React.useRef(alert);
+  alertRef.current = alert;
+
   const [strategies, setStrategies] = React.useState<Strategy[]>([]);
   const [next, setNext] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -98,20 +105,143 @@ export default function Page() {
   const [orderBy, setOrderBy] = React.useState("-created_at");
   const [completed, setCompleted] = React.useState("");
 
-  async function fetchStrategies() {
-    setLoading(true);
-    setStrategies([]);
-    const url = buildStrategiesUrl({ completed, orderBy });
-    const res = await authFetch(url);
-    const data = await res.json();
-    if (data.next) {
-      setNext(data.next.includes("api/") ? data.next.split("api/")[1] : data.next);
-    } else {
-      setNext(null);
-    }
-    setStrategies(data.results ?? []);
-    setLoading(false);
-  }
+  const STRATEGIES_POLL_MS = 40_000;
+  const METRICS_REFRESH_INTERVAL_MS = 90_000;
+
+  const refreshMetricsInFlightRef = React.useRef(false);
+
+  const fetchStrategies = React.useCallback(
+    async (options?: { background?: boolean }) => {
+      const background = options?.background ?? false;
+      if (!background) {
+        setLoading(true);
+        setStrategies([]);
+      }
+      const url = buildStrategiesUrl({ completed, orderBy });
+      try {
+        const res = await authFetch(url);
+        const data = await res.json();
+        if (data.next) {
+          setNext(
+            data.next.includes("api/") ? data.next.split("api/")[1] : data.next
+          );
+        } else {
+          setNext(null);
+        }
+        setStrategies(data.results ?? []);
+      } catch (e) {
+        console.error(e);
+        if (!background) setStrategies([]);
+      } finally {
+        if (!background) setLoading(false);
+      }
+    },
+    [completed, orderBy]
+  );
+
+  React.useEffect(() => {
+    void fetchStrategies();
+  }, [fetchStrategies]);
+
+  React.useEffect(() => {
+    const id = window.setInterval(() => {
+      void fetchStrategies({ background: true });
+    }, STRATEGIES_POLL_MS);
+    return () => window.clearInterval(id);
+  }, [fetchStrategies]);
+
+  const runRefreshActiveStrategyTasks = React.useCallback(
+    async (options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
+      if (refreshMetricsInFlightRef.current) return;
+      refreshMetricsInFlightRef.current = true;
+      setRefreshingMetrics(true);
+      const a = alertRef.current;
+      if (!silent) {
+        a.info("Running PnL, WPNL, and spread refresh tasks…");
+      }
+
+      const listOpts = silent ? ({ background: true } as const) : undefined;
+
+      try {
+        const ids: string[] = [];
+        for (const taskName of REFRESH_ACTIVE_STRATEGY_TASKS) {
+          const response = await authFetch(
+            `core/tasks/run/?task_name=${encodeURIComponent(taskName)}`,
+            { method: "POST" }
+          );
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            if (!silent) {
+              a.error(
+                typeof data.error === "string"
+                  ? data.error
+                  : `Failed to enqueue: ${taskName}`
+              );
+            } else {
+              console.error(
+                "Scheduled metrics refresh: enqueue failed",
+                taskName,
+                data
+              );
+            }
+            return;
+          }
+          if (data.task_id) ids.push(data.task_id);
+        }
+
+        if (ids.length !== REFRESH_ACTIVE_STRATEGY_TASKS.length) {
+          if (!silent) {
+            a.error("Could not queue all refresh tasks (missing task ids)");
+          } else {
+            console.error("Scheduled metrics refresh: missing task ids");
+          }
+          return;
+        }
+
+        const statuses = await Promise.all(
+          ids.map((id) => waitForCeleryTaskComplete(id))
+        );
+        const allOk = statuses.every((s) => s === "SUCCESS");
+        if (allOk) {
+          if (!silent) {
+            a.success("PnL, WPNL, and spread refresh finished");
+          }
+        } else if (!silent) {
+          a.error(
+            `One or more refresh tasks finished with errors (${statuses.join(", ")})`
+          );
+        } else {
+          console.error(
+            "Scheduled metrics refresh: non-success statuses",
+            statuses.join(", ")
+          );
+        }
+        await fetchStrategies(listOpts);
+      } catch (e) {
+        console.error(e);
+        if (!silent) {
+          a.error(
+            e instanceof Error
+              ? e.message
+              : "Failed to run or wait for refresh tasks"
+          );
+        }
+        await fetchStrategies(listOpts);
+      } finally {
+        setRefreshingMetrics(false);
+        refreshMetricsInFlightRef.current = false;
+      }
+    },
+    [fetchStrategies]
+  );
+
+  React.useEffect(() => {
+    const id = window.setInterval(() => {
+      void runRefreshActiveStrategyTasks({ silent: true });
+    }, METRICS_REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [runRefreshActiveStrategyTasks]);
 
   async function loadMoreStrategies() {
     if (!next) return;
@@ -125,60 +255,6 @@ export default function Page() {
     }
     setStrategies((prev) => [...prev, ...(data.results ?? [])]);
     setLoading(false);
-  }
-
-  React.useEffect(() => {
-    fetchStrategies();
-  }, [completed, orderBy]);
-
-  async function runRefreshActiveStrategyTasks() {
-    setRefreshingMetrics(true);
-    alert.info("Running PnL, WPNL, and spread refresh tasks…");
-    try {
-      const ids: string[] = [];
-      for (const taskName of REFRESH_ACTIVE_STRATEGY_TASKS) {
-        const response = await authFetch(
-          `core/tasks/run/?task_name=${encodeURIComponent(taskName)}`,
-          { method: "POST" }
-        );
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          alert.error(
-            typeof data.error === "string"
-              ? data.error
-              : `Failed to enqueue: ${taskName}`
-          );
-          return;
-        }
-        if (data.task_id) ids.push(data.task_id);
-      }
-
-      if (ids.length !== REFRESH_ACTIVE_STRATEGY_TASKS.length) {
-        alert.error("Could not queue all refresh tasks (missing task ids)");
-        return;
-      }
-
-      const statuses = await Promise.all(
-        ids.map((id) => waitForCeleryTaskComplete(id))
-      );
-      const allOk = statuses.every((s) => s === "SUCCESS");
-      if (allOk) {
-        alert.success("PnL, WPNL, and spread refresh finished");
-      } else {
-        alert.error(
-          `One or more refresh tasks finished with errors (${statuses.join(", ")})`
-        );
-      }
-      await fetchStrategies();
-    } catch (e) {
-      console.error(e);
-      alert.error(
-        e instanceof Error ? e.message : "Failed to run or wait for refresh tasks"
-      );
-      await fetchStrategies();
-    } finally {
-      setRefreshingMetrics(false);
-    }
   }
 
   const lastAdjustment = (s: Strategy): Version | null =>
@@ -205,6 +281,16 @@ export default function Page() {
     } catch {
       return iso;
     }
+  };
+
+  /** Display net Greeks (backend stores Δ / Γ to 4 dp). */
+  const formatGreek = (v: number | string | null | undefined) => {
+    const n = toNum(v);
+    if (n == null) return "—";
+    return n.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 4,
+    });
   };
 
   return (
@@ -264,7 +350,7 @@ export default function Page() {
             </button>
             <button
               type="button"
-              onClick={runRefreshActiveStrategyTasks}
+              onClick={() => void runRefreshActiveStrategyTasks()}
               disabled={refreshingMetrics || loading}
               className="btn btn-ghost btn-sm btn-square"
               title="Queue PnL, WPNL, and spread refresh jobs"
@@ -285,6 +371,9 @@ export default function Page() {
                   <th className="font-medium text-base-content/70">ID</th>
                   <th className="font-medium text-base-content/70">Name</th>
                   <th className="font-medium text-base-content/70">Status</th>
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7.5rem]">
+                    Greeks [Δ / Γ]
+                  </th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
                     Total PnL
                   </th>
@@ -304,7 +393,7 @@ export default function Page() {
               <tbody>
                 {strategies.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={9} className="text-center py-16">
+                    <td colSpan={10} className="text-center py-16">
                       <p className="text-base-content/60">No strategies found.</p>
                       <p className="text-sm text-base-content/50 mt-1">
                         Try changing filters or create a new strategy.
@@ -347,6 +436,25 @@ export default function Page() {
                             Active
                           </span>
                         )}
+                      </td>
+                      <td className="text-right align-top min-w-[7.5rem]">
+                        <div className="flex flex-col items-end gap-0.5 tabular-nums text-sm whitespace-nowrap">
+                          <span
+                            title="Net delta"
+                            className="font-medium text-base-content/90"
+                          >
+                            {formatGreek(strategy.greek_delta)}
+                          </span>
+                          <span
+                            title="Net gamma"
+                            className="font-medium text-base-content/70 text-[13px]"
+                          >
+                            {formatGreek(strategy.greek_gamma)}
+                          </span>
+                          <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
+                            {formatSnapshotAt(strategy.greek_updated_at) ?? "—"}
+                          </span>
+                        </div>
                       </td>
                       <td className="text-right align-top min-w-[7rem]">
                         <div className="flex flex-col items-end gap-1 min-w-[7rem]">
@@ -432,7 +540,7 @@ export default function Page() {
                 {loading && strategies.length === 0 &&
                   Array.from({ length: 3 }).map((_, i) => (
                     <tr key={`skeleton-${i}`} className="border-b border-base-300/30">
-                      {Array.from({ length: 9 }).map((_, j) => (
+                      {Array.from({ length: 10 }).map((_, j) => (
                         <td key={j}>
                           <div className="h-5 bg-base-300/40 rounded animate-pulse" />
                         </td>

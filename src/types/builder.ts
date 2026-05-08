@@ -47,6 +47,10 @@ export interface StrategyBuilder {
     delta_band_min?: number | null;
     /** Per-underlying Greeks band: net delta upper bound */
     delta_band_max?: number | null;
+    /** Per-underlying spot deviation lower bound in percentage from last captured spot. */
+    spot_dev_pct_min?: number | null;
+    /** Per-underlying spot deviation upper bound in percentage from last captured spot. */
+    spot_dev_pct_max?: number | null;
     num_lots_delta_band_adjust?: number | null;
     shift_enabled?: boolean;
     shift_strike_distance_itm?: number | null;
@@ -70,6 +74,8 @@ export interface StrategyBuilderCreate {
     supergroup_ids?: number[];
     delta_band_min?: number | null;
     delta_band_max?: number | null;
+    spot_dev_pct_min?: number | null;
+    spot_dev_pct_max?: number | null;
     num_lots_delta_band_adjust?: number | null;
     shift_enabled?: boolean;
     shift_strike_distance_itm?: number | null;
@@ -92,6 +98,8 @@ export interface StrategyBuilderUpdate {
     supergroup_ids?: number[];
     delta_band_min?: number | null;
     delta_band_max?: number | null;
+    spot_dev_pct_min?: number | null;
+    spot_dev_pct_max?: number | null;
     num_lots_delta_band_adjust?: number | null;
     shift_enabled?: boolean;
     shift_strike_distance_itm?: number | null;
