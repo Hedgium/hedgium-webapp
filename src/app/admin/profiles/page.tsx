@@ -168,7 +168,9 @@ export default function ProfilesPage() {
                 <Search size={18} className="text-base-content/60 z-10" />
               </div>
               <input
-                type="text"
+                type="search"
+                name="profile-search-query"
+                autoComplete="off"
                 placeholder="Search profiles..."
                 className="input input-bordered input-sm w-full pl-10 h-9"
                 value={searchQuery}

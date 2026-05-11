@@ -3,7 +3,7 @@ import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
 import { formatMoneyIN } from '@/utils/formatNumber';
 import useAlert from '@/hooks/useAlert';
-import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut } from 'lucide-react';
+import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProfileItemProps {
@@ -12,6 +12,22 @@ interface ProfileItemProps {
     onAddPlan?: (profile: Profile) => void;
     onModifyPlan?: (profile: Profile) => void;
 }
+
+type DocumentKind = "image" | "pdf" | "other";
+
+const getDocumentKind = (url?: string | null): DocumentKind => {
+    if (!url) {
+        return "other";
+    }
+    const cleanUrl = url.split("?")[0].toLowerCase();
+    if (cleanUrl.endsWith(".pdf")) {
+        return "pdf";
+    }
+    if (/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(cleanUrl)) {
+        return "image";
+    }
+    return "other";
+};
 
 export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }: ProfileItemProps) {
     const [refreshing, setRefreshing] = useState(false);
@@ -210,6 +226,8 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
 
     const u = profile.user as typeof profile.user & { aadhar_number?: string | null; pan_number?: string | null; pan_document_url?: string | null; aadhar_document_url?: string | null };
 
+    const panDocumentKind = getDocumentKind(u.pan_document_url);
+    const aadharDocumentKind = getDocumentKind(u.aadhar_document_url);
     const proxyOn = Boolean(((profile.proxy_username && profile.proxy_host) || "").trim());
     const proxyHost = (profile.proxy_host || "").trim();
     const daysLeft = profile.subscription
@@ -490,16 +508,28 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                         <div className="flex gap-2 mt-2 flex-wrap items-center">
                             {u.pan_document_url ? (
                                 <a href={u.pan_document_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" title="View PAN">
-                                    <img src={u.pan_document_url} alt="PAN" className="w-10 h-10 object-cover rounded border border-base-300" />
-                                    <span className="link link-primary text-xs">PAN doc</span>
+                                    {panDocumentKind === "image" ? (
+                                        <img src={u.pan_document_url} alt="PAN" className="w-10 h-10 object-cover rounded border border-base-300" />
+                                    ) : (
+                                        <span className="w-10 h-10 rounded border border-base-300 bg-base-200 grid place-items-center">
+                                            <FileText size={16} />
+                                        </span>
+                                    )}
+                                    <span className="link link-primary text-xs">{panDocumentKind === "pdf" ? "PAN PDF" : "PAN doc"}</span>
                                 </a>
                             ) : (
                                 <span className="text-xs opacity-50">PAN doc —</span>
                             )}
                             {u.aadhar_document_url ? (
                                 <a href={u.aadhar_document_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" title="View Aadhar">
-                                    <img src={u.aadhar_document_url} alt="Aadhar" className="w-10 h-10 object-cover rounded border border-base-300" />
-                                    <span className="link link-primary text-xs">Aadhar doc</span>
+                                    {aadharDocumentKind === "image" ? (
+                                        <img src={u.aadhar_document_url} alt="Aadhar" className="w-10 h-10 object-cover rounded border border-base-300" />
+                                    ) : (
+                                        <span className="w-10 h-10 rounded border border-base-300 bg-base-200 grid place-items-center">
+                                            <FileText size={16} />
+                                        </span>
+                                    )}
+                                    <span className="link link-primary text-xs">{aadharDocumentKind === "pdf" ? "Aadhar PDF" : "Aadhar doc"}</span>
                                 </a>
                             ) : (
                                 <span className="text-xs opacity-50">Aadhar doc —</span>
@@ -543,6 +573,8 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                             </label>
                             <input
                                 type="password"
+                                name={`broker-login-secret-${profile.id}`}
+                                autoComplete="off"
                                 placeholder={`Enter ${profile.broker_name === "KOTAKNEO" ? "MPIN" : "Password"}`}
                                 className="input input-bordered w-full"
                                 value={brokerPassword}
@@ -589,9 +621,13 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                                 <span className="label-text">Broker Access Token</span>
                             </label>
                             <input
-                                type="password"
+                                type="text"
+                                name={`broker-access-token-${profile.id}`}
+                                autoComplete="off"
+                                spellCheck={false}
+                                inputMode="text"
                                 placeholder={`Enter ${profile.broker_name} access token`}
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full font-mono text-sm"
                                 value={brokerAccessToken}
                                 onChange={(e) => setBrokerAccessToken(e.target.value)}
                                 onKeyDown={(e) => {
