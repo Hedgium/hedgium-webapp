@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { User, Profile } from "@/types/profile";
 import type { BrokerProxyPool } from "@/types/brokerProxyPool";
-import { Edit2, UserPlus } from "lucide-react";
+import { Edit2, UserPlus, FileText } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 
@@ -29,6 +29,22 @@ const SIGNUP_STEPS = [
   { value: "verified", label: "Verified" },
 ];
 
+type DocumentKind = "image" | "pdf" | "other";
+
+const getDocumentKind = (url?: string | null): DocumentKind => {
+  if (!url) {
+    return "other";
+  }
+  const cleanUrl = url.split("?")[0].toLowerCase();
+  if (cleanUrl.endsWith(".pdf")) {
+    return "pdf";
+  }
+  if (/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(cleanUrl)) {
+    return "image";
+  }
+  return "other";
+};
+
 export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreated }: UserWithoutProfileItemProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addProfileModalOpen, setAddProfileModalOpen] = useState(false);
@@ -50,6 +66,8 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
 
   const { user } = item;
   const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email;
+  const panDocumentKind = getDocumentKind(user.pan_document_url);
+  const aadharDocumentKind = getDocumentKind(user.aadhar_document_url);
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,12 +216,18 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
                   className="flex items-center gap-1"
                   title="View PAN"
                 >
-                  <img
-                    src={user.pan_document_url}
-                    alt="PAN"
-                    className="w-10 h-10 object-cover rounded border border-base-300"
-                  />
-                  <span className="link link-primary text-xs">PAN</span>
+                  {panDocumentKind === "image" ? (
+                    <img
+                      src={user.pan_document_url}
+                      alt="PAN"
+                      className="w-10 h-10 object-cover rounded border border-base-300"
+                    />
+                  ) : (
+                    <span className="w-10 h-10 rounded border border-base-300 bg-base-200 grid place-items-center">
+                      <FileText size={16} />
+                    </span>
+                  )}
+                  <span className="link link-primary text-xs">{panDocumentKind === "pdf" ? "PAN PDF" : "PAN"}</span>
                 </a>
               ) : (
                 <span className="text-xs opacity-60">PAN —</span>
@@ -216,12 +240,18 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
                   className="flex items-center gap-1"
                   title="View Aadhar"
                 >
-                  <img
-                    src={user.aadhar_document_url}
-                    alt="Aadhar"
-                    className="w-10 h-10 object-cover rounded border border-base-300"
-                  />
-                  <span className="link link-primary text-xs">Aadhar</span>
+                  {aadharDocumentKind === "image" ? (
+                    <img
+                      src={user.aadhar_document_url}
+                      alt="Aadhar"
+                      className="w-10 h-10 object-cover rounded border border-base-300"
+                    />
+                  ) : (
+                    <span className="w-10 h-10 rounded border border-base-300 bg-base-200 grid place-items-center">
+                      <FileText size={16} />
+                    </span>
+                  )}
+                  <span className="link link-primary text-xs">{aadharDocumentKind === "pdf" ? "Aadhar PDF" : "Aadhar"}</span>
                 </a>
               ) : (
                 <span className="text-xs opacity-60">Aadhar —</span>
