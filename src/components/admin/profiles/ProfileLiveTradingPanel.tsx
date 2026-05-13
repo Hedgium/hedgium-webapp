@@ -92,15 +92,15 @@ interface OrderFormData {
   exchange: string;
   tradingsymbol: string;
   transaction_type: string;
-  quantity: number;
+  quantity: string;
   order_type: string;
   product: string;
-  price: number;
+  price: string;
 }
 
 interface ModifyOrderFormData {
-  quantity: number;
-  price: number;
+  quantity: string;
+  price: string;
   tradingsymbol: string;
   exchange: string;
 }
@@ -144,21 +144,21 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   const [placingOrder, setPlacingOrder] = useState(false);
   const [modifyingOrder, setModifyingOrder] = useState(false);
   const [exitingPosition, setExitingPosition] = useState(false);
-  const [exitQuantity, setExitQuantity] = useState<number>(0);
+  const [exitQuantity, setExitQuantity] = useState<string>("");
 
   const [orderForm, setOrderForm] = useState<OrderFormData>({
     exchange: "NSE",
     tradingsymbol: "",
     transaction_type: "BUY",
-    quantity: 1,
-    order_type: "MARKET",
+    quantity: "1",
+    order_type: "LIMIT",
     product: "CNC",
-    price: 0,
+    price: "",
   });
 
   const [modifyForm, setModifyForm] = useState<ModifyOrderFormData>({
-    quantity: 0,
-    price: 0,
+    quantity: "",
+    price: "",
     tradingsymbol: "",
     exchange: "",
   });
@@ -281,16 +281,32 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const parsedQuantity = parseInt(orderForm.quantity, 10);
+    if (!Number.isFinite(parsedQuantity) || parsedQuantity < 1) {
+      alert.error("Quantity must be at least 1");
+      return;
+    }
+
+    let parsedPrice = 0;
+    if (orderForm.order_type !== "MARKET") {
+      parsedPrice = parseFloat(orderForm.price);
+      if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+        alert.error("Price must be greater than 0 for a LIMIT order");
+        return;
+      }
+    }
+
     setPlacingOrder(true);
     try {
       const payload = {
         exchange: orderForm.exchange,
         tradingsymbol: orderForm.tradingsymbol,
         transaction_type: orderForm.transaction_type,
-        quantity: orderForm.quantity,
+        quantity: parsedQuantity,
         order_type: orderForm.order_type,
         product: orderForm.product,
-        price: orderForm.order_type === "MARKET" ? 0 : orderForm.price,
+        price: parsedPrice,
       };
 
       const { data } = await placeOrder(profileId, payload);
@@ -302,10 +318,10 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
           exchange: "NSE",
           tradingsymbol: "",
           transaction_type: "BUY",
-          quantity: 1,
-          order_type: "MARKET",
+          quantity: "1",
+          order_type: "LIMIT",
           product: "CNC",
-          price: 0,
+          price: "",
         });
         fetchOrders();
         fetchTrades();
@@ -324,11 +340,23 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     e.preventDefault();
     if (!selectedOrder) return;
 
+    const parsedQuantity = parseInt(modifyForm.quantity, 10);
+    const parsedPrice = parseFloat(modifyForm.price);
+
+    if (!Number.isFinite(parsedQuantity) || parsedQuantity < 1) {
+      alert.error("Quantity must be at least 1");
+      return;
+    }
+    if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      alert.error("Price must be a non-negative number");
+      return;
+    }
+
     setModifyingOrder(true);
     try {
       const payload = {
-        quantity: modifyForm.quantity,
-        price: modifyForm.price,
+        quantity: parsedQuantity,
+        price: parsedPrice,
         tradingsymbol: modifyForm.tradingsymbol,
         exchange: modifyForm.exchange,
       };
@@ -374,8 +402,8 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   const openModifyForm = (order: LiveOrder) => {
     setSelectedOrder(order);
     setModifyForm({
-      quantity: order.quantity,
-      price: order.price,
+      quantity: String(order.quantity ?? ""),
+      price: order.price != null ? String(order.price) : "",
       tradingsymbol: order.tradingsymbol,
       exchange: order.exchange,
     });
@@ -391,10 +419,17 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
       return;
     }
 
+    const maxQty = Math.abs(selectedPosition.quantity);
+    const parsedExit = parseInt(exitQuantity, 10);
+    if (!Number.isFinite(parsedExit) || parsedExit < 1) {
+      alert.error("Exit quantity must be at least 1");
+      return;
+    }
+    const exitQty = Math.min(parsedExit, maxQty);
+
     setExitingPosition(true);
     try {
       const exitAction = selectedPosition.quantity > 0 ? "SELL" : "BUY";
-      const exitQty = Math.abs(exitQuantity);
       const exchange = selectedPosition.exchange || "NSE";
 
       const payload = {
@@ -411,13 +446,13 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
 
       if (data.status === "success") {
         alert.success(
-          exitQty === Math.abs(selectedPosition.quantity)
+          exitQty === maxQty
             ? "Position exited successfully"
             : `Partial exit of ${exitQty} units completed`
         );
         setShowExitPositionForm(false);
         setSelectedPosition(null);
-        setExitQuantity(0);
+        setExitQuantity("");
         fetchPositions();
         fetchOrders();
         fetchTrades();
@@ -446,7 +481,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   return (
     <>
       {variant === "page" ? (
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button type="button" onClick={() => router.back()} className="btn btn-ghost btn-sm">
               <ArrowLeft size={20} />
@@ -463,7 +498,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
           <div className="flex gap-2">{placeOrderButton}</div>
         </div>
       ) : (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-base-300 pb-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-base-300">
           <div className="min-w-0">
             {profile ? (
               <p className="truncate text-sm text-base-content/70">
@@ -672,7 +707,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                               type="button"
                               onClick={() => {
                                 setSelectedPosition(position);
-                                setExitQuantity(Math.abs(position.quantity));
+                                setExitQuantity(String(Math.abs(position.quantity)));
                                 setShowExitPositionForm(true);
                               }}
                               className="btn btn-ghost btn-xs"
@@ -834,46 +869,77 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 <span className="loading loading-spinner loading-lg"></span>
               </div>
             ) : holdings.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="table table-zebra w-full">
-                  <thead>
-                    <tr>
-                      <th>Instrument</th>
-                      <th className="whitespace-nowrap">Date & time</th>
-                      <th>Qty</th>
-                      <th>Available</th>
-                      <th>Avg Price</th>
-                      <th>LTP</th>
-                      <th>Close</th>
-                      <th>Current Value</th>
-                      <th>P&L</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {holdings.map((holding: LiveHolding, index: number) => (
-                      <tr key={`${holding.exchange ?? "NA"}-${holding.tradingsymbol}-${index}`}>
-                        <td className="font-medium">{holding.tradingsymbol}</td>
-                        <td className="whitespace-nowrap text-xs text-base-content/80">
-                          {formatDateTimeCell(holdingsFetchedAt)}
-                        </td>
-                        <td>{holding.quantity ?? "-"}</td>
-                        <td>{holding.available_quantity ?? "-"}</td>
-                        <td>
-                          {holding.average_price != null ? formatMoneyIN(holding.average_price) : "-"}
-                        </td>
-                        <td>{holding.last_price != null ? formatMoneyIN(holding.last_price) : "-"}</td>
-                        <td>{holding.close_price != null ? formatMoneyIN(holding.close_price) : "-"}</td>
-                        <td>
-                          {holding.current_value != null ? formatMoneyIN(holding.current_value) : "-"}
-                        </td>
-                        <td className={holding.pnl != null && holding.pnl >= 0 ? "text-green-400" : "text-red-400"}>
-                          {holding.pnl != null ? formatMoneyIN(holding.pnl) : "-"}
-                        </td>
+              <>
+                {(() => {
+                  const totalCurrentValue = holdings.reduce(
+                    (sum, h) => sum + (h.current_value ?? 0),
+                    0
+                  );
+                  const totalPnl = holdings.reduce((sum, h) => sum + (h.pnl ?? 0), 0);
+                  const totalPnlColor = totalPnl >= 0 ? "text-green-400" : "text-red-400";
+
+                  return (
+                    <div className="mb-4 grid grid-cols-2 gap-4 rounded-lg bg-base-200 p-4">
+                      <div className="text-center">
+                        <div className="mb-1 text-xs uppercase tracking-wide text-gray-500">
+                          Total Current Value
+                        </div>
+                        <div className="text-lg font-semibold">{formatMoneyIN(totalCurrentValue)}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="mb-1 text-xs uppercase tracking-wide text-gray-500">Total P&L</div>
+                        <div
+                          className={`flex items-center justify-center gap-1 text-lg font-bold ${totalPnlColor}`}
+                        >
+                          {totalPnl >= 0 ? <TrendingUp width={16} /> : <TrendingDown width={16} />}
+                          {formatMoneyIN(totalPnl)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="overflow-x-auto">
+                  <table className="table table-zebra w-full">
+                    <thead>
+                      <tr>
+                        <th>Instrument</th>
+                        <th className="whitespace-nowrap">Date & time</th>
+                        <th>Qty</th>
+                        <th>Available</th>
+                        <th>Avg Price</th>
+                        <th>LTP</th>
+                        <th>Close</th>
+                        <th>Current Value</th>
+                        <th>P&L</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {holdings.map((holding: LiveHolding, index: number) => (
+                        <tr key={`${holding.exchange ?? "NA"}-${holding.tradingsymbol}-${index}`}>
+                          <td className="font-medium">{holding.tradingsymbol}</td>
+                          <td className="whitespace-nowrap text-xs text-base-content/80">
+                            {formatDateTimeCell(holdingsFetchedAt)}
+                          </td>
+                          <td>{holding.quantity ?? "-"}</td>
+                          <td>{holding.available_quantity ?? "-"}</td>
+                          <td>
+                            {holding.average_price != null ? formatMoneyIN(holding.average_price) : "-"}
+                          </td>
+                          <td>{holding.last_price != null ? formatMoneyIN(holding.last_price) : "-"}</td>
+                          <td>{holding.close_price != null ? formatMoneyIN(holding.close_price) : "-"}</td>
+                          <td>
+                            {holding.current_value != null ? formatMoneyIN(holding.current_value) : "-"}
+                          </td>
+                          <td className={holding.pnl != null && holding.pnl >= 0 ? "text-green-400" : "text-red-400"}>
+                            {holding.pnl != null ? formatMoneyIN(holding.pnl) : "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             ) : (
               <p className="py-8 text-center text-gray-400">No holdings found</p>
             )}
@@ -1054,14 +1120,16 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                   <input
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     className="input input-bordered w-full"
                     value={orderForm.price}
                     onChange={(e) =>
                       setOrderForm({
                         ...orderForm,
-                        price: parseFloat(e.target.value) || 0,
+                        price: e.target.value,
                       })
                     }
+                    min="0"
                     required
                   />
                 </div>
@@ -1073,12 +1141,13 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 </label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="input input-bordered w-full"
                   value={orderForm.quantity}
                   onChange={(e) =>
                     setOrderForm({
                       ...orderForm,
-                      quantity: parseInt(e.target.value) || 1,
+                      quantity: e.target.value,
                     })
                   }
                   min="1"
@@ -1139,13 +1208,10 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 </label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="input input-bordered w-full"
                   value={exitQuantity}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) || 0;
-                    const maxQty = Math.abs(selectedPosition.quantity);
-                    setExitQuantity(Math.min(val, maxQty));
-                  }}
+                  onChange={(e) => setExitQuantity(e.target.value)}
                   min="1"
                   max={Math.abs(selectedPosition.quantity)}
                   required
@@ -1174,7 +1240,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                   onClick={() => {
                     setShowExitPositionForm(false);
                     setSelectedPosition(null);
-                    setExitQuantity(0);
+                    setExitQuantity("");
                   }}
                   disabled={exitingPosition}
                 >
@@ -1183,11 +1249,15 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={exitingPosition || exitQuantity <= 0}
+                  disabled={
+                    exitingPosition ||
+                    !Number.isFinite(parseInt(exitQuantity, 10)) ||
+                    parseInt(exitQuantity, 10) <= 0
+                  }
                 >
                   {exitingPosition ? (
                     <span className="loading loading-spinner"></span>
-                  ) : exitQuantity === Math.abs(selectedPosition.quantity) ? (
+                  ) : parseInt(exitQuantity, 10) === Math.abs(selectedPosition.quantity) ? (
                     "Exit Full Position"
                   ) : (
                     "Exit Partial Position"
@@ -1215,12 +1285,13 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 </label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="input input-bordered w-full"
                   value={modifyForm.quantity}
                   onChange={(e) =>
                     setModifyForm({
                       ...modifyForm,
-                      quantity: parseInt(e.target.value) || 0,
+                      quantity: e.target.value,
                     })
                   }
                   min="1"
@@ -1235,14 +1306,16 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 <input
                   type="number"
                   step="0.01"
+                  inputMode="decimal"
                   className="input input-bordered w-full"
                   value={modifyForm.price}
                   onChange={(e) =>
                     setModifyForm({
                       ...modifyForm,
-                      price: parseFloat(e.target.value) || 0,
+                      price: e.target.value,
                     })
                   }
+                  min="0"
                   required
                 />
               </div>

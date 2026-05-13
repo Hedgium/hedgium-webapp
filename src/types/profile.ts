@@ -13,6 +13,7 @@ export interface User {
     pan_number?: string | null;
     pan_document_url?: string | null;
     aadhar_document_url?: string | null;
+    kyc_document_url?: string | null;
 }
 
 export interface SubscriptionPlan {

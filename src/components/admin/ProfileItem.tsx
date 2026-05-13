@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
 import { formatMoneyIN } from '@/utils/formatNumber';
 import useAlert from '@/hooks/useAlert';
-import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut, FileText } from 'lucide-react';
+import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut, FileText, Upload } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProfileItemProps {
@@ -14,6 +14,9 @@ interface ProfileItemProps {
 }
 
 type DocumentKind = "image" | "pdf" | "other";
+type UserDocumentResponse = {
+    kyc_document_url?: string | null;
+};
 
 const getDocumentKind = (url?: string | null): DocumentKind => {
     if (!url) {
@@ -47,7 +50,18 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
 
     const [brokerLoggedIn, setBrokerLoggedIn] = useState(profile.broker_logged_in);
 
+    const [isKycUploadModalOpen, setIsKycUploadModalOpen] = useState(false);
+    const [kycFile, setKycFile] = useState<File | null>(null);
+    const [isUploadingKyc, setIsUploadingKyc] = useState(false);
+    const [kycDocumentUrl, setKycDocumentUrl] = useState<string | null | undefined>(
+        profile.user.kyc_document_url
+    );
+
     const alert = useAlert();
+
+    useEffect(() => {
+        setKycDocumentUrl(profile.user.kyc_document_url);
+    }, [profile.user.kyc_document_url]);
 
     const handleRefreshMargin = async () => {
         setRefreshing(true);
@@ -92,6 +106,49 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
             // alert('Failed to send login reminder');
         } finally {
             setSendingReminder(false);
+        }
+    };
+
+    const handleUploadKyc = async () => {
+        if (!kycFile) {
+            alert.error("Please select a file to upload");
+            return;
+        }
+        setIsUploadingKyc(true);
+        try {
+            const body = new FormData();
+            body.append("kyc_document", kycFile);
+            const response = await authFetch(`users/${profile.user.id}/uploads/`, {
+                method: "PUT",
+                body,
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                alert.error(err.detail || err.message || "Failed to upload KYC document");
+                return;
+            }
+            const data = (await response.json()) as UserDocumentResponse;
+            let uploadedUrl = data.kyc_document_url ?? null;
+            if (!uploadedUrl) {
+                const userResponse = await authFetch(`users/${profile.user.id}/`);
+                if (userResponse.ok) {
+                    const userData = (await userResponse.json()) as UserDocumentResponse;
+                    uploadedUrl = userData.kyc_document_url ?? null;
+                }
+            }
+            setKycDocumentUrl(uploadedUrl);
+            if (!uploadedUrl) {
+                alert.error("KYC document uploaded, but the document URL was not returned");
+                return;
+            }
+            alert.success("KYC document uploaded");
+            setIsKycUploadModalOpen(false);
+            setKycFile(null);
+        } catch (error) {
+            console.error("KYC upload error:", error);
+            alert.error("An error occurred while uploading the KYC document");
+        } finally {
+            setIsUploadingKyc(false);
         }
     };
 
@@ -228,8 +285,11 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
 
     const panDocumentKind = getDocumentKind(u.pan_document_url);
     const aadharDocumentKind = getDocumentKind(u.aadhar_document_url);
-    const proxyOn = Boolean(((profile.proxy_username && profile.proxy_host) || "").trim());
-    const proxyHost = (profile.proxy_host || "").trim();
+    const kycDocumentKind = getDocumentKind(kycDocumentUrl);
+    const proxyAddress = (profile.broker_proxy_pool?.ip_address || profile.proxy_host || "").trim();
+    const proxyPort = profile.broker_proxy_pool?.port ?? profile.proxy_port ?? 443;
+    const proxyUsername = (profile.broker_proxy_pool?.username || profile.proxy_username || "").trim();
+    const proxyOn = Boolean(proxyAddress);
     const daysLeft = profile.subscription
         ? Math.ceil(
               (new Date(profile.subscription.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
@@ -328,8 +388,8 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                             <p className="text-xs text-base-content/80 leading-snug">
                                 {proxyOn ? (
                                     <span className="text-success break-all">
-                                        {proxyHost}:{profile.proxy_port ?? 443}
-                                        {(profile.proxy_username || "").trim() ? " · auth" : ""}
+                                        {proxyAddress}:{proxyPort}
+                                        {proxyUsername ? " · auth" : ""}
                                     </span>
                                 ) : (
                                     <span className="text-base-content/50">Orders direct</span>
@@ -534,6 +594,32 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                             ) : (
                                 <span className="text-xs opacity-50">Aadhar doc —</span>
                             )}
+                            {kycDocumentUrl ? (
+                                <a href={kycDocumentUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" title="View KYC document">
+                                    {kycDocumentKind === "image" ? (
+                                        <img src={kycDocumentUrl} alt="KYC" className="w-10 h-10 object-cover rounded border border-base-300" />
+                                    ) : (
+                                        <span className="w-10 h-10 rounded border border-base-300 bg-base-200 grid place-items-center">
+                                            <FileText size={16} />
+                                        </span>
+                                    )}
+                                    <span className="link link-primary text-xs">{kycDocumentKind === "pdf" ? "KYC PDF" : "KYC doc"}</span>
+                                </a>
+                            ) : (
+                                <span className="text-xs opacity-50">KYC doc —</span>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setKycFile(null);
+                                    setIsKycUploadModalOpen(true);
+                                }}
+                                className="btn btn-ghost btn-xs gap-1"
+                                title={kycDocumentUrl ? "Replace KYC document" : "Upload KYC document"}
+                            >
+                                <Upload size={12} />
+                                {kycDocumentUrl ? "Replace KYC" : "Upload KYC"}
+                            </button>
                         </div>
                     </div>
                     <div>
@@ -661,6 +747,54 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                                 disabled={isSettingBrokerToken}
                             >
                                 {isSettingBrokerToken ? <span className="loading loading-spinner"></span> : (brokerLoggedIn ? "Update Token" : "Set Token")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isKycUploadModalOpen && (
+                <div className="modal modal-open">
+                    <div className="modal-box">
+                        <h3 className="font-bold text-lg mb-4">
+                            {kycDocumentUrl ? "Replace KYC document" : "Upload KYC document"}
+                        </h3>
+                        <div className="form-control w-full mb-4">
+                            <label className="label">
+                                <span className="label-text">Document file (PDF or image)</span>
+                            </label>
+                            <input
+                                type="file"
+                                accept="application/pdf,image/*"
+                                className="file-input file-input-bordered w-full"
+                                onChange={(e) => setKycFile(e.target.files?.[0] ?? null)}
+                                disabled={isUploadingKyc}
+                            />
+                            <label className="label">
+                                <span className="label-text-alt text-base-content/60">
+                                    Uploaded for {profile.user.email}. Replaces any existing KYC document.
+                                </span>
+                            </label>
+                        </div>
+                        <div className="modal-action">
+                            <button
+                                type="button"
+                                className="btn"
+                                onClick={() => {
+                                    setIsKycUploadModalOpen(false);
+                                    setKycFile(null);
+                                }}
+                                disabled={isUploadingKyc}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={handleUploadKyc}
+                                disabled={isUploadingKyc || !kycFile}
+                            >
+                                {isUploadingKyc ? <span className="loading loading-spinner"></span> : "Upload"}
                             </button>
                         </div>
                     </div>
