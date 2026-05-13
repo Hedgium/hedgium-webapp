@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
@@ -20,9 +21,14 @@ import {
   Briefcase,
   ClipboardList,
   ArrowRightLeft,
+  BarChart3,
 } from "lucide-react";
 import { Profile } from "@/types/profile";
 import { LiveHolding, LivePosition } from "@/types/positions";
+
+const MarketDepthModal = dynamic(() => import("@/components/market/MarketDepthModal"), {
+  ssr: false,
+});
 
 function formatDateTimeCell(value: string | Date | null | undefined): string {
   if (value == null || value === "") return "—";
@@ -137,6 +143,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [showPlaceOrderForm, setShowPlaceOrderForm] = useState(false);
+  const [showDepthModal, setShowDepthModal] = useState(false);
   const [showModifyOrderForm, setShowModifyOrderForm] = useState(false);
   const [showExitPositionForm, setShowExitPositionForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<LiveOrder | null>(null);
@@ -1044,143 +1051,175 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
       {showPlaceOrderForm && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="mb-4 text-lg font-bold">Place New Order</h3>
+            <h3 className="mb-3 text-lg font-bold">Place New Order</h3>
             <form onSubmit={handlePlaceOrder}>
-              <div className="form-control mb-4">
-                <label className="label">
-                  <span className="label-text">Exchange</span>
-                </label>
-                <select
-                  className="select select-bordered w-full"
-                  value={orderForm.exchange}
-                  onChange={(e) => setOrderForm({ ...orderForm, exchange: e.target.value })}
-                  required
-                >
-                  <option value="NSE">NSE</option>
-                  <option value="BSE">BSE</option>
-                  <option value="NFO">NFO</option>
-                  <option value="MCX">MCX</option>
-                </select>
-              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="form-control">
+                  <label className="label py-0">
+                    <span className="label-text mb-1.5 text-sm font-medium text-base-content/80">
+                      Exchange
+                    </span>
+                  </label>
+                  <select
+                    className="select select-bordered select-sm h-9 w-full"
+                    value={orderForm.exchange}
+                    onChange={(e) => setOrderForm({ ...orderForm, exchange: e.target.value })}
+                    required
+                  >
+                    <option value="NSE">NSE</option>
+                    <option value="BSE">BSE</option>
+                    <option value="NFO">NFO</option>
+                    <option value="MCX">MCX</option>
+                  </select>
+                </div>
 
-              <div className="form-control mb-4">
-                <label className="label">
-                  <span className="label-text">Trading Symbol</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  value={orderForm.tradingsymbol}
-                  onChange={(e) => setOrderForm({ ...orderForm, tradingsymbol: e.target.value })}
-                  placeholder="e.g., INFY, RELIANCE"
-                  required
-                />
-              </div>
+                <div className="form-control">
+                  <label className="label py-0">
+                    <span className="label-text mb-1.5 text-sm font-medium text-base-content/80">
+                      Product
+                    </span>
+                  </label>
+                  <select
+                    className="select select-bordered select-sm h-9 w-full"
+                    value={orderForm.product}
+                    onChange={(e) => setOrderForm({ ...orderForm, product: e.target.value })}
+                    required
+                  >
+                    <option value="CNC">CNC</option>
+                    <option value="NRML">NRML</option>
+                    <option value="MIS">MIS</option>
+                  </select>
+                </div>
 
-              <div className="form-control mb-4">
-                <label className="label">
-                  <span className="label-text">Transaction Type</span>
-                </label>
-                <select
-                  className="select select-bordered w-full"
-                  value={orderForm.transaction_type}
-                  onChange={(e) =>
-                    setOrderForm({
-                      ...orderForm,
-                      transaction_type: e.target.value,
-                    })
-                  }
-                  required
-                >
-                  <option value="BUY">BUY</option>
-                  <option value="SELL">SELL</option>
-                </select>
-              </div>
-
-              <div className="form-control mb-4">
-                <label className="label">
-                  <span className="label-text">Order Type</span>
-                </label>
-                <select
-                  className="select select-bordered w-full"
-                  value={orderForm.order_type}
-                  onChange={(e) => setOrderForm({ ...orderForm, order_type: e.target.value })}
-                  required
-                >
-                  <option value="MARKET">MARKET</option>
-                  <option value="LIMIT">LIMIT</option>
-                </select>
-              </div>
-
-              {orderForm.order_type === "LIMIT" && (
-                <div className="form-control mb-4">
-                  <label className="label">
-                    <span className="label-text">Price</span>
+                <div className="form-control sm:col-span-2">
+                  <label className="label py-0">
+                    <span className="label-text mb-1.5 text-sm font-medium text-base-content/80">
+                      Trading Symbol
+                    </span>
                   </label>
                   <input
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    className="input input-bordered w-full"
-                    value={orderForm.price}
+                    type="text"
+                    className="input input-bordered input-sm h-9 w-full"
+                    value={orderForm.tradingsymbol}
+                    onChange={(e) =>
+                      setOrderForm({ ...orderForm, tradingsymbol: e.target.value })
+                    }
+                    placeholder="e.g., INFY, RELIANCE"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs mt-1.5 gap-1 self-start"
+                    onClick={() => setShowDepthModal(true)}
+                  >
+                    <BarChart3 size={14} />
+                    See depth
+                  </button>
+                </div>
+
+                <div className="form-control">
+                  <label className="label py-0">
+                    <span className="label-text mb-1.5 text-sm font-medium text-base-content/80">
+                      Transaction
+                    </span>
+                  </label>
+                  <select
+                    className="select select-bordered select-sm h-9 w-full"
+                    value={orderForm.transaction_type}
                     onChange={(e) =>
                       setOrderForm({
                         ...orderForm,
-                        price: e.target.value,
+                        transaction_type: e.target.value,
                       })
                     }
-                    min="0"
+                    required
+                  >
+                    <option value="BUY">BUY</option>
+                    <option value="SELL">SELL</option>
+                  </select>
+                </div>
+
+                <div className="form-control">
+                  <label className="label py-0">
+                    <span className="label-text mb-1.5 text-sm font-medium text-base-content/80">
+                      Order Type
+                    </span>
+                  </label>
+                  <select
+                    className="select select-bordered select-sm h-9 w-full"
+                    value={orderForm.order_type}
+                    onChange={(e) => setOrderForm({ ...orderForm, order_type: e.target.value })}
+                    required
+                  >
+                    <option value="MARKET">MARKET</option>
+                    <option value="LIMIT">LIMIT</option>
+                  </select>
+                </div>
+
+                {orderForm.order_type === "LIMIT" && (
+                  <div className="form-control">
+                    <label className="label py-0">
+                      <span className="label-text mb-1.5 text-sm font-medium text-base-content/80">
+                        Price
+                      </span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      inputMode="decimal"
+                      className="input input-bordered input-sm h-9 w-full"
+                      value={orderForm.price}
+                      onChange={(e) =>
+                        setOrderForm({
+                          ...orderForm,
+                          price: e.target.value,
+                        })
+                      }
+                      min="0"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div
+                  className={`form-control ${orderForm.order_type === "LIMIT" ? "" : "sm:col-span-2"}`}
+                >
+                  <label className="label py-0">
+                    <span className="label-text mb-1.5 text-sm font-medium text-base-content/80">
+                      Quantity
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    className="input input-bordered input-sm h-9 w-full"
+                    value={orderForm.quantity}
+                    onChange={(e) =>
+                      setOrderForm({
+                        ...orderForm,
+                        quantity: e.target.value,
+                      })
+                    }
+                    min="1"
                     required
                   />
                 </div>
-              )}
-
-              <div className="form-control mb-4">
-                <label className="label">
-                  <span className="label-text">Quantity</span>
-                </label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  className="input input-bordered w-full"
-                  value={orderForm.quantity}
-                  onChange={(e) =>
-                    setOrderForm({
-                      ...orderForm,
-                      quantity: e.target.value,
-                    })
-                  }
-                  min="1"
-                  required
-                />
               </div>
 
-              <div className="form-control mb-4">
-                <label className="label">
-                  <span className="label-text">Product</span>
-                </label>
-                <select
-                  className="select select-bordered w-full"
-                  value={orderForm.product}
-                  onChange={(e) => setOrderForm({ ...orderForm, product: e.target.value })}
-                  required
-                >
-                  <option value="CNC">CNC</option>
-                  <option value="NRML">NRML</option>
-                  <option value="MIS">MIS</option>
-                </select>
-              </div>
-
-              <div className="modal-action">
+              <div className="modal-action mt-4">
                 <button
                   type="button"
-                  className="btn"
+                  className="btn btn-sm"
                   onClick={() => setShowPlaceOrderForm(false)}
                   disabled={placingOrder}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={placingOrder}>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-sm"
+                  disabled={placingOrder}
+                >
                   {placingOrder ? <span className="loading loading-spinner"></span> : "Place Order"}
                 </button>
               </div>
@@ -1339,6 +1378,14 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
             </form>
           </div>
         </div>
+      )}
+
+      {showDepthModal && (
+        <MarketDepthModal
+          open={showDepthModal}
+          onClose={() => setShowDepthModal(false)}
+          initialSymbol={orderForm.tradingsymbol}
+        />
       )}
     </>
   );
