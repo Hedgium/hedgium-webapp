@@ -50,6 +50,11 @@ function formatCell(value: number | null | undefined): string {
   return formatMoneyIN(value);
 }
 
+function formatTotalCell(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return formatMoneyIN(value, { decimals: 0, minDecimals: 0 });
+}
+
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
@@ -373,7 +378,7 @@ export default function AdminClientPnlPage() {
               <p
                 className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(totals.engine1)}`}
               >
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatCell(totals.engine1)}
+                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.engine1)}
               </p>
               <p className="mt-1 text-[11px] text-base-content/45">Holdings PnL</p>
             </div>
@@ -382,7 +387,7 @@ export default function AdminClientPnlPage() {
               <p
                 className={`text-lg font-bold tabular-nums leading-tight md:text-xl ${signedClass(totals.e2Ytd)}`}
               >
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatCell(totals.e2Ytd)}
+                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Ytd)}
               </p>
               <p className="mt-1 text-[11px] text-base-content/45">FY to date</p>
             </div>
@@ -393,7 +398,7 @@ export default function AdminClientPnlPage() {
               <p
                 className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(totals.e2Quarter)}`}
               >
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatCell(totals.e2Quarter)}
+                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Quarter)}
               </p>
               <p className="mt-1 text-[11px] text-base-content/45">
                 {engine2Period?.quarter ?? "Current quarter"}
@@ -406,7 +411,7 @@ export default function AdminClientPnlPage() {
               <p
                 className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(totals.e2Month)}`}
               >
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatCell(totals.e2Month)}
+                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Month)}
               </p>
               <p className="mt-1 text-[11px] text-base-content/45">
                 {engine2Period?.month ?? "Current month"}
@@ -417,7 +422,7 @@ export default function AdminClientPnlPage() {
                 Avl margin
               </p>
               <p className="text-lg font-semibold tabular-nums leading-tight text-base-content md:text-xl">
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatCell(totals.availableMargin)}
+                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.availableMargin)}
               </p>
               <p className="mt-1 text-[11px] text-base-content/45">Live broker</p>
             </div>
@@ -426,7 +431,7 @@ export default function AdminClientPnlPage() {
                 Utilised margin
               </p>
               <p className="text-lg font-semibold tabular-nums leading-tight text-base-content md:text-xl">
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatCell(totals.utilisedMargin)}
+                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.utilisedMargin)}
               </p>
               <p className="mt-1 text-[11px] text-base-content/45">Live broker</p>
             </div>

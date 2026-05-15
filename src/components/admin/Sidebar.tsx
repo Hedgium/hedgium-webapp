@@ -78,30 +78,33 @@ export default function AdminSidebar() {
               <li key={idx}>
                 <Link
                   href={tab.href}
-                  className={`flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg transition-all ${
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-all ${
                     active ? "bg-base-300 text-primary" : "hover:bg-base-300/70"
-                  } ${isCollapsed ? "justify-center" : ""}`}
+                  } ${isCollapsed ? "justify-center px-2" : ""}`}
                   aria-current={active ? "page" : undefined}
                   title={isCollapsed ? tab.name : undefined}
                 >
-                  <span className="relative flex items-center">
+                  <span className="relative inline-flex shrink-0 items-center justify-center">
                     {tab.icon}
-                    {/* Unread indicator for Admin Alerts */}
-                    
-                  </span>
-                  {!isCollapsed && <span className="font-medium">{tab.name}</span>}
-
-                  {tab.name === "Alerts" && unreadCount > 0 && (
+                    {tab.name === "Alerts" && unreadCount > 0 && isCollapsed ? (
                       <span
-                        className={`${
-                          isCollapsed
-                            ? "absolute -top-2 -right-2"
-                            : "ml-2 relative"
-                        } inline-flex items-center justify-center min-w-[1.25rem] px-2 py-0.5 rounded-full text-[10px] font-bold bg-error text-error-content`}
+                        className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[9px] font-bold leading-none text-error-content"
+                        aria-label={`${unreadCount} unread alerts`}
                       >
-                        {unreadCount}
+                        {unreadCount > 99 ? "99+" : unreadCount}
                       </span>
-                    )}
+                    ) : null}
+                  </span>
+                  {!isCollapsed ? (
+                    <>
+                      <span className="min-w-0 flex-1 font-medium">{tab.name}</span>
+                      {tab.name === "Alerts" && unreadCount > 0 ? (
+                        <span className="inline-flex min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-error px-2 py-0.5 text-[10px] font-bold text-error-content">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
+                      ) : null}
+                    </>
+                  ) : null}
                 </Link>
               </li>
             );
