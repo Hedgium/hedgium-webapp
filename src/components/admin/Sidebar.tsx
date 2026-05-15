@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Bell, Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network, CandlestickChart } from "lucide-react";
+import { Bell, Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network, CandlestickChart, IndianRupee } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
@@ -13,6 +13,7 @@ const tabs = [
   { name: "Strategies", href: "/admin", icon: <LineChart className="h-5 w-5" /> },
   { name: "Builder", href: "/admin/builder", icon: <Layers className="h-5 w-5" /> },
   { name: "Profiles", href: "/admin/profiles", icon: <Users className="h-5 w-5" /> },
+  { name: "Client PnL", href: "/admin/client-pnl", icon: <IndianRupee className="h-5 w-5" /> },
   { name: "Market", href: "/admin/market", icon: <CandlestickChart className="h-5 w-5" /> },
   { name: "Proxy pool", href: "/admin/proxy-pool", icon: <Network className="h-5 w-5" /> },
   { name: "Leads", href: "/admin/leads", icon: <MessageCircle className="h-5 w-5" /> },
@@ -77,30 +78,33 @@ export default function AdminSidebar() {
               <li key={idx}>
                 <Link
                   href={tab.href}
-                  className={`flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg transition-all ${
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-all ${
                     active ? "bg-base-300 text-primary" : "hover:bg-base-300/70"
-                  } ${isCollapsed ? "justify-center" : ""}`}
+                  } ${isCollapsed ? "justify-center px-2" : ""}`}
                   aria-current={active ? "page" : undefined}
                   title={isCollapsed ? tab.name : undefined}
                 >
-                  <span className="relative flex items-center">
+                  <span className="relative inline-flex shrink-0 items-center justify-center">
                     {tab.icon}
-                    {/* Unread indicator for Admin Alerts */}
-                    
-                  </span>
-                  {!isCollapsed && <span className="font-medium">{tab.name}</span>}
-
-                  {tab.name === "Alerts" && unreadCount > 0 && (
+                    {tab.name === "Alerts" && unreadCount > 0 && isCollapsed ? (
                       <span
-                        className={`${
-                          isCollapsed
-                            ? "absolute -top-2 -right-2"
-                            : "ml-2 relative"
-                        } inline-flex items-center justify-center min-w-[1.25rem] px-2 py-0.5 rounded-full text-[10px] font-bold bg-error text-error-content`}
+                        className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[9px] font-bold leading-none text-error-content"
+                        aria-label={`${unreadCount} unread alerts`}
                       >
-                        {unreadCount}
+                        {unreadCount > 99 ? "99+" : unreadCount}
                       </span>
-                    )}
+                    ) : null}
+                  </span>
+                  {!isCollapsed ? (
+                    <>
+                      <span className="min-w-0 flex-1 font-medium">{tab.name}</span>
+                      {tab.name === "Alerts" && unreadCount > 0 ? (
+                        <span className="inline-flex min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-error px-2 py-0.5 text-[10px] font-bold text-error-content">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
+                      ) : null}
+                    </>
+                  ) : null}
                 </Link>
               </li>
             );

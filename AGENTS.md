@@ -167,6 +167,7 @@ See `00_Context/design-principles.md` for the full visual system. Core rules:
 - **DaisyUI semantic tokens** — never raw hex or hardcoded grays.
 - **Skeletons over spinners** for layout-level loading states. Spinners for button-level or small regions.
 - **Compact and scannable** — dense but readable; traders scan, they don't read.
+- **Accessibility:** UI and content should meet **WCAG 2.1 Level AA** (contrast, focus states, semantics, keyboard paths, and error messaging).
 
 ---
 
