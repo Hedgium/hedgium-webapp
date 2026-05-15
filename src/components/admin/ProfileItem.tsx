@@ -232,13 +232,15 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                 setIsBrokerTokenModalOpen(false);
                 setBrokerAccessToken("");
                 setBrokerLoggedIn(true);
-                // Update margin equity if returned in response
                 if (data.margin_equity !== undefined) {
                     setEquityMargin(data.margin_equity);
                 }
             } else {
-                // Handle error response
-                const errorMsg = data.message || data.detail || `Failed to set token: ${JSON.stringify(data)}`;
+                setBrokerLoggedIn(false);
+                const errorMsg =
+                    data.message ||
+                    data.detail ||
+                    "Token was not saved. Margin could not be fetched from the broker.";
                 alert.error(errorMsg);
             }
 

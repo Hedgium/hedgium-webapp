@@ -31,6 +31,7 @@ type ClientPnlRow = {
   brokerLoggedIn: boolean;
   status: "idle" | "loading" | "done" | "error";
   error?: string;
+  engine1Total: number | null;
   engine1Pnl: number | null;
   engine2: PnlSummary | null;
   margin: LiveMargin | null;
@@ -75,9 +76,19 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
+function sumHoldingsMetrics(holdings: LiveHolding[]): {
+  engine1Total: number;
+  engine1Pnl: number;
+} {
+  return {
+    engine1Total: holdings.reduce((sum, h) => sum + (h.current_value ?? 0), 0),
+    engine1Pnl: holdings.reduce((sum, h) => sum + (h.pnl ?? 0), 0),
+  };
+}
+
 async function fetchRowMetrics(
   profile: Profile
-): Promise<Pick<ClientPnlRow, "engine1Pnl" | "engine2" | "margin" | "error">> {
+): Promise<Pick<ClientPnlRow, "engine1Total" | "engine1Pnl" | "engine2" | "margin" | "error">> {
   const brokerLoggedIn = profile.broker_logged_in;
 
   const [holdingsRes, pnlRes, marginRes] = await Promise.allSettled([
@@ -88,6 +99,7 @@ async function fetchRowMetrics(
     authFetch(`profiles/live/margin/${profile.id}/`),
   ]);
 
+  let engine1Total: number | null = null;
   let engine1Pnl: number | null = null;
   let engine2: PnlSummary | null = null;
   let margin: LiveMargin | null = null;
@@ -98,7 +110,9 @@ async function fetchRowMetrics(
       const holdingsData = await holdingsRes.value.json();
       if (holdingsData.status === "success") {
         const holdings: LiveHolding[] = Array.isArray(holdingsData.data) ? holdingsData.data : [];
-        engine1Pnl = holdings.reduce((sum, h) => sum + (h.pnl ?? 0), 0);
+        const e1 = sumHoldingsMetrics(holdings);
+        engine1Total = e1.engine1Total;
+        engine1Pnl = e1.engine1Pnl;
       } else {
         errors.push("holdings");
       }
@@ -129,6 +143,7 @@ async function fetchRowMetrics(
   }
 
   return {
+    engine1Total,
     engine1Pnl,
     engine2,
     margin,
@@ -137,7 +152,8 @@ async function fetchRowMetrics(
 }
 
 type ClientPnlTotals = {
-  engine1: number;
+  engine1Total: number;
+  engine1Pnl: number;
   e2Ytd: number;
   e2Quarter: number;
   e2Month: number;
@@ -148,7 +164,8 @@ type ClientPnlTotals = {
 
 function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
   const totals: ClientPnlTotals = {
-    engine1: 0,
+    engine1Total: 0,
+    engine1Pnl: 0,
     e2Ytd: 0,
     e2Quarter: 0,
     e2Month: 0,
@@ -161,8 +178,12 @@ function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
     if (row.status === "loading") continue;
 
     let included = false;
+    if (row.engine1Total != null) {
+      totals.engine1Total += row.engine1Total;
+      included = true;
+    }
     if (row.engine1Pnl != null) {
-      totals.engine1 += row.engine1Pnl;
+      totals.engine1Pnl += row.engine1Pnl;
       included = true;
     }
     if (row.engine2?.ytd_pnl != null) {
@@ -199,6 +220,7 @@ function profileToRow(profile: Profile, partial?: Partial<ClientPnlRow>): Client
     brokerName: profile.broker_name,
     brokerLoggedIn: profile.broker_logged_in,
     status: "idle",
+    engine1Total: null,
     engine1Pnl: null,
     engine2: null,
     margin: null,
@@ -252,6 +274,7 @@ export default function AdminClientPnlPage() {
                 ...r,
                 status: metrics.error ? "error" : "done",
                 error: metrics.error,
+                engine1Total: metrics.engine1Total,
                 engine1Pnl: metrics.engine1Pnl,
                 engine2: metrics.engine2,
                 margin: metrics.margin,
@@ -351,100 +374,51 @@ export default function AdminClientPnlPage() {
         </div>
       </div>
 
-      {showTotals ? (
-        <section className="mb-6" aria-label="Totals across all clients">
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/45">
-              All clients total
-            </p>
-            <p className="text-xs text-base-content/50">
-              {anyLoading
-                ? `Updating… (${totals.clientsIncluded} of ${rows.length} with data so far)`
-                : `${totals.clientsIncluded} of ${rows.length} clients`}
-              {engine2Period ? (
-                <>
-                  {" · "}
-                  E2 {engine2Period.month} / {engine2Period.quarter}
-                </>
-              ) : null}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-            <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
-                Engine 1
-              </p>
-              <p
-                className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(totals.engine1)}`}
-              >
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.engine1)}
-              </p>
-              <p className="mt-1 text-[11px] text-base-content/45">Holdings PnL</p>
-            </div>
-            <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">E2 YTD</p>
-              <p
-                className={`text-lg font-bold tabular-nums leading-tight md:text-xl ${signedClass(totals.e2Ytd)}`}
-              >
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Ytd)}
-              </p>
-              <p className="mt-1 text-[11px] text-base-content/45">FY to date</p>
-            </div>
-            <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
-                E2 Quarterly
-              </p>
-              <p
-                className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(totals.e2Quarter)}`}
-              >
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Quarter)}
-              </p>
-              <p className="mt-1 text-[11px] text-base-content/45">
-                {engine2Period?.quarter ?? "Current quarter"}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
-                E2 Monthly
-              </p>
-              <p
-                className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(totals.e2Month)}`}
-              >
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Month)}
-              </p>
-              <p className="mt-1 text-[11px] text-base-content/45">
-                {engine2Period?.month ?? "Current month"}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
-                Avl margin
-              </p>
-              <p className="text-lg font-semibold tabular-nums leading-tight text-base-content md:text-xl">
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.availableMargin)}
-              </p>
-              <p className="mt-1 text-[11px] text-base-content/45">Live broker</p>
-            </div>
-            <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
-                Utilised margin
-              </p>
-              <p className="text-lg font-semibold tabular-nums leading-tight text-base-content md:text-xl">
-                {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.utilisedMargin)}
-              </p>
-              <p className="mt-1 text-[11px] text-base-content/45">Live broker</p>
-            </div>
-          </div>
-        </section>
-      ) : null}
 
       <div className="overflow-x-auto rounded-xl border border-base-300 bg-base-100 shadow-sm">
         <table className="table table-zebra table-sm md:table-md">
           <thead>
+            {showTotals ? (
+              <tr className="border-b border-primary/25 bg-primary/5 text-sm normal-case">
+                <th className="min-w-[12rem] text-left align-middle font-semibold text-base-content">
+                  <span>All clients total</span>
+                  <span className="mt-0.5 block text-[10px] font-normal text-base-content/50">
+                    {anyLoading
+                      ? `Updating… (${totals.clientsIncluded} of ${rows.length})`
+                      : `${totals.clientsIncluded} of ${rows.length} clients`}
+                    {engine2Period
+                      ? ` · E2 ${engine2Period.month} / ${engine2Period.quarter}`
+                      : null}
+                  </span>
+                </th>
+                <th className="text-right align-middle tabular-nums font-semibold text-base-content">
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.engine1Total)}
+                </th>
+                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.engine1Pnl)}`}>
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.engine1Pnl)}
+                </th>
+                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.e2Ytd)}`}>
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Ytd)}
+                </th>
+                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.e2Quarter)}`}>
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Quarter)}
+                </th>
+                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.e2Month)}`}>
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Month)}
+                </th>
+                <th className="text-right align-middle tabular-nums font-semibold text-base-content">
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.availableMargin)}
+                </th>
+                <th className="text-right align-middle tabular-nums font-semibold text-base-content">
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.utilisedMargin)}
+                </th>
+                <th className="w-12" aria-hidden />
+              </tr>
+            ) : null}
             <tr className="text-xs uppercase tracking-wide text-base-content/60">
               <th className="min-w-[12rem]">Client info</th>
-              <th className="text-right">E1 (holdings)</th>
+              <th className="text-right">E1 Total</th>
+              <th className="text-right">E1 PnL</th>
               <th className="text-right">E2 YTD</th>
               <th className="text-right">E2 Quarterly</th>
               <th className="text-right">E2 Monthly</th>
@@ -457,14 +431,14 @@ export default function AdminClientPnlPage() {
             {loadingProfiles ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={8}>
+                  <td colSpan={9}>
                     <div className="h-8 animate-pulse rounded bg-base-300/40" />
                   </td>
                 </tr>
               ))
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-12 text-center text-base-content/55">
+                <td colSpan={9} className="py-12 text-center text-base-content/55">
                   No active profiles found.
                 </td>
               </tr>
@@ -489,12 +463,15 @@ export default function AdminClientPnlPage() {
                       </p>
                     </div>
                   </td>
-                  <td className={`text-right ${signedClass(row.engine1Pnl)}`}>
+                  <td className="text-right tabular-nums">
                     {row.status === "loading" ? (
                       <span className="loading loading-dots loading-xs" />
                     ) : (
-                      formatCell(row.engine1Pnl)
+                      formatCell(row.engine1Total)
                     )}
+                  </td>
+                  <td className={`text-right ${signedClass(row.engine1Pnl)}`}>
+                    {row.status === "loading" ? "…" : formatCell(row.engine1Pnl)}
                   </td>
                   <td className={`text-right ${signedClass(row.engine2?.ytd_pnl)}`}>
                     {row.status === "loading" ? "…" : formatCell(row.engine2?.ytd_pnl ?? null)}
