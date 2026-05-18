@@ -1,15 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import TradeCyclePositionsSkeleton from "@/components/skeletons/TradeCyclePositionsSkeleton";
-import SandboxPageShell from "@/components/sandbox/SandboxPageShell";
 import { sandboxFetch } from "@/utils/sandboxApi";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { RotateCw, Briefcase, TrendingUp, ArrowRight } from "lucide-react";
+import { RotateCw, Briefcase, TrendingUp } from "lucide-react";
 import { useSandboxStore } from "@/store/sandboxStore";
 
 type TradeCycle = {
@@ -38,8 +35,7 @@ function signedClass(value: number): string {
   return "text-base-content/75";
 }
 
-export default function SandboxPositionsPage() {
-  const router = useRouter();
+export default function SandboxPositionsContent() {
   const { sandboxPlan } = useSandboxStore();
   const alert = useAlert();
   const [tradeCycles, setTradeCycles] = useState<TradeCycle[]>([]);
@@ -47,13 +43,6 @@ export default function SandboxPositionsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [pnlSummary, setPnlSummary] = useState<PnlSummary | null>(null);
   const [loadingPnlSummary, setLoadingPnlSummary] = useState(true);
-
-  useEffect(() => {
-    if (!sandboxPlan) {
-      router.replace("/sandbox");
-      return;
-    }
-  }, [sandboxPlan, router]);
 
   async function getAllTradeCycles() {
     if (!sandboxPlan) return;
@@ -89,7 +78,7 @@ export default function SandboxPositionsPage() {
       await getAllTradeCycles();
       await fetchPnlSummary();
       alert.success("Data refreshed");
-    } catch (err) {
+    } catch {
       alert.error("Failed to refresh");
     } finally {
       setRefreshing(false);
@@ -97,14 +86,13 @@ export default function SandboxPositionsPage() {
   }
 
   useEffect(() => {
-    if (sandboxPlan) {
-      (async () => {
-        setLoading(true);
-        await getAllTradeCycles();
-        await fetchPnlSummary();
-        setLoading(false);
-      })();
-    }
+    if (!sandboxPlan) return;
+    (async () => {
+      setLoading(true);
+      await getAllTradeCycles();
+      await fetchPnlSummary();
+      setLoading(false);
+    })();
   }, [sandboxPlan]);
 
   if (!sandboxPlan) return null;
@@ -113,7 +101,7 @@ export default function SandboxPositionsPage() {
   const cycleCount = tradeCycles.length;
 
   return (
-    <SandboxPageShell maxWidth="6xl">
+    <>
       <section className="mb-8">
         <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/45">
           Summary
@@ -250,16 +238,12 @@ export default function SandboxPositionsPage() {
               </div>
               <h3 className="text-lg font-semibold text-base-content">No trade cycles</h3>
               <p className="mt-2 text-sm leading-relaxed text-base-content/60">
-                No sandbox positions for this plan. Try another plan or open strategies on the home tab.
+                No sandbox positions for this plan. Try another plan tier above.
               </p>
-              <Link href="/sandbox/home" className="btn btn-primary btn-sm mt-6 gap-2 rounded-full">
-                Go to sandbox home
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
             </div>
           </div>
         )}
       </section>
-    </SandboxPageShell>
+    </>
   );
 }
