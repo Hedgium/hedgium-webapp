@@ -239,7 +239,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
           <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-base-300/50 pt-4">
             {cycle.state !== "NEW" && (
               <Link
-                href={isSandbox ? "/sandbox/positions" : "/positions"}
+                href={isSandbox ? "/sandbox" : "/positions"}
                 className="btn btn-primary btn-sm gap-1.5 rounded-full px-5 shadow-sm shadow-primary/15"
               >
                 View positions

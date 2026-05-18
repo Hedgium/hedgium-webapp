@@ -28,8 +28,16 @@ module.exports = withBundleAnalyzer({
     return [
       { source: "/hedgium/dashboard", destination: "/home", permanent: true },
       { source: "/hedgium/dashboard/", destination: "/home", permanent: true },
-      { source: "/sandbox/dashboard", destination: "/sandbox/home", permanent: true },
-      { source: "/sandbox/dashboard/", destination: "/sandbox/home", permanent: true },
+      { source: "/sandbox/dashboard", destination: "/sandbox", permanent: true },
+      { source: "/sandbox/dashboard/", destination: "/sandbox", permanent: true },
+      { source: "/sandbox/home", destination: "/sandbox", permanent: true },
+      { source: "/sandbox/home/", destination: "/sandbox", permanent: true },
+      { source: "/sandbox/positions", destination: "/sandbox", permanent: true },
+      { source: "/sandbox/positions/", destination: "/sandbox", permanent: true },
+      { source: "/sandbox/reports", destination: "/sandbox", permanent: true },
+      { source: "/sandbox/reports/", destination: "/sandbox", permanent: true },
+      { source: "/sandbox/settings", destination: "/sandbox", permanent: true },
+      { source: "/sandbox/settings/", destination: "/sandbox", permanent: true },
       ...legacyHedgiumToRoot,
     ];
   },
