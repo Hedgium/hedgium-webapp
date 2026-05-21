@@ -44,6 +44,7 @@ export interface User {
   active_subscription: UserSubscription | null;
   broker_logged_in: boolean | false;
   is_staff: boolean | false;
+  role?: string;
 }
 
 interface AuthState {

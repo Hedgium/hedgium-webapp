@@ -5,6 +5,7 @@ import { formatMoneyIN } from '@/utils/formatNumber';
 import useAlert from '@/hooks/useAlert';
 import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut, FileText, Upload } from 'lucide-react';
 import Link from 'next/link';
+import { userRoleLabel } from '@/constants/userRoles';
 
 interface ProfileItemProps {
     profile: Profile;
@@ -313,6 +314,11 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                         </Link>
                         <span className="text-base-content/40 hidden sm:inline">·</span>
                         <span className="text-sm font-medium text-base-content/90">{profile.broker_name}</span>
+                        {profile.user.role ? (
+                            <span className="badge badge-outline badge-xs whitespace-nowrap">
+                                {userRoleLabel(profile.user.role)}
+                            </span>
+                        ) : null}
                         {proxyOn && (
                             <span className="badge badge-success badge-xs whitespace-nowrap">Order proxy</span>
                         )}
