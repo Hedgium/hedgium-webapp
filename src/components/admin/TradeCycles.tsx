@@ -348,37 +348,6 @@ export default function TradeCycles({
     }
   }
 
-  // Poll until refresh task completes (like TradeCycleDetailsModal)
-  async function refreshProfilePositionsAndWait(profileId: number): Promise<void> {
-    const res = await authFetch(`positions/pnl/refresh/trades/async/${profileId}/`, {
-      method: "POST",
-    });
-    const startData = await res.json();
-    if (!res.ok) {
-      throw new Error(startData.detail || "Failed to start refresh");
-    }
-    const taskId = startData.task_id as string | undefined;
-    if (!taskId) {
-      throw new Error("Refresh task not started");
-    }
-    const maxAttempts = 30;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      await new Promise((r) => setTimeout(r, 2000));
-      const statusRes = await authFetch(`tasks/status/${taskId}/`);
-      const statusData = await statusRes.json();
-      if (!statusRes.ok) {
-        throw new Error(statusData.detail || "Failed to check refresh status");
-      }
-      if (statusData.status === "SUCCESS") {
-        return;
-      }
-      if (statusData.status === "FAILURE") {
-        throw new Error(statusData.result || "Refresh failed");
-      }
-    }
-    throw new Error("Refresh timed out");
-  }
-
   function hasActionRequired(result: CompareResult): boolean {
     return (
       result.missing_in_trade_cycle > 0 ||

@@ -56,7 +56,6 @@ interface AuthState {
   keys: Keys | null;
 
   login: (username: string, password: string) => Promise<void>;
-  loginWithToken: (token:string) => Promise<void>;
   userKeyGet: () => Promise<Keys|null>;
   userKeyCreateUpdate: () => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
@@ -92,27 +91,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return data;
     }
     return null;
-  },
-
-  loginWithToken: async (token: string) => {
-  
-    try {
-      const res = await fetch("/api/proxy/users/token/exchange-token/?token="+token, 
-        {
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        set({ accessToken: data.access_token });
-      } else {
-      }
-    } catch {
-      set({ user: null });
-    }
-
   },
 
   userKeyCreateUpdate: async ()=> {

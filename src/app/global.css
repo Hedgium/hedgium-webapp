@@ -116,4 +116,23 @@
   color: #fff;
 }
 
+/* Solid black text on white for legal/onboarding print (theme opacity does not print well). */
+@media print {
+  #printable.terms-printable,
+  #printable.terms-printable * {
+    color: #0a0a0a !important;
+    opacity: 1 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #printable.terms-printable {
+    background: #fff !important;
+  }
+
+  #printable.terms-printable li::marker {
+    color: #0a0a0a !important;
+  }
+}
+
 
