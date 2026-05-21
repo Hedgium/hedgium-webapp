@@ -49,7 +49,6 @@ The backend API lives in `hedgium_backend` (Django + Ninja Extra).
 /forgot-password    → Password reset request
 /reset-password     → Password reset confirm
 /onboarding         → Post-signup onboarding flow
-/web-login          → Broker web login (Kite/Zerodha)
 /get-started        → Pre-auth entry point
 /about              → About page (within app shell)
 /(app)/             → Authenticated app shell

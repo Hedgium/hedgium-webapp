@@ -15,7 +15,7 @@ export default function AuthFlowFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="shrink-0 border-t border-base-300/80 bg-base-100/90 backdrop-blur-sm">
+    <footer className="shrink-0 border-t border-base-300/80 bg-base-100/90 backdrop-blur-sm print:hidden">
       <div className="mx-auto max-w-4xl px-4 py-5 sm:py-6">
         <nav
           className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-center text-[11px] sm:text-xs text-base-content/55"

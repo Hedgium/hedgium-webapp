@@ -21,7 +21,6 @@ const PUBLIC_PATH_PREFIXES = [
   "/grievance-redressal",
   "/complaint-status",
   "/mitc-ra",
-  "/web-login",
 ] as const;
 
 /** Root URL where the login form lives (`/`). */
