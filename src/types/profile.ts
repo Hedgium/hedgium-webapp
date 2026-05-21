@@ -4,6 +4,7 @@ export interface User {
     first_name: string;
     last_name: string;
     mobile?: string | null;
+    role?: string | null;
     signup_step?: string | null;
     terms_accepted_at?: string | null;
     terms_version?: string | null;

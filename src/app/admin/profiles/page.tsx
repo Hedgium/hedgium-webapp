@@ -9,6 +9,7 @@ import UserWithoutProfileItem, { UserWithoutProfile } from "@/components/admin/U
 import useAlert from "@/hooks/useAlert";
 import { Search } from "lucide-react";
 import ProfileItemSkeleton from "@/components/skeletons/ProfileItemSkeleton";
+import { USER_ROLE_FILTER_OPTIONS } from "@/constants/userRoles";
 
 const ProfileForm = dynamic(
   () => import("@/components/admin/profiles/ProfileForm"),
@@ -32,6 +33,7 @@ export default function ProfilesPage() {
   const [subscriptionFilter, setSubscriptionFilter] = useState<string>("");
   const [verifiedFilter, setVerifiedFilter] = useState<string>("");
   const [loggedInFilter, setLoggedInFilter] = useState<string>("");
+  const [roleFilter, setRoleFilter] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"profiles" | "no-profiles">("profiles");
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -55,6 +57,7 @@ export default function ProfilesPage() {
       if (subscriptionFilter) params.append("subscription_plan", subscriptionFilter);
       if (verifiedFilter) params.append("verified", verifiedFilter);
       if (loggedInFilter) params.append("logged_in", loggedInFilter);
+      if (roleFilter) params.append("user_role", roleFilter);
 
       params.append("include_users_without_profiles", "true");
       const response = await authFetch(`profiles/?${params.toString()}`);
@@ -72,7 +75,7 @@ export default function ProfilesPage() {
 
   useEffect(() => {
     fetchProfiles();
-  }, [debouncedSearch, brokerFilter, subscriptionFilter, verifiedFilter, loggedInFilter]);
+  }, [debouncedSearch, brokerFilter, subscriptionFilter, verifiedFilter, loggedInFilter, roleFilter]);
 
   const fetchNextPage = async () => {
     if (!nextPage) return;
@@ -147,6 +150,7 @@ export default function ProfilesPage() {
     setSubscriptionFilter("");
     setVerifiedFilter("");
     setLoggedInFilter("");
+    setRoleFilter("");
     setSearchQuery("");
   };
 
@@ -155,6 +159,7 @@ export default function ProfilesPage() {
     subscriptionFilter ||
     verifiedFilter ||
     loggedInFilter ||
+    roleFilter ||
     searchQuery;
 
   return (
@@ -215,6 +220,18 @@ export default function ProfilesPage() {
               <option value="">All Login Status</option>
               <option value="true">Logged In</option>
               <option value="false">Not Logged In</option>
+            </select>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="select select-bordered select-sm h-9 w-44"
+              aria-label="Filter by user role"
+            >
+              {USER_ROLE_FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value || "all"} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
             {hasActiveFilters && (
               <button

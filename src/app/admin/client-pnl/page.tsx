@@ -8,6 +8,7 @@ import useAlert from "@/hooks/useAlert";
 import { Profile } from "@/types/profile";
 import { LiveHolding } from "@/types/positions";
 import { IndianRupee, RefreshCw, Search } from "lucide-react";
+import { USER_ROLE_FILTER_OPTIONS, userRoleLabel } from "@/constants/userRoles";
 
 type PnlSummary = {
   month: string;
@@ -27,6 +28,7 @@ type ClientPnlRow = {
   profileId: number;
   clientId: string;
   userEmail: string;
+  userRole?: string | null;
   brokerName: string;
   brokerLoggedIn: boolean;
   status: "idle" | "loading" | "done" | "error";
@@ -217,6 +219,7 @@ function profileToRow(profile: Profile, partial?: Partial<ClientPnlRow>): Client
     profileId: profile.id,
     clientId: profile.broker_user_id || "—",
     userEmail: profile.user?.email ?? "—",
+    userRole: profile.user?.role ?? null,
     brokerName: profile.broker_name,
     brokerLoggedIn: profile.broker_logged_in,
     status: "idle",
@@ -239,6 +242,7 @@ export default function AdminClientPnlPage() {
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("client");
   const [engine2Period, setEngine2Period] = useState<{ month: string; quarter: string } | null>(
     null
   );
@@ -302,6 +306,7 @@ export default function AdminClientPnlPage() {
       const params = new URLSearchParams();
       params.set("page_size", "200");
       if (debouncedSearch) params.set("search", debouncedSearch);
+      if (roleFilter) params.set("user_role", roleFilter);
 
       const res = await authFetch(`profiles/?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to load profiles");
@@ -318,7 +323,7 @@ export default function AdminClientPnlPage() {
       setRows([]);
       setLoadingProfiles(false);
     }
-  }, [debouncedSearch, refreshRows]);
+  }, [debouncedSearch, roleFilter, refreshRows]);
 
   useEffect(() => {
     void loadProfilesAndMetrics();
@@ -348,8 +353,9 @@ export default function AdminClientPnlPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="input input-bordered input-sm flex w-full items-center gap-2 sm:w-64">
+        <div className="flex items-center gap-2">
+
+        <label className="input input-bordered input-sm flex w-full items-center gap-2 sm:w-64">
             <Search className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
             <input
               type="search"
@@ -359,6 +365,19 @@ export default function AdminClientPnlPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </label>
+          
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="select select-bordered select-sm h-9 min-w-[10rem]"
+            aria-label="Filter by user role"
+          >
+            {USER_ROLE_FILTER_OPTIONS.map((opt) => (
+              <option key={opt.value || "all"} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
             className="btn btn-primary btn-sm gap-2"
@@ -369,7 +388,6 @@ export default function AdminClientPnlPage() {
               className={`h-4 w-4 ${refreshingAll || anyLoading ? "animate-spin" : ""}`}
               aria-hidden
             />
-            Refresh all
           </button>
         </div>
       </div>
@@ -461,6 +479,11 @@ export default function AdminClientPnlPage() {
                       <p className="truncate text-sm text-base-content/80" title={row.userEmail}>
                         {row.userEmail}
                       </p>
+                      {row.userRole ? (
+                        <span className="badge badge-outline badge-xs w-fit">
+                          {userRoleLabel(row.userRole)}
+                        </span>
+                      ) : null}
                     </div>
                   </td>
                   <td className="text-right tabular-nums">

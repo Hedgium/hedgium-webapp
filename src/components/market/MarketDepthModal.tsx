@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import AsyncSelect from "react-select/async";
+import type { StylesConfig } from "react-select";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import { RefreshCw, X, TrendingUp, TrendingDown } from "lucide-react";
@@ -71,6 +72,72 @@ const INSTRUMENT_TYPES: { id: MarketDepthInstrumentType; label: string }[] = [
   { id: "EQ", label: "Equity (EQ)" },
   { id: "FUT", label: "Futures (FUT)" },
 ];
+
+// Wires DaisyUI v5 CSS variables into react-select so it respects the active theme.
+const reactSelectStyles: StylesConfig<InstrumentOption> = {
+  control: (base, state) => ({
+    ...base,
+    backgroundColor: "var(--color-base-100)",
+    borderColor: state.isFocused ? "var(--color-primary)" : "var(--color-base-300)",
+    boxShadow: state.isFocused ? "0 0 0 1px var(--color-primary)" : "none",
+    "&:hover": { borderColor: "var(--color-base-content)" },
+  }),
+  menu: (base) => ({
+    ...base,
+    backgroundColor: "var(--color-base-100)",
+    border: "1px solid var(--color-base-300)",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+  }),
+  menuList: (base) => ({
+    ...base,
+    backgroundColor: "var(--color-base-100)",
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? "var(--color-primary)"
+      : state.isFocused
+      ? "var(--color-base-200)"
+      : "transparent",
+    color: state.isSelected ? "var(--color-primary-content)" : "var(--color-base-content)",
+    cursor: "pointer",
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: "var(--color-base-content)",
+  }),
+  input: (base) => ({
+    ...base,
+    color: "var(--color-base-content)",
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: "color-mix(in oklch, var(--color-base-content) 45%, transparent)",
+  }),
+  indicatorSeparator: (base) => ({
+    ...base,
+    backgroundColor: "var(--color-base-300)",
+  }),
+  dropdownIndicator: (base) => ({
+    ...base,
+    color: "color-mix(in oklch, var(--color-base-content) 60%, transparent)",
+  }),
+  clearIndicator: (base) => ({
+    ...base,
+    color: "color-mix(in oklch, var(--color-base-content) 60%, transparent)",
+    "&:hover": { color: "var(--color-error)" },
+  }),
+  noOptionsMessage: (base) => ({
+    ...base,
+    color: "var(--color-base-content)",
+    backgroundColor: "var(--color-base-100)",
+  }),
+  loadingMessage: (base) => ({
+    ...base,
+    color: "var(--color-base-content)",
+    backgroundColor: "var(--color-base-100)",
+  }),
+};
 
 export default function MarketDepthModal({
   open,
@@ -219,6 +286,7 @@ export default function MarketDepthModal({
             onChange={(option) => setSelected(option as InstrumentOption | null)}
             placeholder="Search instrument (e.g., RELIANCE, INFY, NIFTY)…"
             classNamePrefix="react-select"
+            styles={reactSelectStyles}
           />
         </div>
 

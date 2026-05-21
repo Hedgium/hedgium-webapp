@@ -6,6 +6,7 @@ import type { BrokerProxyPool } from "@/types/brokerProxyPool";
 import { Edit2, UserPlus, FileText } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
+import { userRoleLabel } from "@/constants/userRoles";
 
 export interface UserWithoutProfile {
   id: null;
@@ -183,6 +184,9 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
           <div>
             <p className="text-gray-400 text-sm">User</p>
             <p className="font-medium">{user.email}</p>
+            {user.role ? (
+              <span className="badge badge-outline badge-xs mt-1">{userRoleLabel(user.role)}</span>
+            ) : null}
             <p className="text-sm text-gray-500">{displayName !== user.email ? displayName : ""}</p>
             <p className="text-sm text-gray-500">ID: {item.user_id}</p>
             {user.last_login && (
