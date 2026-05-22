@@ -40,6 +40,8 @@ export interface StrategyBuilder {
     exit_pnl: number;
     margin_required: number;
     multiplier_allowed: boolean;
+    auto_match_allowed?: boolean;
+    auto_match_max?: number | null;
     strategy_template: StrategyTemplate;
     builder_legs: BuilderLeg[];
     supergroup_ids: number[];
@@ -71,6 +73,8 @@ export interface StrategyBuilderCreate {
     strategy_template_id: number;
     margin_required?: number;
     multiplier_allowed?: boolean;
+    auto_match_allowed?: boolean;
+    auto_match_max?: number | null;
     supergroup_ids?: number[];
     delta_band_min?: number | null;
     delta_band_max?: number | null;
@@ -95,6 +99,8 @@ export interface StrategyBuilderUpdate {
     strategy_template_id?: number;
     margin_required?: number;
     multiplier_allowed?: boolean;
+    auto_match_allowed?: boolean;
+    auto_match_max?: number | null;
     supergroup_ids?: number[];
     delta_band_min?: number | null;
     delta_band_max?: number | null;

@@ -28,6 +28,8 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         strategy_template_id: null, // Default or fetch from API
         margin_required: 0,
         multiplier_allowed: false,
+        auto_match_allowed: false,
+        auto_match_max: null,
         supergroup_ids: [],
         delta_band_min: null,
         delta_band_max: null,
@@ -59,6 +61,11 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 strategy_template_id: initialData.strategy_template?.id || 1,
                 margin_required: initialData.margin_required || 0,
                 multiplier_allowed: initialData.multiplier_allowed ?? false,
+                auto_match_allowed: initialData.auto_match_allowed ?? false,
+                auto_match_max:
+                    initialData.auto_match_max == null
+                        ? null
+                        : Number(initialData.auto_match_max),
                 supergroup_ids: initialData.supergroup_ids || [],
                 delta_band_min:
                     initialData.delta_band_min === undefined || initialData.delta_band_min === null
@@ -172,6 +179,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             'spot_dev_pct_min',
             'spot_dev_pct_max',
             'num_lots_delta_band_adjust',
+            'auto_match_max',
             'shift_strike_distance_itm',
             'shift_strike_distance_otm',
             'sell_exposure_limit_lacs',
@@ -217,6 +225,13 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             e.preventDefault();
         }
         if (submittingRef.current) return;
+        if (formData.auto_match_allowed) {
+            const max = formData.auto_match_max;
+            if (max == null || !Number.isFinite(Number(max)) || Number(max) < 1) {
+                alert('Auto match max must be at least 1 when auto match is enabled.');
+                return;
+            }
+        }
         submittingRef.current = true;
         setIsSubmitting(true);
         try {
@@ -410,6 +425,44 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                             onChange={handleChange}
                             className="toggle toggle-primary"
                         />
+                    </label>
+                </div>
+
+                <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-4 py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80 flex items-center gap-1">
+                            Auto Match Allowed
+                            <span className="tooltip tooltip-right" data-tip="When enabled, Celery can place batch match orders when follower positions diverge from master (per-cycle max applies).">
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-base-300 text-base-content text-[10px] font-bold cursor-default select-none">i</span>
+                            </span>
+                        </span>
+                        <input
+                            type="checkbox"
+                            name="auto_match_allowed"
+                            checked={formData.auto_match_allowed ?? false}
+                            onChange={handleChange}
+                            className="toggle toggle-primary"
+                        />
+                    </label>
+                </div>
+
+                <div className="form-control">
+                    <label className="label py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Auto Match Max (per trade cycle)</span>
+                    </label>
+                    <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        name="auto_match_max"
+                        value={optionalNumberValue(formData.auto_match_max)}
+                        onChange={handleChange}
+                        disabled={!formData.auto_match_allowed}
+                        placeholder={formData.auto_match_allowed ? 'e.g. 3' : 'Enable auto match first'}
+                        className="input input-bordered input-sm h-9 w-full"
+                    />
+                    <label className="label">
+                        <span className="label-text-alt">Max automated match batch runs per follower trade cycle</span>
                     </label>
                 </div>
 
@@ -644,9 +697,16 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className={`btn btn-primary btn-sm min-w-[5.5rem]${isSubmitting ? ' loading' : ''}`}
+                    className="btn btn-primary btn-sm min-w-[5.5rem] gap-2"
                 >
-                    {initialData ? 'Update' : 'Create'}
+                    {isSubmitting ? (
+                        <>
+                            <span className="loading loading-spinner loading-xs" aria-hidden />
+                            {initialData ? "Updating…" : "Creating…"}
+                        </>
+                    ) : (
+                        initialData ? "Update" : "Create"
+                    )}
                 </button>
             </div>
         </form>
