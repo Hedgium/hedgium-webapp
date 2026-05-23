@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Search, UserCircle2, X } from 'lucide-react';
 import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
@@ -21,7 +21,7 @@ type RmSearchUser = {
 
 interface ProfileFormProps {
     initialData: Profile;
-    onSubmit: (data: ProfileFormPayload) => void;
+    onSubmit: (data: ProfileFormPayload) => void | Promise<void>;
     onCancel: () => void;
 }
 
@@ -64,6 +64,9 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         proxy_username: '',
         proxy_password: '',
     });
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const submittingRef = useRef(false);
 
     const [relationshipManagerId, setRelationshipManagerId] = useState<number | null>(
         () => initialData.relationship_manager?.id ?? null
@@ -171,8 +174,11 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (submittingRef.current) return;
+        submittingRef.current = true;
+        setIsSubmitting(true);
         const payload: ProfileFormPayload = {
             broker_name: formData.broker_name,
             broker_user_id: formData.broker_user_id || undefined,
@@ -196,7 +202,12 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             payload.proxy_password = pwd;
         }
         payload.relationship_manager_id = relationshipManagerId;
-        onSubmit(payload);
+        try {
+            await Promise.resolve(onSubmit(payload));
+        } finally {
+            submittingRef.current = false;
+            setIsSubmitting(false);
+        }
     };
 
     const rmDisplay =
@@ -220,7 +231,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isSubmitting}>
             <p className="text-sm text-base-content/60">
                 Essentials below. Open a section for user account fields, order proxy, or sizing.
             </p>
@@ -532,11 +543,22 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             </FormCollapse>
 
             <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={onCancel} className="btn btn-ghost">
+                <button type="button" onClick={onCancel} disabled={isSubmitting} className="btn btn-ghost">
                     Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                    Update profile
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="btn btn-primary min-w-[8.5rem] gap-2"
+                >
+                    {isSubmitting ? (
+                        <>
+                            <span className="loading loading-spinner loading-xs" aria-hidden />
+                            Updating…
+                        </>
+                    ) : (
+                        "Update profile"
+                    )}
                 </button>
             </div>
         </form>
