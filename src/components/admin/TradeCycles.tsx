@@ -449,32 +449,50 @@ export default function TradeCycles({
 
     // Use exchange from position, fallback to NFO for derivatives (contains digits), else NSE
     const resolvedExchange = exchange || (instrument.match(/\d/) ? "NFO" : "NSE");
-    
+
     const requestKey = `${cycle.id}-${instrument}-${transactionType}`;
     setPlacingCompareOrder(requestKey);
     try {
-      const payload = {
-        instrument,
-        exchange: resolvedExchange,
-        transaction_type: transactionType,
-        quantity,
-      };
-
-      // Use the new match order API that handles broker conversion and LIMIT orders
-      const res = await authFetch(`trade-cycles/${cycle.id}/place-match-order/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await authFetch(
+        `trade-cycles/${cycle.id}/place-match-orders-batch/`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: [
+              {
+                instrument,
+                exchange: resolvedExchange,
+                transaction_type: transactionType,
+                quantity,
+              },
+            ],
+          }),
+        }
+      );
       const data = await res.json();
 
+      if (data.status === "skipped") {
+        alert.info(data.message || "Match order skipped", { duration: 5000 });
+        return;
+      }
+
       if (data.status === "success") {
-        const orderInfo = data.data;
-        alert.success(
-          `Order placed: ${orderInfo.action} ${orderInfo.quantity} ${orderInfo.instrument} @ ${formatMoneyIN(orderInfo.price)}`
-        );
-        // Mark this order as completed to disable the button
-        setCompletedOrders((prev) => new Set(prev).add(requestKey));
+        const { orders_created, created, errors } = data.data || {};
+        if ((orders_created ?? 0) > 0 && created?.length) {
+          const first = created[0];
+          alert.success(
+            `Order placed: ${first.action} ${first.quantity} ${first.instrument}`
+          );
+          setCompletedOrders((prev) => new Set(prev).add(requestKey));
+        } else if (errors?.length) {
+          const err0 = errors[0];
+          alert.error(
+            `${err0.instrument ?? instrument}: ${err0.reason ?? "Failed to place order"}`
+          );
+        } else {
+          alert.error(data.message || "No orders were created");
+        }
       } else {
         alert.error(data.message || "Failed to place order");
       }
@@ -589,15 +607,39 @@ export default function TradeCycles({
       });
       const data = await res.json();
 
+      if (data.status === "skipped") {
+        alert.info(data.message || "Match All skipped", { duration: 5000 });
+        return;
+      }
+
       if (data.status === "success") {
-        const { orders_created, batches } = data.data || {};
-        alert.success(
-          `Match All: ${orders_created} order(s) created in ${batches} batch(es)`,
-          { duration: 4000 }
-        );
-        setCompareModalCycleId(null);
-        setCompareResults((prev) => ({ ...prev, [cycle.id]: { ...prev[cycle.id], matched_count: (prev[cycle.id]?.matched_count ?? 0) + (orders_created || 0) } }));
-        fetchTradeCycles();
+        const { orders_created, batches, errors } = data.data || {};
+        if ((orders_created ?? 0) > 0) {
+          alert.success(
+            `Match All: ${orders_created} order(s) created in ${batches} batch(es)`,
+            { duration: 4000 }
+          );
+          setCompareModalCycleId(null);
+          setCompareResults((prev) => ({
+            ...prev,
+            [cycle.id]: {
+              ...prev[cycle.id],
+              matched_count: (prev[cycle.id]?.matched_count ?? 0) + (orders_created || 0),
+            },
+          }));
+          fetchTradeCycles();
+        } else if (errors?.length) {
+          alert.error(
+            errors
+              .slice(0, 3)
+              .map((e: { instrument?: string; reason?: string }) =>
+                `${e.instrument ?? "?"}: ${e.reason ?? "failed"}`
+              )
+              .join("; ")
+          );
+        } else {
+          alert.error(data.message || "Match All produced no orders");
+        }
       } else {
         alert.error(data.message || "Match All failed");
       }
