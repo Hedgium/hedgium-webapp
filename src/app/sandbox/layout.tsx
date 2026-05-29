@@ -7,7 +7,7 @@ import NotificationProvider from "@/providers/NotificationProvider";
 import { useSandboxStore } from "@/store/sandboxStore";
 
 const BANNER =
-  "Sandbox — sample data from other users on this plan. Past performance does not guarantee future results.";
+  "Sandbox — illustrative performance from a reference account on the selected plan tier. E1 is simulated; E2 is from that account. Past performance does not guarantee future results.";
 
 export default function SandboxLayout({
   children,

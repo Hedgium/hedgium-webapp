@@ -5,8 +5,8 @@ import { useSandboxStore, type SandboxPlan } from "@/store/sandboxStore";
 
 const PLANS: { id: SandboxPlan; label: string }[] = [
   { id: "BASIC", label: "25L" },
-  { id: "MASTERS", label: "25L to 75L" },
-  { id: "LEGENDS", label: "75L+" },
+  { id: "MASTERS", label: "50L" },
+  { id: "LEGENDS", label: "1 Cr" },
 ];
 
 export default function SandboxPlanSelector() {
