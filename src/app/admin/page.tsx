@@ -18,6 +18,9 @@ interface Version {
   approved: boolean;
 }
 
+/** Symbol -> LTP at last metric cache update (from backend JSON fields). */
+type SpotByUnderlying = Record<string, number>;
+
 interface Strategy {
   id: number;
   name: string;
@@ -35,6 +38,9 @@ interface Strategy {
   greek_delta: number | string | null;
   greek_gamma: number | string | null;
   greek_updated_at: string | null;
+  greek_spot_by_underlying: SpotByUnderlying | null;
+  wpnl_spot_by_underlying: SpotByUnderlying | null;
+  spread_spot_by_underlying: SpotByUnderlying | null;
   completed: boolean;
   completed_at: string | null;
   versions: Version[];
@@ -103,7 +109,7 @@ export default function Page() {
   const [loading, setLoading] = React.useState(false);
   const [refreshingMetrics, setRefreshingMetrics] = React.useState(false);
   const [orderBy, setOrderBy] = React.useState("-created_at");
-  const [completed, setCompleted] = React.useState("");
+  const [completed, setCompleted] = React.useState("false");
 
   const STRATEGIES_POLL_MS = 40_000;
   const METRICS_REFRESH_INTERVAL_MS = 90_000;
@@ -293,6 +299,48 @@ export default function Page() {
     });
   };
 
+  const formatSpotPrice = (v: number | string) => {
+    const n = typeof v === "number" ? v : Number(v);
+    if (!Number.isFinite(n)) return String(v);
+    return n.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 4,
+    });
+  };
+
+  const formatSpotByUnderlying = (
+    spots: SpotByUnderlying | null | undefined
+  ): string[] => {
+    if (!spots || typeof spots !== "object") return [];
+    return Object.entries(spots)
+      .filter(([sym]) => sym)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([sym, price]) => `${sym} ${formatSpotPrice(price)}`);
+  };
+
+  const SpotAtCalcLines = ({
+    spots,
+    title,
+  }: {
+    spots: SpotByUnderlying | null | undefined;
+    title: string;
+  }) => {
+    const lines = formatSpotByUnderlying(spots);
+    if (lines.length === 0) return null;
+    return (
+      <span
+        className="text-[10px] text-base-content/55 tabular-nums leading-tight"
+        title={title}
+      >
+        {lines.map((line) => (
+          <span key={line} className="block whitespace-nowrap">
+            @ {line}
+          </span>
+        ))}
+      </span>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-base-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -454,6 +502,10 @@ export default function Page() {
                           <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
                             {formatSnapshotAt(strategy.greek_updated_at) ?? "—"}
                           </span>
+                          <SpotAtCalcLines
+                            spots={strategy.greek_spot_by_underlying}
+                            title="Spot when Greeks were calculated"
+                          />
                         </div>
                       </td>
                       <td className="text-right align-top min-w-[7rem]">
@@ -482,6 +534,10 @@ export default function Page() {
                           <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
                             {formatSnapshotAt(strategy.spread_updated_at) ?? "—"}
                           </span>
+                          <SpotAtCalcLines
+                            spots={strategy.spread_spot_by_underlying}
+                            title="Spot when ATM spread was calculated"
+                          />
                         </div>
                       </td>
                       <td className="text-right">
@@ -507,6 +563,10 @@ export default function Page() {
                           <span className="text-[10px] text-base-content/60 tabular-nums leading-tight">
                             {formatSnapshotAt(strategy.wpnl_updated_at) ?? "—"}
                           </span>
+                          <SpotAtCalcLines
+                            spots={strategy.wpnl_spot_by_underlying}
+                            title="Spot when WPNL was calculated"
+                          />
                         </div>
                       </td>
                       <td>
