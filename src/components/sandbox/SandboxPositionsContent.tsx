@@ -138,9 +138,6 @@ export default function SandboxPositionsContent() {
     }
   }, [fetchTradeCycles, dashboard?.configured]);
 
-  if (!sandboxPlan) return null;
-
-  const fetchFn = (path: string) => sandboxFetch(path, sandboxPlan);
   const notional = dashboard?.notional_capital ?? 0;
   const metrics = useMemo(() => {
     const before = dashboard?.before_joining;
@@ -195,6 +192,9 @@ export default function SandboxPositionsContent() {
     if (!hasMoreCycles || loadingMoreCycles) return;
     void fetchTradeCycles(cyclePage + 1, true);
   };
+  if (!sandboxPlan) return null;
+
+  const fetchFn = (path: string) => sandboxFetch(path, sandboxPlan);
 
   return (
     <>
