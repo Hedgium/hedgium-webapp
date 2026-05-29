@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "nextjs-toploader/app";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import { useAuthStore } from "@/store/authStore";
-import { RotateCw, Plus, AlertCircle, Loader2 } from "lucide-react";
+import { RotateCw, Plus, AlertCircle, Loader2, ChevronDown } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
+import { LiveHolding } from "@/types/positions";
 
 interface BrokerState {
   loading: boolean;
@@ -16,6 +17,36 @@ interface BrokerState {
   name: string | null;
   margin?: number | null;
   profileId?: number | null;
+}
+
+type AccountMetrics = {
+  loading: boolean;
+  engine1Total: number | null;
+  availableCash: number | null;
+  totalAcValue: number | null;
+};
+
+function parseAvailableCash(marginData: Record<string, unknown>): number | null {
+  if (marginData.status === "success" && marginData.available_cash != null) {
+    const cash = Number(marginData.available_cash);
+    if (!Number.isNaN(cash)) return cash;
+  }
+  const equity = (marginData.data as { equity?: { available?: { cash?: number } } } | undefined)
+    ?.equity;
+  const cash = equity?.available?.cash;
+  return typeof cash === "number" && !Number.isNaN(cash) ? cash : null;
+}
+
+function sumEngine1Total(holdings: LiveHolding[]): number {
+  return holdings.reduce((sum, h) => sum + (h.current_value ?? 0), 0);
+}
+
+function totalAcValue(
+  engine1Total: number | null,
+  availableCash: number | null
+): number | null {
+  if (engine1Total == null || availableCash == null) return null;
+  return engine1Total + availableCash;
 }
 
 export default function BrokerLoginStatus() {
@@ -33,88 +64,191 @@ export default function BrokerLoginStatus() {
   });
   const [refreshing, setRefreshing] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [accountMetrics, setAccountMetrics] = useState<AccountMetrics>({
+    loading: false,
+    engine1Total: null,
+    availableCash: null,
+    totalAcValue: null,
+  });
+  const [metricsOpen, setMetricsOpen] = useState(false);
+  const metricsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Login modal state
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [password, setPassword] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const autoMarginFetchedForProfileRef = useRef<number | null>(null);
+  const metricsFetchGen = useRef(0);
+  const metricsLoadedForProfileRef = useRef<number | null>(null);
 
-  const fetchActiveProfile = async () => {
+  const fetchAccountMetrics = useCallback(async () => {
     if (!user) return;
-    setBroker((b) => ({ ...b, loading: true }));
-    setStatusError(null);
+    const gen = ++metricsFetchGen.current;
+    setAccountMetrics((m) => ({ ...m, loading: true }));
 
     try {
-      const res = await authFetch("profiles/check-profile/");
-      if (!res.ok) {
-        setBroker({ loading: false, hasProfile: false, verified: false, loggedIn: false, name: null });
-        return;
+      const [holdingsRes, marginRes] = await Promise.all([
+        authFetch("positions/live/holdings/"),
+        authFetch("profiles/live/margin/"),
+      ]);
+
+      if (gen !== metricsFetchGen.current) return;
+
+      let engine1Total: number | null = null;
+      let availableCash: number | null = null;
+
+      if (holdingsRes.ok) {
+        const holdingsData = await holdingsRes.json();
+        if (holdingsData.status === "success") {
+          const holdings: LiveHolding[] = Array.isArray(holdingsData.data)
+            ? holdingsData.data
+            : [];
+          engine1Total = sumEngine1Total(holdings);
+        }
       }
-      const data = await res.json();
-      setBroker({
+
+      if (marginRes.ok) {
+        const marginData = await marginRes.json();
+        availableCash = parseAvailableCash(marginData);
+      }
+
+      setAccountMetrics({
         loading: false,
-        hasProfile: !!data.id,
-        verified: data.verified || false,
-        loggedIn: data.logged_in || false,
-        name: data.broker_name || null,
-        margin: data.margin_equity ?? null,
-        profileId: data.id || null,
+        engine1Total,
+        availableCash,
+        totalAcValue: totalAcValue(engine1Total, availableCash),
       });
     } catch (err) {
-      console.error("Broker check failed:", err);
-      setBroker({ loading: false, hasProfile: false, verified: false, loggedIn: false, name: null });
+      console.error("Account metrics fetch failed:", err);
+      if (gen !== metricsFetchGen.current) return;
+      setAccountMetrics({
+        loading: false,
+        engine1Total: null,
+        availableCash: null,
+        totalAcValue: null,
+      });
     }
-  };
+  }, [user]);
 
-  const refreshMargin = async ({ silent = false }: { silent?: boolean } = {}) => {
-    if (!user) return;
-    setRefreshing(true);
-    setStatusError(null);
-
-    try {
-      const res = await authFetch("profiles/refresh-margin/");
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Failed to fetch margin");
+  const fetchActiveProfile = useCallback(
+    async ({ silent = false }: { silent?: boolean } = {}) => {
+      if (!user) return;
       if (!silent) {
-        alert.success("Margins updated");
+        setBroker((b) => ({ ...b, loading: true }));
       }
-      await fetchActiveProfile();
-    } catch (err) {
-      setStatusError("Failed to refresh margin.");
-      await fetchActiveProfile();
-    } finally {
-      setRefreshing(false);
-    }
-  };
+      setStatusError(null);
+
+      try {
+        const res = await authFetch("profiles/check-profile/");
+        if (!res.ok) {
+          metricsLoadedForProfileRef.current = null;
+          setBroker({
+            loading: false,
+            hasProfile: false,
+            verified: false,
+            loggedIn: false,
+            name: null,
+          });
+          return;
+        }
+        const data = await res.json();
+        const loggedIn = Boolean(data.logged_in);
+        const profileId = data.id ?? null;
+        setBroker({
+          loading: false,
+          hasProfile: !!data.id,
+          verified: data.verified || false,
+          loggedIn,
+          name: data.broker_name || null,
+          margin: data.margin_equity ?? null,
+          profileId,
+        });
+        if (!loggedIn) {
+          metricsLoadedForProfileRef.current = null;
+        }
+      } catch (err) {
+        console.error("Broker check failed:", err);
+        metricsLoadedForProfileRef.current = null;
+        setBroker({
+          loading: false,
+          hasProfile: false,
+          verified: false,
+          loggedIn: false,
+          name: null,
+        });
+      }
+    },
+    [user]
+  );
+
+  const refreshAccountValues = useCallback(
+    async ({ silent = false }: { silent?: boolean } = {}) => {
+      if (!user) return;
+      setRefreshing(true);
+      setStatusError(null);
+
+      try {
+        const res = await authFetch("profiles/refresh-margin/");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Failed to refresh margin");
+        if (typeof data.margin_equity === "number") {
+          setBroker((b) => ({ ...b, margin: data.margin_equity }));
+        }
+        await fetchAccountMetrics();
+        if (!silent) {
+          alert.success("Account values updated");
+        }
+      } catch {
+        setStatusError("Failed to refresh account values.");
+      } finally {
+        setRefreshing(false);
+      }
+    },
+    [user, fetchAccountMetrics, alert]
+  );
 
   // Watch for broker setup completion (set by the add-broker page)
   useEffect(() => {
     if (brokerNeedsRefresh) {
       setBrokerNeedsRefresh(false);
-      fetchActiveProfile();
+      metricsLoadedForProfileRef.current = null;
+      void fetchActiveProfile();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brokerNeedsRefresh]);
+  }, [brokerNeedsRefresh, fetchActiveProfile, setBrokerNeedsRefresh]);
 
   useEffect(() => {
-    fetchActiveProfile();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+    void fetchActiveProfile();
+  }, [fetchActiveProfile]);
 
-  // Auto-refresh margin once when a broker session is logged in (including after login).
   useEffect(() => {
-    if (!broker.loggedIn || !broker.profileId) {
-      autoMarginFetchedForProfileRef.current = null;
+    if (!metricsOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (metricsDropdownRef.current?.contains(e.target as Node)) return;
+      setMetricsOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [metricsOpen]);
+
+  // Load live E1 / cash metrics once per logged-in profile (no profile bar reload loop).
+  useEffect(() => {
+    if (broker.loading || !broker.loggedIn || !broker.profileId) {
+      if (!broker.loggedIn) {
+        metricsLoadedForProfileRef.current = null;
+        setAccountMetrics({
+          loading: false,
+          engine1Total: null,
+          availableCash: null,
+          totalAcValue: null,
+        });
+      }
       return;
     }
 
-    if (autoMarginFetchedForProfileRef.current === broker.profileId) return;
-    autoMarginFetchedForProfileRef.current = broker.profileId;
-    refreshMargin({ silent: true });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [broker.loggedIn, broker.profileId, user]);
+    if (metricsLoadedForProfileRef.current === broker.profileId) return;
+    metricsLoadedForProfileRef.current = broker.profileId;
+    void fetchAccountMetrics();
+  }, [broker.loading, broker.loggedIn, broker.profileId, fetchAccountMetrics]);
 
   // ── Login handler (for already-verified broker) ──
   const handleBrokerLogin = async () => {
@@ -150,6 +284,7 @@ export default function BrokerLoginStatus() {
         setShowLoginModal(false);
         setPassword("");
         setLoginError(null);
+        metricsLoadedForProfileRef.current = null;
         await fetchActiveProfile();
       } else {
         // Surface the exact message from the broker
@@ -217,18 +352,90 @@ export default function BrokerLoginStatus() {
                 )}
               </div>
 
-              {broker.margin != null && broker.loggedIn && (
-                <p className="flex items-center gap-1">
-                  <span className="font-medium">Margin:</span>{" "}
-                  {formatMoneyIN(broker.margin, { decimals: 0 })}
+              {broker.loggedIn && (
+                <div
+                  ref={metricsDropdownRef}
+                  className={`dropdown dropdown-end ${metricsOpen ? "dropdown-open" : ""}`}
+                >
                   <button
-                    onClick={() => refreshMargin()}
-                    disabled={refreshing}
-                    className={`btn btn-ghost btn-xs ${refreshing ? "animate-spin" : ""}`}
+                    type="button"
+                    aria-expanded={metricsOpen}
+                    aria-haspopup="true"
+                    className="btn btn-ghost btn-sm h-auto min-h-0 gap-1 px-2 py-1 font-normal normal-case"
+                    onClick={() => setMetricsOpen((o) => !o)}
                   >
-                    <RotateCw size={16} />
+                    <span className="text-sm">
+                      <span className="font-medium">Margin:</span>{" "}
+                      <span className="tabular-nums">
+                        {broker.margin != null
+                          ? formatMoneyIN(broker.margin, { decimals: 0 })
+                          : "—"}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 opacity-60 transition-transform ${metricsOpen ? "rotate-180" : ""}`}
+                      aria-hidden
+                    />
                   </button>
-                </p>
+                  <ul
+                    className="dropdown-content menu z-[200] mt-1 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+                    role="menu"
+                  >
+                    <li className="pointer-events-none px-2 py-1">
+                      <div className="flex justify-between gap-3 text-sm">
+                        <span className="text-base-content/60">E1 Total</span>
+                        <span className="tabular-nums font-medium">
+                          {accountMetrics.loading
+                            ? "…"
+                            : accountMetrics.engine1Total != null
+                              ? formatMoneyIN(accountMetrics.engine1Total, { decimals: 0 })
+                              : "—"}
+                        </span>
+                      </div>
+                    </li>
+                    <li className="pointer-events-none px-2 py-1">
+                      <div className="flex justify-between gap-3 text-sm">
+                        <span className="text-base-content/60">Avl cash</span>
+                        <span className="tabular-nums font-medium">
+                          {accountMetrics.loading
+                            ? "…"
+                            : accountMetrics.availableCash != null
+                              ? formatMoneyIN(accountMetrics.availableCash, { decimals: 0 })
+                              : "—"}
+                        </span>
+                      </div>
+                    </li>
+                    <li className="pointer-events-none px-2 py-1 border-t border-base-300/80">
+                      <div className="flex justify-between gap-3 text-sm">
+                        <span className="font-medium">Total AC</span>
+                        <span className="tabular-nums font-semibold">
+                          {accountMetrics.loading
+                            ? "…"
+                            : accountMetrics.totalAcValue != null
+                              ? formatMoneyIN(accountMetrics.totalAcValue, { decimals: 0 })
+                              : "—"}
+                        </span>
+                      </div>
+                    </li>
+                    <li className="mt-1 border-t border-base-300/80 pt-1">
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm"
+                        onClick={() => {
+                          setMetricsOpen(false);
+                          void refreshAccountValues();
+                        }}
+                        disabled={refreshing || accountMetrics.loading}
+                      >
+                        <RotateCw
+                          className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                          aria-hidden
+                        />
+                        Refresh
+                      </button>
+                    </li>
+                  </ul>
+                </div>
               )}
             </>
           )}

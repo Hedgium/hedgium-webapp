@@ -1,6 +1,5 @@
 /**
- * Sandbox API - fetches from sandbox endpoints with plan param.
- * Used when in Sandbox Mode. Returns real data from other users on the selected plan.
+ * Sandbox API — reference account for the selected plan tier.
  */
 import { authFetch } from "./api";
 
@@ -10,9 +9,7 @@ function appendPlan(path: string, plan: string): string {
 }
 
 /**
- * Fetch from sandbox API. Appends plan to path.
- * @param path - e.g. "trade-cycles/?approved=true&page=1"
- * @param plan - BASIC | MASTERS | LEGENDS
+ * Fetch from `/api/sandbox/*`. Appends `plan` and optional query params.
  */
 export async function sandboxFetch(
   path: string,

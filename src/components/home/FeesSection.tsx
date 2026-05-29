@@ -50,7 +50,7 @@ export default function FeesSection() {
                 Accredited or Institutional Clients
               </h3>
               <div className="flex gap-6 items-start">
-                <span className={TIER_COL}>75L+</span>
+                <span className={TIER_COL}>1 Cr</span>
                 <div className={DESC_COL}>
                   <p>Customized pricing depending on mandate</p>
                 </div>

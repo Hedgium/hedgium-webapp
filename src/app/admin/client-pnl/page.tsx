@@ -20,6 +20,7 @@ type PnlSummary = {
 
 type LiveMargin = {
   available_total: number;
+  available_cash: number;
   utilised_total: number;
   net: number;
 };
@@ -56,6 +57,14 @@ function formatCell(value: number | null | undefined): string {
 function formatTotalCell(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
   return formatMoneyIN(value, { decimals: 0, minDecimals: 0 });
+}
+
+function totalAcValue(
+  engine1Total: number | null,
+  availableCash: number | null | undefined
+): number | null {
+  if (engine1Total == null || availableCash == null || Number.isNaN(availableCash)) return null;
+  return engine1Total + availableCash;
 }
 
 async function mapWithConcurrency<T, R>(
@@ -134,6 +143,7 @@ async function fetchRowMetrics(
     if (marginData.status === "success") {
       margin = {
         available_total: marginData.available_total,
+        available_cash: marginData.available_cash,
         utilised_total: marginData.utilised_total,
         net: marginData.net,
       };
@@ -155,6 +165,8 @@ async function fetchRowMetrics(
 
 type ClientPnlTotals = {
   engine1Total: number;
+  availableCash: number;
+  totalAcValue: number;
   engine1Pnl: number;
   e2Ytd: number;
   e2Quarter: number;
@@ -167,6 +179,8 @@ type ClientPnlTotals = {
 function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
   const totals: ClientPnlTotals = {
     engine1Total: 0,
+    availableCash: 0,
+    totalAcValue: 0,
     engine1Pnl: 0,
     e2Ytd: 0,
     e2Quarter: 0,
@@ -182,6 +196,15 @@ function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
     let included = false;
     if (row.engine1Total != null) {
       totals.engine1Total += row.engine1Total;
+      included = true;
+    }
+    if (row.margin?.available_cash != null) {
+      totals.availableCash += row.margin.available_cash;
+      included = true;
+    }
+    const rowTotalAc = totalAcValue(row.engine1Total, row.margin?.available_cash);
+    if (rowTotalAc != null) {
+      totals.totalAcValue += rowTotalAc;
       included = true;
     }
     if (row.engine1Pnl != null) {
@@ -412,6 +435,12 @@ export default function AdminClientPnlPage() {
                 <th className="text-right align-middle tabular-nums font-semibold text-base-content">
                   {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.engine1Total)}
                 </th>
+                <th className="text-right align-middle tabular-nums font-semibold text-base-content">
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.availableCash)}
+                </th>
+                <th className="text-right align-middle tabular-nums font-semibold text-base-content">
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.totalAcValue)}
+                </th>
                 <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.engine1Pnl)}`}>
                   {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.engine1Pnl)}
                 </th>
@@ -436,6 +465,8 @@ export default function AdminClientPnlPage() {
             <tr className="text-xs uppercase tracking-wide text-base-content/60">
               <th className="min-w-[12rem]">Client info</th>
               <th className="text-right">E1 Total</th>
+              <th className="text-right">Avl cash</th>
+              <th className="text-right">Total AC</th>
               <th className="text-right">E1 PnL</th>
               <th className="text-right">E2 YTD</th>
               <th className="text-right">E2 Quarterly</th>
@@ -449,14 +480,14 @@ export default function AdminClientPnlPage() {
             {loadingProfiles ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={9}>
+                  <td colSpan={11}>
                     <div className="h-8 animate-pulse rounded bg-base-300/40" />
                   </td>
                 </tr>
               ))
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-base-content/55">
+                <td colSpan={11} className="py-12 text-center text-base-content/55">
                   No active profiles found.
                 </td>
               </tr>
@@ -492,6 +523,16 @@ export default function AdminClientPnlPage() {
                     ) : (
                       formatCell(row.engine1Total)
                     )}
+                  </td>
+                  <td className="text-right tabular-nums">
+                    {row.status === "loading"
+                      ? "…"
+                      : formatCell(row.margin?.available_cash ?? null)}
+                  </td>
+                  <td className="text-right tabular-nums">
+                    {row.status === "loading"
+                      ? "…"
+                      : formatCell(totalAcValue(row.engine1Total, row.margin?.available_cash))}
                   </td>
                   <td className={`text-right ${signedClass(row.engine1Pnl)}`}>
                     {row.status === "loading" ? "…" : formatCell(row.engine1Pnl)}
