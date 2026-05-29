@@ -45,3 +45,15 @@ export type SandboxTradeCycle = {
   created_at: string;
   updated_at?: string;
 };
+
+export type SandboxTradeCycleListResponse = {
+  count: number;
+  configured: boolean;
+  page: number;
+  page_size: number;
+  has_next: boolean;
+  has_previous: boolean;
+  next: string | null;
+  previous: string | null;
+  results: SandboxTradeCycle[];
+};

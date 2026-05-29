@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import TradeCyclePositionsSkeleton from "@/components/skeletons/TradeCyclePositionsSkeleton";
 import { sandboxFetch } from "@/utils/sandboxApi";
@@ -12,6 +12,7 @@ import type {
   SandboxDashboard,
   SandboxE1Risk,
   SandboxPhase,
+  SandboxTradeCycleListResponse,
   SandboxTradeCycle,
 } from "@/types/sandbox";
 
@@ -20,6 +21,11 @@ const E1_OPTIONS: { id: SandboxE1Risk; label: string }[] = [
   { id: "MEDIUM", label: "Medium (9%)" },
   { id: "HIGH", label: "High (12%)" },
 ];
+const E1_ANNUAL_RATE: Record<SandboxE1Risk, number> = {
+  LOW: 0.07,
+  MEDIUM: 0.09,
+  HIGH: 0.12,
+};
 
 function signedClass(value: number): string {
   if (value > 0) return "text-success";
@@ -48,15 +54,16 @@ export default function SandboxPositionsContent() {
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [tradeCycles, setTradeCycles] = useState<SandboxTradeCycle[]>([]);
   const [loadingCycles, setLoadingCycles] = useState(true);
+  const [loadingMoreCycles, setLoadingMoreCycles] = useState(false);
+  const [cyclePage, setCyclePage] = useState(1);
+  const [hasMoreCycles, setHasMoreCycles] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
     if (!sandboxPlan) return;
     setLoadingDashboard(true);
     try {
-      const res = await sandboxFetch("dashboard/", sandboxPlan, undefined, {
-        e1_risk: e1Risk,
-      });
+      const res = await sandboxFetch("dashboard/", sandboxPlan);
       if (!res.ok) throw new Error("Failed to load sandbox dashboard");
       const data = (await res.json()) as SandboxDashboard;
       setDashboard(data);
@@ -66,24 +73,40 @@ export default function SandboxPositionsContent() {
     } finally {
       setLoadingDashboard(false);
     }
-  }, [sandboxPlan, e1Risk]);
+  }, [sandboxPlan]);
 
-  const fetchTradeCycles = useCallback(async () => {
+  const fetchTradeCycles = useCallback(async (page = 1, append = false) => {
     if (!sandboxPlan) return;
-    setLoadingCycles(true);
+    if (append) {
+      setLoadingMoreCycles(true);
+    } else {
+      setLoadingCycles(true);
+    }
     try {
       const res = await sandboxFetch("trade-cycles/", sandboxPlan, undefined, {
         phase,
-        page_size: 50,
+        page,
+        page_size: 10,
       });
       if (!res.ok) throw new Error("Failed to fetch trade cycles");
-      const data = await res.json();
-      setTradeCycles(data.results || []);
+      const data = (await res.json()) as SandboxTradeCycleListResponse;
+      const nextResults = data.results || [];
+      setTradeCycles((prev) => (append ? [...prev, ...nextResults] : nextResults));
+      setCyclePage(data.page || page);
+      setHasMoreCycles(Boolean(data.has_next));
     } catch (error) {
       console.error(error);
-      setTradeCycles([]);
+      if (!append) {
+        setTradeCycles([]);
+        setCyclePage(1);
+        setHasMoreCycles(false);
+      }
     } finally {
-      setLoadingCycles(false);
+      if (append) {
+        setLoadingMoreCycles(false);
+      } else {
+        setLoadingCycles(false);
+      }
     }
   }, [sandboxPlan, phase]);
 
@@ -110,6 +133,8 @@ export default function SandboxPositionsContent() {
     } else {
       setTradeCycles([]);
       setLoadingCycles(false);
+      setCyclePage(1);
+      setHasMoreCycles(false);
     }
   }, [fetchTradeCycles, dashboard?.configured]);
 
@@ -117,6 +142,59 @@ export default function SandboxPositionsContent() {
 
   const fetchFn = (path: string) => sandboxFetch(path, sandboxPlan);
   const notional = dashboard?.notional_capital ?? 0;
+  const metrics = useMemo(() => {
+    const before = dashboard?.before_joining;
+    const after = dashboard?.after_joining;
+    const combined = dashboard?.combined;
+    if (!before || !after || !combined || !notional) {
+      return {
+        beforeE1: 0,
+        afterE1: 0,
+        combinedE1: 0,
+        combinedRoiValue: combined?.roi_value ?? 0,
+        combinedRoiPercent: combined?.roi_percent ?? 0,
+      };
+    }
+
+    const parseIsoDay = (isoDay: string | undefined): Date | null => {
+      if (!isoDay) return null;
+      const d = new Date(`${isoDay}T00:00:00`);
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+    const dayDiff = (fromIso: string | undefined, toIso: string | undefined): number => {
+      const from = parseIsoDay(fromIso);
+      const to = parseIsoDay(toIso);
+      if (!from || !to) return 0;
+      const ms = to.getTime() - from.getTime();
+      return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+    };
+
+    const rate = E1_ANNUAL_RATE[e1Risk];
+    const beforeDays = dayDiff(before.from, before.to);
+    const afterDays = dayDiff(after.from, after.to);
+    const combinedDays = beforeDays + afterDays;
+
+    const calcE1 = (days: number) => Number((notional * rate * (days / 365)).toFixed(2));
+    const beforeE1 = calcE1(beforeDays);
+    const afterE1 = calcE1(afterDays);
+    const combinedE1 = calcE1(combinedDays);
+    const combinedRoiValue = Number((combinedE1 + (combined.e2_pnl ?? 0)).toFixed(2));
+    const combinedRoiPercent = notional
+      ? Number(((combinedRoiValue / notional) * 100).toFixed(2))
+      : 0;
+
+    return {
+      beforeE1,
+      afterE1,
+      combinedE1,
+      combinedRoiValue,
+      combinedRoiPercent,
+    };
+  }, [dashboard, e1Risk, notional]);
+  const handleLoadMoreCycles = () => {
+    if (!hasMoreCycles || loadingMoreCycles) return;
+    void fetchTradeCycles(cyclePage + 1, true);
+  };
 
   return (
     <>
@@ -200,8 +278,8 @@ export default function SandboxPositionsContent() {
                   </option>
                 ))}
               </select>
-              <p className={`text-lg font-semibold tabular-nums md:text-xl ${signedClass(dashboard.combined?.e1 ?? 0)}`}>
-                {formatMoneyIN(dashboard.combined?.e1 ?? 0, { decimals: 0 })}
+              <p className={`text-lg font-semibold tabular-nums md:text-xl ${signedClass(metrics.combinedE1)}`}>
+                {formatMoneyIN(metrics.combinedE1, { decimals: 0 })}
               </p>
               <p className="mt-1 text-[11px] text-base-content/45">
                 Simulated on {formatMoneyIN(notional, { decimals: 0 })}
@@ -212,12 +290,12 @@ export default function SandboxPositionsContent() {
                 ROI (E1 + E2)
               </p>
               <p
-                className={`text-lg font-bold tabular-nums leading-tight md:text-xl ${signedClass(dashboard.combined?.roi_value ?? 0)}`}
+                className={`text-lg font-bold tabular-nums leading-tight md:text-xl ${signedClass(metrics.combinedRoiValue)}`}
               >
-                {formatMoneyIN(dashboard.combined?.roi_value ?? 0, { decimals: 0 })}
+                {formatMoneyIN(metrics.combinedRoiValue, { decimals: 0 })}
               </p>
-              <p className={`mt-1 text-sm font-semibold tabular-nums ${signedClass(dashboard.combined?.roi_percent ?? 0)}`}>
-                {(dashboard.combined?.roi_percent ?? 0).toFixed(2)}%
+              <p className={`mt-1 text-sm font-semibold tabular-nums ${signedClass(metrics.combinedRoiPercent)}`}>
+                {metrics.combinedRoiPercent.toFixed(2)}%
               </p>
             </div>
           </div>
@@ -268,24 +346,38 @@ export default function SandboxPositionsContent() {
               ))}
             </div>
           ) : tradeCycles.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6">
-              {tradeCycles.map((cycle) => (
-                <TradeCycleWithPositionsCard
-                  key={cycle.id}
-                  tradeCycle={{
-                    ...cycle,
-                    id: String(cycle.id),
-                    state: cycle.state as
-                      | "NEW"
-                      | "ACTIVATED"
-                      | "ADJUSTED"
-                      | "PENDING"
-                      | "COMPLETED"
-                      | "STOPPED",
-                  }}
-                  fetchFn={fetchFn}
-                />
-              ))}
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-6">
+                {tradeCycles.map((cycle) => (
+                  <TradeCycleWithPositionsCard
+                    key={cycle.id}
+                    tradeCycle={{
+                      ...cycle,
+                      id: String(cycle.id),
+                      state: cycle.state as
+                        | "NEW"
+                        | "ACTIVATED"
+                        | "ADJUSTED"
+                        | "PENDING"
+                        | "COMPLETED"
+                        | "STOPPED",
+                    }}
+                    fetchFn={fetchFn}
+                  />
+                ))}
+              </div>
+              {hasMoreCycles ? (
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleLoadMoreCycles}
+                    disabled={loadingMoreCycles}
+                    className="btn btn-outline btn-sm min-w-32"
+                  >
+                    {loadingMoreCycles ? "Loading..." : "Load more"}
+                  </button>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-base-300/70 bg-base-100/40 px-6 py-12 text-center">
