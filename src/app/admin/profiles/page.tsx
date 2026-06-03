@@ -264,9 +264,7 @@ export default function ProfilesPage() {
         </button>
       </div>
 
-      {loading ? (
-        <ProfileItemSkeleton />
-      ) : activeTab === "profiles" ? (
+      { activeTab === "profiles" ? (
         <div className="space-y-4">
           {profiles.map((profile) => (
             <ProfileItem
@@ -309,6 +307,8 @@ export default function ProfilesPage() {
           )}
         </div>
       )}
+
+      {loading  &&  <ProfileItemSkeleton /> }
 
       {!loading && activeTab === "profiles" && nextPage && (
         <div className="flex justify-center mt-6">

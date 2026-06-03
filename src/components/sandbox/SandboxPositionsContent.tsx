@@ -266,8 +266,16 @@ export default function SandboxPositionsContent() {
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-base-content/50">
                 E1
               </label>
+              
+              <p className={`text-lg font-semibold tabular-nums md:text-xl ${signedClass(metrics.combinedE1)}`}>
+                {formatMoneyIN(metrics.combinedE1, { decimals: 0 })}
+              </p>
+
+              <p className="mt-1 text-[11px] text-base-content/45">
+                Simulated on {formatMoneyIN(notional, { decimals: 0 })}
+              </p>
               <select
-                className="select select-bordered select-xs mb-2 w-full max-w-full"
+                className="select mt-2 select-bordered select-xs mb-2 w-full max-w-full"
                 value={e1Risk}
                 onChange={(e) => setE1Risk(e.target.value as SandboxE1Risk)}
                 aria-label="E1 risk tier"
@@ -278,12 +286,7 @@ export default function SandboxPositionsContent() {
                   </option>
                 ))}
               </select>
-              <p className={`text-lg font-semibold tabular-nums md:text-xl ${signedClass(metrics.combinedE1)}`}>
-                {formatMoneyIN(metrics.combinedE1, { decimals: 0 })}
-              </p>
-              <p className="mt-1 text-[11px] text-base-content/45">
-                Simulated on {formatMoneyIN(notional, { decimals: 0 })}
-              </p>
+              
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4 col-span-2 lg:col-span-1">
               <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
