@@ -1,10 +1,10 @@
 /** Matches ``users.models.User.UserRole`` values from the backend. */
 export const USER_ROLE_FILTER_OPTIONS = [
-  { value: "", label: "All roles" },
+  { value: "", label: "All" },
   { value: "client", label: "Client" },
-  { value: "staff", label: "Staff" },
-  { value: "rm", label: "Relationship manager" },
-  { value: "demo", label: "Demo" },
+  // { value: "staff", label: "Staff" },
+  // { value: "rm", label: "Relationship manager" },
+  // { value: "demo", label: "Demo" },
   { value: "internal", label: "Internal" },
 ] as const;
 

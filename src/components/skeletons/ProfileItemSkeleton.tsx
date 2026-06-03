@@ -4,7 +4,7 @@ interface ProfileItemSkeletonProps {
   count?: number;
 }
 
-export default function ProfileItemSkeleton({ count = 3 }: ProfileItemSkeletonProps) {
+export default function ProfileItemSkeleton({ count = 4 }: ProfileItemSkeletonProps) {
   return (
     <div className="space-y-4">
       {[...Array(count)].map((_, i) => (
