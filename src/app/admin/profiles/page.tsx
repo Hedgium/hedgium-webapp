@@ -275,10 +275,10 @@ export default function ProfilesPage() {
               onModifyPlan={handleModifyPlan}
             />
           ))}
-          {profiles.length === 0 && usersWithoutProfiles.length === 0 && (
+          {profiles.length === 0 && usersWithoutProfiles.length === 0 && !loading && (
             <p className="text-center text-base-content/60">No profiles or users found.</p>
           )}
-          {profiles.length === 0 && usersWithoutProfiles.length > 0 && (
+          {profiles.length === 0 && usersWithoutProfiles.length > 0 && !loading && (
             <p className="text-center text-base-content/60">No profiles. Switch to &quot;Users without profiles&quot; tab.</p>
           )}
         </div>
@@ -302,7 +302,7 @@ export default function ProfilesPage() {
               }}
             />
           ))}
-          {usersWithoutProfiles.length === 0 && (
+          {(usersWithoutProfiles.length === 0 && !loading) && (
             <p className="text-center text-base-content/60">No users without profiles.</p>
           )}
         </div>
