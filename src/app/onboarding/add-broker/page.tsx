@@ -82,7 +82,7 @@ const BrokerSetup: React.FC = () => {
         user_id: number;
         broker_name: string;
         broker_user_id: string;
-        broker_api_key: string;
+        broker_api_key?: string;
         broker_secret_key?: string;
         broker_twofa?: string;
       } = {
