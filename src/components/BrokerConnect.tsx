@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "nextjs-toploader/app";
 import { authFetch } from "@/utils/api";
+import { brokerLoginWithPolling } from "@/utils/brokerLogin";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import { useAuthStore } from "@/store/authStore";
 import { RotateCw, Plus, AlertCircle, Loader2, ChevronDown } from "lucide-react";
@@ -258,28 +259,13 @@ export default function BrokerLoginStatus() {
 
     setLoggingIn(true);
     try {
-      const endpoints: Record<string, string> = {
-        SHOONYA: "users/shoonya-login/",
-        ZERODHA: "users/zerodha-login/",
-        KOTAKNEO: "users/kotakneo-login/",
-      };
-      const endpoint = endpoints[broker.name];
-      if (!endpoint) throw new Error(`Login not supported for ${broker.name}`);
-
-      const payload: { profile_id: string; mpin?: string; pwd?: string } = {
-        profile_id: String(broker.profileId),
-      };
-      if (broker.name === "KOTAKNEO") payload.mpin = password;
-      else payload.pwd = password;
-
-      const res = await authFetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const result = await brokerLoginWithPolling({
+        brokerName: broker.name,
+        profileId: broker.profileId,
+        secret: password,
       });
-      const data = await res.json();
 
-      if (data.status === "success") {
+      if (result.status === "success") {
         alert.success(`${broker.name} login successful`);
         setShowLoginModal(false);
         setPassword("");
@@ -288,7 +274,7 @@ export default function BrokerLoginStatus() {
         await fetchActiveProfile();
       } else {
         // Surface the exact message from the broker
-        setLoginError(data.message || "Login failed. Please check your credentials.");
+        setLoginError(result.message || "Login failed. Please check your credentials.");
       }
     } catch (err: unknown) {
       setLoginError(err instanceof Error ? err.message : "An unexpected error occurred.");

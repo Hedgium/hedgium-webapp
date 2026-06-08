@@ -3,10 +3,11 @@
 import { authFetch } from "@/utils/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import useAlert from "@/hooks/useAlert";
-import type { BrokerProxyPool } from "@/types/brokerProxyPool";
+import type { BrokerProxyPool, BrokerProxyPoolBroker } from "@/types/brokerProxyPool";
+import { BROKER_PROXY_POOL_BROKERS } from "@/types/brokerProxyPool";
 import { Network, Pencil, Plus, Search, Trash2 } from "lucide-react";
 
-type ProfileOption = { id: number; label: string };
+type ProfileOption = { id: number; label: string; broker_name: string };
 
 export default function AdminProxyPoolPage() {
   const [rows, setRows] = useState<BrokerProxyPool[]>([]);
@@ -14,11 +15,13 @@ export default function AdminProxyPoolPage() {
   const [nextPage, setNextPage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [brokerFilter, setBrokerFilter] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<BrokerProxyPool | null>(null);
   const [saving, setSaving] = useState(false);
   const [profileOptions, setProfileOptions] = useState<ProfileOption[]>([]);
 
+  const [brokerName, setBrokerName] = useState<BrokerProxyPoolBroker>("SHOONYA");
   const [ipAddress, setIpAddress] = useState("");
   const [host, setHost] = useState("");
   const [port, setPort] = useState("443");
@@ -53,7 +56,8 @@ export default function AdminProxyPoolPage() {
         const namePart = name ? `${name} · ` : "";
         opts.push({
           id: p.id,
-          label: `#${p.id} ${namePart}${email} · ${p.broker_name || ""}`.trim(),
+          label: `#${p.id} ${namePart}${email}`.trim(),
+          broker_name: p.broker_name || "",
         });
       }
       setProfileOptions(opts);
@@ -79,6 +83,7 @@ export default function AdminProxyPoolPage() {
           const params = new URLSearchParams();
           params.set("page_size", "50");
           if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+          if (brokerFilter) params.set("broker_name", brokerFilter);
           endpoint = `profiles/broker-proxy-pool/?${params.toString()}`;
         }
         const res = await authFetch(endpoint);
@@ -102,7 +107,11 @@ export default function AdminProxyPoolPage() {
         setLoading(false);
       }
     },
-    [debouncedSearch]
+    [debouncedSearch, brokerFilter]
+  );
+
+  const matchingProfileOptions = profileOptions.filter(
+    (o) => o.broker_name === brokerName
   );
 
   useEffect(() => {
@@ -111,6 +120,7 @@ export default function AdminProxyPoolPage() {
 
   const openCreate = () => {
     setEditing(null);
+    setBrokerName("SHOONYA");
     setIpAddress("");
     setHost("");
     setPort("443");
@@ -124,6 +134,7 @@ export default function AdminProxyPoolPage() {
 
   const openEdit = (row: BrokerProxyPool) => {
     setEditing(row);
+    setBrokerName(row.broker_name);
     setIpAddress(row.ip_address || "");
     setHost(row.host || "");
     setPort(String(row.port ?? 443));
@@ -163,6 +174,7 @@ export default function AdminProxyPoolPage() {
 
       if (editing) {
         const body: Record<string, unknown> = {
+          broker_name: brokerName,
           ip_address: ipAddress.trim(),
           host: host.trim(),
           port: portNum,
@@ -185,6 +197,7 @@ export default function AdminProxyPoolPage() {
         alert.success("Proxy pool updated");
       } else {
         const body: Record<string, unknown> = {
+          broker_name: brokerName,
           ip_address: ipAddress.trim(),
           host: host.trim(),
           port: portNum,
@@ -272,6 +285,19 @@ export default function AdminProxyPoolPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+        <select
+          className="select select-bordered select-sm"
+          value={brokerFilter}
+          onChange={(e) => setBrokerFilter(e.target.value)}
+          aria-label="Filter by broker"
+        >
+          <option value="">All brokers</option>
+          {BROKER_PROXY_POOL_BROKERS.map((b) => (
+            <option key={b} value={b}>
+              {b}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-base-300 bg-base-100">
@@ -279,6 +305,7 @@ export default function AdminProxyPoolPage() {
           <thead>
             <tr className="bg-base-200">
               <th>ID</th>
+              <th>Broker</th>
               <th>IP address</th>
               <th>Proxy host</th>
               <th>Port</th>
@@ -291,13 +318,13 @@ export default function AdminProxyPoolPage() {
           <tbody>
             {loading && rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-12 text-base-content/60">
+                <td colSpan={9} className="text-center py-12 text-base-content/60">
                   Loading…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-12 text-base-content/60">
+                <td colSpan={9} className="text-center py-12 text-base-content/60">
                   No proxy pool rows yet.
                 </td>
               </tr>
@@ -305,6 +332,7 @@ export default function AdminProxyPoolPage() {
               rows.map((r) => (
                 <tr key={r.id} className="hover">
                   <td className="font-mono">{r.id}</td>
+                  <td>{r.broker_name}</td>
                   <td className="font-mono text-xs">{r.ip_address || "—"}</td>
                   <td className="font-mono text-xs max-w-[200px] truncate" title={r.host}>
                     {r.host || "—"}
@@ -380,6 +408,27 @@ export default function AdminProxyPoolPage() {
             </h3>
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3">
               <label className="form-control w-full">
+                <span className="label-text text-sm">Broker</span>
+                <span className="label-text-alt text-xs text-base-content/60 block -mt-0.5 mb-1">
+                  Static IPs are whitelisted per broker — pool rows must match the profile broker.
+                </span>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={brokerName}
+                  onChange={(e) => {
+                    setBrokerName(e.target.value as BrokerProxyPoolBroker);
+                    setAssignedProfileId("");
+                  }}
+                  required
+                >
+                  {BROKER_PROXY_POOL_BROKERS.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="form-control w-full">
                 <span className="label-text text-sm">IP address (whitelisted)</span>
                 <span className="label-text-alt text-xs text-base-content/60 block -mt-0.5 mb-1">
                   Static IP the broker associates with this customer (e.g. 103.204.210.45).
@@ -444,19 +493,24 @@ export default function AdminProxyPoolPage() {
                 <span className="text-sm">Active (used for order proxy resolution)</span>
               </label>
               <label className="form-control w-full">
-                <span className="label-text text-sm">Assign profile</span>
+                <span className="label-text text-sm">Assign profile ({brokerName})</span>
                 <select
                   className="select select-bordered select-sm w-full"
                   value={assignedProfileId}
                   onChange={(e) => setAssignedProfileId(e.target.value)}
                 >
                   <option value="">— Unassigned —</option>
-                  {profileOptions.map((o) => (
+                  {matchingProfileOptions.map((o) => (
                     <option key={o.id} value={String(o.id)}>
                       {o.label}
                     </option>
                   ))}
                 </select>
+                {!matchingProfileOptions.length && (
+                  <span className="label-text-alt text-xs text-base-content/60 mt-1">
+                    No profiles with broker {brokerName}.
+                  </span>
+                )}
               </label>
               <div className="modal-action">
                 <button type="button" className="btn btn-ghost" onClick={closeModal}>

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "nextjs-toploader/app";
 import { useSearchParams } from "next/navigation";
 import { authFetch } from "@/utils/api";
+import { brokerLoginWithPolling } from "@/utils/brokerLogin";
 import { useAuthStore } from "@/store/authStore";
 import useAlert from "@/hooks/useAlert";
 import BrokerCredentialHelpModal from "@/components/BrokerCredentialHelpModal";
@@ -20,12 +21,6 @@ import {
 
 type Step = "credentials" | "login" | "result";
 type ResultStatus = "loading" | "success" | "error" | null;
-
-const BROKER_ENDPOINTS: Record<string, string> = {
-  SHOONYA: "users/shoonya-login/",
-  ZERODHA: "users/zerodha-login/",
-  KOTAKNEO: "users/kotakneo-login/",
-};
 
 const stepLabels: Record<Step, string> = {
   credentials: "Credentials",
@@ -251,23 +246,13 @@ export default function AddBrokerPage() {
       }
       if (!profileId) throw new Error("Could not find profile. Please go back and try again.");
 
-      const endpoint = BROKER_ENDPOINTS[savedBrokerName];
-      if (!endpoint) throw new Error(`Login not supported for ${savedBrokerName}`);
-
-      const payload: { profile_id: string; mpin?: string; pwd?: string } = {
-        profile_id: String(profileId),
-      };
-      if (savedBrokerName === "KOTAKNEO") payload.mpin = brokerPassword;
-      else payload.pwd = brokerPassword;
-
-      const res = await authFetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const result = await brokerLoginWithPolling({
+        brokerName: savedBrokerName,
+        profileId,
+        secret: brokerPassword,
       });
-      const data = await res.json();
 
-      if (data.status === "success") {
+      if (result.status === "success") {
         // Move to result step with loading state while margin is being fetched
         setStep("result");
         setResultStatus("loading");
@@ -284,7 +269,7 @@ export default function AddBrokerPage() {
         }
       } else {
         // Surface the exact error from the broker
-        setLoginError(data.message || "Login failed. Please check your credentials and try again.");
+        setLoginError(result.message || "Login failed. Please check your credentials and try again.");
       }
     } catch (err: unknown) {
       setLoginError(err instanceof Error ? err.message : "An unexpected error occurred.");

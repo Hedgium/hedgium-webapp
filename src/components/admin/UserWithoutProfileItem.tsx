@@ -114,7 +114,9 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
   const loadUnassignedPools = async () => {
     setPoolsLoading(true);
     try {
-      const res = await authFetch("profiles/broker-proxy-pool/?page_size=200");
+      const res = await authFetch(
+        "profiles/broker-proxy-pool/?page_size=200&broker_name=SHOONYA"
+      );
       if (!res.ok) {
         throw new Error("bad response");
       }
@@ -124,7 +126,7 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
       setPoolOptions(
         unassigned.map((r) => ({
           id: r.id,
-          label: `#${r.id} · IP ${(r.ip_address || "").trim() || "—"}${r.host ? ` · ${r.host}` : ""}`,
+          label: `#${r.id} · ${r.broker_name} · IP ${(r.ip_address || "").trim() || "—"}${r.host ? ` · ${r.host}` : ""}`,
         }))
       );
     } catch {

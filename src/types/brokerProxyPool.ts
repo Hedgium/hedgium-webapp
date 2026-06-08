@@ -7,8 +7,18 @@ export type BrokerProxyPoolAssignedProfile = {
   last_name?: string;
 };
 
+export const BROKER_PROXY_POOL_BROKERS = [
+  "ZERODHA",
+  "SHOONYA",
+  "GROWW",
+  "KOTAKNEO",
+] as const;
+
+export type BrokerProxyPoolBroker = (typeof BROKER_PROXY_POOL_BROKERS)[number];
+
 export type BrokerProxyPool = {
   id: number;
+  broker_name: BrokerProxyPoolBroker;
   ip_address: string;
   host: string;
   port: number;
