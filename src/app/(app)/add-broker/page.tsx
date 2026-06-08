@@ -117,22 +117,21 @@ export default function AddBrokerPage() {
         continue;
       }
       const ip = resolveWhitelistIpFromPayload(data);
-      setOrderProxyWhitelistIp(ip);
-      return;
+      if (ip) {
+        setOrderProxyWhitelistIp(ip);
+        return;
+      }
     }
     setOrderProxyWhitelistIp(null);
   };
 
-  // Refetch whitelist IP when the selected broker changes (pools are broker-specific).
+  // Load whitelist IP on the login step (after profile + pool are assigned).
   useEffect(() => {
+    if (step !== "login" || !savedBrokerName) return;
     let cancelled = false;
-    if (!brokerName) {
-      setOrderProxyWhitelistIp(null);
-      return;
-    }
     void (async () => {
       try {
-        await loadWhitelistIp(brokerName);
+        await loadWhitelistIp(savedBrokerName);
       } catch {
         if (!cancelled) setOrderProxyWhitelistIp(null);
       }
@@ -140,7 +139,7 @@ export default function AddBrokerPage() {
     return () => {
       cancelled = true;
     };
-  }, [brokerName]);
+  }, [step, savedBrokerName]);
 
   // If arriving from "Complete Setup" (existing unverified profile),
   // the profileId and broker name are passed as query params → skip to login step.
@@ -218,6 +217,7 @@ export default function AddBrokerPage() {
         if (res.ok) {
           const data = (await res.json()) as Record<string, unknown>;
           applyWhitelistIpFromPayload(data);
+          await loadWhitelistIp(brokerName);
           setSavedProfileId(existingProfileId);
           setSavedBrokerName(brokerName);
           setStep("login");
@@ -234,6 +234,7 @@ export default function AddBrokerPage() {
         if (res.ok) {
           const data = (await res.json()) as Record<string, unknown>;
           applyWhitelistIpFromPayload(data);
+          await loadWhitelistIp(brokerName);
           setSavedProfileId((data.id as number) || null);
           setSavedBrokerName(brokerName);
           setStep("login");
@@ -303,6 +304,60 @@ export default function AddBrokerPage() {
     }
   };
 
+  const whitelistIpBanner = (broker: string) => (
+    <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-sm">
+      <div className="flex gap-2 items-start">
+        <Network className="size-4 text-primary shrink-0 mt-0.5" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-medium text-base-content pr-1">
+              Whitelist this IP at {broker}
+            </p>
+            {broker === "KOTAKNEO" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setHelpField("whitelist_ip");
+                  setHelpOpen(true);
+                }}
+                className="text-primary hover:opacity-80 p-0.5 shrink-0"
+                title="How to add IP in Kotak Neo"
+                aria-label="Help: whitelist IP in Kotak Neo"
+              >
+                <HelpCircle className="h-4 w-4 cursor-pointer" />
+              </button>
+            )}
+          </div>
+          {orderProxyWhitelistIp ? (
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <p className="text-base-content/90 font-mono text-sm tabular-nums tracking-tight break-all">
+                {orderProxyWhitelistIp}
+              </p>
+              <button
+                type="button"
+                onClick={() => void copyWhitelistIp()}
+                className="btn btn-ghost btn-xs gap-1 h-7 min-h-7 px-2 shrink-0 normal-case"
+                title="Copy IP address"
+              >
+                <Copy className="size-3.5" aria-hidden />
+                Copy
+              </button>
+            </div>
+          ) : (
+            <p className="mt-1 text-xs text-warning leading-relaxed">
+              Static IP not assigned yet for {broker}. Contact support if this does not appear
+              shortly.
+            </p>
+          )}
+          <p className="text-xs text-base-content/60 mt-1.5 leading-relaxed">
+            Add this IP to your broker&apos;s allowlist (API / app settings) before logging in,
+            so orders are not blocked.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-base-200 flex flex-col items-center justify-center px-4 py-8 lg:py-12">
       <div className="w-full max-w-md">
@@ -370,60 +425,6 @@ export default function AddBrokerPage() {
           {/* ── Step 1: Credentials ── */}
           {step === "credentials" && (
             <div className="p-6">
-              {brokerName && (
-                <div className="mb-4 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-sm">
-                  <div className="flex gap-2 items-start">
-                    <Network className="size-4 text-primary shrink-0 mt-0.5" aria-hidden />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-base-content pr-1">
-                          Whitelist this IP at {brokerName}
-                        </p>
-                        {brokerName === "KOTAKNEO" && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setHelpField("whitelist_ip");
-                              setHelpOpen(true);
-                            }}
-                            className="text-primary hover:opacity-80 p-0.5 shrink-0"
-                            title="How to add IP in Kotak Neo"
-                            aria-label="Help: whitelist IP in Kotak Neo"
-                          >
-                            <HelpCircle className="h-4 w-4 cursor-pointer" />
-                          </button>
-                        )}
-                      </div>
-                      {orderProxyWhitelistIp ? (
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                          <p className="text-base-content/90 font-mono text-sm tabular-nums tracking-tight break-all">
-                            {orderProxyWhitelistIp}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => void copyWhitelistIp()}
-                            className="btn btn-ghost btn-xs gap-1 h-7 min-h-7 px-2 shrink-0 normal-case"
-                            title="Copy IP address"
-                          >
-                            <Copy className="size-3.5" aria-hidden />
-                            Copy
-                          </button>
-                        </div>
-                      ) : (
-                        <p className="mt-1 text-xs text-base-content/70 leading-relaxed">
-                          Your static IP for {brokerName} will appear here after you save broker
-                          details. Save credentials first, then copy the IP and add it to your
-                          broker&apos;s allowlist before logging in.
-                        </p>
-                      )}
-                      <p className="text-xs text-base-content/60 mt-1.5 leading-relaxed">
-                        Hedgium uses this static IP for order requests. Add it to your broker&apos;s
-                        IP allowlist (API / app settings) so orders are not blocked.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
               <form onSubmit={handleSaveCredentials} className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-base-content/80 mb-1.5">Broker</label>
@@ -536,14 +537,15 @@ export default function AddBrokerPage() {
           )}
 
           {/* ── Step 2: Login ── */}
-          {step === "login" && (
+          {step === "login" && savedBrokerName && (
             <div className="p-6 space-y-4">
+              {whitelistIpBanner(savedBrokerName)}
               <p className="text-sm text-base-content/70">
                 Log in to your{" "}
                 <span className="font-medium text-base-content">{savedBrokerName}</span> account
                 to verify the connection and fetch your margin.
               </p>
-              
+
               <div>
                 <label className="block text-sm font-medium text-base-content/80 mb-1.5">
                   {savedBrokerName === "KOTAKNEO" ? "MPIN" : "Password"}
