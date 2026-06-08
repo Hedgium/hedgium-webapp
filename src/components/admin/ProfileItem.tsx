@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
+import { brokerLoginWithPolling } from '@/utils/brokerLogin';
 import { formatMoneyIN } from '@/utils/formatNumber';
 import useAlert from '@/hooks/useAlert';
 import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut, FileText, Upload } from 'lucide-react';
@@ -160,45 +161,22 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
             return;
         }
 
-        // Determine API endpoint based on broker name
-        const brokerEndpoints: Record<string, string> = {
-            "SHOONYA": "users/shoonya-login/",
-            "ZERODHA": "users/zerodha-login/",
-            "KOTAKNEO": "users/kotakneo-login/",
-        };
-
-        const endpoint = brokerEndpoints[profile.broker_name];
-        if (!endpoint) {
-            alert.error(`Login not supported for ${profile.broker_name}`);
-            return;
-        }
-
         setIsLoggingInBroker(true);
         try {
-            const response = await authFetch(endpoint, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    "profile_id": String(profile.id),
-                    ...(profile.broker_name === "KOTAKNEO"
-                        ? { "mpin": brokerPassword }
-                        : { "pwd": brokerPassword })
-                }),
+            const result = await brokerLoginWithPolling({
+                brokerName: profile.broker_name,
+                profileId: profile.id,
+                secret: brokerPassword,
             });
 
-            const data = await response.json();
-
-            if (data.status === "success") {
+            if (result.status === "success") {
                 alert.success(`${profile.broker_name} login successful`);
                 setIsBrokerLoginModalOpen(false);
                 setBrokerPassword("");
                 setBrokerLoggedIn(true);
             } else {
-                alert.error(`Login failed: ${data.message || JSON.stringify(data)}`);
+                alert.error(`Login failed: ${result.message || "Unknown error"}`);
             }
-
         } catch (error) {
             console.error(`${profile.broker_name} login error:`, error);
             alert.error("An error occurred during login");

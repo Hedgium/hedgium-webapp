@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "nextjs-toploader/app";
 import { useSearchParams } from "next/navigation";
 import { authFetch } from "@/utils/api";
+import { brokerLoginWithPolling } from "@/utils/brokerLogin";
 import { useAuthStore } from "@/store/authStore";
 import useAlert from "@/hooks/useAlert";
 import BrokerCredentialHelpModal from "@/components/BrokerCredentialHelpModal";
@@ -20,12 +21,6 @@ import {
 
 type Step = "credentials" | "login" | "result";
 type ResultStatus = "loading" | "success" | "error" | null;
-
-const BROKER_ENDPOINTS: Record<string, string> = {
-  SHOONYA: "users/shoonya-login/",
-  ZERODHA: "users/zerodha-login/",
-  KOTAKNEO: "users/kotakneo-login/",
-};
 
 const stepLabels: Record<Step, string> = {
   credentials: "Credentials",
@@ -95,37 +90,56 @@ export default function AddBrokerPage() {
 
   const applyWhitelistIpFromPayload = (data: Record<string, unknown>) => {
     const ip = resolveWhitelistIpFromPayload(data);
-    if (ip) setOrderProxyWhitelistIp(ip);
+    setOrderProxyWhitelistIp(ip);
   };
 
-  // Load whitelist IP. Try 3 endpoints in order, stopping as soon as an IP is found:
-  //   1. profiles/me/         – active profile with pool attached (normal case)
-  //   3. profiles/my-pool-ip/ – any profile (active or inactive), always returns 200 with IP or null.
-  //      Ensures the IP banner is visible even before the profile is activated / verified.
+  const loadWhitelistIp = async (selectedBroker: string) => {
+    if (!selectedBroker) {
+      setOrderProxyWhitelistIp(null);
+      return;
+    }
+    const brokerParam = encodeURIComponent(selectedBroker);
+    const endpoints = [
+      `profiles/my-pool-ip/?broker_name=${brokerParam}`,
+      "profiles/check-profile/",
+      "profiles/me/",
+    ];
+    for (const endpoint of endpoints) {
+      const res = await authFetch(endpoint);
+      if (!res.ok) continue;
+      const data = (await res.json()) as Record<string, unknown>;
+      const profileBroker = data.broker_name;
+      if (
+        typeof profileBroker === "string" &&
+        profileBroker &&
+        profileBroker !== selectedBroker
+      ) {
+        continue;
+      }
+      const ip = resolveWhitelistIpFromPayload(data);
+      if (ip) {
+        setOrderProxyWhitelistIp(ip);
+        return;
+      }
+    }
+    setOrderProxyWhitelistIp(null);
+  };
+
+  // Load whitelist IP on the login step (after profile + pool are assigned).
   useEffect(() => {
+    if (step !== "login" || !savedBrokerName) return;
     let cancelled = false;
-    (async () => {
+    void (async () => {
       try {
-        for (const endpoint of ["profiles/me/", "profiles/my-pool-ip/"]) {
-          if (cancelled) return;
-          const res = await authFetch(endpoint);
-          if (cancelled) return;
-          if (!res.ok) continue;
-          const data = (await res.json()) as Record<string, unknown>;
-          const ip = resolveWhitelistIpFromPayload(data);
-          if (ip) {
-            setOrderProxyWhitelistIp(ip);
-            return;
-          }
-        }
+        await loadWhitelistIp(savedBrokerName);
       } catch {
-        /* ignore */
+        if (!cancelled) setOrderProxyWhitelistIp(null);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [step, savedBrokerName]);
 
   // If arriving from "Complete Setup" (existing unverified profile),
   // the profileId and broker name are passed as query params → skip to login step.
@@ -146,8 +160,11 @@ export default function AddBrokerPage() {
 
     if (!brokerName) { setFormError("Select a broker"); return; }
     if (!brokerUserId) { setFormError("Enter Broker User ID"); return; }
-    if (!apiKey) { setFormError("Enter API Key"); return; }
-    if (brokerName === "ZERODHA" && !secretKey) { setFormError("Enter Secret Key"); return; }
+    if (brokerName === "KOTAKNEO" && !apiKey) { setFormError("Enter API Key"); return; }
+    if ((brokerName === "ZERODHA" || brokerName === "SHOONYA") && !secretKey) {
+      setFormError("Enter Secret Key");
+      return;
+    }
     if (!brokerTwofa) { setFormError("Enter TOTP Secret"); return; }
 
     try {
@@ -156,15 +173,17 @@ export default function AddBrokerPage() {
       const credPayload: {
         broker_name: string;
         broker_user_id: string;
-        broker_api_key: string;
+        broker_api_key?: string;
         broker_secret_key?: string;
         broker_twofa?: string;
       } = {
         broker_name: brokerName,
         broker_user_id: brokerUserId,
-        broker_api_key: apiKey,
       };
-      if (brokerName === "ZERODHA") credPayload.broker_secret_key = secretKey;
+      if (brokerName === "KOTAKNEO") credPayload.broker_api_key = apiKey;
+      if (brokerName === "ZERODHA" || brokerName === "SHOONYA") {
+        credPayload.broker_secret_key = secretKey;
+      }
       credPayload.broker_twofa = brokerTwofa;
 
       // If a profile already exists (in-session or on server), update it via PUT
@@ -198,6 +217,7 @@ export default function AddBrokerPage() {
         if (res.ok) {
           const data = (await res.json()) as Record<string, unknown>;
           applyWhitelistIpFromPayload(data);
+          await loadWhitelistIp(brokerName);
           setSavedProfileId(existingProfileId);
           setSavedBrokerName(brokerName);
           setStep("login");
@@ -214,6 +234,7 @@ export default function AddBrokerPage() {
         if (res.ok) {
           const data = (await res.json()) as Record<string, unknown>;
           applyWhitelistIpFromPayload(data);
+          await loadWhitelistIp(brokerName);
           setSavedProfileId((data.id as number) || null);
           setSavedBrokerName(brokerName);
           setStep("login");
@@ -251,23 +272,13 @@ export default function AddBrokerPage() {
       }
       if (!profileId) throw new Error("Could not find profile. Please go back and try again.");
 
-      const endpoint = BROKER_ENDPOINTS[savedBrokerName];
-      if (!endpoint) throw new Error(`Login not supported for ${savedBrokerName}`);
-
-      const payload: { profile_id: string; mpin?: string; pwd?: string } = {
-        profile_id: String(profileId),
-      };
-      if (savedBrokerName === "KOTAKNEO") payload.mpin = brokerPassword;
-      else payload.pwd = brokerPassword;
-
-      const res = await authFetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const result = await brokerLoginWithPolling({
+        brokerName: savedBrokerName,
+        profileId,
+        secret: brokerPassword,
       });
-      const data = await res.json();
 
-      if (data.status === "success") {
+      if (result.status === "success") {
         // Move to result step with loading state while margin is being fetched
         setStep("result");
         setResultStatus("loading");
@@ -284,7 +295,7 @@ export default function AddBrokerPage() {
         }
       } else {
         // Surface the exact error from the broker
-        setLoginError(data.message || "Login failed. Please check your credentials and try again.");
+        setLoginError(result.message || "Login failed. Please check your credentials and try again.");
       }
     } catch (err: unknown) {
       setLoginError(err instanceof Error ? err.message : "An unexpected error occurred.");
@@ -292,6 +303,60 @@ export default function AddBrokerPage() {
       setLoggingIn(false);
     }
   };
+
+  const whitelistIpBanner = (broker: string) => (
+    <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-sm">
+      <div className="flex gap-2 items-start">
+        <Network className="size-4 text-primary shrink-0 mt-0.5" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-medium text-base-content pr-1">
+              Whitelist this IP at {broker}
+            </p>
+            {broker === "KOTAKNEO" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setHelpField("whitelist_ip");
+                  setHelpOpen(true);
+                }}
+                className="text-primary hover:opacity-80 p-0.5 shrink-0"
+                title="How to add IP in Kotak Neo"
+                aria-label="Help: whitelist IP in Kotak Neo"
+              >
+                <HelpCircle className="h-4 w-4 cursor-pointer" />
+              </button>
+            )}
+          </div>
+          {orderProxyWhitelistIp ? (
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <p className="text-base-content/90 font-mono text-sm tabular-nums tracking-tight break-all">
+                {orderProxyWhitelistIp}
+              </p>
+              <button
+                type="button"
+                onClick={() => void copyWhitelistIp()}
+                className="btn btn-ghost btn-xs gap-1 h-7 min-h-7 px-2 shrink-0 normal-case"
+                title="Copy IP address"
+              >
+                <Copy className="size-3.5" aria-hidden />
+                Copy
+              </button>
+            </div>
+          ) : (
+            <p className="mt-1 text-xs text-warning leading-relaxed">
+              Static IP not assigned yet for {broker}. Contact support if this does not appear
+              shortly.
+            </p>
+          )}
+          <p className="text-xs text-base-content/60 mt-1.5 leading-relaxed">
+            Add this IP to your broker&apos;s allowlist (API / app settings) before logging in,
+            so orders are not blocked.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="bg-base-200 flex flex-col items-center justify-center px-4 py-8 lg:py-12">
@@ -360,52 +425,6 @@ export default function AddBrokerPage() {
           {/* ── Step 1: Credentials ── */}
           {step === "credentials" && (
             <div className="p-6">
-              {orderProxyWhitelistIp && (
-                <div className="mb-4 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-sm">
-                  <div className="flex gap-2 items-start">
-                    <Network className="size-4 text-primary shrink-0 mt-0.5" aria-hidden />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-base-content pr-1">
-                          Whitelist this IP at your broker
-                        </p>
-                        {brokerName === "KOTAKNEO" && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setHelpField("whitelist_ip");
-                              setHelpOpen(true);
-                            }}
-                            className="text-primary hover:opacity-80 p-0.5 shrink-0"
-                            title="How to add IP in Kotak Neo"
-                            aria-label="Help: whitelist IP in Kotak Neo"
-                          >
-                            <HelpCircle className="h-4 w-4 cursor-pointer" />
-                          </button>
-                        )}
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <p className="text-base-content/90 font-mono text-sm tabular-nums tracking-tight break-all">
-                          {orderProxyWhitelistIp}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => void copyWhitelistIp()}
-                          className="btn btn-ghost btn-xs gap-1 h-7 min-h-7 px-2 shrink-0 normal-case"
-                          title="Copy IP address"
-                        >
-                          <Copy className="size-3.5" aria-hidden />
-                          Copy
-                        </button>
-                      </div>
-                      <p className="text-xs text-base-content/60 mt-1.5 leading-relaxed">
-                        Hedgium uses this static IP for order requests. Add it to your broker&apos;s IP allowlist
-                        (API / app settings) so orders are not blocked.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
               <form onSubmit={handleSaveCredentials} className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-base-content/80 mb-1.5">Broker</label>
@@ -440,25 +459,25 @@ export default function AddBrokerPage() {
                   />
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <label className="text-xs font-medium text-base-content/80">API Key</label>
-                    {brokerName && (
+                {brokerName === "KOTAKNEO" && (
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <label className="text-xs font-medium text-base-content/80">API Key</label>
                       <button type="button" onClick={() => { setHelpField("api_key"); setHelpOpen(true); }} className="text-primary hover:opacity-80 p-0.5">
                         <HelpCircle className="h-3.5 w-3.5 cursor-pointer" />
                       </button>
-                    )}
+                    </div>
+                    <input
+                      type="text"
+                      value={apiKey}
+                      onChange={(e) => { setApiKey(e.target.value); setFormError(null); }}
+                      className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                      placeholder="API key"
+                    />
                   </div>
-                  <input
-                    type="text"
-                    value={apiKey}
-                    onChange={(e) => { setApiKey(e.target.value); setFormError(null); }}
-                    className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
-                    placeholder="API key"
-                  />
-                </div>
+                )}
 
-                {brokerName === "ZERODHA" && (
+                {(brokerName === "ZERODHA" || brokerName === "SHOONYA") && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label className="text-xs font-medium text-base-content/80">Secret Key</label>
@@ -518,14 +537,15 @@ export default function AddBrokerPage() {
           )}
 
           {/* ── Step 2: Login ── */}
-          {step === "login" && (
+          {step === "login" && savedBrokerName && (
             <div className="p-6 space-y-4">
+              {whitelistIpBanner(savedBrokerName)}
               <p className="text-sm text-base-content/70">
                 Log in to your{" "}
                 <span className="font-medium text-base-content">{savedBrokerName}</span> account
                 to verify the connection and fetch your margin.
               </p>
-              
+
               <div>
                 <label className="block text-sm font-medium text-base-content/80 mb-1.5">
                   {savedBrokerName === "KOTAKNEO" ? "MPIN" : "Password"}

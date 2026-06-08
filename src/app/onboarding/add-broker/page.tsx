@@ -63,11 +63,11 @@ const BrokerSetup: React.FC = () => {
       alert.error("Enter Broker User ID", { duration: 3000 });
       return;
     }
-    if (!apiKey) {
+    if (brokerName === "KOTAKNEO" && !apiKey) {
       alert.error("Enter API Key", { duration: 3000 });
       return;
     }
-    if (brokerName === "ZERODHA" && !secretKey) {
+    if ((brokerName === "ZERODHA" || brokerName === "SHOONYA") && !secretKey) {
       alert.error("Enter Secret Key", { duration: 3000 });
       return;
     }
@@ -82,16 +82,18 @@ const BrokerSetup: React.FC = () => {
         user_id: number;
         broker_name: string;
         broker_user_id: string;
-        broker_api_key: string;
+        broker_api_key?: string;
         broker_secret_key?: string;
         broker_twofa?: string;
       } = {
         user_id: user.id,
         broker_name: brokerName,
         broker_user_id: brokerUserId,
-        broker_api_key: apiKey,
       };
-      if (brokerName === "ZERODHA") formData.broker_secret_key = secretKey;
+      if (brokerName === "KOTAKNEO") formData.broker_api_key = apiKey;
+      if (brokerName === "ZERODHA" || brokerName === "SHOONYA") {
+        formData.broker_secret_key = secretKey;
+      }
       formData.broker_twofa = brokerTwofa;
 
       const res = await authFetch("profiles/", { method: "POST", body: JSON.stringify(formData) });
@@ -167,10 +169,10 @@ const BrokerSetup: React.FC = () => {
                 placeholder="Broker user ID"
               />
             </div>
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <label className="text-xs font-medium text-base-content/80">API Key</label>
-                {brokerName && (
+            {brokerName === "KOTAKNEO" && (
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <label className="text-xs font-medium text-base-content/80">API Key</label>
                   <button
                     type="button"
                     onClick={() => openHelp("api_key")}
@@ -179,17 +181,17 @@ const BrokerSetup: React.FC = () => {
                   >
                     <HelpCircle className="h-3.5 w-3.5" />
                   </button>
-                )}
+                </div>
+                <input
+                  type="text"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                  placeholder="API key"
+                />
               </div>
-              <input
-                type="text"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
-                placeholder="API key"
-              />
-            </div>
-            {brokerName === "ZERODHA" && (
+            )}
+            {(brokerName === "ZERODHA" || brokerName === "SHOONYA") && (
               <div>
                 <div className="flex items-center justify-between gap-2 mb-1.5">
                   <label className="text-xs font-medium text-base-content/80">Secret Key</label>

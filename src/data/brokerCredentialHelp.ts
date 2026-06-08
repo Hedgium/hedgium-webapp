@@ -67,15 +67,15 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
       ],
     },
     {
-      field: "api_key",
-      label: "API Key",
+      field: "secret_key",
+      label: "Secret Key",
       steps: [
         {
           text: "Login to **prism.shoonya.com** and click the **profile icon** on the top right.",
           imageUrl: "/images/onboarding/shoonya_api_1.png",
         },
         {
-          text: "Click **API Key**, then **Generate**, and **copy** it from there.",
+          text: "Click **API Key**, then **Generate**, and **copy the secret key** from there.",
           imageUrl: "/images/onboarding/shoonya_api_2.png",
         },
       ],
