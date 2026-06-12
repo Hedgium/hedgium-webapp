@@ -3,7 +3,7 @@
 import { useState, lazy, Suspense } from "react";
 import type { ComponentType, LazyExoticComponent } from "react";
 import { authFetch } from "@/utils/api";
-import { formatMoneyIN } from "@/utils/formatNumber";
+import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { RotateCw, Eye, Plus, X, LayoutList, Zap, GitCompare, ExternalLink } from "lucide-react";
 // import Link from "next/link";
@@ -726,7 +726,7 @@ export default function TradeCycles({
                         <th className="w-10">Select</th>
                         <th>Email</th>
                         <th>Broker</th>
-                        <th>Margin</th>
+                        <th>Margin (L)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -742,7 +742,7 @@ export default function TradeCycles({
                           </td>
                           <td>{p.user.email}</td>
                           <td>{p.broker_name ?? "—"}</td>
-                          <td>{p.margin_equity != null ? formatMoneyIN(p.margin_equity, { decimals: 0 }) : "—"}</td>
+                          <td>{formatLakhsIN(p.margin_equity, 1)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -780,9 +780,7 @@ export default function TradeCycles({
 
       {/* Existing Cycles */}
       <div className="mb-8">
-        {/* <h3 className="font-bold mb-2">Existing Trade Cycles</h3> */}
-
-        <div className="overflow-x-auto rounded-xl border border-base-300">
+        <div className="overflow-x-auto rounded-xl border border-base-300/70 bg-base-100/70">
           <table className="table">
             <thead>
               <tr>
@@ -819,7 +817,7 @@ export default function TradeCycles({
                     <td>{cycle.client.username}</td>
                     <td>{cycle.profile.broker_name}</td>
                     <td>{cycle.profile.risk_profile}</td>
-                    <td>{cycle.profile.margin_equity}</td>
+                    <td>{formatLakhsIN(cycle.profile.margin_equity, 1)}</td>
                     <td>{cycle.profile.quantity_multiplier ?? 1}</td>
                     <td>
                       <span className="flex items-center gap-1">
