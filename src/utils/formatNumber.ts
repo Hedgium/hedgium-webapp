@@ -41,3 +41,17 @@ export function formatIndianShort(value: number | null | undefined): string {
   }
   return sign + trimShortAmount(n / 1000) + "k";
 }
+
+/** Format rupee amounts as lakhs (e.g. 500000 → "5 L"). */
+export function formatLakhsIN(
+  value: number | null | undefined,
+  decimals = 2
+): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return (
+    (value / 100_000).toLocaleString("en-IN", {
+      maximumFractionDigits: decimals,
+      minimumFractionDigits: 0,
+    }) + " L"
+  );
+}

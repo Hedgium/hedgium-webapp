@@ -8,7 +8,7 @@ import Adjustments from "@/components/admin/Adjustments";
 import Link from "next/link";
 import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
-import { formatMoneyIN } from "@/utils/formatNumber";
+import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { CheckCircle, ChevronLeft, Plus, Layers, Table2, RotateCcw, RotateCw } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
@@ -62,7 +62,45 @@ interface StrategyDetail {
   recent_spot_snapshots?: SpotSnapshot[];
 }
 
-export default function StrategyDetail() {
+function formatSnapshotAt(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function StatCell({
+  label,
+  value,
+  sub,
+  valueClassName = "text-base-content",
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="bg-base-100/70 px-4 py-3.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">
+        {label}
+      </p>
+      <p className={`text-lg font-semibold tabular-nums leading-tight mt-0.5 ${valueClassName}`}>
+        {value}
+      </p>
+      {sub != null && sub !== false && (
+        <p className="text-[10px] text-base-content/50 mt-1 tabular-nums leading-snug">{sub}</p>
+      )}
+    </div>
+  );
+}
+
+export default function StrategyDetailPage() {
   const [strategy, setStrategy] = useState<StrategyDetail | null>(null);
   const [trade_cycles, setTradeCycles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -224,96 +262,70 @@ export default function StrategyDetail() {
           Back to strategies
         </Link>
 
-        <header className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="flex items-start gap-4">
+        <header className="mb-8 rounded-2xl border border-base-300/70 bg-base-100/70 overflow-hidden">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 p-5 sm:p-6 border-b border-base-300/60">
+            <div className="flex items-start gap-4 min-w-0">
               <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
                 <Layers className="size-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">
-                  {strategy?.name}
-                </h1>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl font-semibold tracking-tight truncate">
+                    {strategy?.name}
+                  </h1>
+                  {strategy?.completed ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-xs font-medium shrink-0">
+                      <CheckCircle className="size-3.5" />
+                      Completed
+                    </span>
+                  ) : (
+                    <span className="inline-flex px-2 py-0.5 rounded-md bg-base-300/50 text-base-content/80 text-xs font-medium shrink-0">
+                      Active
+                    </span>
+                  )}
+                </div>
                 {strategy?.description && (
-                  <p className="text-base-content/70 mt-1 text-sm">
+                  <p className="text-base-content/70 mt-1 text-sm max-w-2xl">
                     {strategy.description}
                   </p>
                 )}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-base-content/60">
-                  <span>Created: {strategy?.created_at ? formatDateTimeMinutes(strategy.created_at) : "—"}</span>
-                  <span>
-                    PnL:{" "}
-                    <span className={pnlColor(toNum(strategy?.pnl_total))}>
-                      {toNum(strategy?.pnl_total) != null
-                        ? formatMoneyIN(toNum(strategy.pnl_total)!)
-                        : "—"}
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <span className="inline-flex px-2 py-0.5 rounded-md bg-base-200 text-xs font-mono text-base-content/70">
+                    #{strategy?.id}
+                  </span>
+                  {strategy?.exchange && (
+                    <span className="inline-flex px-2 py-0.5 rounded-md bg-base-200 text-xs text-base-content/70">
+                      {strategy.exchange}
                     </span>
-                  </span>
-                  <span>
-                    WPNL:{" "}
-                    <span className={pnlColor(toNum(strategy?.wpnl_total))}>
-                      {toNum(strategy?.wpnl_total) != null
-                        ? formatMoneyIN(toNum(strategy.wpnl_total)!)
-                        : "—"}
+                  )}
+                  {strategy?.source && (
+                    <span className="inline-flex px-2 py-0.5 rounded-md bg-base-200 text-xs text-base-content/70">
+                      {strategy.source}
                     </span>
-                  </span>
-                  <span>
-                    Mid PNL:{" "}
-                    <span className={pnlColor(toNum(strategy?.mid_wpnl_total))}>
-                      {toNum(strategy?.mid_wpnl_total) != null
-                        ? formatMoneyIN(toNum(strategy.mid_wpnl_total)!)
-                        : "—"}
+                  )}
+                  {!!strategy?.underlying_names?.length && (
+                    <span className="inline-flex px-2 py-0.5 rounded-md bg-base-200 text-xs text-base-content/70">
+                      {strategy.underlying_names.join(", ")}
                     </span>
+                  )}
+                  <span className="text-xs text-base-content/50">
+                    Created {strategy?.created_at ? formatDateTimeMinutes(strategy.created_at) : "—"}
                   </span>
-                  <span>
-                    Spread:{" "}
-                    <span className="font-medium text-base-content/80 tabular-nums">
-                      {toNum(strategy?.atm_spread) != null
-                        ? `${toNum(strategy.atm_spread)!.toFixed(2)}%`
-                        : "—"}
-                    </span>
-                  </span>
-                  <span>
-                    WPNL updated:{" "}
-                    {strategy?.wpnl_updated_at
-                      ? formatDateTimeMinutes(strategy.wpnl_updated_at)
-                      : "—"}
-                  </span>
-                  <span>
-                    Spread updated:{" "}
-                    {strategy?.spread_updated_at
-                      ? formatDateTimeMinutes(strategy.spread_updated_at)
-                      : "—"}
-                  </span>
-                  <span>
-                    PnL updated:{" "}
-                    {strategy?.pnl_updated_at
-                      ? formatDateTimeMinutes(strategy.pnl_updated_at)
-                      : "—"}
-                  </span>
+                  
+                  
                 </div>
-                {!!strategy?.latest_spot_snapshots?.length && (
-                  <div className="mt-2">
-                    <div className="text-xs text-base-content/60 mb-1">Latest spot baseline</div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {strategy.latest_spot_snapshots.map((s) => (
-                        <span
-                          key={`${s.underlying}-${s.captured_at}`}
-                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-base-300/50 text-xs"
-                          title={formatDateTimeMinutes(s.captured_at)}
-                        >
-                          <span className="font-semibold">{s.underlying}</span>
-                          <span className="tabular-nums">
-                            {toNum(s.spot_price) != null ? toNum(s.spot_price)!.toFixed(2) : "—"}
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0 lg:justify-end">
+              <button
+                type="button"
+                onClick={() => fetchStrategyData({ silent: true })}
+                disabled={strategyRefreshing}
+                className={`btn btn-ghost btn-sm btn-square ${strategyRefreshing ? "animate-spin" : ""}`}
+                title="Refresh strategy metrics"
+              >
+                <RotateCw className="size-4" />
+              </button>
               <button
                 type="button"
                 onClick={() => setShowOptionChainModal(true)}
@@ -329,26 +341,20 @@ export default function StrategyDetail() {
                 Option chains
               </button>
               {strategy?.completed ? (
-                <>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
-                    <CheckCircle className="size-4" />
-                    Completed
-                  </span>
-                  <button
-                    type="button"
-                    onClick={uncompleteStrategy}
-                    disabled={uncompletingStrategy}
-                    className="btn btn-outline btn-sm gap-1.5"
-                    title="Clear completed flag; reopens cycles closed in that completion window"
-                  >
-                    {uncompletingStrategy ? (
-                      <span className="loading loading-spinner size-4" />
-                    ) : (
-                      <RotateCcw className="size-4" />
-                    )}
-                    Undo complete
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={uncompleteStrategy}
+                  disabled={uncompletingStrategy}
+                  className="btn btn-outline btn-sm gap-1.5"
+                  title="Clear completed flag; reopens cycles closed in that completion window"
+                >
+                  {uncompletingStrategy ? (
+                    <span className="loading loading-spinner size-4" />
+                  ) : (
+                    <RotateCcw className="size-4" />
+                  )}
+                  Undo complete
+                </button>
               ) : (
                 <button
                   onClick={completeStrategy}
@@ -366,6 +372,74 @@ export default function StrategyDetail() {
               )}
             </div>
           </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-base-300/50">
+            <StatCell
+              label="Total PnL"
+              value={
+                toNum(strategy?.pnl_total) != null
+                  ? formatMoneyIN(toNum(strategy!.pnl_total)!)
+                  : "—"
+              }
+              sub={formatSnapshotAt(strategy?.pnl_updated_at ?? null) ?? "Not updated"}
+              valueClassName={pnlColor(toNum(strategy?.pnl_total)) || "text-base-content"}
+            />
+            <StatCell
+              label="WPNL"
+              value={
+                toNum(strategy?.wpnl_total) != null
+                  ? formatMoneyIN(toNum(strategy!.wpnl_total)!)
+                  : "—"
+              }
+              sub={formatSnapshotAt(strategy?.wpnl_updated_at ?? null) ?? "Not updated"}
+              valueClassName={pnlColor(toNum(strategy?.wpnl_total)) || "text-base-content"}
+            />
+            <StatCell
+              label="Mid PNL"
+              value={
+                toNum(strategy?.mid_wpnl_total) != null
+                  ? formatMoneyIN(toNum(strategy!.mid_wpnl_total)!)
+                  : "—"
+              }
+              sub={formatSnapshotAt(strategy?.wpnl_updated_at ?? null) ?? "Not updated"}
+              valueClassName={pnlColor(toNum(strategy?.mid_wpnl_total)) || "text-base-content"}
+            />
+            <StatCell
+              label="ATM spread"
+              value={
+                toNum(strategy?.atm_spread) != null
+                  ? `${toNum(strategy!.atm_spread)!.toFixed(2)}%`
+                  : "—"
+              }
+              sub={formatSnapshotAt(strategy?.spread_updated_at ?? null) ?? "Not updated"}
+              valueClassName="text-base-content"
+            />
+          </div>
+
+          {!!strategy?.latest_spot_snapshots?.length && (
+            <div className="px-5 py-3 border-t border-base-300/60 bg-base-200/30">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45 mb-2">
+                Latest spot baseline
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {strategy.latest_spot_snapshots.map((s) => (
+                  <span
+                    key={`${s.underlying}-${s.captured_at}`}
+                    className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border border-base-300/70 bg-base-100 text-xs"
+                    title={formatDateTimeMinutes(s.captured_at)}
+                  >
+                    <span className="font-semibold text-base-content/90">{s.underlying}</span>
+                    <span className="tabular-nums font-medium">
+                      {toNum(s.spot_price) != null ? toNum(s.spot_price)!.toFixed(2) : "—"}
+                    </span>
+                    <span className="text-base-content/45 tabular-nums">
+                      {formatSnapshotAt(s.captured_at)}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </header>
 
         <hr className="border-base-300/60 mb-6" />
@@ -409,7 +483,7 @@ export default function StrategyDetail() {
             <hr className="border-base-300/60 mb-6" />
             <div className="mb-6">
               <h2 className="text-lg font-semibold mb-2">Spot snapshot history</h2>
-              <div className="rounded-lg border border-base-300/70 bg-base-100 overflow-x-auto">
+              <div className="rounded-lg border border-base-300/70 bg-base-100/70 overflow-x-auto">
                 <table className="table table-sm">
                   <thead>
                     <tr>
