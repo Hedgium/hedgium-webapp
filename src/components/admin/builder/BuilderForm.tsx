@@ -212,12 +212,16 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         }));
     };
 
-    const handleSupergroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedOptions = Array.from(e.target.selectedOptions, option => parseInt(option.value));
-        setFormData(prev => ({
-            ...prev,
-            supergroup_ids: selectedOptions
-        }));
+    const toggleSupergroup = (id: number, checked: boolean) => {
+        setFormData(prev => {
+            const current = prev.supergroup_ids ?? [];
+            return {
+                ...prev,
+                supergroup_ids: checked
+                    ? [...current, id]
+                    : current.filter(sgId => sgId !== id),
+            };
+        });
     };
 
     const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
@@ -468,22 +472,34 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
 
                 <div className="form-control md:col-span-2">
                     <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Supergroups</span></label>
-                    <select 
-                        name="supergroup_ids" 
-                        multiple
-                        value={formData.supergroup_ids?.map(id => id.toString()) || []} 
-                        onChange={handleSupergroupChange} 
-                        className="select select-bordered select-sm w-full h-28"
-                        disabled={loadingSupergroups}
-                    >
-                        {supergroups.map(sg => (
-                            <option key={sg.id} value={sg.id.toString()}>
-                                {sg.name} {sg.risk_profile ? `(${sg.risk_profile})` : ''}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="w-full h-28 overflow-y-auto rounded-btn border border-base-300 bg-base-100 p-2 space-y-1">
+                        {supergroups.length === 0 ? (
+                            <p className="text-sm text-base-content/50 px-1">
+                                {loadingSupergroups ? 'Loading supergroups…' : 'No supergroups available'}
+                            </p>
+                        ) : (
+                            supergroups.map(sg => (
+                                <label
+                                    key={sg.id}
+                                    className="flex items-center gap-2 cursor-pointer rounded px-1 py-0.5 text-sm hover:bg-base-200"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        className="checkbox checkbox-xs checkbox-primary"
+                                        checked={formData.supergroup_ids?.includes(sg.id) ?? false}
+                                        onChange={(e) => toggleSupergroup(sg.id, e.target.checked)}
+                                        disabled={loadingSupergroups}
+                                    />
+                                    <span>
+                                        {sg.name}
+                                        {sg.risk_profile ? ` (${sg.risk_profile})` : ''}
+                                    </span>
+                                </label>
+                            ))
+                        )}
+                    </div>
                     <label className="label">
-                        <span className="label-text-alt">Hold Ctrl/Cmd to select multiple supergroups</span>
+                        <span className="label-text-alt">Select one or more supergroups</span>
                     </label>
                 </div>
 
