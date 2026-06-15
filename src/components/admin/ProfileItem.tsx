@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Profile } from '@/types/profile';
+import { getBrokerAccessToken } from '@/services/profile';
 import { authFetch } from '@/utils/api';
 import { brokerLoginWithPolling } from '@/utils/brokerLogin';
 import { formatMoneyIN } from '@/utils/formatNumber';
 import useAlert from '@/hooks/useAlert';
-import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut, FileText, Upload } from 'lucide-react';
+import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut, FileText, Upload, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { userRoleLabel } from '@/constants/userRoles';
 
@@ -49,6 +50,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
     const [brokerAccessToken, setBrokerAccessToken] = useState("");
     const [isSettingBrokerToken, setIsSettingBrokerToken] = useState(false);
     const [isClearingBrokerToken, setIsClearingBrokerToken] = useState(false);
+    const [isFetchingBrokerToken, setIsFetchingBrokerToken] = useState(false);
 
     const [brokerLoggedIn, setBrokerLoggedIn] = useState(profile.broker_logged_in);
 
@@ -262,6 +264,49 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
         }
     };
 
+    const handleCopyBrokerToken = async () => {
+        setIsFetchingBrokerToken(true);
+        try {
+            const data = await getBrokerAccessToken(profile.id);
+            if (!data.broker_access_token) {
+                alert.error("No broker access token stored");
+                return;
+            }
+            await navigator.clipboard.writeText(data.broker_access_token);
+            alert.success("Broker access token copied");
+        } catch (error) {
+            console.error("Copy broker token error:", error);
+            const message = error instanceof Error ? error.message : "Could not copy broker access token";
+            alert.error(message);
+        } finally {
+            setIsFetchingBrokerToken(false);
+        }
+    };
+
+    const handleLoadCurrentBrokerToken = async () => {
+        setIsFetchingBrokerToken(true);
+        try {
+            const data = await getBrokerAccessToken(profile.id);
+            if (!data.broker_access_token) {
+                alert.error("No broker access token stored");
+                return;
+            }
+            setBrokerAccessToken(data.broker_access_token);
+            alert.success("Current broker access token loaded");
+        } catch (error) {
+            console.error("Load broker token error:", error);
+            const message = error instanceof Error ? error.message : "Failed to load broker access token";
+            alert.error(message);
+        } finally {
+            setIsFetchingBrokerToken(false);
+        }
+    };
+
+    const openBrokerTokenModal = () => {
+        setBrokerAccessToken("");
+        setIsBrokerTokenModalOpen(true);
+    };
+
     const u = profile.user as typeof profile.user & { aadhar_number?: string | null; pan_number?: string | null; pan_document_url?: string | null; aadhar_document_url?: string | null };
 
     const panDocumentKind = getDocumentKind(u.pan_document_url);
@@ -436,6 +481,21 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                                         )}
                                     </button>
                                 </div>
+                                <div className="tooltip tooltip-bottom lg:tooltip-left" data-tip="Copy access token">
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyBrokerToken}
+                                        disabled={isFetchingBrokerToken}
+                                        className="btn btn-ghost btn-sm btn-square"
+                                        aria-label="Copy broker access token"
+                                    >
+                                        {isFetchingBrokerToken ? (
+                                            <span className="loading loading-spinner loading-sm" />
+                                        ) : (
+                                            <Copy size={18} />
+                                        )}
+                                    </button>
+                                </div>
                             </>
                         )}
                         <div
@@ -444,7 +504,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                         >
                             <button
                                 type="button"
-                                onClick={() => setIsBrokerTokenModalOpen(true)}
+                                onClick={openBrokerTokenModal}
                                 className="btn btn-ghost btn-sm btn-square text-warning"
                                 aria-label={brokerLoggedIn ? "Update token" : "Set access token"}
                             >
@@ -712,9 +772,23 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                                 <span className="label-text-alt">
                                     {brokerLoggedIn
                                         ? "Enter the new access token to replace the current one."
-                                        : "Provide the broker access token directly. This will update the profile's access token."}
+                                        : "Provide the broker access token directly"}
                                 </span>
                             </label>
+                            {brokerLoggedIn ? (
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm mt-2"
+                                    onClick={handleLoadCurrentBrokerToken}
+                                    disabled={isFetchingBrokerToken || isSettingBrokerToken}
+                                >
+                                    {isFetchingBrokerToken ? (
+                                        <span className="loading loading-spinner loading-sm" />
+                                    ) : (
+                                        "Load current token"
+                                    )}
+                                </button>
+                            ) : null}
                         </div>
                         <div className="modal-action">
                             <button

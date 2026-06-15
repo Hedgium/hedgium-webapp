@@ -75,3 +75,8 @@ export interface ProfileResponse {
     previous: string | null;
     results: Profile[];
 }
+
+export interface BrokerAccessTokenResponse {
+    profile_id: number;
+    broker_access_token: string | null;
+}
