@@ -32,7 +32,8 @@ export function isPublicPath(pathname: string | null | undefined): boolean {
   if (!pathname) return true;
   if (PUBLIC_PATH_EXACT.has(pathname)) return true;
   for (const prefix of PUBLIC_PATH_PREFIXES) {
-    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return true;
+    const base = prefix.endsWith("/") ? prefix.slice(0, -1) : prefix;
+    if (pathname === base || pathname.startsWith(`${base}/`)) return true;
   }
   return false;
 }
