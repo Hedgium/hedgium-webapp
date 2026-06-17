@@ -142,14 +142,14 @@ export default function SandboxPositionsContent() {
   const metrics = useMemo(() => {
     const before = dashboard?.before_joining;
     const after = dashboard?.after_joining;
-    const combined = dashboard?.combined;
-    if (!before || !after || !combined || !notional) {
+    if (!before || !after || !notional) {
       return {
         beforeE1: 0,
         afterE1: 0,
-        combinedE1: 0,
-        combinedRoiValue: combined?.roi_value ?? 0,
-        combinedRoiPercent: combined?.roi_percent ?? 0,
+        beforeRoiValue: before?.roi_value ?? 0,
+        beforeRoiPercent: before?.roi_percent ?? 0,
+        afterRoiValue: after?.roi_value ?? 0,
+        afterRoiPercent: after?.roi_percent ?? 0,
       };
     }
 
@@ -169,23 +169,26 @@ export default function SandboxPositionsContent() {
     const rate = E1_ANNUAL_RATE[e1Risk];
     const beforeDays = dayDiff(before.from, before.to);
     const afterDays = dayDiff(after.from, after.to);
-    const combinedDays = beforeDays + afterDays;
 
     const calcE1 = (days: number) => Number((notional * rate * (days / 365)).toFixed(2));
     const beforeE1 = calcE1(beforeDays);
     const afterE1 = calcE1(afterDays);
-    const combinedE1 = calcE1(combinedDays);
-    const combinedRoiValue = Number((combinedE1 + (combined.e2_pnl ?? 0)).toFixed(2));
-    const combinedRoiPercent = notional
-      ? Number(((combinedRoiValue / notional) * 100).toFixed(2))
+    const beforeRoiValue = Number((beforeE1 + (before.e2_pnl ?? 0)).toFixed(2));
+    const afterRoiValue = Number((afterE1 + (after.e2_pnl ?? 0)).toFixed(2));
+    const beforeRoiPercent = notional
+      ? Number(((beforeRoiValue / notional) * 100).toFixed(2))
+      : 0;
+    const afterRoiPercent = notional
+      ? Number(((afterRoiValue / notional) * 100).toFixed(2))
       : 0;
 
     return {
       beforeE1,
       afterE1,
-      combinedE1,
-      combinedRoiValue,
-      combinedRoiPercent,
+      beforeRoiValue,
+      beforeRoiPercent,
+      afterRoiValue,
+      afterRoiPercent,
     };
   }, [dashboard, e1Risk, notional]);
   const handleLoadMoreCycles = () => {
@@ -216,12 +219,17 @@ export default function SandboxPositionsContent() {
         </div>
 
         {loadingDashboard ? (
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="h-28 animate-pulse rounded-2xl border border-base-300/40 bg-base-100/70"
-              />
+          <div className="space-y-4">
+            <div className="h-10 w-48 animate-pulse rounded-xl border border-base-300/40 bg-base-100/70" />
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {[...Array(3)].map((__, j) => (
+                  <div
+                    key={j}
+                    className="h-28 animate-pulse rounded-2xl border border-base-300/40 bg-base-100/70"
+                  />
+                ))}
+              </div>
             ))}
           </div>
         ) : !dashboard?.configured ? (
@@ -234,48 +242,18 @@ export default function SandboxPositionsContent() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <SummaryCard
-              label="PnL before joining"
-              sub={`E2 · ${formatDate(dashboard.showcase_start)} – ${formatDate(dashboard.doj)}`}
-              value={dashboard.before_joining?.e2_pnl ?? 0}
-            />
-            <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
-                DOJ
-              </p>
-              <p className="text-lg font-semibold tabular-nums text-base-content md:text-xl">
-                {formatDate(dashboard.doj)}
-              </p>
-              <p className="mt-1 text-[11px] text-base-content/45">Your date of joining</p>
-            </div>
-            <SummaryCard
-              label="PnL after joining"
-              sub={
-                dashboard.after_joining?.has_cycles === false
-                  ? "E2 · No strategies yet"
-                  : `E2 · from ${formatDate(dashboard.doj)}`
-              }
-              value={
-                dashboard.after_joining?.has_cycles === false
-                  ? null
-                  : (dashboard.after_joining?.e2_pnl ?? null)
-              }
-            />
-            <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-              <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-base-content/50">
-                E1
-              </label>
-              
-              <p className={`text-lg font-semibold tabular-nums md:text-xl ${signedClass(metrics.combinedE1)}`}>
-                {formatMoneyIN(metrics.combinedE1, { decimals: 0 })}
-              </p>
-
-              <p className="mt-1 text-[11px] text-base-content/45">
-                Simulated on {formatMoneyIN(notional, { decimals: 0 })}
-              </p>
+          <div className="space-y-5">
+            <div className="flex flex-col gap-3 rounded-2xl border border-base-300/60 bg-base-200/35 p-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-base-content/50">
+                  E1 risk tier
+                </p>
+                <p className="mt-1 text-[11px] text-base-content/45">
+                  Simulated on {formatMoneyIN(notional, { decimals: 0 })}
+                </p>
+              </div>
               <select
-                className="select mt-2 select-bordered select-xs mb-2 w-full max-w-full"
+                className="select select-bordered select-sm w-full max-w-xs"
                 value={e1Risk}
                 onChange={(e) => setE1Risk(e.target.value as SandboxE1Risk)}
                 aria-label="E1 risk tier"
@@ -286,21 +264,51 @@ export default function SandboxPositionsContent() {
                   </option>
                 ))}
               </select>
-              
             </div>
-            <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4 col-span-2 lg:col-span-1">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
-                ROI (E1 + E2)
-              </p>
-              <p
-                className={`text-lg font-bold tabular-nums leading-tight md:text-xl ${signedClass(metrics.combinedRoiValue)}`}
-              >
-                {formatMoneyIN(metrics.combinedRoiValue, { decimals: 0 })}
-              </p>
-              <p className={`mt-1 text-sm font-semibold tabular-nums ${signedClass(metrics.combinedRoiPercent)}`}>
-                {metrics.combinedRoiPercent.toFixed(2)}%
-              </p>
+
+            <PeriodSummaryGroup
+              title="Before joining"
+              subtitle={`${formatDate(dashboard.showcase_start)} – ${formatDate(dashboard.doj)}`}
+              e2Label="E2 PnL"
+              e2Sub={`${formatDate(dashboard.showcase_start)} – ${formatDate(dashboard.doj)}`}
+              e2Value={dashboard.before_joining?.e2_pnl ?? 0}
+              e1Value={metrics.beforeE1}
+              e1Sub={`From ${formatDate(dashboard.showcase_start)}`}
+              roiValue={metrics.beforeRoiValue}
+              roiPercent={metrics.beforeRoiPercent}
+            />
+
+            <div className="flex justify-center">
+              <div className="rounded-2xl border border-base-300/60 bg-base-200/35 px-6 py-3 text-center">
+                <p className="text-xs font-medium uppercase tracking-wider text-base-content/50">
+                  DOJ
+                </p>
+                <p className="mt-1 text-lg font-semibold tabular-nums text-base-content md:text-xl">
+                  {formatDate(dashboard.doj)}
+                </p>
+                <p className="mt-0.5 text-[11px] text-base-content/45">Your date of joining</p>
+              </div>
             </div>
+
+            <PeriodSummaryGroup
+              title="After joining"
+              subtitle={`From ${formatDate(dashboard.doj)}`}
+              e2Label="E2 PnL"
+              e2Sub={
+                dashboard.after_joining?.has_cycles === false
+                  ? "No strategies yet"
+                  : `From ${formatDate(dashboard.doj)}`
+              }
+              e2Value={
+                dashboard.after_joining?.has_cycles === false
+                  ? null
+                  : (dashboard.after_joining?.e2_pnl ?? null)
+              }
+              e1Value={metrics.afterE1}
+              e1Sub={`From ${formatDate(dashboard.doj)}`}
+              roiValue={metrics.afterRoiValue}
+              roiPercent={metrics.afterRoiPercent}
+            />
           </div>
         )}
       </section>
@@ -394,6 +402,60 @@ export default function SandboxPositionsContent() {
         </section>
       ) : null}
     </>
+  );
+}
+
+function PeriodSummaryGroup({
+  title,
+  subtitle,
+  e2Label,
+  e2Sub,
+  e2Value,
+  e1Value,
+  e1Sub,
+  roiValue,
+  roiPercent,
+}: {
+  title: string;
+  subtitle: string;
+  e2Label: string;
+  e2Sub: string;
+  e2Value: number | null;
+  e1Value: number;
+  e1Sub: string;
+  roiValue: number;
+  roiPercent: number;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm font-semibold text-base-content">{title}</p>
+        <p className="text-xs text-base-content/50">{subtitle}</p>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <SummaryCard label={e2Label} sub={e2Sub} value={e2Value} />
+        <SummaryCard label="E1 PnL" sub={e1Sub} value={e1Value} />
+        <RoiSummaryCard value={roiValue} percent={roiPercent} />
+      </div>
+    </div>
+  );
+}
+
+function RoiSummaryCard({ value, percent }: { value: number; percent: number }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4">
+      <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
+        Total (E1 + E2)
+      </p>
+      <p
+        className={`text-lg font-bold tabular-nums leading-tight md:text-xl ${signedClass(value)}`}
+      >
+        {formatMoneyIN(value, { decimals: 0 })}
+      </p>
+      <p className={`mt-1 text-sm font-semibold tabular-nums ${signedClass(percent)}`}>
+        {percent.toFixed(2)}%
+      </p>
+    </div>
   );
 }
 
