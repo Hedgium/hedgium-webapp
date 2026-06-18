@@ -9,6 +9,7 @@ import type { ResearchReport } from "@/types/research";
 import ResearchSymbolSearch from "@/components/research/ResearchSymbolSearch";
 import ResearchReportView from "@/components/research/ResearchReportView";
 import ResearchReportSkeleton from "@/components/research/ResearchReportSkeleton";
+import ResearchSubNav, { isResearchSymbolPath } from "@/components/research/ResearchSubNav";
 
 const RESEARCH_BASE = "/admin/research";
 
@@ -17,9 +18,8 @@ function symbolPath(ticker: string) {
 }
 
 function parseUrlSymbol(pathname: string | null): string | null {
-  if (!pathname?.startsWith(`${RESEARCH_BASE}/`)) return null;
-  const segment = pathname.slice(`${RESEARCH_BASE}/`.length).split("/")[0];
-  if (!segment) return null;
+  if (!isResearchSymbolPath(pathname)) return null;
+  const segment = pathname!.slice(`${RESEARCH_BASE}/`.length).split("/")[0];
   try {
     return decodeURIComponent(segment).trim().toUpperCase();
   } catch {
@@ -137,6 +137,8 @@ export default function ResearchPageContent() {
             ML outlook, risk assessment, and AI agent synthesis for NSE symbols.
           </p>
         </section>
+
+        <ResearchSubNav />
 
         <ResearchSymbolSearch
           value={inputSymbol}

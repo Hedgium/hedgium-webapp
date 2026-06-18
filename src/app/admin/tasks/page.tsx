@@ -82,7 +82,6 @@ export default function AdminTasksPage() {
         })}
       </div>
 
-
       <section
         id={`tasks-panel-${activeTab}`}
         role="tabpanel"
