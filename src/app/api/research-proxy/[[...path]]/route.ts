@@ -7,6 +7,10 @@ export async function GET(request: Request) {
   return handleResearchProxy(request);
 }
 
+export async function POST(request: Request) {
+  return handleResearchProxy(request);
+}
+
 async function requireStaff(request: Request): Promise<NextResponse | null> {
   const session = await getSessionCookie();
   if (!session) {
@@ -84,14 +88,30 @@ async function handleResearchProxy(request: Request) {
     );
   }
 
-  const upstreamUrl = `${baseUrl.replace(/\/?$/, "/")}${normalizedPath}`;
+  const upstreamSearch = (() => {
+    const params = new URL(request.url).searchParams;
+    // Next.js [[...path]] catch-all adds ?path=... — strip it before upstream.
+    params.delete("path");
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  })();
+
+  const upstreamUrl = `${baseUrl.replace(/\/?$/, "/")}${normalizedPath}${upstreamSearch}`;
+  const clientContentType = request.headers.get("content-type");
 
   try {
+    const body =
+      request.method !== "GET" && request.method !== "HEAD"
+        ? await request.text()
+        : undefined;
+
     const response = await fetch(upstreamUrl, {
-      method: "GET",
+      method: request.method,
       headers: {
         "X-API-Key": apiKey,
+        ...(clientContentType ? { "Content-Type": clientContentType } : {}),
       },
+      body,
     });
 
     const contentType =

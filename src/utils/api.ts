@@ -141,3 +141,61 @@ export async function researchFetch(
 
   return res;
 }
+
+function buildResearchProxyUrl(
+  path: string,
+  queryParams?: Record<string, string | number | boolean>
+): string {
+  const normalized = path.replace(/^\//, "").replace(/\/?$/, "/");
+  const url = new URL(`/api/research-proxy/${normalized}`, window.location.origin);
+  if (queryParams) {
+    Object.entries(queryParams).forEach(([key, value]) => {
+      url.searchParams.append(key, String(value));
+    });
+  }
+  return url.toString();
+}
+
+/**
+ * Authenticated fetch to hedgium_research via server proxy (staff only).
+ */
+export async function researchProxyFetch(
+  path: string,
+  options: RequestInit = {},
+  queryParams?: Record<string, string | number | boolean>
+): Promise<Response> {
+  const url = buildResearchProxyUrl(path, queryParams);
+  const csrftoken = Cookies.get("csrftoken") ?? "";
+  const { accessToken, refreshAccessToken } = useAuthStore.getState();
+
+  const doFetch = async (token?: string) => {
+    const headers: HeadersInit = {
+      "X-CSRFToken": csrftoken,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    };
+
+    const hasBody = options.body != null;
+    if (!hasBody && options.method && options.method !== "GET") {
+      headers["Content-Type"] = "application/json";
+    }
+
+    return fetch(url, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
+  };
+
+  let res = await doFetch(accessToken || undefined);
+
+  if (res.status === 401 && refreshAccessToken) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      const { accessToken: newToken } = useAuthStore.getState();
+      res = await doFetch(newToken || undefined);
+    }
+  }
+
+  return res;
+}
