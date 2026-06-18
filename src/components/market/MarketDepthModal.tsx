@@ -6,6 +6,7 @@ import type { StylesConfig } from "react-select";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import { RefreshCw, X, TrendingUp, TrendingDown } from "lucide-react";
+import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
 
 /**
  * Reusable market-depth modal.
@@ -64,7 +65,7 @@ export interface MarketDepthModalProps {
   initialSymbol?: string;
   /** Default instrument_type for the underlying search. */
   defaultInstrumentType?: MarketDepthInstrumentType;
-  /** Poll interval for live depth refresh while open. Default 2000ms. */
+  /** Poll interval for live depth refresh while open. Default 3000ms. */
   refreshIntervalMs?: number;
 }
 
@@ -144,7 +145,7 @@ export default function MarketDepthModal({
   onClose,
   initialSymbol,
   defaultInstrumentType = "EQ",
-  refreshIntervalMs = 2000,
+  refreshIntervalMs = 3000,
 }: MarketDepthModalProps) {
   const [instrumentType, setInstrumentType] = useState<MarketDepthInstrumentType>(defaultInstrumentType);
   const [selected, setSelected] = useState<InstrumentOption | null>(null);
@@ -220,13 +221,16 @@ export default function MarketDepthModal({
     })();
   }, [open, initialSymbol, loadOptions]);
 
-  useEffect(() => {
-    if (!open || !selected?.token) return;
-    fetchDepth(selected.token);
-    if (!autoRefresh) return;
-    const id = window.setInterval(() => fetchDepth(selected.token), refreshIntervalMs);
-    return () => window.clearInterval(id);
-  }, [open, selected, autoRefresh, refreshIntervalMs, fetchDepth]);
+  const pollDepth = useCallback(() => {
+    if (selected?.token) {
+      void fetchDepth(selected.token);
+    }
+  }, [selected?.token, fetchDepth]);
+
+  useVisibilityAwareInterval(pollDepth, refreshIntervalMs, {
+    enabled: open && !!selected?.token && autoRefresh,
+    runImmediately: true,
+  });
 
   if (!open) return null;
 

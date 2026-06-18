@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { useTickStream } from "@/hooks/useTickStream";
+import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
 import { authFetch } from "@/utils/api";
 import MarketDataCardSkeleton from "./skeletons/MarketDataCardSkeleton";
 
@@ -134,52 +135,38 @@ export default function MarketHeader() {
     return () => clearTimeout(stableTimer);
   }, [isConnected]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchFromApi() {
-      if (allInstruments.length === 0) {
-        return;
-      }
-      try {
-        const instruments = allInstruments.map((inst) => String(inst.token)).join(",");
-        const res = await authFetch("market/quotes/", {}, { instruments });
-        if (!res.ok) {
-          throw new Error("Unable to fetch quotes");
-        }
-        const payload = await res.json();
-        const quoteMap = (payload?.data ?? {}) as Record<string, QuotePayload>;
-        const parsed = buildDataFromQuotes(quoteMap, allInstruments);
-
-        if (!cancelled && parsed.length > 0) {
-          setMarketData(parsed);
-          setSource("api");
-          setLastUpdatedAt(Date.now());
-          setApiError(null);
-          setLoading(false);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setApiError("Live market API unavailable. Retrying every minute.");
-          setLoading(false);
-          console.error("Error fetching market quotes:", error);
-        }
-      }
+  const fetchFromApi = useCallback(async () => {
+    if (allInstruments.length === 0) {
+      return;
     }
+    try {
+      const instruments = allInstruments.map((inst) => String(inst.token)).join(",");
+      const res = await authFetch("market/quotes/", {}, { instruments });
+      if (!res.ok) {
+        throw new Error("Unable to fetch quotes");
+      }
+      const payload = await res.json();
+      const quoteMap = (payload?.data ?? {}) as Record<string, QuotePayload>;
+      const parsed = buildDataFromQuotes(quoteMap, allInstruments);
 
-    fetchFromApi();
-    if (isWsStable) {
-      return () => {
-        cancelled = true;
-      };
+      if (parsed.length > 0) {
+        setMarketData(parsed);
+        setSource("api");
+        setLastUpdatedAt(Date.now());
+        setApiError(null);
+        setLoading(false);
+      }
+    } catch (error) {
+      setApiError("Live market API unavailable. Retrying every minute.");
+      setLoading(false);
+      console.error("Error fetching market quotes:", error);
     }
+  }, [allInstruments]);
 
-    const interval = setInterval(fetchFromApi, POLLING_INTERVAL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [allInstruments, isWsStable]);
+  useVisibilityAwareInterval(fetchFromApi, POLLING_INTERVAL_MS, {
+    enabled: !isWsStable && allInstruments.length > 0,
+    runImmediately: true,
+  });
 
   useEffect(() => {
     if (!isWsStable) return;

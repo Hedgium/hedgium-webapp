@@ -2,6 +2,9 @@ import { create } from "zustand";
 // import useAlert from "@/hooks/useAlert";
 import { generateKeyPair } from "@/utils/crypto";
 
+/** Clears visibility listener registered by startAutoRefresh. */
+let autoRefreshCleanup: (() => void) | null = null;
+
 export interface SubscriptionPlan {
   id: number;
   name: string;
@@ -227,15 +230,42 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   startAutoRefresh: () => {
-    get().stopAutoRefresh(); // clear any old one first
-    const interval = 1000 * 60 * 29; // 29 minute
-    const id = setInterval(async () => {
+    get().stopAutoRefresh();
+    const interval = 1000 * 60 * 29; // 29 minutes
+
+    const maybeRefresh = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        return;
+      }
       await get().refreshAccessToken();
+    };
+
+    const id = setInterval(() => {
+      void maybeRefresh();
     }, interval);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void maybeRefresh();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
+    autoRefreshCleanup = () => {
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+    };
+
     set({ refreshTimerId: id });
   },
 
   stopAutoRefresh: () => {
+    autoRefreshCleanup?.();
+    autoRefreshCleanup = null;
     const id = get().refreshTimerId;
     if (id) clearInterval(id);
     set({ refreshTimerId: null });
