@@ -4,8 +4,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Check, Pencil, RefreshCw, X } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
+import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
 
 const TICK_BATCH = 500;
+const OPTION_CHAIN_LIVE_POLL_MS = 90_000;
 
 interface OptionChainRow {
   id: number;
@@ -464,12 +466,14 @@ export default function StrategyOptionChainModal({
     setDraftManualSpot({});
   }, [underlying, selectedExpiry, tab, chainViewMode]);
 
-  useEffect(() => {
-    if (rows.length === 0) return;
-    void pollLive();
-    const id = setInterval(() => void pollLive(), 60000); // 1 minute
-    return () => clearInterval(id);
-  }, [rows, pollLive]);
+  useVisibilityAwareInterval(
+    () => void pollLive(),
+    OPTION_CHAIN_LIVE_POLL_MS,
+    {
+      enabled: rows.length > 0,
+      runImmediately: true,
+    }
+  );
 
   async function saveGreeksRow(row: OptionChainRow) {
     const rawD =

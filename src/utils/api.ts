@@ -91,3 +91,53 @@ export async function authFetch(
 
   return res;
 }
+
+function buildResearchUrl(
+  symbol: string,
+  options?: { latest?: boolean }
+): string {
+  const ticker = symbol.trim().toUpperCase();
+  const suffix = options?.latest ? "latest/" : "";
+  return new URL(
+    `/api/research-proxy/${ticker}/${suffix}`,
+    window.location.origin
+  ).toString();
+}
+
+/**
+ * Fetch stock research report via server-side proxy (requires session).
+ */
+export async function researchFetch(
+  symbol: string,
+  options?: { latest?: boolean; signal?: AbortSignal }
+): Promise<Response> {
+  const url = buildResearchUrl(symbol, options);
+  const csrftoken = Cookies.get("csrftoken") ?? "";
+  const { accessToken, refreshAccessToken } = useAuthStore.getState();
+
+  const doFetch = async (token?: string) => {
+    const headers: HeadersInit = {
+      "X-CSRFToken": csrftoken,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    return fetch(url, {
+      method: "GET",
+      headers,
+      credentials: "include",
+      signal: options?.signal,
+    });
+  };
+
+  let res = await doFetch(accessToken || undefined);
+
+  if (res.status === 401 && refreshAccessToken && !options?.signal?.aborted) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      const { accessToken: newToken } = useAuthStore.getState();
+      res = await doFetch(newToken || undefined);
+    }
+  }
+
+  return res;
+}

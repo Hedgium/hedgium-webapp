@@ -4,7 +4,7 @@
 
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Home, Briefcase, Bell, Settings, LineChart, Sun, Moon, LogOut, FileText, FlaskConical } from "lucide-react";
+import { Home, Briefcase, Bell, Settings, Sun, Moon, LogOut, FileText } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";

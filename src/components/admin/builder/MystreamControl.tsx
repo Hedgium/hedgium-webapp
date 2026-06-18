@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
+import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
+
+const STATUS_POLL_MS = 30_000;
 
 type StreamStatus = {
     running: boolean;
@@ -21,7 +24,7 @@ export default function MystreamControl() {
     const [toggling, setToggling] = useState(false);
     const alert = useAlert();
 
-    const fetchStatus = async () => {
+    const fetchStatus = useCallback(async () => {
         try {
             const res = await authFetch("optionchain/stream/status/");
             const data = await res.json();
@@ -29,7 +32,7 @@ export default function MystreamControl() {
         } catch {
             // silently ignore — stale values remain
         }
-    };
+    }, []);
 
     const handleToggle = async () => {
         setToggling(true);
@@ -52,11 +55,9 @@ export default function MystreamControl() {
         }
     };
 
-    useEffect(() => {
-        fetchStatus();
-        const interval = setInterval(fetchStatus, 10000);
-        return () => clearInterval(interval);
-    }, []);
+    useVisibilityAwareInterval(fetchStatus, STATUS_POLL_MS, {
+        runImmediately: true,
+    });
 
     return (
         <div className="bg-base-100/70 rounded-xl border border-base-300 py-3 px-4 flex-1 min-w-[200px]">

@@ -6,6 +6,7 @@ import React from "react";
 import { CheckCircle, LayoutList, ListRestart, RefreshCw } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
+import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
 
 const REFRESH_ACTIVE_STRATEGY_TASKS = [
   "refresh-pnl-active-strategies",
@@ -111,8 +112,8 @@ export default function Page() {
   const [orderBy, setOrderBy] = React.useState("-created_at");
   const [completed, setCompleted] = React.useState("false");
 
-  const STRATEGIES_POLL_MS = 40_000;
-  const METRICS_REFRESH_INTERVAL_MS = 90_000;
+  const STRATEGIES_POLL_MS = 60_000;
+  const METRICS_REFRESH_INTERVAL_MS = 120_000;
 
   const refreshMetricsInFlightRef = React.useRef(false);
 
@@ -149,12 +150,11 @@ export default function Page() {
     void fetchStrategies();
   }, [fetchStrategies]);
 
-  React.useEffect(() => {
-    const id = window.setInterval(() => {
-      void fetchStrategies({ background: true });
-    }, STRATEGIES_POLL_MS);
-    return () => window.clearInterval(id);
-  }, [fetchStrategies]);
+  useVisibilityAwareInterval(
+    () => fetchStrategies({ background: true }),
+    STRATEGIES_POLL_MS,
+    { runImmediately: false }
+  );
 
   const runRefreshActiveStrategyTasks = React.useCallback(
     async (options?: { silent?: boolean }) => {
@@ -242,12 +242,11 @@ export default function Page() {
     [fetchStrategies]
   );
 
-  React.useEffect(() => {
-    const id = window.setInterval(() => {
-      void runRefreshActiveStrategyTasks({ silent: true });
-    }, METRICS_REFRESH_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, [runRefreshActiveStrategyTasks]);
+  useVisibilityAwareInterval(
+    () => runRefreshActiveStrategyTasks({ silent: true }),
+    METRICS_REFRESH_INTERVAL_MS,
+    { runImmediately: false }
+  );
 
   async function loadMoreStrategies() {
     if (!next) return;

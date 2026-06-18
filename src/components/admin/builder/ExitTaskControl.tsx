@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import useAlert from "@/hooks/useAlert";
 import { authFetch } from "@/utils/api";
+import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
+
+const TASK_POLL_MS = 30_000;
 
 type TaskState = {
     is_running: boolean;
@@ -27,7 +30,7 @@ export default function ExitTaskControl() {
     const [taskLoading, setTaskLoading] = useState(false);
     const alert = useAlert();
 
-    const fetchTaskStatus = async () => {
+    const fetchTaskStatus = useCallback(async () => {
         try {
             const response = await authFetch("tasks/running");
             const data = await response.json();
@@ -45,7 +48,7 @@ export default function ExitTaskControl() {
         } catch (error) {
             console.error("Error fetching exit task status:", error);
         }
-    };
+    }, []);
 
     const handleStartTask = async () => {
         setTaskLoading(true);
@@ -99,13 +102,9 @@ export default function ExitTaskControl() {
         }
     };
 
-    useEffect(() => {
-        fetchTaskStatus();
-
-        // Poll task status every 10 seconds
-        const interval = setInterval(fetchTaskStatus, 10000);
-        return () => clearInterval(interval);
-    }, []);
+    useVisibilityAwareInterval(fetchTaskStatus, TASK_POLL_MS, {
+        runImmediately: true,
+    });
 
     return (
         <div className="bg-base-100/70 rounded-xl border border-base-300 py-3 px-4 flex-1 min-w-[200px]">
