@@ -17,7 +17,7 @@ export default function SandboxPlanSelector() {
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-2">
         <label htmlFor="sandbox-plan" className="text-sm font-medium text-base-content/70">
-          Plan
+          Capital
         </label>
         <select
           id="sandbox-plan"
