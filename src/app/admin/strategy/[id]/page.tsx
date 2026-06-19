@@ -145,8 +145,10 @@ export default function StrategyDetailPage() {
       const res = await authFetch(`myadmin/trade-cycles/${id}/?page=1&page_size=100`);
       const data = await res.json();
       setTradeCycles(data.results);
+      return data.results;
     } catch (error) {
       console.error("Error fetching trade cycles:", error);
+      return [];
     } finally {
       setTradeCyclesLoading(false);
     }

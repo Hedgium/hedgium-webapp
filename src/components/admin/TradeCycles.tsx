@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense, useCallback, useEffect, useRef } from "react";
 import type { ComponentType, LazyExoticComponent } from "react";
 import { authFetch } from "@/utils/api";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
@@ -91,10 +91,33 @@ type SearchProfile = {
   margin_equity?: number | null;
 };
 
+const LIVE_MARGIN_FETCH_CONCURRENCY = 4;
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const i = nextIndex++;
+      results[i] = await fn(items[i]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker())
+  );
+  return results;
+}
+
 type TradeCyclesProps = {
   id: number;
   trade_cycles: TradeCycle[];
-  fetchTradeCycles: () => Promise<void> | void;
+  fetchTradeCycles: () => Promise<TradeCycle[] | void> | TradeCycle[] | void;
   multiplierAllowed?: boolean;
 };
 
@@ -130,8 +153,51 @@ export default function TradeCycles({
   const [selectedTradeCycleId, setSelectedTradeCycleId] = useState<number | null>(null);
   const [selectedTradeCycle, setSelectedTradeCycle] = useState<{ id: number; profile_id?: number } | null>(null);
   const [liveModalProfileId, setLiveModalProfileId] = useState<number | null>(null);
+  const [liveMargins, setLiveMargins] = useState<Record<number, number | null>>({});
+  const liveMarginFetchGen = useRef(0);
 
   const alert = useAlert();
+
+  const fetchLiveMargins = useCallback(async (profileIds: number[]) => {
+    const uniqueIds = [...new Set(profileIds)];
+    if (uniqueIds.length === 0) return;
+
+    const gen = ++liveMarginFetchGen.current;
+
+    const entries = await mapWithConcurrency(
+      uniqueIds,
+      LIVE_MARGIN_FETCH_CONCURRENCY,
+      async (profileId) => {
+        try {
+          const res = await authFetch(`profiles/live/margin/${profileId}/`);
+          if (!res.ok) return [profileId, null] as const;
+          const data = await res.json();
+          if (data.status === "success" && typeof data.net === "number") {
+            return [profileId, data.net] as const;
+          }
+          return [profileId, null] as const;
+        } catch {
+          return [profileId, null] as const;
+        }
+      }
+    );
+
+    if (gen !== liveMarginFetchGen.current) return;
+
+    setLiveMargins((prev) => {
+      const next = { ...prev };
+      for (const [profileId, net] of entries) {
+        if (net !== null) next[profileId] = net;
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const profileIds = trade_cycles.map((c) => c.profile.id);
+    if (profileIds.length === 0) return;
+    void fetchLiveMargins(profileIds);
+  }, [trade_cycles, fetchLiveMargins]);
   // Toggle existing cycle selection
   function toggleCycle(cycleId: number) {
     setSelectedCycles((prev) =>
@@ -165,11 +231,18 @@ export default function TradeCycles({
     }
   }
 
-  // Refresh trade cycles
+  // Refresh trade cycles and live broker margins
   async function handleRefresh() {
     setRefreshing(true);
-    await fetchTradeCycles();
-    setRefreshing(false);
+    try {
+      const cycles = await fetchTradeCycles();
+      const profileIds = (
+        Array.isArray(cycles) ? cycles : trade_cycles
+      ).map((c) => c.profile.id);
+      await fetchLiveMargins(profileIds);
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   // Delete selected cycles
@@ -817,7 +890,12 @@ export default function TradeCycles({
                     <td>{cycle.client.username}</td>
                     <td>{cycle.profile.broker_name}</td>
                     <td>{cycle.profile.risk_profile}</td>
-                    <td>{formatLakhsIN(cycle.profile.margin_equity, 1)}</td>
+                    <td>
+                      {formatLakhsIN(
+                        liveMargins[cycle.profile.id] ?? cycle.profile.margin_equity,
+                        1
+                      )}
+                    </td>
                     <td>{cycle.profile.quantity_multiplier ?? 1}</td>
                     <td>
                       <span className="flex items-center gap-1">
