@@ -12,54 +12,21 @@ export default function NotificationProvider({ children }: { children: React.Rea
 
   const wsRef = useRef<WebSocket | null>(null);
   const retryCountRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(false);
   const maxRetries = 5;
-
-  // const [tick, setTick] = useState<any | null>(null);
-  // const wsRef1 = useRef<WebSocket | null>(null);
-
-  // useEffect(() => {
-  //   console.log("Connecting to tick websocket...");
-  //   if (!accessToken) return;
-
-  //   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  //   const wsUrl = `${protocol}://${process.env.NEXT_PUBLIC_BACKEND_DOMAIN}/ws/ticks/?token=${accessToken}&instrument_token=408065`;
-  //   console.log("WebSocket URL:", wsUrl);
-  //   const ws1 = new WebSocket(wsUrl);
-
-  //   wsRef1.current = ws1 ;
-
-  //   ws1.onopen = () => {
-  //     console.log("Tick websocket connected");
-  //   };
-
-  //   ws1.onmessage = (event) => {
-  //     try {
-  //       const data = JSON.parse(event.data);
-  //       console.log("Received tick data:", data);
-  //       setTick(data);
-  //     } catch (e) {
-  //       console.log("Failed to parse tick", e);
-  //     }
-  //   };
-
-  //   ws1.onerror = (e) => {
-  //     console.log("Tick websocket error", e);
-  //   };
-
-  //   return () => {
-  //     ws1.close();
-  //   };
-  // }, [accessToken]);
-
 
   useEffect(() => {
     if (!accessToken) return;
+
+    mountedRef.current = true;
 
     // Load alerts via HTTP regardless of WebSocket — WS is only for live pushes.
     void fetchNotifications();
 
     const connectWebSocket = () => {
-      if (wsRef.current) return; // already connected or connecting
+      if (!mountedRef.current) return;
+      if (wsRef.current) return;
 
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
       const wsUrl = `${protocol}://${process.env.NEXT_PUBLIC_BACKEND_DOMAIN}/ws/notifications/?token=${accessToken}`;
@@ -69,16 +36,16 @@ export default function NotificationProvider({ children }: { children: React.Rea
 
       wsRef.current.onopen = () => {
         console.log("✅ WebSocket connected");
-        retryCountRef.current = 0; // reset retry count
+        retryCountRef.current = 0;
       };
 
       wsRef.current.onmessage = (event) => {
         const newNotification = JSON.parse(event.data);
+        const { notifications } = useNotificationStore.getState();
+        const isDuplicate = notifications.some((n) => n.id === newNotification?.id);
         addNotification(newNotification);
 
-        // Pop-up toast for fresh, unread alerts.
-        // Use getState() directly to avoid stale closure on the alert functions.
-        if (newNotification?.read) return;
+        if (isDuplicate || newNotification?.read) return;
 
         const type = newNotification?.type as
           | "INFO"
@@ -109,12 +76,16 @@ export default function NotificationProvider({ children }: { children: React.Rea
 
         wsRef.current = null;
 
-        // Try reconnect if retries left
+        if (!mountedRef.current) return;
+
         if (retryCountRef.current < maxRetries) {
           retryCountRef.current += 1;
-          const retryDelay = Math.min(1000 * 2 ** retryCountRef.current, 10000); // exponential backoff up to 10s
+          const retryDelay = Math.min(1000 * 2 ** retryCountRef.current, 10000);
           console.log(`🔁 Reconnecting in ${retryDelay / 1000}s...`);
-          setTimeout(connectWebSocket, retryDelay);
+          reconnectTimerRef.current = setTimeout(() => {
+            reconnectTimerRef.current = null;
+            connectWebSocket();
+          }, retryDelay);
         } else {
           console.log("🚫 Max retry attempts reached. WebSocket not reconnecting.");
         }
@@ -129,6 +100,11 @@ export default function NotificationProvider({ children }: { children: React.Rea
     connectWebSocket();
 
     return () => {
+      mountedRef.current = false;
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
       wsRef.current?.close();
       wsRef.current = null;
       retryCountRef.current = 0;

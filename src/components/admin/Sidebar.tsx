@@ -28,14 +28,8 @@ export default function AdminSidebar() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { logout } = useAuthStore();
-  const { unreadCount, fetchNotifications } = useNotificationStore();
+  const { unreadCount } = useNotificationStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // Always fetch on mount so the unread badge is correct immediately.
-  useEffect(() => {
-    void fetchNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Load sidebar state from localStorage on mount
   useEffect(() => {
