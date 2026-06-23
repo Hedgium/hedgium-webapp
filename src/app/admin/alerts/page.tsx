@@ -15,6 +15,8 @@ export default function AdminAlertsPage() {
   const {
     notifications,
     isLoading,
+    daysFilter,
+    setDaysFilter,
     markAllAsRead,
     deleteNotification,
   } = useNotificationStore();
@@ -109,6 +111,35 @@ export default function AdminAlertsPage() {
         </section>
 
         <section className="space-y-8">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm font-medium text-base-content/80">Period</span>
+              <div className="join">
+                <button
+                  type="button"
+                  className={`btn btn-sm join-item rounded-lg ${
+                    daysFilter === 1
+                      ? "btn-primary"
+                      : "btn-ghost border border-base-300/60"
+                  }`}
+                  onClick={() => void setDaysFilter(1)}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm join-item rounded-lg ${
+                    daysFilter === 7
+                      ? "btn-primary"
+                      : "btn-ghost border border-base-300/60"
+                  }`}
+                  onClick={() => void setDaysFilter(7)}
+                >
+                  Last 7 days
+                </button>
+              </div>
+            </div>
+
           <div className="flex flex-col gap-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/45">
               Notifications
@@ -205,6 +236,7 @@ export default function AdminAlertsPage() {
                 </button>
               </div>
             </div>
+          </div>
           </div>
 
           {filterNotifications?.length === 0 ? (

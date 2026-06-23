@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { authFetch } from "@/utils/api";
 
-
+export type NotificationDaysFilter = 1 | 7;
 
 export interface Notification {
   id: number;
@@ -18,22 +18,38 @@ interface NotificationState {
   notifications: Notification[];
   isLoading: boolean;
   unreadCount: number;
+  daysFilter: NotificationDaysFilter;
 
-  fetchNotifications: () => Promise<void>;
+  fetchNotifications: (days?: NotificationDaysFilter) => Promise<void>;
+  setDaysFilter: (days: NotificationDaysFilter) => Promise<void>;
   addNotification: (n: Notification) => void;
   markAsRead: (id: number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotification: (id: number) => Promise<void>;
 }
 
+function notificationWithinDays(
+  notification: Notification,
+  days: NotificationDaysFilter
+): boolean {
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  return new Date(notification.timestamp).getTime() >= cutoff;
+}
+
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   isLoading: true,
   unreadCount: 0,
+  daysFilter: 1,
 
-  fetchNotifications: async () => {
+  fetchNotifications: async (days) => {
+    const resolvedDays = days ?? get().daysFilter;
+    set({ isLoading: true, daysFilter: resolvedDays });
+
     try {
-      const res = await authFetch("/notifications/", { method: "GET" });
+      const res = await authFetch(`/notifications/?days=${resolvedDays}`, {
+        method: "GET",
+      });
 
       if (res.ok) {
         const data: Notification[] = await res.json();
@@ -49,14 +65,28 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       console.error("Failed to fetch notifications", err);
       set({ isLoading: false });
     }
-  
+  },
+
+  setDaysFilter: async (days) => {
+    if (get().daysFilter === days && get().notifications.length > 0) {
+      return;
+    }
+    await get().fetchNotifications(days);
   },
 
   addNotification: (n) =>
-    set((state) => ({
-      notifications: [n, ...state.notifications],
-      unreadCount: state.unreadCount + (n.read ? 0 : 1),
-    })),
+    set((state) => {
+      if (state.notifications.some((existing) => existing.id === n.id)) {
+        return state;
+      }
+      if (!notificationWithinDays(n, state.daysFilter)) {
+        return state;
+      }
+      return {
+        notifications: [n, ...state.notifications],
+        unreadCount: state.unreadCount + (n.read ? 0 : 1),
+      };
+    }),
 
   markAsRead: async (id) => {
     try {
@@ -69,9 +99,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
           unreadCount: updated.filter((n) => !n.read).length,
         };
       });
-      
+
       await authFetch(`/notifications/${id}/read/`, { method: "POST" });
-      
     } catch (err) {
       console.error("Failed to mark as read", err);
     }
@@ -79,14 +108,12 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   markAllAsRead: async () => {
     try {
-
       set((state) => ({
         notifications: state.notifications.map((n) => ({ ...n, read: true })),
         unreadCount: 0,
       }));
 
       await authFetch("/notifications/mark-all-read/", { method: "POST" });
-      
     } catch (err) {
       console.error("Failed to mark all as read", err);
     }
@@ -103,7 +130,6 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       });
 
       await authFetch(`/notifications/${id}/`, { method: "DELETE" });
-      
     } catch (err) {
       console.error("Failed to delete notification", err);
     }
