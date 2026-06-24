@@ -19,5 +19,8 @@ export async function sendBuilderPnlEmails(
     method: "POST",
   });
   const data = (await response.json()) as SendBuilderPnlEmailsResponse | SendBuilderPnlEmailsError;
-  return { ok: response.ok, data };
+  if (response.ok) {
+    return { ok: true, data: data as SendBuilderPnlEmailsResponse };
+  }
+  return { ok: false, data: data as SendBuilderPnlEmailsError };
 }
