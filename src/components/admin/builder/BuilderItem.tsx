@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StrategyBuilder, BuilderLeg } from '@/types/builder';
-import { Edit2, Trash2, RotateCw, Plus } from 'lucide-react';
+import { Edit2, Trash2, RotateCw, Plus, Mail } from 'lucide-react';
 import BuilderLegItem from './BuilderLegItem';
 import { formatDateTimeMinutes } from '@/utils/formatDate';
 
@@ -12,6 +12,7 @@ interface BuilderItemProps {
     onEditLeg: (leg: BuilderLeg) => void;
     onDeleteLeg: (legId: number) => void;
     onRefreshStatus: (builderId: number) => void;
+    onSendPnlEmails: (builderId: number) => Promise<void>;
 }
 
 export default function BuilderItem({
@@ -21,14 +22,28 @@ export default function BuilderItem({
     onAddLeg,
     onEditLeg,
     onDeleteLeg,
-    onRefreshStatus
+    onRefreshStatus,
+    onSendPnlEmails,
 }: BuilderItemProps) {
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isSendingPnlEmails, setIsSendingPnlEmails] = useState(false);
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
         await onRefreshStatus(builder.id);
         setIsRefreshing(false);
+    };
+
+    const handleSendPnlEmails = async () => {
+        if (!confirm(`Send PnL emails to all clients for "${builder.name}"?`)) {
+            return;
+        }
+        setIsSendingPnlEmails(true);
+        try {
+            await onSendPnlEmails(builder.id);
+        } finally {
+            setIsSendingPnlEmails(false);
+        }
     };
 
     return (
@@ -54,6 +69,22 @@ export default function BuilderItem({
                 </div>
 
                 <div className="flex items-center space-x-2 mt-4 md:mt-0">
+                    {builder.status === 'EXITED' && (
+                        <button
+                            type="button"
+                            onClick={handleSendPnlEmails}
+                            disabled={isSendingPnlEmails}
+                            className="btn btn-outline btn-sm btn-primary gap-1"
+                            title="Send PnL Emails"
+                        >
+                            {isSendingPnlEmails ? (
+                                <span className="loading loading-spinner loading-xs" />
+                            ) : (
+                                <Mail size={16} />
+                            )}
+                            Send PnL Emails
+                        </button>
+                    )}
                     <button
                         onClick={handleRefresh}
                         className={`btn btn-ghost btn-sm ${isRefreshing ? 'animate-spin' : ''}`}

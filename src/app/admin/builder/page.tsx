@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { authFetch } from "@/utils/api";
+import { sendBuilderPnlEmails } from "@/services/builder";
 import { StrategyBuilder, BuilderLeg, StrategyBuilderCreate, StrategyBuilderUpdate, BuilderLegCreate, BuilderLegUpdate } from "@/types/builder";
 import BuilderItem from "@/components/admin/builder/BuilderItem";
 import useAlert from "@/hooks/useAlert";
@@ -125,6 +126,22 @@ export default function BuilderPage() {
         } catch (error) {
             console.error('Error refreshing status:', error);
             alert.error('Failed to refresh status');
+        }
+    };
+
+    const handleSendPnlEmails = async (builderId: number) => {
+        try {
+            const result = await sendBuilderPnlEmails(builderId);
+            if (result.ok) {
+                alert.success(
+                    `${result.data.message} Task ID: ${result.data.task_id}`
+                );
+            } else {
+                alert.error(result.data.message || 'Failed to queue PnL emails');
+            }
+        } catch (error) {
+            console.error('Error sending PnL emails:', error);
+            alert.error('Failed to queue PnL emails');
         }
     };
 
@@ -263,6 +280,7 @@ export default function BuilderPage() {
                             onEditLeg={handleEditLeg}
                             onDeleteLeg={handleDeleteLeg}
                             onRefreshStatus={handleRefreshStatus}
+                            onSendPnlEmails={handleSendPnlEmails}
                         />
                     ))}
                     {builders.length === 0 && (
