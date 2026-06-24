@@ -96,11 +96,11 @@ export default function ResearchTechnicalAnalysis({ features, agentSummary }: Pr
     {
       label: "Price vs EMAs",
       value: (
-        <div className="flex flex-wrap gap-1">
+        <span className="flex flex-wrap gap-1">
           {boolChip(technical.price_above_ema_20, ">20", "≤20")}
           {boolChip(technical.price_above_ema_50, ">50", "≤50")}
           {boolChip(technical.price_above_ema_200, ">200", "≤200")}
-        </div>
+        </span>
       ),
     },
     { label: "ADX (14)", value: num(technical.adx_14, 1), hint: "Trend strength" },
