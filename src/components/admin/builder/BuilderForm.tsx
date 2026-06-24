@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StrategyBuilder, StrategyBuilderCreate, StrategyBuilderUpdate, StrategyTemplate } from '@/types/builder';
+import UnderlyingDividendSection from '@/components/admin/builder/UnderlyingDividendSection';
 import { authFetch } from '@/utils/api';
 
 interface SuperGroup {
@@ -511,7 +512,6 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             <div className="collapse collapse-arrow join-item border-0 !rounded-none border-t border-base-300 min-h-0">
                 <input
                     type="checkbox"
-                    defaultChecked
                     aria-label="Show or hide Adjustment"
                     className="min-h-0"
                 />
@@ -569,6 +569,12 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         </span>
                     </label>
                 </div>
+
+                {initialData ? (
+                    <UnderlyingDividendSection
+                        symbols={(initialData.builder_legs || []).map((leg) => leg.symbol)}
+                    />
+                ) : null}
 
                 <div className="form-control md:col-span-2">
                     <label className="label py-0">
