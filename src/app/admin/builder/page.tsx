@@ -35,6 +35,8 @@ const ExitTaskControl = dynamic(
 export default function BuilderPage() {
     const [builders, setBuilders] = useState<StrategyBuilder[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [nextPage, setNextPage] = useState<string | null>(null);
     const [isBuilderModalOpen, setIsBuilderModalOpen] = useState(false);
     const [isLegModalOpen, setIsLegModalOpen] = useState(false);
     const [editingBuilder, setEditingBuilder] = useState<StrategyBuilder | undefined>(undefined);
@@ -48,18 +50,38 @@ export default function BuilderPage() {
     const fetchBuilders = async () => {
         setLoading(true);
         try {
-            const url = statusFilter
-                ? `builder/builders/?status=${statusFilter}`
-                : 'builder/builders/';
+            const params = new URLSearchParams();
+            if (statusFilter) params.set("status", statusFilter);
+            const query = params.toString();
+            const url = query ? `builder/builders/?${query}` : "builder/builders/";
             const response = await authFetch(url);
             const data = await response.json();
 
-            setBuilders(data.results);
+            setBuilders(data.results ?? []);
+            setNextPage(data.next ?? null);
         } catch (error) {
             console.error('Error fetching builders:', error);
             alert.error('Failed to fetch strategy builders');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchNextPage = async () => {
+        if (!nextPage) return;
+        setLoadingMore(true);
+        try {
+            const url = new URL(nextPage);
+            const path = url.pathname.replace(/^\/api\//, "") || "builder/builders/";
+            const response = await authFetch(`${path}${url.search}`);
+            const data = await response.json();
+            setBuilders((prev) => [...prev, ...(data.results ?? [])]);
+            setNextPage(data.next ?? null);
+        } catch (error) {
+            console.error('Error fetching next page:', error);
+            alert.error('Failed to load more builders');
+        } finally {
+            setLoadingMore(false);
         }
     };
 
@@ -269,24 +291,43 @@ export default function BuilderPage() {
             {loading ? (
                 <BuilderItemSkeleton />
             ) : (
-                <div className="space-y-4">
-                    {builders.map(builder => (
-                        <BuilderItem
-                            key={builder.id}
-                            builder={builder}
-                            onEdit={handleEditBuilder}
-                            onDelete={handleDeleteBuilder}
-                            onAddLeg={handleAddLeg}
-                            onEditLeg={handleEditLeg}
-                            onDeleteLeg={handleDeleteLeg}
-                            onRefreshStatus={handleRefreshStatus}
-                            onSendPnlEmails={handleSendPnlEmails}
-                        />
-                    ))}
-                    {builders.length === 0 && (
-                        <p className="text-center text-base-content/60">No strategy builders found.</p>
+                <>
+                    <div className="space-y-4">
+                        {builders.map(builder => (
+                            <BuilderItem
+                                key={builder.id}
+                                builder={builder}
+                                onEdit={handleEditBuilder}
+                                onDelete={handleDeleteBuilder}
+                                onAddLeg={handleAddLeg}
+                                onEditLeg={handleEditLeg}
+                                onDeleteLeg={handleDeleteLeg}
+                                onRefreshStatus={handleRefreshStatus}
+                                onSendPnlEmails={handleSendPnlEmails}
+                            />
+                        ))}
+                        {builders.length === 0 && (
+                            <p className="text-center text-base-content/60">No strategy builders found.</p>
+                        )}
+                    </div>
+
+                    {nextPage && (
+                        <div className="flex justify-center mt-6">
+                            <button
+                                type="button"
+                                onClick={fetchNextPage}
+                                disabled={loadingMore}
+                                className="btn btn-outline btn-sm"
+                            >
+                                {loadingMore ? (
+                                    <span className="loading loading-spinner loading-xs" />
+                                ) : (
+                                    "Load More"
+                                )}
+                            </button>
+                        </div>
                     )}
-                </div>
+                </>
             )}
 
             {/* Builder Modal */}
