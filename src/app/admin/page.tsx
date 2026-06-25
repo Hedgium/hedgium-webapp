@@ -29,6 +29,8 @@ interface Strategy {
   adjustment_count: number;
   trade_cycle_count: number;
   leg_count: number;
+  pending_orders_count: number;
+  open_orders_count: number;
   wpnl_total: number | string | null;
   mid_wpnl_total: number | string | null;
   atm_spread: number | string | null;
@@ -418,6 +420,9 @@ export default function Page() {
                   <th className="font-medium text-base-content/70">ID</th>
                   <th className="font-medium text-base-content/70">Name</th>
                   <th className="font-medium text-base-content/70">Status</th>
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[6.5rem]">
+                    Orders
+                  </th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7.5rem]">
                     Greeks [Δ / Γ]
                   </th>
@@ -440,7 +445,7 @@ export default function Page() {
               <tbody>
                 {strategies.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={10} className="text-center py-16">
+                    <td colSpan={11} className="text-center py-16">
                       <p className="text-base-content/60">No strategies found.</p>
                       <p className="text-sm text-base-content/50 mt-1">
                         Try changing filters or create a new strategy.
@@ -483,6 +488,30 @@ export default function Page() {
                             Active
                           </span>
                         )}
+                      </td>
+                      <td className="text-right align-top min-w-[6.5rem]">
+                        <div className="flex flex-col items-end gap-0.5 tabular-nums text-sm whitespace-nowrap">
+                          <span
+                            title="Pending orders"
+                            className={`font-medium ${
+                              (strategy.pending_orders_count ?? 0) > 0
+                                ? "text-warning"
+                                : "text-base-content/90"
+                            }`}
+                          >
+                            {strategy.pending_orders_count ?? 0}
+                          </span>
+                          <span
+                            title="Open orders at broker"
+                            className={`font-medium text-[13px] ${
+                              (strategy.open_orders_count ?? 0) > 0
+                                ? "text-warning"
+                                : "text-base-content/70"
+                            }`}
+                          >
+                            {strategy.open_orders_count ?? 0}
+                          </span>
+                        </div>
                       </td>
                       <td className="text-right align-top min-w-[7.5rem]">
                         <div className="flex flex-col items-end gap-0.5 tabular-nums text-sm whitespace-nowrap">
@@ -599,7 +628,7 @@ export default function Page() {
                 {loading && strategies.length === 0 &&
                   Array.from({ length: 3 }).map((_, i) => (
                     <tr key={`skeleton-${i}`} className="border-b border-base-300/30">
-                      {Array.from({ length: 10 }).map((_, j) => (
+                      {Array.from({ length: 11 }).map((_, j) => (
                         <td key={j}>
                           <div className="h-5 bg-base-300/40 rounded animate-pulse" />
                         </td>
