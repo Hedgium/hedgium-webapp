@@ -4,12 +4,13 @@
 
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Home, Briefcase, Bell, Settings, Sun, Moon, LogOut, FileText } from "lucide-react";
+import { Home, Briefcase, Bell, Settings, Sun, Moon, LogOut, FileText, FlaskConical } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { useNotificationStore } from "@/store/notificationStore";
 import KycStatusIndicator from "@/components/KycStatusIndicator";
+import { useHasAssignedTradeCycles } from "@/hooks/useHasAssignedTradeCycles";
 
 const tabs = [
   { name: "Home", href: "/home", icon: <Home className="h-5 w-5" /> },
@@ -38,6 +39,8 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
     .join("");
 
   const { unreadCount } = useNotificationStore();
+  const { hasAssigned, loading: tradeCyclesLoading } = useHasAssignedTradeCycles();
+  const showSandbox = !tradeCyclesLoading && hasAssigned === false;
 
   const sendToPage = (url: string) => {
     router.push(url);
@@ -60,40 +63,34 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
               {displayEmail ? (
                 <p className="text-xs text-base-content/60 truncate">{displayEmail}</p>
               ) : null}
-              <div className="mt-1 flex items-center gap-2">
+              {/* <div className="mt-1 flex items-center gap-2">
                 <span className={`text-xs font-medium ${isLegends ? "text-warning" : "text-primary"} truncate`}>
                   Plan: {planName}
                 </span>
-                {/* {!isLegends && user?.active_subscription?.plan?.name ? (
+                {!isLegends && user?.active_subscription?.plan?.name ? (
                   <Link href="/upgrade" className="text-[11px] text-primary hover:underline">
                     Upgrade
                   </Link>
-                ) : null} */}
-              </div>
+                ) : null}
+              </div> */}
             </div>
           </div>
         </div>
 
-
-        {/* <div className="p-4 border-b border-base-300">
-          <Link href="/home" className="flex items-center gap-2 text-xl font-bold text-primary">
-            <LineChart width="26" height="26" className="text-primary" />
-            <span>Hedgium</span>
-          </Link>
-        </div> */}
-
         {/* Navigation items */}
         <nav className="flex-1 overflow-y-auto px-4 mt-4">
           <ul className="gap-2 space-y-1">
-            {/* <li>
-              <Link
-                href="/sandbox"
-                className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all hover:bg-base-300/70 text-warning"
-              >
-                <FlaskConical className="h-5 w-5" />
-                <span className="font-medium">Sandbox</span>
-              </Link>
-            </li> */}
+            {showSandbox ? (
+              <li>
+                <Link
+                  href="/sandbox"
+                  className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all hover:bg-base-300/70 text-warning"
+                >
+                  <FlaskConical className="h-5 w-5" />
+                  <span className="font-medium">Sandbox</span>
+                </Link>
+              </li>
+            ) : null}
             {tabs.map((tab, idx) => {
               const active = pathname === tab.href;
               return (

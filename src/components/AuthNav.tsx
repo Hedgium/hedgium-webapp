@@ -10,6 +10,7 @@ import { LineChart, Settings, Moon, Sun, LogOut, FlaskConical } from "lucide-rea
 import { useAuthStore } from "@/store/authStore";
 import { useSandboxStore } from "@/store/sandboxStore";
 import KycStatusIndicator from "@/components/KycStatusIndicator";
+import { useHasAssignedTradeCycles } from "@/hooks/useHasAssignedTradeCycles";
 
 export default function AuthNav() {
   const pathname = usePathname();
@@ -20,6 +21,8 @@ export default function AuthNav() {
   const isSandbox = pathname?.startsWith("/sandbox");
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { hasAssigned, loading: tradeCyclesLoading } = useHasAssignedTradeCycles();
+  const showSandbox = !tradeCyclesLoading && hasAssigned === false;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -105,24 +108,26 @@ export default function AuthNav() {
                 <Settings className="w-4 h-4" /> Settings
               </Link>
             </li>
-            <li>
-              {isSandbox ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    clearSandboxPlan();
-                    setMenuOpen(false);
-                    router.push("/sandbox");
-                  }}
-                >
-                  <FlaskConical className="w-4 h-4" /> Change plan
-                </button>
-              ) : (
-                <Link href="/sandbox" onClick={() => setMenuOpen(false)}>
-                  <FlaskConical className="w-4 h-4" /> Switch to Sandbox
-                </Link>
-              )}
-            </li>
+            {showSandbox ? (
+              <li>
+                {isSandbox ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearSandboxPlan();
+                      setMenuOpen(false);
+                      router.push("/sandbox");
+                    }}
+                  >
+                    <FlaskConical className="w-4 h-4" /> Change plan
+                  </button>
+                ) : (
+                  <Link href="/sandbox" onClick={() => setMenuOpen(false)}>
+                    <FlaskConical className="w-4 h-4" /> Switch to Sandbox
+                  </Link>
+                )}
+              </li>
+            ) : null}
             <li>
               <button
                 type="button"

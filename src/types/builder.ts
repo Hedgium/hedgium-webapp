@@ -1,8 +1,37 @@
+export interface LegPresetConfig {
+    version: number;
+    inputs: string[];
+    legs: Array<{
+        option_type: 'CE' | 'PE';
+        action: 'BUY' | 'SELL';
+        strike_distance: number;
+        expiry_ref: string;
+        when?: Record<string, string[]>;
+    }>;
+}
+
+export type CalendarMode = 'CE' | 'PE' | 'BOTH';
+
+export interface LegPresetInputs {
+    symbol: string;
+    token: string;
+    strike_step: number;
+    lot_size: number;
+    lots: number;
+    atm_strike: number;
+    strike_distance?: number;
+    expiry?: string;
+    near_expiry?: string;
+    far_expiry?: string;
+    calendar_mode?: CalendarMode;
+}
+
 export interface StrategyTemplate {
     id: number;
     name: string;
     description: string;
     minimum_capital: number;
+    leg_preset_config?: LegPresetConfig | null;
 }
 
 export interface BuilderLeg {
@@ -85,6 +114,7 @@ export interface StrategyBuilderCreate {
     shift_strike_distance_itm?: number | null;
     shift_strike_distance_otm?: number | null;
     sell_exposure_limit_lacs?: number | null;
+    leg_preset?: LegPresetInputs;
 }
 
 export interface StrategyBuilderUpdate {
