@@ -498,8 +498,8 @@ export default function Page() {
                                 ? "text-warning"
                                 : "text-base-content/90"
                             }`}
-                          >
-                            {strategy.pending_orders_count ?? 0}
+                          > 
+                          Pending - {strategy.pending_orders_count ?? 0}
                           </span>
                           <span
                             title="Open orders at broker"
@@ -509,7 +509,7 @@ export default function Page() {
                                 : "text-base-content/70"
                             }`}
                           >
-                            {strategy.open_orders_count ?? 0}
+                          Open - {strategy.open_orders_count ?? 0}
                           </span>
                         </div>
                       </td>

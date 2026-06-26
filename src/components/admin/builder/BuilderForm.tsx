@@ -1,5 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StrategyBuilder, StrategyBuilderCreate, StrategyBuilderUpdate, StrategyTemplate } from '@/types/builder';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import AsyncSelect from 'react-select/async';
+import type { StylesConfig } from 'react-select';
+import {
+    StrategyBuilder,
+    StrategyBuilderCreate,
+    StrategyBuilderUpdate,
+    StrategyTemplate,
+    CalendarMode,
+    LegPresetInputs,
+} from '@/types/builder';
 import UnderlyingDividendSection from '@/components/admin/builder/UnderlyingDividendSection';
 import { authFetch } from '@/utils/api';
 
@@ -10,6 +19,47 @@ interface SuperGroup {
     plan_id?: number;
     risk_profile?: string;
 }
+
+interface UnderlyingOption {
+    label: string;
+    value: string;
+    token: string;
+    lot_size: number;
+}
+
+interface InstrumentSearchResult {
+    tradingsymbol: string;
+    name: string;
+    instrument_token: number;
+    exchange: string;
+    lot_size: number;
+}
+
+const reactSelectStyles: StylesConfig<UnderlyingOption> = {
+    control: (base, state) => ({
+        ...base,
+        backgroundColor: 'var(--color-base-100)',
+        borderColor: state.isFocused ? 'var(--color-primary)' : 'var(--color-base-300)',
+        boxShadow: state.isFocused ? '0 0 0 1px var(--color-primary)' : 'none',
+        '&:hover': { borderColor: 'var(--color-base-content)' },
+    }),
+    menu: (base) => ({
+        ...base,
+        backgroundColor: 'var(--color-base-100)',
+        border: '1px solid var(--color-base-300)',
+    }),
+    option: (base, state) => ({
+        ...base,
+        backgroundColor: state.isSelected
+            ? 'var(--color-primary)'
+            : state.isFocused
+            ? 'var(--color-base-200)'
+            : 'transparent',
+        color: state.isSelected ? 'var(--color-primary-content)' : 'var(--color-base-content)',
+    }),
+    singleValue: (base) => ({ ...base, color: 'var(--color-base-content)' }),
+    input: (base) => ({ ...base, color: 'var(--color-base-content)' }),
+};
 
 interface BuilderFormProps {
     initialData?: StrategyBuilder;
@@ -48,6 +98,43 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const submittingRef = useRef(false);
+
+    const [presetSymbol, setPresetSymbol] = useState('');
+    const [presetToken, setPresetToken] = useState('');
+    const [presetStrikeStep, setPresetStrikeStep] = useState(50);
+    const [presetLotSize, setPresetLotSize] = useState(75);
+    const [presetLots, setPresetLots] = useState(1);
+    const [presetExpiry, setPresetExpiry] = useState('');
+    const [presetNearExpiry, setPresetNearExpiry] = useState('');
+    const [presetFarExpiry, setPresetFarExpiry] = useState('');
+    const [presetCalendarMode, setPresetCalendarMode] = useState<CalendarMode>('PE');
+    const [presetSpotPrice, setPresetSpotPrice] = useState<number | null>(null);
+    const [presetAtmStrike, setPresetAtmStrike] = useState<number | null>(null);
+
+    const calculateATMStrike = (currentPrice: number, strikeStep: number): number => {
+        if (strikeStep === 0) return 0;
+        return Math.round(currentPrice / strikeStep) * strikeStep;
+    };
+
+    const selectedTemplate = useMemo(
+        () => strategyTemplates.find((t) => t.id === formData.strategy_template_id),
+        [strategyTemplates, formData.strategy_template_id]
+    );
+    const legPresetConfig = selectedTemplate?.leg_preset_config ?? null;
+
+    const resetPresetInputs = () => {
+        setPresetSymbol('');
+        setPresetToken('');
+        setPresetStrikeStep(50);
+        setPresetLotSize(75);
+        setPresetLots(1);
+        setPresetExpiry('');
+        setPresetNearExpiry('');
+        setPresetFarExpiry('');
+        setPresetCalendarMode('PE');
+        setPresetSpotPrice(null);
+        setPresetAtmStrike(null);
+    };
 
     useEffect(() => {
         if (initialData) {
@@ -165,11 +252,12 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         // Handle strategy_template_id change - auto-populate margin_required
         if (name === 'strategy_template_id') {
             const templateId = value === '' ? null : parseInt(value, 10);
-            const selectedTemplate = templateId != null ? strategyTemplates.find(t => t.id === templateId) : null;
+            const selected = templateId != null ? strategyTemplates.find(t => t.id === templateId) : null;
+            resetPresetInputs();
             setFormData(prev => ({
                 ...prev,
                 [name]: templateId,
-                margin_required: selectedTemplate?.minimum_capital || prev.margin_required || 0
+                margin_required: selected?.minimum_capital || prev.margin_required || 0
             }));
             return;
         }
@@ -225,6 +313,137 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         });
     };
 
+    const loadUnderlyingOptions = async (inputValue: string) => {
+        if (!inputValue) return [];
+        try {
+            const instrumentType = formData.exchange === 'MCX' ? 'FUT' : 'EQ';
+            const response = await authFetch(
+                `market/instruments/search/?instrument_type=${instrumentType}&q=${encodeURIComponent(inputValue)}`
+            );
+            const data: InstrumentSearchResult[] = await response.json();
+            return data.map((item) => ({
+                label: `${item.tradingsymbol} - ${item.name} - ${item.exchange}`,
+                value: item.tradingsymbol,
+                token: item.instrument_token.toString(),
+                lot_size: item.lot_size,
+            }));
+        } catch {
+            return [];
+        }
+    };
+
+    const fetchUnderlyingSpot = async (token: string): Promise<number | null> => {
+        try {
+            const response = await authFetch('market/quotes/', {}, { instruments: token });
+            const data = await response.json();
+            const quote = data.data?.[token];
+            const lastPrice = Number(quote?.last_price);
+            return Number.isFinite(lastPrice) ? lastPrice : null;
+        } catch {
+            return null;
+        }
+    };
+
+    const handlePresetUnderlyingChange = async (option: UnderlyingOption | null) => {
+        if (!option) {
+            setPresetSymbol('');
+            setPresetToken('');
+            setPresetSpotPrice(null);
+            setPresetAtmStrike(null);
+            return;
+        }
+        const parts = option.label.split(' - ');
+        const firstWord = option.value.split(' ')[0];
+        const symbol = formData.exchange === 'MCX' ? parts[1] : firstWord;
+        setPresetSymbol(symbol);
+        setPresetToken(option.token);
+        if (option.lot_size > 0) {
+            setPresetLotSize(option.lot_size);
+        }
+        let strikeStep = presetStrikeStep;
+        try {
+            const response = await authFetch(`market/get/${symbol}`);
+            if (response.ok) {
+                const data = await response.json();
+                const step = Number(data.strike_step);
+                if (Number.isFinite(step) && step > 0) {
+                    strikeStep = step;
+                    setPresetStrikeStep(step);
+                }
+            }
+        } catch {
+            // strike step stays at current value
+        }
+        const spot = await fetchUnderlyingSpot(option.token);
+        if (spot != null) {
+            setPresetSpotPrice(spot);
+            setPresetAtmStrike(calculateATMStrike(spot, strikeStep));
+        } else {
+            setPresetSpotPrice(null);
+            setPresetAtmStrike(null);
+        }
+    };
+
+    const presetReady = useMemo(() => {
+        if (!legPresetConfig?.inputs?.length || !presetSymbol || !presetToken || presetAtmStrike == null) {
+            return false;
+        }
+        const values: Record<string, string | number> = {
+            symbol: presetSymbol,
+            token: presetToken,
+            strike_step: presetStrikeStep,
+            lot_size: presetLotSize,
+            lots: presetLots,
+            expiry: presetExpiry,
+            near_expiry: presetNearExpiry,
+            far_expiry: presetFarExpiry,
+            calendar_mode: presetCalendarMode,
+        };
+        return legPresetConfig.inputs.every((key) => {
+            if (key === 'strike_distance') return true;
+            const value = values[key];
+            return value !== '' && value !== null && value !== undefined;
+        });
+    }, [
+        legPresetConfig,
+        presetSymbol,
+        presetToken,
+        presetStrikeStep,
+        presetLotSize,
+        presetLots,
+        presetExpiry,
+        presetNearExpiry,
+        presetFarExpiry,
+        presetCalendarMode,
+        presetAtmStrike,
+    ]);
+
+    const buildLegPresetPayload = (): LegPresetInputs | undefined => {
+        if (!legPresetConfig || !presetReady || presetAtmStrike == null) return undefined;
+        const payload: LegPresetInputs = {
+            symbol: presetSymbol,
+            token: presetToken,
+            strike_step: presetStrikeStep,
+            lot_size: presetLotSize,
+            lots: presetLots,
+            atm_strike: presetAtmStrike,
+            strike_distance: 0,
+        };
+        if (legPresetConfig.inputs.includes('expiry')) {
+            payload.expiry = presetExpiry;
+        }
+        if (legPresetConfig.inputs.includes('near_expiry')) {
+            payload.near_expiry = presetNearExpiry;
+        }
+        if (legPresetConfig.inputs.includes('far_expiry')) {
+            payload.far_expiry = presetFarExpiry;
+        }
+        if (legPresetConfig.inputs.includes('calendar_mode')) {
+            payload.calendar_mode = presetCalendarMode;
+        }
+        return payload;
+    };
+
     const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
         if (e) {
             e.preventDefault();
@@ -237,10 +456,19 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 return;
             }
         }
+        if (!initialData && legPresetConfig && !presetReady) {
+            alert('Please complete all leg setup fields before submitting.');
+            return;
+        }
         submittingRef.current = true;
         setIsSubmitting(true);
         try {
-            await Promise.resolve(onSubmit(formData as StrategyBuilderCreate));
+            const payload = { ...formData } as StrategyBuilderCreate;
+            const legPreset = buildLegPresetPayload();
+            if (!initialData && legPreset) {
+                payload.leg_preset = legPreset;
+            }
+            await Promise.resolve(onSubmit(payload));
         } finally {
             submittingRef.current = false;
             setIsSubmitting(false);
@@ -712,13 +940,142 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             </div>
             </div>
 
+            {!initialData && legPresetConfig ? (
+            <div className="collapse collapse-arrow join-item border-0 !rounded-none border-t border-base-300 min-h-0">
+                <input
+                    type="checkbox"
+                    defaultChecked
+                    aria-label="Show or hide Leg setup"
+                    className="min-h-0"
+                />
+                <div className="collapse-title min-h-0 py-3 text-sm font-semibold text-base-content after:!top-1/2 after:!-translate-y-1/2">
+                    Leg setup
+                </div>
+                <div className="collapse-content pt-0">
+                <div className="px-0 pb-4 sm:px-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {legPresetConfig.inputs.includes('symbol') ? (
+                        <div className="form-control md:col-span-2">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Underlying</span>
+                            </label>
+                            <AsyncSelect
+                                cacheOptions
+                                defaultOptions
+                                loadOptions={loadUnderlyingOptions}
+                                onChange={handlePresetUnderlyingChange}
+                                value={
+                                    presetSymbol
+                                        ? {
+                                              label: presetSymbol,
+                                              value: presetSymbol,
+                                              token: presetToken,
+                                              lot_size: presetLotSize,
+                                          }
+                                        : null
+                                }
+                                placeholder="Search symbol (e.g. NIFTY)..."
+                                styles={reactSelectStyles}
+                            />
+                            <label className="label py-0">
+                                <span className="label-text-alt">
+                                    Token: {presetToken || '—'}, strike step: {presetStrikeStep}, lot size: {presetLotSize}
+                                    {presetSpotPrice != null ? `, spot: ${presetSpotPrice}` : ''}
+                                    {presetAtmStrike != null ? `, ATM: ${presetAtmStrike}` : ''}
+                                </span>
+                            </label>
+                        </div>
+                    ) : null}
+
+                    {legPresetConfig.inputs.includes('lots') ? (
+                        <div className="form-control">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Lots</span>
+                            </label>
+                            <input
+                                type="number"
+                                min={1}
+                                value={presetLots}
+                                onChange={(e) => setPresetLots(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                                className="input input-bordered input-sm h-9 w-full"
+                            />
+                        </div>
+                    ) : null}
+
+                    {legPresetConfig.inputs.includes('expiry') ? (
+                        <div className="form-control">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Expiry</span>
+                            </label>
+                            <input
+                                type="date"
+                                value={presetExpiry}
+                                onChange={(e) => setPresetExpiry(e.target.value)}
+                                className="input input-bordered input-sm h-9 w-full"
+                                required
+                            />
+                        </div>
+                    ) : null}
+
+                    {legPresetConfig.inputs.includes('near_expiry') ? (
+                        <div className="form-control">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Near expiry</span>
+                            </label>
+                            <input
+                                type="date"
+                                value={presetNearExpiry}
+                                onChange={(e) => setPresetNearExpiry(e.target.value)}
+                                className="input input-bordered input-sm h-9 w-full"
+                                required
+                            />
+                        </div>
+                    ) : null}
+
+                    {legPresetConfig.inputs.includes('far_expiry') ? (
+                        <div className="form-control">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Far expiry</span>
+                            </label>
+                            <input
+                                type="date"
+                                value={presetFarExpiry}
+                                onChange={(e) => setPresetFarExpiry(e.target.value)}
+                                className="input input-bordered input-sm h-9 w-full"
+                                required
+                            />
+                        </div>
+                    ) : null}
+
+                    {legPresetConfig.inputs.includes('calendar_mode') ? (
+                        <div className="form-control">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Calendar legs</span>
+                            </label>
+                            <select
+                                value={presetCalendarMode}
+                                onChange={(e) => setPresetCalendarMode(e.target.value as CalendarMode)}
+                                className="select select-bordered select-sm h-9 w-full"
+                            >
+                                <option value="CE">Call (CE) — 2 legs</option>
+                                <option value="PE">Put (PE) — 2 legs</option>
+                                <option value="BOTH">Both CE and PE — 4 legs</option>
+                            </select>
+                        </div>
+                    ) : null}
+                </div>
+                </div>
+                </div>
+            </div>
+            ) : null}
+
             <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={onCancel} disabled={isSubmitting} className="btn btn-ghost btn-sm">
                     Cancel
                 </button>
                 <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || (!initialData && Boolean(legPresetConfig) && !presetReady)}
                     className="btn btn-primary btn-sm min-w-[5.5rem] gap-2"
                 >
                     {isSubmitting ? (
