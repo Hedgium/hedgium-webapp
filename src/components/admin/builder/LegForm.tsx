@@ -491,23 +491,21 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                 </div>
 
 
-                {formData.strike_type === 'FIXED' && (
-                    <div className="form-control">
-                        <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Strike Distance (ATM +/-)</span></label>
-                        <input 
-                            type="number" 
-                            name="strike_distance" 
-                            value={formData.strike_distance} 
-                            onChange={handleChange}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    handleSubmit(e);
-                                }
-                            }}
-                            className="input input-bordered input-sm h-9 w-full" 
-                        />
-                    </div>
-                )}
+                <div className="form-control">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Strike Distance (ATM +/-)</span></label>
+                    <input 
+                        type="number" 
+                        name="strike_distance" 
+                        value={formData.strike_distance} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
+                        className="input input-bordered input-sm h-9 w-full" 
+                    />
+                </div>
 
                 {formData.strike_type === 'FIXED' && (<div className="form-control">
                     <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Calculated Strike</span></label>

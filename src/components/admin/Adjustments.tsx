@@ -38,15 +38,19 @@ function Adjustment({ adj, onDelete }) {
 
   async function approveAdjustment(adjId: number) {
     try {
-      setAdjustment({ ...adjustment, approved: true });
-      alert.success("Adjustment approved successfully.");
       const res = await authFetch(`myadmin/approve-adjustment/${adjId}/`, {
         method: "POST"
       });
-      const data = await res.json();
-      // console.log("Approved adjustment:", data);
+      if (res.ok) {
+        setAdjustment({ ...adjustment, approved: true });
+        alert.success("Adjustment approved successfully.");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert.error(data?.message || "Failed to approve adjustment.");
+      }
     } catch (error) {
       console.error("Error approving adjustment:", error);
+      alert.error("Error approving adjustment.");
     }
   }
 

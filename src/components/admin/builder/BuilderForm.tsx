@@ -79,6 +79,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         strategy_template_id: null, // Default or fetch from API
         margin_required: 0,
         multiplier_allowed: false,
+        auto_approve_adjustments: false,
         auto_match_allowed: false,
         auto_match_max: null,
         supergroup_ids: [],
@@ -149,6 +150,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 strategy_template_id: initialData.strategy_template?.id || 1,
                 margin_required: initialData.margin_required || 0,
                 multiplier_allowed: initialData.multiplier_allowed ?? false,
+                auto_approve_adjustments: initialData.auto_approve_adjustments ?? false,
                 auto_match_allowed: initialData.auto_match_allowed ?? false,
                 auto_match_max:
                     initialData.auto_match_max == null
@@ -655,6 +657,24 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                             type="checkbox"
                             name="multiplier_allowed"
                             checked={formData.multiplier_allowed ?? false}
+                            onChange={handleChange}
+                            className="toggle toggle-primary"
+                        />
+                    </label>
+                </div>
+
+                <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-4 py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80 flex items-center gap-1">
+                            Auto-approve adjustments (after v1)
+                            <span className="tooltip tooltip-right" data-tip="When enabled, adjustments from v2 onward are approved and orders placed automatically — no admin Approve click. v1 always requires manual approval.">
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-base-300 text-base-content text-[10px] font-bold cursor-default select-none">i</span>
+                            </span>
+                        </span>
+                        <input
+                            type="checkbox"
+                            name="auto_approve_adjustments"
+                            checked={formData.auto_approve_adjustments ?? false}
                             onChange={handleChange}
                             className="toggle toggle-primary"
                         />
