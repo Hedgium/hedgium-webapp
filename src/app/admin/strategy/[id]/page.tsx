@@ -20,12 +20,6 @@ const StrategyOptionChainModal = dynamic(
   { ssr: false, loading: () => null }
 );
 
-interface StrategyVersion {
-  id: number;
-  version: number;
-  title: string | null;
-}
-
 interface SpotSnapshot {
   underlying: string;
   spot_price: number | string;
@@ -54,7 +48,6 @@ interface StrategyDetail {
   pnl_updated_at?: string | null;
   adjustment_count: number;
   leg_count: number;
-  versions: StrategyVersion[];
   multiplier_allowed?: boolean;
   /** Uppercase symbol -> Zerodha underlying instrument_token from builder legs */
   underlying_instrument_tokens?: Record<string, number>;
@@ -110,11 +103,17 @@ export default function StrategyDetailPage() {
   const [showManualAdjustment, setShowManualAdjustment] = useState(false);
   const [showOptionChainModal, setShowOptionChainModal] = useState(false);
   const [strategyRefreshing, setStrategyRefreshing] = useState(false);
+  const [adjustmentsRefreshVersion, setAdjustmentsRefreshVersion] = useState(0);
   const alert = useAlert();
 
   const params = useParams<{ id: string }>();
   const { id } = params;
   const strategyId = Number(id);
+
+  function refreshStrategyAndAdjustments(opts?: { silent?: boolean }) {
+    void fetchStrategyData(opts);
+    setAdjustmentsRefreshVersion((v) => v + 1);
+  }
 
   async function fetchStrategyData(opts?: { silent?: boolean }) {
     const silent = opts?.silent ?? false;
@@ -321,7 +320,7 @@ export default function StrategyDetailPage() {
             <div className="flex flex-wrap items-center gap-2 shrink-0 lg:justify-end">
               <button
                 type="button"
-                onClick={() => fetchStrategyData({ silent: true })}
+                onClick={() => refreshStrategyAndAdjustments({ silent: true })}
                 disabled={strategyRefreshing}
                 className={`btn btn-ghost btn-sm btn-square ${strategyRefreshing ? "animate-spin" : ""}`}
                 title="Refresh strategy metrics"
@@ -449,7 +448,7 @@ export default function StrategyDetailPage() {
         <div className="mb-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 mb-2">
             <h2 className="text-lg font-semibold min-w-0 shrink sm:pr-2">
-              Strategy adjustments ({Array.isArray(strategy?.versions) ? strategy.versions.length : 0})
+              Strategy adjustments ({strategy?.adjustment_count ?? 0})
             </h2>
             <div className="flex flex-wrap items-center gap-1 shrink-0">
               {!strategy?.completed && (
@@ -464,7 +463,7 @@ export default function StrategyDetailPage() {
               )}
               <button
                 type="button"
-                onClick={() => fetchStrategyData({ silent: true })}
+                onClick={() => refreshStrategyAndAdjustments({ silent: true })}
                 disabled={strategyRefreshing}
                 className={`btn btn-ghost btn-sm ${strategyRefreshing ? "animate-spin" : ""}`}
                 title="Refresh strategy & adjustments"
@@ -475,7 +474,8 @@ export default function StrategyDetailPage() {
             </div>
           </div>
           <Adjustments
-            adjustments={strategy?.versions ?? []}
+            strategyId={strategyId}
+            refreshVersion={adjustmentsRefreshVersion}
             onRefresh={() => fetchStrategyData({ silent: true })}
           />
         </div>
@@ -532,7 +532,7 @@ export default function StrategyDetailPage() {
           <ManualAdjustmentModal
             strategyId={strategyId}
             onClose={() => setShowManualAdjustment(false)}
-            onSuccess={() => fetchStrategyData({ silent: true })}
+            onSuccess={() => refreshStrategyAndAdjustments({ silent: true })}
           />
         )}
 

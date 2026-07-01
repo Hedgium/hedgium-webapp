@@ -80,6 +80,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         margin_required: 0,
         multiplier_allowed: false,
         auto_approve_adjustments: false,
+        auto_approve_max: null,
         auto_match_allowed: false,
         auto_match_max: null,
         supergroup_ids: [],
@@ -88,6 +89,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         spot_dev_pct_min: null,
         spot_dev_pct_max: null,
         num_lots_delta_band_adjust: null,
+        adjustment_strike_distance: 0,
         shift_enabled: false,
         shift_strike_distance_itm: null,
         shift_strike_distance_otm: null,
@@ -151,6 +153,10 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 margin_required: initialData.margin_required || 0,
                 multiplier_allowed: initialData.multiplier_allowed ?? false,
                 auto_approve_adjustments: initialData.auto_approve_adjustments ?? false,
+                auto_approve_max:
+                    initialData.auto_approve_max == null
+                        ? null
+                        : Number(initialData.auto_approve_max),
                 auto_match_allowed: initialData.auto_match_allowed ?? false,
                 auto_match_max:
                     initialData.auto_match_max == null
@@ -177,6 +183,10 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     initialData.num_lots_delta_band_adjust == null
                         ? null
                         : Number(initialData.num_lots_delta_band_adjust),
+                adjustment_strike_distance:
+                    initialData.adjustment_strike_distance == null
+                        ? 0
+                        : Number(initialData.adjustment_strike_distance),
                 shift_enabled: initialData.shift_enabled ?? false,
                 shift_strike_distance_itm:
                     initialData.shift_strike_distance_itm == null
@@ -270,6 +280,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             'spot_dev_pct_min',
             'spot_dev_pct_max',
             'num_lots_delta_band_adjust',
+            'auto_approve_max',
             'auto_match_max',
             'shift_strike_distance_itm',
             'shift_strike_distance_otm',
@@ -298,7 +309,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         
         setFormData(prev => ({
             ...prev,
-            [name]: name === 'strike_step' || name === 'strike_multiplier' || name === 'strategy_template_id' ? parseInt(value) :
+            [name]: name === 'strike_step' || name === 'strike_multiplier' || name === 'strategy_template_id' || name === 'adjustment_strike_distance' ? parseInt(value) :
                 name === 'entry_ws' || name === 'exit_ws' || name === 'margin_required' ? parseFloat(value) : value
         }));
     };
@@ -451,6 +462,13 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             e.preventDefault();
         }
         if (submittingRef.current) return;
+        if (formData.auto_approve_adjustments) {
+            const approveMax = formData.auto_approve_max;
+            if (approveMax == null || !Number.isFinite(Number(approveMax)) || Number(approveMax) < 1) {
+                alert('Auto approve max must be at least 1 when auto-approve adjustments is enabled.');
+                return;
+            }
+        }
         if (formData.auto_match_allowed) {
             const max = formData.auto_match_max;
             if (max == null || !Number.isFinite(Number(max)) || Number(max) < 1) {
@@ -641,7 +659,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         required
                     />
                     <label className="label">
-                        <span className="label-text-alt">Auto-populated from template, but editable</span>
+                        <span className="text-xs text-base-content/60">Auto-populated from template, but editable</span>
                     </label>
                 </div>
 
@@ -682,6 +700,26 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div>
 
                 <div className="form-control">
+                    <label className="label py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Auto Approve Max (per strategy)</span>
+                    </label>
+                    <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        name="auto_approve_max"
+                        value={optionalNumberValue(formData.auto_approve_max)}
+                        onChange={handleChange}
+                        disabled={!formData.auto_approve_adjustments}
+                        placeholder={formData.auto_approve_adjustments ? 'e.g. 3' : 'Enable auto-approve first'}
+                        className="input input-bordered input-sm h-9 w-full"
+                    />
+                    <label className="label">
+                        <span className="text-xs text-base-content/60">Max auto-approved adjustments (v2+) per deployed strategy</span>
+                    </label>
+                </div>
+
+                <div className="form-control">
                     <label className="label cursor-pointer justify-start gap-4 py-0">
                         <span className="label-text text-sm font-medium text-base-content/80 flex items-center gap-1">
                             Auto Match Allowed
@@ -715,7 +753,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         className="input input-bordered input-sm h-9 w-full"
                     />
                     <label className="label">
-                        <span className="label-text-alt">Max automated match batch runs per follower trade cycle</span>
+                        <span className="text-xs text-base-content/60">Max automated match batch runs per follower trade cycle</span>
                     </label>
                 </div>
 
@@ -748,7 +786,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         )}
                     </div>
                     <label className="label">
-                        <span className="label-text-alt">Select one or more supergroups</span>
+                        <span className="text-xs text-base-content/60">Select one or more supergroups</span>
                     </label>
                 </div>
 
@@ -812,7 +850,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         </div>
                     </div>
                     <label className="label">
-                        <span className="label-text-alt">
+                        <span className="text-xs text-base-content/60">
                             Leave either field empty to disable. Net delta per underlying is compared to these bounds directly.
                         </span>
                     </label>
@@ -867,7 +905,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         </div>
                     </div>
                     <label className="label">
-                        <span className="label-text-alt">
+                        <span className="text-xs text-base-content/60">
                             Leave either field empty to disable spot deviation checks.
                         </span>
                     </label>
@@ -890,6 +928,29 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         placeholder="e.g. 1 (required for auto push)"
                         className="input input-bordered input-sm h-9 w-full"
                     />
+                </div>
+
+                <div className="form-control">
+                    <label className="label py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80">Adjustment strike distance (strikes from ATM)</span>
+                    </label>
+                    <input
+                        type="number"
+                        step="1"
+                        name="adjustment_strike_distance"
+                        value={formData.adjustment_strike_distance ?? 0}
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSubmit(e);
+                        }}
+                        placeholder="0 = ATM"
+                        className="input input-bordered input-sm h-9 w-full"
+                    />
+                    <label className="label">
+                        <span className="text-xs text-base-content/60">
+                            0 = ATM. +2 → CE at ATM+2×step, PE at ATM−2×step.
+                        </span>
+                    </label>
                 </div>
 
                 <div className="form-control">
@@ -998,7 +1059,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                                 styles={reactSelectStyles}
                             />
                             <label className="label py-0">
-                                <span className="label-text-alt">
+                                <span className="text-xs text-base-content/60">
                                     Token: {presetToken || '—'}, strike step: {presetStrikeStep}, lot size: {presetLotSize}
                                     {presetSpotPrice != null ? `, spot: ${presetSpotPrice}` : ''}
                                     {presetAtmStrike != null ? `, ATM: ${presetAtmStrike}` : ''}

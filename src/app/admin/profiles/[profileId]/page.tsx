@@ -8,7 +8,7 @@ import { authFetch } from "@/utils/api";
 import { Profile } from "@/types/profile";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { ArrowLeft, Edit2, TrendingUp, Calendar, Plus } from "lucide-react";
+import { ArrowLeft, Edit2, TrendingUp, Calendar, Plus, BarChart3 } from "lucide-react";
 
 const ProfileForm = dynamic(
   () => import("@/components/admin/profiles/ProfileForm"),
@@ -119,6 +119,12 @@ export default function ProfileDetailPage() {
           >
             <Edit2 size={16} /> Edit Profile
           </button>
+          <Link
+            href={`/admin/profiles/${profile.id}/reports`}
+            className="btn btn-outline btn-sm gap-2"
+          >
+            <BarChart3 size={16} /> E2 Reports
+          </Link>
           {profile.broker_logged_in && (
             <Link
               href={`/admin/profiles/${profile.id}/live`}
