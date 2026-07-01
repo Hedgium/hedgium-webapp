@@ -69,6 +69,7 @@ export interface StrategyBuilder {
     exit_pnl: number;
     margin_required: number;
     multiplier_allowed: boolean;
+    auto_approve_adjustments?: boolean;
     auto_match_allowed?: boolean;
     auto_match_max?: number | null;
     strategy_template: StrategyTemplate;
@@ -102,6 +103,7 @@ export interface StrategyBuilderCreate {
     strategy_template_id: number;
     margin_required?: number;
     multiplier_allowed?: boolean;
+    auto_approve_adjustments?: boolean;
     auto_match_allowed?: boolean;
     auto_match_max?: number | null;
     supergroup_ids?: number[];
@@ -129,6 +131,7 @@ export interface StrategyBuilderUpdate {
     strategy_template_id?: number;
     margin_required?: number;
     multiplier_allowed?: boolean;
+    auto_approve_adjustments?: boolean;
     auto_match_allowed?: boolean;
     auto_match_max?: number | null;
     supergroup_ids?: number[];
