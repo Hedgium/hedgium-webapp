@@ -409,7 +409,7 @@ export default function AdminProxyPoolPage() {
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3">
               <label className="form-control w-full">
                 <span className="label-text text-sm">Broker</span>
-                <span className="label-text-alt text-xs text-base-content/60 block -mt-0.5 mb-1">
+                <span className="text-xs text-base-content/60 block -mt-0.5 mb-1">
                   Static IPs are whitelisted per broker — pool rows must match the profile broker.
                 </span>
                 <select
@@ -430,7 +430,7 @@ export default function AdminProxyPoolPage() {
               </label>
               <label className="form-control w-full">
                 <span className="label-text text-sm">IP address (whitelisted)</span>
-                <span className="label-text-alt text-xs text-base-content/60 block -mt-0.5 mb-1">
+                <span className="text-xs text-base-content/60 block -mt-0.5 mb-1">
                   Static IP the broker associates with this customer (e.g. 103.204.210.45).
                 </span>
                 <input
@@ -442,7 +442,7 @@ export default function AdminProxyPoolPage() {
               </label>
               <label className="form-control w-full">
                 <span className="label-text text-sm">Proxy host (CONNECT)</span>
-                <span className="label-text-alt text-xs text-base-content/60 block -mt-0.5 mb-1">
+                <span className="text-xs text-base-content/60 block -mt-0.5 mb-1">
                   Hostname your HTTP client uses to reach the proxy (provider DNS).
                 </span>
                 <input
@@ -507,7 +507,7 @@ export default function AdminProxyPoolPage() {
                   ))}
                 </select>
                 {!matchingProfileOptions.length && (
-                  <span className="label-text-alt text-xs text-base-content/60 mt-1">
+                  <span className="text-xs text-base-content/60 mt-1">
                     No profiles with broker {brokerName}.
                   </span>
                 )}

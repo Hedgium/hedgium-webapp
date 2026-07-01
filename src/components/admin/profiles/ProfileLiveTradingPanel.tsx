@@ -23,6 +23,7 @@ import {
   ArrowRightLeft,
   BarChart3,
 } from "lucide-react";
+import Link from "next/link";
 import { Profile } from "@/types/profile";
 import { LiveHolding, LivePosition } from "@/types/positions";
 
@@ -502,7 +503,16 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
               )}
             </div>
           </div>
-          <div className="flex gap-2">{placeOrderButton}</div>
+          <div className="flex gap-2">
+            <Link
+              href={`/admin/profiles/${profileId}/reports`}
+              className="btn btn-outline btn-sm gap-2"
+            >
+              <BarChart3 size={16} />
+              E2 Reports
+            </Link>
+            {placeOrderButton}
+          </div>
         </div>
       ) : (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-base-300">
@@ -1256,7 +1266,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                   required
                 />
                 <label className="label">
-                  <span className="label-text-alt">Max: {Math.abs(selectedPosition.quantity)} units</span>
+                  <span className="text-xs text-base-content/60">Max: {Math.abs(selectedPosition.quantity)} units</span>
                 </label>
               </div>
 
@@ -1268,7 +1278,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                   <option value="MARKET">MARKET</option>
                 </select>
                 <label className="label">
-                  <span className="label-text-alt">Exit orders are placed as MARKET orders</span>
+                  <span className="text-xs text-base-content/60">Exit orders are placed as MARKET orders</span>
                 </label>
               </div>
 

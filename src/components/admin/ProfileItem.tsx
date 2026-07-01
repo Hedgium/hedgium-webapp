@@ -769,7 +769,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                                 }}
                             />
                             <label className="label">
-                                <span className="label-text-alt">
+                                <span className="text-xs text-base-content/60">
                                     {brokerLoggedIn
                                         ? "Enter the new access token to replace the current one."
                                         : "Provide the broker access token directly"}
@@ -831,7 +831,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                                 disabled={isUploadingKyc}
                             />
                             <label className="label">
-                                <span className="label-text-alt text-base-content/60">
+                                <span className="text-xs text-base-content/60">
                                     Uploaded for {profile.user.email}. Replaces any existing KYC document.
                                 </span>
                             </label>

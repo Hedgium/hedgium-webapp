@@ -45,12 +45,19 @@ function isSessionExempt(normalizedPath: string, method: string): boolean {
 }
 
 async function handleProxyRequest(request: Request) {
-  const { pathname, search } = new URL(request.url);
+  const { pathname } = new URL(request.url);
   const pathSegments = pathname.split("/").slice(3);
   const backendPath = pathSegments.join("/");
   const normalizedPath =
     backendPath.endsWith("/") ? backendPath : backendPath + "/";
-  const backendUrl = `${process.env.BACKEND_API_URL}${normalizedPath}${search}`;
+  const upstreamSearch = (() => {
+    const params = new URL(request.url).searchParams;
+    // Next.js [[...path]] catch-all adds ?path=... — strip before upstream.
+    params.delete("path");
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  })();
+  const backendUrl = `${process.env.BACKEND_API_URL}${normalizedPath}${upstreamSearch}`;
   const apiKey = process.env.BACKEND_API_KEY;
 
   if (!apiKey) {

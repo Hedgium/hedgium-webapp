@@ -7,7 +7,7 @@ import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { Profile } from "@/types/profile";
 import { LiveHolding } from "@/types/positions";
-import { IndianRupee, RefreshCw, Search } from "lucide-react";
+import { IndianRupee, RefreshCw, Search, BarChart3 } from "lucide-react";
 import { USER_ROLE_FILTER_OPTIONS, userRoleLabel } from "@/constants/userRoles";
 
 type PnlSummary = {
@@ -502,6 +502,14 @@ export default function AdminClientPnlPage() {
                           className="link link-primary font-mono text-sm font-medium"
                         >
                           {row.clientId} <span className="text-xs text-base-content/55">{row.brokerName}</span>
+                        </Link>
+                        <Link
+                          href={`/admin/profiles/${row.profileId}/reports`}
+                          className="btn btn-ghost btn-xs gap-1 px-1.5"
+                          title="E2 reports"
+                        >
+                          <BarChart3 className="h-3.5 w-3.5" aria-hidden />
+                          <span className="hidden sm:inline">Reports</span>
                         </Link>
                         {!row.brokerLoggedIn ? (
                           <span className="badge badge-warning badge-xs">offline</span>

@@ -1,19 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import StrategyLegs from "./StrategyLegs";
 import { authFetch } from "@/utils/api";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import useAlert from "@/hooks/useAlert";
 import { ChevronRight, Trash2 } from "lucide-react";
 
-function Adjustment({ adj, onDelete }) {
+const ADJUSTMENTS_PAGE_SIZE = 3;
+
+interface AdjustmentLeg {
+  leg_index: number;
+  action: string;
+  instrument: string;
+  quantity: number;
+  price?: number | null;
+  order_type: string;
+}
+
+interface AdjustmentData {
+  id: number;
+  version: number;
+  title: string | null;
+  created_at: string;
+  completed: boolean;
+  approved: boolean;
+  legs: AdjustmentLeg[];
+}
+
+interface PaginatedAdjustments {
+  count: number;
+  next: string | null;
+  results: AdjustmentData[];
+}
+
+function Adjustment({
+  adj,
+  onDelete,
+}: {
+  adj: AdjustmentData;
+  onDelete?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [adjustment, setAdjustment] = useState(adj);
   const [deleting, setDeleting] = useState(false);
   const [togglingCompleted, setTogglingCompleted] = useState(false);
 
   const alert = useAlert();
+
+  useEffect(() => {
+    setAdjustment(adj);
+  }, [adj]);
 
   async function toggleCompleted(adjId: number) {
     const newValue = !adjustment.completed;
@@ -39,7 +76,7 @@ function Adjustment({ adj, onDelete }) {
   async function approveAdjustment(adjId: number) {
     try {
       const res = await authFetch(`myadmin/approve-adjustment/${adjId}/`, {
-        method: "POST"
+        method: "POST",
       });
       if (res.ok) {
         setAdjustment({ ...adjustment, approved: true });
@@ -55,23 +92,24 @@ function Adjustment({ adj, onDelete }) {
   }
 
   async function deleteAdjustment(adjId: number) {
-    if (!confirm(`Are you sure you want to delete adjustment v${adjustment.version}? This will also delete all associated legs.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete adjustment v${adjustment.version}? This will also delete all associated legs.`
+      )
+    ) {
       return;
     }
 
     setDeleting(true);
     try {
       const res = await authFetch(`strategies/adjustments/${adjId}/`, {
-        method: "DELETE"
+        method: "DELETE",
       });
       const data = await res.json();
 
       if (res.ok && data.success) {
         alert.success(`Adjustment v${adjustment.version} deleted successfully`);
-        // Call parent callback to refresh strategy data
-        if (onDelete) {
-          onDelete();
-        }
+        onDelete?.();
       } else {
         alert.error("Failed to delete adjustment");
       }
@@ -85,8 +123,6 @@ function Adjustment({ adj, onDelete }) {
 
   return (
     <div className="border border-base-300 rounded-xl mb-2 bg-base-100/70">
-
-      {/* COLLAPSE HEADER */}
       <div
         className="flex items-center justify-between px-4 py-2 cursor-pointer"
         onClick={() => setOpen(!open)}
@@ -99,7 +135,6 @@ function Adjustment({ adj, onDelete }) {
         <div className="flex items-center gap-4">
           <span className="text-sm opacity-70">{formatDateTimeMinutes(adjustment.created_at)}</span>
 
-          {/* Completed toggle */}
           <label
             className="flex items-center gap-2 cursor-pointer"
             onClick={(e) => e.stopPropagation()}
@@ -127,17 +162,22 @@ function Adjustment({ adj, onDelete }) {
 
           <button
             onClick={(e) => {
-              e.stopPropagation(); // prevent dropdown toggle
+              e.stopPropagation();
               deleteAdjustment(adjustment.id);
             }}
             disabled={deleting || adjustment.approved}
             className="btn btn-sm btn-error btn-ghost"
-            title={adjustment.approved ? "Cannot delete an approved adjustment" : "Delete adjustment and all its legs"}
-          >
-            {deleting
-              ? <span className="loading loading-spinner loading-xs"></span>
-              : <Trash2 size={14} />
+            title={
+              adjustment.approved
+                ? "Cannot delete an approved adjustment"
+                : "Delete adjustment and all its legs"
             }
+          >
+            {deleting ? (
+              <span className="loading loading-spinner loading-xs"></span>
+            ) : (
+              <Trash2 size={14} />
+            )}
           </button>
 
           <ChevronRight
@@ -148,17 +188,8 @@ function Adjustment({ adj, onDelete }) {
         </div>
       </div>
 
-      {/* COLLAPSE CONTENT */}
       {open && (
         <div className="px-4 py-2 border-t border-base-300 rounded-xl bg-base-100">
-          {/* Notes */}
-          {/* {adj.notes && (
-            <p className="mb-3 text-sm text-gray-700">
-              <strong>Notes:</strong> {adj.notes}
-            </p>
-          )} */}
-
-          {/* Strategy Legs Table */}
           <div className="overflow-x-auto">
             <table className="table w-full">
               <thead>
@@ -179,17 +210,91 @@ function Adjustment({ adj, onDelete }) {
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
-export default function Adjustments({ adjustments, onRefresh }) {
+export default function Adjustments({
+  strategyId,
+  refreshVersion = 0,
+  onRefresh,
+}: {
+  strategyId: number;
+  refreshVersion?: number;
+  onRefresh?: () => void;
+}) {
+  const [adjustments, setAdjustments] = useState<AdjustmentData[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [nextPage, setNextPage] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const fetchAdjustments = useCallback(
+    async (page: number, append: boolean) => {
+      const setBusy = append ? setLoadingMore : setLoading;
+      setBusy(true);
+      try {
+        const res = await authFetch(
+          `myadmin/strategies/${strategyId}/adjustments/?page=${page}&page_size=${ADJUSTMENTS_PAGE_SIZE}`
+        );
+        if (!res.ok) {
+          throw new Error("Failed to fetch adjustments");
+        }
+        const data: PaginatedAdjustments = await res.json();
+        setAdjustments((prev) => (append ? [...prev, ...data.results] : data.results));
+        setTotalCount(data.count);
+        setNextPage(data.next ? page + 1 : null);
+      } catch (error) {
+        console.error("Error fetching adjustments:", error);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [strategyId]
+  );
+
+  useEffect(() => {
+    void fetchAdjustments(1, false);
+  }, [fetchAdjustments, refreshVersion]);
+
+  function handleDelete() {
+    void fetchAdjustments(1, false);
+    onRefresh?.();
+  }
+
+  const remaining = Math.max(totalCount - adjustments.length, 0);
+
+  if (loading) {
+    return (
+      <div className="mt-2 space-y-2">
+        {Array.from({ length: ADJUSTMENTS_PAGE_SIZE }).map((_, i) => (
+          <div key={i} className="h-12 rounded-xl bg-base-300/40 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (adjustments.length === 0) {
+    return <p className="mt-2 text-sm text-base-content/60">No adjustments yet.</p>;
+  }
+
   return (
     <div className="mt-2">
       {adjustments.map((adj) => (
-        <Adjustment key={adj.id} adj={adj} onDelete={onRefresh} />
+        <Adjustment key={adj.id} adj={adj} onDelete={handleDelete} />
       ))}
+      {nextPage != null && (
+        <div className="mt-2 flex justify-center">
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            disabled={loadingMore}
+            onClick={() => void fetchAdjustments(nextPage, true)}
+          >
+            {loadingMore ? "Loading..." : `Load more (${remaining} remaining)`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

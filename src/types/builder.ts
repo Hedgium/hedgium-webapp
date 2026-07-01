@@ -70,6 +70,7 @@ export interface StrategyBuilder {
     margin_required: number;
     multiplier_allowed: boolean;
     auto_approve_adjustments?: boolean;
+    auto_approve_max?: number | null;
     auto_match_allowed?: boolean;
     auto_match_max?: number | null;
     strategy_template: StrategyTemplate;
@@ -84,6 +85,7 @@ export interface StrategyBuilder {
     /** Per-underlying spot deviation upper bound in percentage from last captured spot. */
     spot_dev_pct_max?: number | null;
     num_lots_delta_band_adjust?: number | null;
+    adjustment_strike_distance?: number;
     shift_enabled?: boolean;
     shift_strike_distance_itm?: number | null;
     shift_strike_distance_otm?: number | null;
@@ -104,6 +106,7 @@ export interface StrategyBuilderCreate {
     margin_required?: number;
     multiplier_allowed?: boolean;
     auto_approve_adjustments?: boolean;
+    auto_approve_max?: number | null;
     auto_match_allowed?: boolean;
     auto_match_max?: number | null;
     supergroup_ids?: number[];
@@ -112,6 +115,7 @@ export interface StrategyBuilderCreate {
     spot_dev_pct_min?: number | null;
     spot_dev_pct_max?: number | null;
     num_lots_delta_band_adjust?: number | null;
+    adjustment_strike_distance?: number;
     shift_enabled?: boolean;
     shift_strike_distance_itm?: number | null;
     shift_strike_distance_otm?: number | null;
@@ -132,6 +136,7 @@ export interface StrategyBuilderUpdate {
     margin_required?: number;
     multiplier_allowed?: boolean;
     auto_approve_adjustments?: boolean;
+    auto_approve_max?: number | null;
     auto_match_allowed?: boolean;
     auto_match_max?: number | null;
     supergroup_ids?: number[];
@@ -140,6 +145,7 @@ export interface StrategyBuilderUpdate {
     spot_dev_pct_min?: number | null;
     spot_dev_pct_max?: number | null;
     num_lots_delta_band_adjust?: number | null;
+    adjustment_strike_distance?: number;
     shift_enabled?: boolean;
     shift_strike_distance_itm?: number | null;
     shift_strike_distance_otm?: number | null;

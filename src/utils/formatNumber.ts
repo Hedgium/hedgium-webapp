@@ -3,13 +3,15 @@
  * No currency symbol — use for displaying money values in the UI.
  */
 export function formatMoneyIN(
-  value: number | null | undefined,
+  value: number | string | null | undefined,
   options?: { decimals?: number; minDecimals?: number }
 ): string {
-  if (value == null || Number.isNaN(value)) return "—";
+  if (value == null || value === "") return "—";
+  const num = typeof value === "number" ? value : Number(value);
+  if (Number.isNaN(num)) return "—";
   const decimals = options?.decimals ?? 2;
   const minDecimals = options?.minDecimals ?? 0;
-  return value.toLocaleString("en-IN", {
+  return num.toLocaleString("en-IN", {
     maximumFractionDigits: decimals,
     minimumFractionDigits: minDecimals,
   });

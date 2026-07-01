@@ -326,10 +326,10 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
                     ))}
                   </select>
                   {poolsLoading && (
-                    <span className="label-text-alt text-base-content/50">Loading pools…</span>
+                    <span className="text-xs text-base-content/50">Loading pools…</span>
                   )}
                   {!poolsLoading && poolOptions.length === 0 && (
-                    <span className="label-text-alt text-warning">
+                    <span className="text-xs text-warning">
                       No unassigned pools. Create one in Proxy pool admin (leave profile unassigned).
                     </span>
                   )}
