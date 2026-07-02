@@ -49,19 +49,13 @@ The backend API lives in `hedgium_backend` (Django + Ninja Extra).
 /forgot-password    → Password reset request
 /reset-password     → Password reset confirm
 /onboarding         → Post-signup onboarding flow
-/get-started        → Pre-auth entry point
 /about              → About page (within app shell)
 /(app)/             → Authenticated app shell
 /admin/             → Admin panel (role-gated)
 /sandbox/           → Sandbox / paper trading
-/complaint-status   → Public complaint lookup
-/privacy-policy     → Legal
-/terms-of-use       → Legal
-/refund-policy      → Legal
-/grievance-redressal → Legal
-/mitc-ia            → MITC — Investment Adviser
-/mitc-ra            → MITC — Research Analyst
 ```
+
+Canonical legal disclosures live on the marketing site (`HEDGIUM_MARKETING_SITE_URL` in `src/lib/marketingSite.ts` → `/legal-complaints-investor-charter`).
 
 Protected routes under `/(app)/` and `/admin/` require valid JWT session.
 Middleware or layout-level auth checks must guard all authenticated paths.

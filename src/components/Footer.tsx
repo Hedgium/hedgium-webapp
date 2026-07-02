@@ -1,4 +1,16 @@
-import Link from "next/link";
+import {
+  HEDGIUM_MARKETING_SITE_URL,
+  legalCharterUrl,
+} from "@/lib/marketingSite";
+
+const LEGAL_LINKS = [
+  { href: legalCharterUrl("terms-of-use"), label: "Terms of Use" },
+  { href: legalCharterUrl("privacy-policy"), label: "Privacy Policy" },
+  { href: legalCharterUrl("complaint-status"), label: "Complaint Status" },
+  { href: legalCharterUrl("grievance-redressal"), label: "Grievance Redressal" },
+  { href: legalCharterUrl("refund-policy"), label: "Refund Policy" },
+  { href: legalCharterUrl("mitc-ra"), label: "MITC-RA" },
+] as const;
 
 export default function Footer() {
   return (
@@ -55,47 +67,17 @@ export default function Footer() {
               Legal
             </span>
 
-            <Link
-              href="/terms-of-use"
-              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
-            >
-              Terms of Use
-            </Link>
-
-            <Link
-              href="/privacy-policy"
-              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
-            >
-              Privacy Policy
-            </Link>
-
-            <Link
-              href="/complaint-status"
-              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
-            >
-              Complaint Status
-            </Link>
-
-            <Link
-              href="/grievance-redressal"
-              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
-            >
-              Grievance Redressal
-            </Link>
-
-            <Link
-              href="/refund-policy"
-              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
-            >
-              Refund Policy
-            </Link>
-
-            <Link
-              href="/mitc-ra"
-              className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
-            >
-              MITC-RA
-            </Link>
+            {LEGAL_LINKS.map(({ href, label }) => (
+              <a
+                key={href}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
+              >
+                {label}
+              </a>
+            ))}
 
           </div>
 
@@ -120,7 +102,9 @@ export default function Footer() {
             </a>
 
             <a
-              href="https://www.hedgium.ai"
+              href={HEDGIUM_MARKETING_SITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-neutral-content/70 hover:text-neutral-content transition"
             >
               www.hedgium.ai

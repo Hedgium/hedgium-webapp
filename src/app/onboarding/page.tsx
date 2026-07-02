@@ -301,16 +301,22 @@ function Onboarding() {
 
             <button
               type="submit"
-              className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case"
+              className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 disabled:cursor-not-allowed disabled:opacity-90 disabled:!bg-primary disabled:!text-primary-content"
               disabled={registering || redirecting}
+              aria-busy={registering || redirecting}
             >
-              {redirecting
-                ? "Redirecting..."
-                : registering
-                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : isEditingExisting
-                    ? "Save & continue to verification"
-                    : "Create account"}
+              {redirecting ? (
+                "Redirecting..."
+              ) : registering ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  <span>{isEditingExisting ? "Saving…" : "Creating account…"}</span>
+                </>
+              ) : isEditingExisting ? (
+                "Save & continue to verification"
+              ) : (
+                "Create account"
+              )}
             </button>
           </form>
         </div>

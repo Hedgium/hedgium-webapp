@@ -1,3 +1,4 @@
+import AuthFlowChrome from "@/components/AuthFlowChrome";
 import AuthFlowFooter from "@/components/AuthFlowFooter";
 
 type AuthFlowShellProps = {
@@ -10,7 +11,12 @@ type AuthFlowShellProps = {
 export default function AuthFlowShell({ children }: AuthFlowShellProps) {
   return (
     <div className="flex min-h-dvh flex-col bg-gradient-to-b from-base-200 via-base-200 to-base-300/40 print:bg-white print:text-black">
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-8 pb-20 print:pb-4">
+      <AuthFlowChrome />
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex flex-1 flex-col items-center justify-center px-4 py-8 pb-20 outline-none print:pb-4"
+      >
         <div className="flex w-full max-w-4xl flex-col items-center">{children}</div>
       </main>
       <AuthFlowFooter />

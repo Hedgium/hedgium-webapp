@@ -1,6 +1,4 @@
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -12,7 +10,6 @@ export const metadata: Metadata = {
 export default function Custom404() {
   return (
     <>
-      <Navbar />
       
       <div className="min-h-screen flex items-center justify-center bg-base-200">
         <div className="card w-full max-w-md bg-base-100 shadow-xl">
@@ -73,7 +70,6 @@ export default function Custom404() {
         </div>
       </div>
 
-      <Footer />
     </>
   );
 }
