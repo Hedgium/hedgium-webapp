@@ -15,12 +15,6 @@ const PUBLIC_PATH_EXACT = new Set([
 const PUBLIC_PATH_PREFIXES = [
   "/reset-password/",
   "/onboarding/",
-  "/terms-of-use",
-  "/privacy-policy",
-  "/refund-policy",
-  "/grievance-redressal",
-  "/complaint-status",
-  "/mitc-ra",
 ] as const;
 
 /** Root URL where the login form lives (`/`). */

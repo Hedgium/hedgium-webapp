@@ -205,14 +205,19 @@ export default function AuthInitializingProvider({
 
   if (showLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
+      <div
+        className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <div className="w-full max-w-[400px]">
           <div className="bg-base-100 rounded-xl border border-base-300 p-6">
             <div className="text-center mb-6">
               <h2 className="text-xl font-semibold text-base-content tracking-tight">
                 {loadingTitle}
               </h2>
-              <p className="text-sm text-base-content/60 mt-1">{loadingSubtitle}</p>
+              <p className="text-sm text-base-content/70 mt-1">{loadingSubtitle}</p>
             </div>
 
             {/* State Steps */}
@@ -270,7 +275,14 @@ export default function AuthInitializingProvider({
 
             {/* Progress indicator */}
             <div className="mt-4 pt-4 border-t border-base-300">
-              <div className="w-full bg-base-200 rounded-full h-1.5">
+              <div
+                className="w-full bg-base-200 rounded-full h-1.5"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(((currentStateIndex + 1) / states.length) * 100)}
+                aria-label="Session check progress"
+              >
                 <div
                   className="bg-primary h-1.5 rounded-full transition-all duration-500"
                   style={{
