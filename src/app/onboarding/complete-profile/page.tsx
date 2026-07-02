@@ -123,18 +123,22 @@ const CompleteProfile: React.FC = () => {
           <h1 className="text-xl font-semibold tracking-tight text-base-content">
             Complete profile
           </h1>
-          <p className="mt-1 text-sm text-base-content/60">
+          <p className="mt-1 text-sm text-base-content/70">
             Add your details to continue
           </p>
         </div>
 
         <div className="rounded-xl border border-base-300 bg-base-100 p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
-              <label className="block text-xs font-medium text-base-content/80 mb-1.5">PAN number</label>
+              <label htmlFor="panNumber" className="block text-xs font-medium text-base-content/80 mb-1.5">PAN number</label>
               <input
+                id="panNumber"
+                name="panNumber"
                 type="text"
-                className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 uppercase"
+                required
+                aria-required="true"
+                className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                 value={panNumber}
                 onChange={(e) => handlePanChange(e.target.value)}
                 placeholder="10 characters (e.g. ABCDE1234F)"
@@ -142,11 +146,15 @@ const CompleteProfile: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-base-content/80 mb-1.5">Aadhaar number</label>
+              <label htmlFor="aadharNumber" className="block text-xs font-medium text-base-content/80 mb-1.5">Aadhaar number</label>
               <input
+                id="aadharNumber"
+                name="aadharNumber"
                 type="text"
                 inputMode="numeric"
-                className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                required
+                aria-required="true"
+                className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                 value={formatAadharNumber(aadharNumber)}
                 onChange={(e) => handleAadharChange(e.target.value)}
                 placeholder="12 digits"
@@ -154,20 +162,24 @@ const CompleteProfile: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-base-content/80 mb-1.5">PAN document</label>
+              <label htmlFor="panDocument" className="block text-xs font-medium text-base-content/80 mb-1.5">PAN document</label>
               <input
+                id="panDocument"
+                name="panDocument"
                 type="file"
                 accept="image/*,.pdf"
-                className="file-input file-input-bordered file-input-sm w-full text-sm"
+                className="file-input file-input-bordered file-input-sm w-full text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                 onChange={(e) => setPanDocument(e.target.files?.[0] ?? null)}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-base-content/80 mb-1.5">Aadhaar document</label>
+              <label htmlFor="aadharDocument" className="block text-xs font-medium text-base-content/80 mb-1.5">Aadhaar document</label>
               <input
+                id="aadharDocument"
+                name="aadharDocument"
                 type="file"
                 accept="image/*,.pdf"
-                className="file-input file-input-bordered file-input-sm w-full text-sm"
+                className="file-input file-input-bordered file-input-sm w-full text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                 onChange={(e) => setAadharDocument(e.target.files?.[0] ?? null)}
               />
             </div>
@@ -176,15 +188,25 @@ const CompleteProfile: React.FC = () => {
               <button
                 type="submit"
                 disabled={submitting || redirecting}
-                className="btn btn-primary btn-sm flex-1 h-9 text-sm font-medium normal-case"
+                aria-busy={submitting || redirecting}
+                className="btn btn-primary btn-sm flex-1 h-9 text-sm font-medium normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 disabled:cursor-not-allowed disabled:opacity-90 disabled:!bg-primary disabled:!text-primary-content"
               >
-                {redirecting ? "Redirecting..." : submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit"}
+                {redirecting ? (
+                  "Redirecting..."
+                ) : submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    <span>Submitting…</span>
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </button>
               <button
                 type="button"
                 disabled={submitting || redirecting}
                 onClick={handleSkip}
-                className="btn btn-outline btn-sm flex-1 h-9 text-sm normal-case"
+                className="btn btn-outline btn-sm flex-1 h-9 text-sm normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
               >
                 Skip for now
               </button>

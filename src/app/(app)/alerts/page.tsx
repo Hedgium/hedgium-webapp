@@ -80,7 +80,7 @@ export default function NotificationsPage() {
               <Bell className="h-7 w-7 shrink-0 text-primary" aria-hidden />
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-base-content md:text-3xl">Alerts</h1>
-                <p className="text-sm text-base-content/55">
+                <p className="text-sm text-base-content/70">
                   Trading and system updates. Unread items are marked as read when you open this page.
                 </p>
               </div>
@@ -96,15 +96,16 @@ export default function NotificationsPage() {
 
         <section className="space-y-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/45">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/70">
               Notifications
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-sm font-medium text-base-content/80">View</span>
-              <div className="join">
+              <span className="text-sm font-medium text-base-content/80" id="alerts-filter-label">View</span>
+              <div className="join" role="group" aria-labelledby="alerts-filter-label">
                 <button
                   type="button"
-                  className={`btn btn-sm join-item rounded-lg ${
+                  aria-pressed={filter === "all"}
+                  className={`btn btn-sm join-item rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                     filter === "all" ? "btn-primary" : "btn-ghost border border-base-300/60"
                   }`}
                   onClick={() => setFilter("all")}
@@ -114,7 +115,8 @@ export default function NotificationsPage() {
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-sm join-item rounded-lg ${
+                  aria-pressed={filter === "unread"}
+                  className={`btn btn-sm join-item rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                     filter === "unread" ? "btn-primary" : "btn-ghost border border-base-300/60"
                   }`}
                   onClick={() => setFilter("unread")}
@@ -132,7 +134,7 @@ export default function NotificationsPage() {
               <p className="font-medium text-base-content">
                 {filter === "unread" ? "No unread items from this visit" : "No notifications yet"}
               </p>
-              <p className="mt-1 text-sm text-base-content/55">
+              <p className="mt-1 text-sm text-base-content/70">
                 {filter === "unread"
                   ? "Everything was already read, or nothing was pending when you opened Alerts."
                   : "You’ll see strategy and system messages here."}
@@ -185,13 +187,13 @@ export default function NotificationsPage() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <h3 className="font-semibold leading-snug text-base-content md:text-lg">{notification.title}</h3>
-                            <p className="mt-1 text-sm leading-relaxed text-base-content/55">{notification.message}</p>
+                            <p className="mt-1 text-sm leading-relaxed text-base-content/70">{notification.message}</p>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
-                              <span className="text-[11px] font-medium uppercase tracking-wide text-base-content/50">
+                              <span className="text-[11px] font-medium uppercase tracking-wide text-base-content/70">
                                 {notification.related_model_name}
                               </span>
-                              <span className="text-base-content/35">·</span>
-                              <span className="text-xs text-base-content/45">
+                              <span className="text-base-content/70" aria-hidden="true">·</span>
+                              <span className="text-xs text-base-content/70">
                                 {formatTimeAgo(new Date(notification.timestamp))}
                               </span>
                             </div>
@@ -200,7 +202,7 @@ export default function NotificationsPage() {
                         <button
                           type="button"
                           onClick={() => deleteNotification(notification.id)}
-                          className="btn btn-ghost btn-sm shrink-0 gap-2 self-start text-base-content/45 hover:bg-error/10 hover:text-error sm:-mr-1"
+                          className="btn btn-ghost btn-sm shrink-0 gap-2 self-start text-base-content/70 hover:bg-error/10 hover:text-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:-mr-1"
                           title="Delete"
                           aria-label="Delete notification"
                         >

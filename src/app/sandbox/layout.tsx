@@ -23,7 +23,7 @@ export default function SandboxLayout({
   return (
     <NotificationProvider>
       <div className="flex h-screen flex-col">
-        <div className="shrink-0 border-b border-primary/20 bg-gradient-to-r from-primary/12 via-primary/8 to-secondary/10 px-4 py-2.5 text-center text-xs leading-snug text-base-content/90 backdrop-blur-sm md:text-xs">
+        <div className="shrink-0 border-b border-base-300 bg-gradient-to-r from-primary/12 via-primary/8 to-secondary/10 px-4 py-2.5 text-center text-xs leading-snug text-base-content/90 backdrop-blur-sm md:text-xs">
           {BANNER}
         </div>
         <main className="flex flex-1 flex-col overflow-y-auto bg-base-200">

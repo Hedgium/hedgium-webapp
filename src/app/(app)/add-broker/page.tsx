@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { useRouter } from "nextjs-toploader/app";
 import { useSearchParams } from "next/navigation";
 import { authFetch } from "@/utils/api";
@@ -62,6 +62,13 @@ export default function AddBrokerPage() {
 
   /** Static IP from assigned broker proxy pool (whitelist at broker). */
   const [orderProxyWhitelistIp, setOrderProxyWhitelistIp] = useState<string | null>(null);
+
+  const brokerNameId = useId();
+  const brokerUserIdId = useId();
+  const apiKeyId = useId();
+  const secretKeyId = useId();
+  const brokerTwofaId = useId();
+  const brokerPasswordId = useId();
 
   const copyWhitelistIp = async () => {
     if (!orderProxyWhitelistIp) return;
@@ -320,11 +327,11 @@ export default function AddBrokerPage() {
                   setHelpField("whitelist_ip");
                   setHelpOpen(true);
                 }}
-                className="text-primary hover:opacity-80 p-0.5 shrink-0"
+                className="text-primary hover:opacity-80 p-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
                 title="How to add IP in Kotak Neo"
                 aria-label="Help: whitelist IP in Kotak Neo"
               >
-                <HelpCircle className="h-4 w-4 cursor-pointer" />
+                <HelpCircle className="h-4 w-4 cursor-pointer" aria-hidden="true" />
               </button>
             )}
           </div>
@@ -336,10 +343,10 @@ export default function AddBrokerPage() {
               <button
                 type="button"
                 onClick={() => void copyWhitelistIp()}
-                className="btn btn-ghost btn-xs gap-1 h-7 min-h-7 px-2 shrink-0 normal-case"
+                className="btn btn-ghost btn-xs gap-1 h-7 min-h-7 px-2 shrink-0 normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 title="Copy IP address"
               >
-                <Copy className="size-3.5" aria-hidden />
+                <Copy className="size-3.5" aria-hidden="true" />
                 Copy
               </button>
             </div>
@@ -349,7 +356,7 @@ export default function AddBrokerPage() {
               shortly.
             </p>
           )}
-          <p className="text-xs text-base-content/60 mt-1.5 leading-relaxed">
+          <p className="text-xs text-base-content/70 mt-1.5 leading-relaxed">
             Add this IP to your broker&apos;s allowlist (API / app settings) before logging in,
             so orders are not blocked.
           </p>
@@ -365,10 +372,11 @@ export default function AddBrokerPage() {
         {/* Back button */}
         {step !== "result" && (
           <button
+            type="button"
             onClick={() => router.back()}
-            className="flex items-center cursor-pointer gap-1.5 text-sm text-base-content/60 hover:text-base-content mb-6 transition-colors"
+            className="flex items-center cursor-pointer gap-1.5 text-sm text-base-content/70 hover:text-base-content mb-6 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Back
           </button>
         )}
@@ -382,7 +390,10 @@ export default function AddBrokerPage() {
               Connect Broker
             </h1>
 
-            <div className="flex items-center gap-2">
+            <p className="sr-only" role="status">
+              Step {stepOrder.indexOf(step) + 1} of {stepOrder.length}: {stepLabels[step]}
+            </p>
+            <div className="flex items-center gap-2" aria-hidden="true">
               {stepOrder.map((s, idx) => {
                 const currentIdx = stepOrder.indexOf(step);
                 const isCompleted = idx < currentIdx;
@@ -396,14 +407,14 @@ export default function AddBrokerPage() {
                             ? "bg-success text-success-content"
                             : isCurrent
                             ? "bg-primary text-primary-content"
-                            : "bg-base-300 text-base-content/40"
+                            : "bg-base-300 text-base-content/60"
                         }`}
                       >
                         {isCompleted ? "✓" : idx + 1}
                       </div>
                       <span
                         className={`text-xs hidden sm:inline transition-colors ${
-                          isCurrent ? "text-base-content font-medium" : "text-base-content/40"
+                          isCurrent ? "text-base-content font-medium" : "text-base-content/60"
                         }`}
                       >
                         {stepLabels[s]}
@@ -425,13 +436,17 @@ export default function AddBrokerPage() {
           {/* ── Step 1: Credentials ── */}
           {step === "credentials" && (
             <div className="p-6">
-              <form onSubmit={handleSaveCredentials} className="space-y-4">
+              <form onSubmit={handleSaveCredentials} noValidate className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-base-content/80 mb-1.5">Broker</label>
+                  <label htmlFor={brokerNameId} className="block text-xs font-medium text-base-content/80 mb-1.5">Broker</label>
                   <select
+                    id={brokerNameId}
+                    name="brokerName"
+                    required
+                    aria-required="true"
                     value={brokerName}
                     onChange={(e) => { setBrokerName(e.target.value); setFormError(null); }}
-                    className="select select-bordered select-sm w-full h-9 text-sm bg-base-100"
+                    className="select select-bordered select-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <option value="">Select broker</option>
                     <option value="KOTAKNEO">Kotak Neo</option>
@@ -443,18 +458,27 @@ export default function AddBrokerPage() {
 
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <label className="text-xs font-medium text-base-content/80">Broker User ID</label>
+                    <label htmlFor={brokerUserIdId} className="text-xs font-medium text-base-content/80">Broker User ID</label>
                     {brokerName && (
-                      <button type="button" onClick={() => { setHelpField("broker_user_id"); setHelpOpen(true); }} className="text-primary hover:opacity-80 p-0.5">
-                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" />
+                      <button
+                        type="button"
+                        onClick={() => { setHelpField("broker_user_id"); setHelpOpen(true); }}
+                        className="text-primary hover:opacity-80 p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        aria-label="How to get Broker User ID"
+                      >
+                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" aria-hidden="true" />
                       </button>
                     )}
                   </div>
                   <input
+                    id={brokerUserIdId}
+                    name="brokerUserId"
+                    required
+                    aria-required="true"
                     type="text"
                     value={brokerUserId}
                     onChange={(e) => { setBrokerUserId(e.target.value); setFormError(null); }}
-                    className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                    className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     placeholder="Broker user ID"
                   />
                 </div>
@@ -462,16 +486,25 @@ export default function AddBrokerPage() {
                 {brokerName === "KOTAKNEO" && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <label className="text-xs font-medium text-base-content/80">API Key</label>
-                      <button type="button" onClick={() => { setHelpField("api_key"); setHelpOpen(true); }} className="text-primary hover:opacity-80 p-0.5">
-                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" />
+                      <label htmlFor={apiKeyId} className="text-xs font-medium text-base-content/80">API Key</label>
+                      <button
+                        type="button"
+                        onClick={() => { setHelpField("api_key"); setHelpOpen(true); }}
+                        className="text-primary hover:opacity-80 p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        aria-label="How to get API Key"
+                      >
+                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" aria-hidden="true" />
                       </button>
                     </div>
                     <input
+                      id={apiKeyId}
+                      name="apiKey"
+                      required
+                      aria-required="true"
                       type="text"
                       value={apiKey}
                       onChange={(e) => { setApiKey(e.target.value); setFormError(null); }}
-                      className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                      className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       placeholder="API key"
                     />
                   </div>
@@ -480,16 +513,25 @@ export default function AddBrokerPage() {
                 {(brokerName === "ZERODHA" || brokerName === "SHOONYA") && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <label className="text-xs font-medium text-base-content/80">Secret Key</label>
-                      <button type="button" onClick={() => { setHelpField("secret_key"); setHelpOpen(true); }} className="text-primary hover:opacity-80 p-0.5">
-                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" />
+                      <label htmlFor={secretKeyId} className="text-xs font-medium text-base-content/80">Secret Key</label>
+                      <button
+                        type="button"
+                        onClick={() => { setHelpField("secret_key"); setHelpOpen(true); }}
+                        className="text-primary hover:opacity-80 p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        aria-label="How to get Secret Key"
+                      >
+                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" aria-hidden="true" />
                       </button>
                     </div>
                     <input
+                      id={secretKeyId}
+                      name="secretKey"
+                      required
+                      aria-required="true"
                       type="text"
                       value={secretKey}
                       onChange={(e) => { setSecretKey(e.target.value); setFormError(null); }}
-                      className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                      className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       placeholder="Secret key"
                     />
                   </div>
@@ -498,29 +540,38 @@ export default function AddBrokerPage() {
                 {brokerName && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <label className="text-xs font-medium text-base-content/80">TOTP Secret</label>
-                      <button type="button" onClick={() => { setHelpField("broker_twofa"); setHelpOpen(true); }} className="text-primary hover:opacity-80 p-0.5">
-                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" />
+                      <label htmlFor={brokerTwofaId} className="text-xs font-medium text-base-content/80">TOTP Secret</label>
+                      <button
+                        type="button"
+                        onClick={() => { setHelpField("broker_twofa"); setHelpOpen(true); }}
+                        className="text-primary hover:opacity-80 p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        aria-label="How to get TOTP Secret"
+                      >
+                        <HelpCircle className="h-3.5 w-3.5 cursor-pointer" aria-hidden="true" />
                       </button>
                     </div>
                     <input
+                      id={brokerTwofaId}
+                      name="brokerTwofa"
+                      required
+                      aria-required="true"
                       type="text"
                       value={brokerTwofa}
                       onChange={(e) => { setBrokerTwofa(e.target.value); setFormError(null); }}
-                      className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                      className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       placeholder="TOTP secret"
                     />
                   </div>
                 )}
 
                 {formError && (
-                  <div className="flex items-center gap-1.5 text-error text-sm">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
+                  <div role="alert" className="flex items-center gap-1.5 text-error text-sm">
+                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>{formError}</span>
                   </div>
                 )}
 
-                <p className="mt-2 flex items-start gap-1.5 text-xs leading-snug text-base-content/55">
+                <p className="mt-2 flex items-start gap-1.5 text-xs leading-snug text-base-content/70">
                   <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
                   <span>Hedgium encrypts sensitive credentials at rest using strong cryptographic standards, with secure key management practices to prevent unauthorized access.</span>
                 </p>
@@ -528,9 +579,17 @@ export default function AddBrokerPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case mt-1"
+                  aria-busy={submitting}
+                  className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case mt-1 disabled:!bg-primary disabled:!text-primary-content disabled:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                 >
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save & Continue"}
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      Saving…
+                    </>
+                  ) : (
+                    "Save & Continue"
+                  )}
                 </button>
               </form>
             </div>
@@ -547,27 +606,32 @@ export default function AddBrokerPage() {
               </p>
 
               <div>
-                <label className="block text-sm font-medium text-base-content/80 mb-1.5">
+                <label htmlFor={brokerPasswordId} className="block text-sm font-medium text-base-content/80 mb-1.5">
                   {savedBrokerName === "KOTAKNEO" ? "MPIN" : "Password"}
                 </label>
-                
+
                 <input
+                  id={brokerPasswordId}
+                  name="brokerPassword"
+                  autoComplete="current-password"
                   type="password"
                   value={brokerPassword}
                   onChange={(e) => { setBrokerPassword(e.target.value); setLoginError(null); }}
-                  className={`input input-bordered input-sm w-full h-9 text-sm bg-base-100 ${loginError ? "input-error" : ""}`}
+                  className={`input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${loginError ? "input-error" : ""}`}
                   placeholder={`Enter ${savedBrokerName === "KOTAKNEO" ? "MPIN" : "password"}`}
                   onKeyDown={(e) => { if (e.key === "Enter") handleLogin(); }}
+                  aria-invalid={loginError ? true : undefined}
+                  aria-describedby={loginError ? `${brokerPasswordId}-error` : undefined}
                 />
 
-                <p className="text-xs pt-2 leading-snug text-base-content/55 mb-1.5">
+                <p className="text-xs pt-2 leading-snug text-base-content/70 mb-1.5">
                   Hedgium does not store your{" "}
                   {savedBrokerName === "KOTAKNEO" ? "MPIN" : "password"} on our servers—it is only
                   used for this login.
                 </p>
                 {loginError && (
-                  <div className="flex items-center gap-1.5 text-error text-sm mt-2">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
+                  <div id={`${brokerPasswordId}-error`} role="alert" className="flex items-center gap-1.5 text-error text-sm mt-2">
+                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>{loginError}</span>
                   </div>
                 )}
@@ -576,10 +640,11 @@ export default function AddBrokerPage() {
               <button
                 onClick={handleLogin}
                 disabled={loggingIn || !brokerPassword}
-                className="btn btn-primary btn-sm w-full h-9 text-sm normal-case"
+                aria-busy={loggingIn}
+                className="btn btn-primary btn-sm w-full h-9 text-sm normal-case disabled:!bg-primary disabled:!text-primary-content disabled:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
               >
                 {loggingIn
-                  ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Logging in...</>
+                  ? <><Loader2 className="h-4 w-4 animate-spin mr-2" aria-hidden="true" />Logging in…</>
                   : `Login to ${savedBrokerName}`
                 }
               </button>
@@ -587,24 +652,24 @@ export default function AddBrokerPage() {
               <button
                 type="button"
                 onClick={() => { setStep("credentials"); setLoginError(null); }}
-                className="btn btn-ghost btn-sm w-full text-sm normal-case text-base-content/60"
+                className="btn btn-ghost btn-sm w-full text-sm normal-case text-base-content/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                ← Edit credentials
+                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Edit credentials
               </button>
             </div>
           )}
 
           {/* ── Step 3: Result ── */}
           {step === "result" && (
-            <div className="p-6 text-center space-y-4">
+            <div className="p-6 text-center space-y-4" role="status" aria-live="polite" aria-busy={resultStatus === "loading"}>
               {resultStatus === "loading" ? (
                 <>
                   <div className="flex justify-center py-2">
-                    <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                    <Loader2 className="w-10 h-10 text-primary animate-spin" aria-hidden="true" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-base-content">Verifying connection...</h4>
-                    <p className="text-sm text-base-content/60 mt-1">
+                    <h4 className="text-lg font-semibold text-base-content">Verifying connection…</h4>
+                    <p className="text-sm text-base-content/70 mt-1">
                       Fetching your margin from {savedBrokerName}. Please wait.
                     </p>
                   </div>
@@ -613,19 +678,19 @@ export default function AddBrokerPage() {
                 <>
                   <div className="flex justify-center">
                     <div className="rounded-full bg-success/10 p-4">
-                      <CheckCircle className="w-10 h-10 text-success" />
+                      <CheckCircle className="w-10 h-10 text-success" aria-hidden="true" />
                     </div>
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-base-content">Profile Added Successfully!</h4>
-                    <p className="text-sm text-base-content/60 mt-1">
+                    <p className="text-sm text-base-content/70 mt-1">
                       Your broker account is connected and margin has been fetched.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => router.push("/home")}
-                    className="btn btn-primary btn-sm normal-case w-full"
+                    className="btn btn-primary btn-sm normal-case w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                   >
                     Go to Home
                   </button>
@@ -634,23 +699,24 @@ export default function AddBrokerPage() {
                 <>
                   <div className="flex justify-center">
                     <div className="rounded-full bg-error/10 p-4">
-                      <AlertCircle className="w-10 h-10 text-error" />
+                      <AlertCircle className="w-10 h-10 text-error" aria-hidden="true" />
                     </div>
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-base-content">Something Went Wrong</h4>
-                    <p className="text-sm text-base-content/60 mt-1">
+                    <p className="text-sm text-base-content/70 mt-1">
                       {resultError || "We couldn't complete the broker setup."}
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => { setResultStatus(null); setResultError(null); setStep("login"); setLoginError(null); }}
-                      className="btn btn-outline btn-sm flex-1 normal-case"
+                      className="btn btn-outline btn-sm flex-1 normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       Try Again
                     </button>
-                    <a href="mailto:support@hedgium.in" className="btn btn-primary btn-sm flex-1 normal-case">
+                    <a href="mailto:support@hedgium.in" className="btn btn-primary btn-sm flex-1 normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100">
                       Contact Us
                     </a>
                   </div>

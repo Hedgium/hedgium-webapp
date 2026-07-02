@@ -140,7 +140,7 @@ export default function PositionsPage() {
         {/* PnL summary — positions/pnl/summary/ (cycles scoped by total_updated_at on backend) */}
         <section className="mb-8">
             {/* <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" /> */}
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/45">
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/70">
               Summary
             </p>
 
@@ -156,39 +156,39 @@ export default function PositionsPage() {
             ) : pnlSummary ? (
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4">
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">YTD</p>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">YTD</p>
                   <p className={`text-lg font-bold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.ytd_pnl)}`}>
                     {formatMoneyIN(pnlSummary.ytd_pnl)}
                   </p>
-                  <p className="mt-1 text-[11px] text-base-content/45">FY to date</p>
+                  <p className="mt-1 text-[11px] text-base-content/70">FY to date</p>
                 </div>
                 <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-                  <div className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-base-content/50">
+                  <div className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-base-content/70">
                     <TrendingUp className="h-3.5 w-3.5 shrink-0 text-primary/80" aria-hidden />
                     Monthly P&amp;L
                   </div>
                   <p className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.pnl)}`}>
                     {formatMoneyIN(pnlSummary.pnl)}
                   </p>
-                  <p className="mt-1 text-[11px] text-base-content/45">{pnlSummary.month}</p>
+                  <p className="mt-1 text-[11px] text-base-content/70">{pnlSummary.month}</p>
                 </div>
                 <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">Realised</p>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">Realised</p>
                   <p className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.realised)}`}>
                     {formatMoneyIN(pnlSummary.realised)}
                   </p>
-                  <p className="mt-1 text-[11px] text-base-content/45">{pnlSummary.month}</p>
+                  <p className="mt-1 text-[11px] text-base-content/70">{pnlSummary.month}</p>
                 </div>
                 <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">M2M</p>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">M2M</p>
                   <p className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.m2m)}`}>
                     {formatMoneyIN(pnlSummary.m2m)}
                   </p>
-                  <p className="mt-1 text-[11px] text-base-content/45">{pnlSummary.month}</p>
+                  <p className="mt-1 text-[11px] text-base-content/70">{pnlSummary.month}</p>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-base-content/55">Summary unavailable.</p>
+              <p className="text-sm text-base-content/70">Summary unavailable.</p>
             )}
         </section>
 
@@ -201,10 +201,10 @@ export default function PositionsPage() {
                   Strategy-wise Positions
                 </h2>
               </div>
-              <p className="text-sm text-base-content/55">
+              <p className="text-sm text-base-content/70">
                 Open positions and orders grouped per trade cycle
                 {!loading && cycleCount > 0 ? (
-                  <span className="text-base-content/40">
+                  <span className="text-base-content/70">
                     {" "}
                     · {cycleCount} cycle{cycleCount === 1 ? "" : "s"}
                   </span>
@@ -219,7 +219,8 @@ export default function PositionsPage() {
                 type="button"
                 onClick={() => void reloadPositions()}
                 disabled={refreshing}
-                className="btn btn-circle btn-ghost shrink-0 self-start border border-base-300/70 bg-base-100/80 hover:border-primary/35 hover:bg-base-200/60 sm:self-auto"
+                aria-busy={refreshing}
+                className="btn btn-circle btn-ghost shrink-0 self-start border border-base-300/70 bg-base-100/80 hover:border-primary/35 hover:bg-base-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:self-auto"
                 aria-label={refreshing ? "Reloading positions" : "Reload positions"}
               >
                 <RotateCw
@@ -253,10 +254,10 @@ export default function PositionsPage() {
                   <Briefcase className="h-7 w-7 text-primary/80" aria-hidden />
                 </div>
                 <h3 className="text-lg font-semibold text-base-content">No trade cycles yet</h3>
-                <p className="mt-2 text-sm leading-relaxed text-base-content/60">
+                <p className="mt-2 text-sm leading-relaxed text-base-content/70">
                   When you have active cycles, positions will show here. You can also try reloading after syncing your broker.
                 </p>
-                <Link href="/home" className="btn btn-primary btn-sm mt-6 gap-2 rounded-full">
+                <Link href="/home" className="btn btn-primary btn-sm mt-6 gap-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100">
                   Go to home
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </Link>

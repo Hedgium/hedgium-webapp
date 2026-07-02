@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import AuthFlowShell from '@/components/AuthFlowShell';
 
 export const metadata: Metadata = {
   title: 'Reset Password',
@@ -10,5 +11,5 @@ export default function ResetPasswordLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <AuthFlowShell>{children}</AuthFlowShell>;
 }

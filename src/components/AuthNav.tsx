@@ -30,8 +30,15 @@ export default function AuthNav() {
       if (dropdownRef.current?.contains(e.target as Node)) return;
       setMenuOpen(false);
     };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
     document.addEventListener("pointerdown", onPointerDown, true);
-    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [menuOpen]);
 
   const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
@@ -73,22 +80,20 @@ export default function AuthNav() {
             type="button"
             aria-expanded={menuOpen}
             aria-haspopup="true"
-            className="btn btn-primary btn-circle btn-sm w-8 h-8 min-h-8 p-0 text-xs font-bold border-0"
+            aria-label={`Account menu for ${displayName}`}
+            className="btn btn-primary btn-circle btn-sm w-8 h-8 min-h-8 p-0 text-xs font-bold border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
             onClick={() => setMenuOpen((o) => !o)}
           >
-            <span className="flex h-full w-full items-center justify-center rounded-full">
+            <span className="flex h-full w-full items-center justify-center rounded-full" aria-hidden="true">
               {initials || "U"}
             </span>
           </button>
 
-          <ul
-            className="menu dropdown-content mt-2 z-[200] p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300"
-            role="menu"
-          >
+          <ul className="menu dropdown-content mt-2 z-[200] p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300">
             <li className="px-3 py-2 border-b border-base-300 mb-1">
               <p className="font-semibold text-sm text-base-content">{displayName}</p>
               {displayEmail ? (
-                <p className="text-xs text-base-content/60 truncate">{displayEmail}</p>
+                <p className="text-xs text-base-content/70 truncate">{displayEmail}</p>
               ) : null}
               <div className="mt-1 flex items-center gap-2 flex-wrap">
                 <span
@@ -105,7 +110,7 @@ export default function AuthNav() {
             </li>
             <li>
               <Link href="/settings" onClick={() => setMenuOpen(false)}>
-                <Settings className="w-4 h-4" /> Settings
+                <Settings className="w-4 h-4" aria-hidden="true" /> Settings
               </Link>
             </li>
             {showSandbox ? (
@@ -119,11 +124,11 @@ export default function AuthNav() {
                       router.push("/sandbox");
                     }}
                   >
-                    <FlaskConical className="w-4 h-4" /> Change plan
+                    <FlaskConical className="w-4 h-4" aria-hidden="true" /> Change plan
                   </button>
                 ) : (
                   <Link href="/sandbox" onClick={() => setMenuOpen(false)}>
-                    <FlaskConical className="w-4 h-4" /> Switch to Sandbox
+                    <FlaskConical className="w-4 h-4" aria-hidden="true" /> Switch to Sandbox
                   </Link>
                 )}
               </li>
@@ -138,11 +143,11 @@ export default function AuthNav() {
               >
                 {theme === "light" ? (
                   <>
-                    <Moon className="w-4 h-4" /> Dark Mode
+                    <Moon className="w-4 h-4" aria-hidden="true" /> Dark Mode
                   </>
                 ) : (
                   <>
-                    <Sun className="w-4 h-4" /> Light Mode
+                    <Sun className="w-4 h-4" aria-hidden="true" /> Light Mode
                   </>
                 )}
               </button>
@@ -155,7 +160,7 @@ export default function AuthNav() {
                   handleLogout();
                 }}
               >
-                <LogOut className="w-4 h-4" /> Logout
+                <LogOut className="w-4 h-4" aria-hidden="true" /> Logout
               </button>
             </li>
           </ul>

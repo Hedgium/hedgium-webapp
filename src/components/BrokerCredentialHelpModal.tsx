@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import type { CredentialHelpItem } from "@/data/brokerCredentialHelp";
 import { BROKER_CREDENTIAL_HELP } from "@/data/brokerCredentialHelp";
 
@@ -64,6 +64,9 @@ export default function BrokerCredentialHelpModal({
   brokerKey,
   field = null,
 }: BrokerCredentialHelpModalProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const headingId = "broker-credential-help-heading";
+
   const allItems: CredentialHelpItem[] = brokerKey
     ? BROKER_CREDENTIAL_HELP[brokerKey] ?? []
     : [];
@@ -76,12 +79,31 @@ export default function BrokerCredentialHelpModal({
     singleItem?.modalTitle ??
     (singleItem ? `How to get ${singleItem.label}` : `How to get ${brokerName} credentials`);
 
-  if (!open) return null;
+  // showModal()/close() give us a native focus trap, Escape-to-close, an inert
+  // background, and a ::backdrop — all for free, unlike the `open` attribute alone.
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return;
+    if (open && !node.open) {
+      node.showModal();
+    } else if (!open && node.open) {
+      node.close();
+    }
+  }, [open]);
 
   return (
-    <dialog open className="modal modal-open z-[100]">
+    <dialog
+      ref={dialogRef}
+      className="modal z-[100]"
+      aria-labelledby={headingId}
+      onClose={onClose}
+      onCancel={onClose}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) onClose();
+      }}
+    >
       <div className="modal-box relative z-[101] flex max-h-[85vh] w-11/12 max-w-3xl flex-col p-6">
-        <h3 className="shrink-0 text-lg font-semibold text-base-content">
+        <h3 id={headingId} className="shrink-0 text-lg font-semibold text-base-content">
           {modalHeading}
         </h3>
         {items.length === 0 ? (
@@ -128,20 +150,12 @@ export default function BrokerCredentialHelpModal({
           <button
             type="button"
             onClick={onClose}
-            className="btn btn-sm btn-ghost normal-case"
+            className="btn btn-sm btn-ghost normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             Close
           </button>
         </div>
       </div>
-      <div
-        className="modal-backdrop z-[99]"
-        onClick={onClose}
-        onKeyDown={(e) => e.key === "Escape" && onClose()}
-        role="button"
-        tabIndex={0}
-        aria-label="Close modal"
-      />
     </dialog>
   );
 }

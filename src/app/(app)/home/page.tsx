@@ -104,7 +104,7 @@ export default function HomePage() {
                   Active strategies
                 </h2>
               </div>
-              <p className="text-sm text-base-content/55">
+              <p className="text-sm text-base-content/70">
                 Approved trade cycles you can monitor or act on
               </p>
             </div>
@@ -130,12 +130,13 @@ export default function HomePage() {
                     type="button"
                     onClick={loadMoreTradeCycles}
                     disabled={loadingMore}
-                    className="btn btn-primary btn-md rounded-full px-10 shadow-lg shadow-primary/20"
+                    aria-busy={loadingMore}
+                    className="btn btn-primary btn-md rounded-full px-10 shadow-lg shadow-primary/20 disabled:!bg-primary disabled:!text-primary-content disabled:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                   >
                     {loadingMore ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                        Loading
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        Loading…
                       </>
                     ) : (
                       'Load more strategies'
@@ -152,7 +153,7 @@ export default function HomePage() {
                   <LayoutGrid className="h-7 w-7 text-primary/80" aria-hidden />
                 </div>
                 <h3 className="text-lg font-semibold text-base-content">No active strategies yet</h3>
-                <p className="mt-2 text-sm leading-relaxed text-base-content/60">
+                <p className="mt-2 text-sm leading-relaxed text-base-content/70">
                   When your trade cycles are approved and running, they will appear here with live status and quick actions.
                 </p>
               </div>

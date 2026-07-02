@@ -215,65 +215,92 @@ export default function VerifyEmail({
     if (skipPath) router.push(skipPath);
   };
 
+  const errorId = "verify-email-otp-error";
+
   return (
     <div className={className}>
       <div className="flex justify-center mb-4">
         <div className="rounded-full bg-primary/10 p-3">
-          <Mail className="w-8 h-8 text-primary" />
+          <Mail className="w-8 h-8 text-primary" aria-hidden="true" />
         </div>
       </div>
       <h2 className="text-xl font-semibold text-base-content text-center tracking-tight">
         Verify your email
       </h2>
-      <p className="text-sm text-base-content/60 text-center mt-1">
+      <p className="text-sm text-base-content/70 text-center mt-1">
         {hasSent
           ? <>We sent a 6-digit code to <span className="font-medium text-base-content">{email}</span></>
           : <>We&apos;ll send a 6-digit code to <span className="font-medium text-base-content">{email}</span></>}
       </p>
 
-      <div className="flex gap-2 justify-center mt-4" onPaste={handlePaste}>
-        {otp.map((digit, i) => (
-          <input
-            key={i}
-            ref={(el) => { inputRefs.current[i] = el; }}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={digit}
-            onChange={(e) => handleChange(i, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(i, e)}
-            className={`input input-bordered input-sm w-10 h-10 text-center text-lg font-semibold ${
-              error ? "input-error" : digit ? "input-primary" : ""
-            }`}
-          />
-        ))}
-      </div>
+      <fieldset className="mt-4">
+        <legend className="sr-only">6-digit verification code</legend>
+        <div
+          className="flex gap-2 justify-center"
+          onPaste={handlePaste}
+          role="group"
+          aria-describedby={error ? errorId : undefined}
+        >
+          {otp.map((digit, i) => (
+            <input
+              key={i}
+              ref={(el) => { inputRefs.current[i] = el; }}
+              type="text"
+              inputMode="numeric"
+              autoComplete={i === 0 ? "one-time-code" : "off"}
+              maxLength={1}
+              aria-label={`Verification code digit ${i + 1} of ${OTP_LENGTH}`}
+              aria-invalid={!!error}
+              value={digit}
+              onChange={(e) => handleChange(i, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(i, e)}
+              className={`input input-bordered input-sm w-10 h-10 text-center text-lg font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${
+                error ? "input-error" : digit ? "input-primary" : ""
+              }`}
+            />
+          ))}
+        </div>
+      </fieldset>
 
-      {error && <p className="text-xs text-error text-center mt-2">{error}</p>}
+      {error && (
+        <p id={errorId} role="alert" className="text-xs text-error text-center mt-2">
+          {error}
+        </p>
+      )}
 
       <button
         type="button"
-        className="btn btn-primary pointer-cursor btn-sm w-full h-9 text-sm font-medium normal-case mt-4"
+        className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 disabled:cursor-not-allowed disabled:opacity-90 disabled:!bg-primary disabled:!text-primary-content"
         onClick={handleVerify}
         disabled={verifying || redirecting || otp.join("").length < OTP_LENGTH}
+        aria-busy={verifying || redirecting}
       >
-        {redirecting ? "Redirecting..." : verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify email"}
+        {redirecting ? (
+          "Redirecting..."
+        ) : verifying ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            <span>Verifying…</span>
+          </>
+        ) : (
+          "Verify email"
+        )}
       </button>
 
-      <div className="text-xs text-base-content/60 text-center mt-4">
+      <div className="text-xs text-base-content/70 text-center mt-4">
         {hasSent ? (
           <>
             Didn&apos;t get the code?{" "}
             {cooldown > 0 ? (
-              <span className="text-base-content/40">Resend in {cooldown}s</span>
+              <span className="text-base-content/70">Resend in {cooldown}s</span>
             ) : (
               <button
                 type="button"
-                className="text-primary cursor-pointer font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40"
+                className="text-primary cursor-pointer font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
                 onClick={sendOtp}
                 disabled={sending}
               >
-                <RefreshCw className={`w-3 h-3 ${sending ? "animate-spin" : ""}`} />
+                <RefreshCw className={`w-3 h-3 ${sending ? "animate-spin" : ""}`} aria-hidden="true" />
                 {sending ? "Sending…" : "Resend code"}
               </button>
             )}
@@ -281,11 +308,11 @@ export default function VerifyEmail({
         ) : (
           <button
             type="button"
-            className="text-primary cursor-pointer font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40"
+            className="text-primary cursor-pointer font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             onClick={sendOtp}
             disabled={sending}
           >
-            <RefreshCw className={`w-3 h-3 ${sending ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3 h-3 ${sending ? "animate-spin" : ""}`} aria-hidden="true" />
             {sending ? "Sending…" : "Send code"}
           </button>
         )}
@@ -294,7 +321,7 @@ export default function VerifyEmail({
       {showSkip && (
         <button
           type="button"
-          className="btn btn-ghost pointer-cursor btn-sm w-full text-base-content/50 hover:text-base-content/70 text-xs mt-2"
+          className="btn btn-ghost btn-sm w-full text-base-content/70 hover:text-base-content text-xs mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           onClick={handleSkip}
         >
           Skip for now
