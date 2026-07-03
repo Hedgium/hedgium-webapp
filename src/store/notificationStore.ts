@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { authFetch } from "@/utils/api";
+import { useAuthStore } from "@/store/authStore";
 
 export type NotificationDaysFilter = 1 | 7;
 
@@ -100,7 +101,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         };
       });
 
-      await authFetch(`/notifications/${id}/read/`, { method: "POST" });
+      if (!useAuthStore.getState().user?.is_demo) {
+        await authFetch(`/notifications/${id}/read/`, { method: "POST" });
+      }
     } catch (err) {
       console.error("Failed to mark as read", err);
     }
@@ -129,7 +132,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         };
       });
 
-      await authFetch(`/notifications/${id}/`, { method: "DELETE" });
+      if (!useAuthStore.getState().user?.is_demo) {
+        await authFetch(`/notifications/${id}/`, { method: "DELETE" });
+      }
     } catch (err) {
       console.error("Failed to delete notification", err);
     }

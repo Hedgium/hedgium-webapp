@@ -16,11 +16,6 @@ import type {
   SandboxTradeCycle,
 } from "@/types/sandbox";
 
-const E1_OPTIONS: { id: SandboxE1Risk; label: string }[] = [
-  { id: "LOW", label: "Low (7%)" },
-  { id: "MEDIUM", label: "Medium (9%)" },
-  { id: "HIGH", label: "High (12%)" },
-];
 const E1_ANNUAL_RATE: Record<SandboxE1Risk, number> = {
   LOW: 0.07,
   MEDIUM: 0.09,
@@ -45,11 +40,9 @@ function formatDate(iso: string | undefined): string {
 }
 
 export default function SandboxPositionsContent() {
-  const { sandboxPlan } = useSandboxStore();
+  const { sandboxPlan, sandboxE1Risk } = useSandboxStore();
   const alert = useAlert();
   const tabsId = useId();
-
-  const [e1Risk, setE1Risk] = useState<SandboxE1Risk>("MEDIUM");
   const [phase, setPhase] = useState<SandboxPhase>("before");
   const [dashboard, setDashboard] = useState<SandboxDashboard | null>(null);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
@@ -167,7 +160,7 @@ export default function SandboxPositionsContent() {
       return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
     };
 
-    const rate = E1_ANNUAL_RATE[e1Risk];
+    const rate = E1_ANNUAL_RATE[sandboxE1Risk];
     const beforeDays = dayDiff(before.from, before.to);
     const afterDays = dayDiff(after.from, after.to);
 
@@ -191,7 +184,7 @@ export default function SandboxPositionsContent() {
       afterRoiValue,
       afterRoiPercent,
     };
-  }, [dashboard, e1Risk, notional]);
+  }, [dashboard, sandboxE1Risk, notional]);
   const handleLoadMoreCycles = () => {
     if (!hasMoreCycles || loadingMoreCycles) return;
     void fetchTradeCycles(cyclePage + 1, true);
@@ -244,29 +237,6 @@ export default function SandboxPositionsContent() {
           </div>
         ) : (
           <div className="space-y-5 rounded-2xl border border-base-300 bg-base-100/55 p-5 backdrop-blur-sm md:p-6">
-            <div className="flex flex-col gap-3 rounded-xl border border-base-300 bg-base-200/40 p-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-base-content/70">
-                  E1 risk tier
-                </p>
-                <p className="mt-1 text-[11px] text-base-content/70">
-                  Simulated on {formatMoneyIN(notional, { decimals: 0 })}
-                </p>
-              </div>
-              <select
-                className="select select-bordered select-sm h-9 min-h-9 w-full max-w-xs border-base-300 bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                value={e1Risk}
-                onChange={(e) => setE1Risk(e.target.value as SandboxE1Risk)}
-                aria-label="E1 risk tier"
-              >
-                {E1_OPTIONS.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             <PeriodSummaryGroup
               title="Before joining"
               subtitle={`${formatDate(dashboard.showcase_start)} – ${formatDate(dashboard.doj)}`}

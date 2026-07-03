@@ -22,7 +22,7 @@ export default function AuthNav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { hasAssigned, loading: tradeCyclesLoading } = useHasAssignedTradeCycles();
-  const showSandbox = !tradeCyclesLoading && hasAssigned === false;
+  const showSandbox = user?.is_demo || (!tradeCyclesLoading && hasAssigned === false);
 
   useEffect(() => {
     if (!menuOpen) return;

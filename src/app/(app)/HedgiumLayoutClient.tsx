@@ -5,6 +5,7 @@ import AuthFooter from '@/components/AuthFooter';
 import AuthNavigation from '@/components/AuthNavigation';
 import NotificationProvider from '@/providers/NotificationProvider';
 import BrokerConnect from '@/components/BrokerConnect';
+import DemoModeBanner from '@/components/DemoModeBanner';
 
 export default function HedgiumLayoutClient({
   children,
@@ -29,6 +30,7 @@ export default function HedgiumLayoutClient({
             tabIndex={-1}
             className="flex-1 bg-base-200 overflow-y-auto flex flex-col outline-none"
           >
+            <DemoModeBanner />
             <BrokerConnect />
             <AuthNav />
             <div className="flex-1">{children}</div>
