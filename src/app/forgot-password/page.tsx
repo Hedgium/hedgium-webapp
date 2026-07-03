@@ -52,38 +52,43 @@ export default function ForgotPasswordPage() {
         <h1 className="text-xl font-semibold tracking-tight text-base-content">
           Forgot <span className="text-primary">password</span>?
         </h1>
-        <p className="mt-1 text-sm text-base-content/60">
+        <p className="mt-1 text-sm text-base-content/70">
           Enter your email and we&apos;ll send a reset link
         </p>
       </div>
 
       <div className="rounded-xl border border-base-300 bg-base-100 p-6 shadow-sm">
           {message === "success" ? (
-            <div className="space-y-4">
+            <div className="space-y-4" role="status" aria-live="polite">
               <p className="text-sm text-success text-center">
                 If an account exists for that email, we&apos;ve sent a reset link. Check your inbox and spam folder.
               </p>
               <Link
                 href="/"
-                className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case gap-2"
+                className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                 Back to login
               </Link>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
                 <label htmlFor="email" className="block text-xs font-medium text-base-content/80 mb-1.5">
                   Email
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" aria-hidden="true" />
                   <input
                     id="email"
+                    name="email"
                     type="email"
                     autoComplete="email"
-                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${
+                    required
+                    aria-required="true"
+                    aria-invalid={!!emailError}
+                    aria-describedby={emailError ? "email-error" : undefined}
+                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${
                       emailError ? "input-error" : ""
                     }`}
                     value={email}
@@ -95,32 +100,42 @@ export default function ForgotPasswordPage() {
                     disabled={isSubmitting}
                   />
                 </div>
-                {emailError && <p className="mt-1 text-xs text-error">{emailError}</p>}
+                {emailError && <p id="email-error" role="alert" className="mt-1 text-xs text-error">{emailError}</p>}
               </div>
 
               {message === "error" && (
-                <p className="text-xs text-error text-center">Something went wrong. Please try again.</p>
+                <p role="alert" className="text-xs text-error text-center">Something went wrong. Please try again.</p>
               )}
 
               <button
                 type="submit"
-                className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case"
+                className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 disabled:cursor-not-allowed disabled:opacity-90 disabled:!bg-primary disabled:!text-primary-content"
                 disabled={isSubmitting}
+                aria-busy={isSubmitting}
               >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    <span>Sending…</span>
+                  </>
+                ) : (
+                  "Send reset link"
+                )}
               </button>
             </form>
           )}
 
-        <p className="mt-4 text-center">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 text-xs text-base-content/50 hover:text-primary"
-          >
-            <ArrowLeft className="h-3 w-3" />
-            Back to login
-          </Link>
-        </p>
+        {message !== "success" && (
+          <p className="mt-4 text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1 text-xs text-base-content/70 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            >
+              <ArrowLeft className="h-3 w-3" aria-hidden="true" />
+              Back to login
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

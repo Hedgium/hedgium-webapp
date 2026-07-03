@@ -282,9 +282,10 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
           <div className="flex justify-end">
             <button
               type="button"
-              className="btn btn-outline btn-sm gap-2"
+              className="btn btn-outline btn-sm gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={() => void handleRefreshPnl()}
               disabled={refreshingPnl}
+              aria-busy={refreshingPnl}
             >
               <RotateCw className={`h-4 w-4 ${refreshingPnl ? "animate-spin" : ""}`} aria-hidden />
               Refresh PnL
@@ -304,7 +305,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                     At a glance
                   </h2>
                 </div>
-                <p className="max-w-xl text-sm text-base-content/55">
+                <p className="max-w-xl text-sm text-base-content/70">
                   {isAdmin
                     ? "Engine 2 (strategy) PnL summary and allocated trade cycle counts for this profile."
                     : "PnL summary and allocated trade cycle counts by period."}
@@ -325,7 +326,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                           key={period}
                           className="rounded-xl border border-base-300/50 bg-base-100/80 p-3"
                         >
-                          <span className="text-xs text-base-content/55 uppercase">
+                          <span className="text-xs text-base-content/70 uppercase">
                             {period.replace(/_/g, " ")}
                           </span>
                           <p
@@ -354,7 +355,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                           key={period}
                           className="rounded-xl border border-base-300/50 bg-base-100/80 p-3"
                         >
-                          <span className="text-xs text-base-content/55 uppercase">
+                          <span className="text-xs text-base-content/70 uppercase">
                             {period.replace(/_/g, " ")}
                           </span>
                           <p className="mt-1 font-semibold tabular-nums text-primary">
@@ -376,7 +377,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
               <Calendar className="h-5 w-5 text-primary shrink-0" aria-hidden />
               <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">Reports</h2>
             </div>
-            <p className="max-w-xl text-sm text-base-content/55">
+            <p className="max-w-xl text-sm text-base-content/70">
               Margin and PnL trends, then past trade cycles
             </p>
           </div>
@@ -384,13 +385,14 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
 
         <section className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm font-medium text-base-content/80">Chart view</span>
-            <div className="join">
+            <span className="text-sm font-medium text-base-content/80" id="report-chart-view-label">Chart view</span>
+            <div className="join" role="group" aria-labelledby="report-chart-view-label">
               {allowedPeriods.map((p) => (
                 <button
                   key={p}
                   type="button"
-                  className={`btn btn-sm join-item rounded-lg ${chartPeriod === p ? "btn-primary" : "btn-ghost border border-base-300/60"}`}
+                  aria-pressed={chartPeriod === p}
+                  className={`btn btn-sm join-item rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${chartPeriod === p ? "btn-primary" : "btn-ghost border border-base-300/60"}`}
                   onClick={() => setChartPeriod(p)}
                 >
                   {p === "daily" ? "Daily (1M)" : p === "weekly" ? "Weekly (6M)" : "Monthly (2Y)"}
@@ -412,7 +414,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
               {loadingCharts ? (
                 <ReportsChartSkeleton />
               ) : marginChartData.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-base-content/60">
+                <div className="h-64 flex items-center justify-center text-base-content/70">
                   No margin data in selected range
                 </div>
               ) : (
@@ -434,7 +436,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
               {loadingCharts ? (
                 <ReportsChartSkeleton />
               ) : pnlChartData.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-base-content/60">
+                <div className="h-64 flex items-center justify-center text-base-content/70">
                   No PnL snapshot data yet
                 </div>
               ) : (
@@ -455,7 +457,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                   All trade cycles
                 </h3>
               </div>
-              <p className="max-w-xl text-sm text-base-content/55">
+              <p className="max-w-xl text-sm text-base-content/70">
                 Expand a row to see stored positions for that cycle. PnL shown is from the report aggregate.
               </p>
             </div>
@@ -483,7 +485,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
             <div className="rounded-xl border border-dashed border-base-300/70 bg-base-200/20 py-14 text-center">
               <Briefcase className="mx-auto mb-3 h-11 w-11 text-base-content/30" aria-hidden />
               <p className="font-medium text-base-content">No trade cycles</p>
-              <p className="mt-1 text-sm text-base-content/55">Nothing in this report yet.</p>
+              <p className="mt-1 text-sm text-base-content/70">Nothing in this report yet.</p>
             </div>
           ) : (
             <>
@@ -497,7 +499,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                     >
                       <button
                         type="button"
-                        className="flex w-full flex-col gap-3 p-4 text-left md:flex-row md:items-center md:justify-between md:gap-4 md:p-6"
+                        className="flex w-full flex-col gap-3 p-4 text-left md:flex-row md:items-center md:justify-between md:gap-4 md:p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
                         onClick={() => void toggleCycleDetails(cycle.id)}
                         aria-expanded={expanded}
                       >
@@ -514,10 +516,10 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                           <div className="min-w-0 flex-1">
                             <h4 className="font-semibold leading-snug text-base-content md:text-lg">{cycle.name}</h4>
                             {cycle.description ? (
-                              <p className="mt-0.5 line-clamp-2 text-sm text-base-content/55">{cycle.description}</p>
+                              <p className="mt-0.5 line-clamp-2 text-sm text-base-content/70">{cycle.description}</p>
                             ) : null}
                             <div className="mt-2 flex flex-wrap items-center gap-2">
-                              <span className="inline-flex items-center rounded-full border border-base-300/60 px-2 py-0.5 text-[11px] font-medium tabular-nums text-base-content/60">
+                              <span className="inline-flex items-center rounded-full border border-base-300/60 px-2 py-0.5 text-[11px] font-medium tabular-nums text-base-content/70">
                                 #{cycle.id}
                               </span>
                               {isAdmin && cycle.strategy_name ? (
@@ -528,14 +530,14 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                                   {cycle.strategy_name}
                                 </span>
                               ) : null}
-                              <span className="text-xs text-base-content/45">{formatDate(cycle.created_at)}</span>
+                              <span className="text-xs text-base-content/70">{formatDate(cycle.created_at)}</span>
                               <span
                                 className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${stateChipClass(cycle.state)}`}
                               >
                                 {cycle.state}
                               </span>
                               {cycle.sub_state ? (
-                                <span className="truncate text-xs text-base-content/50" title={cycle.sub_state}>
+                                <span className="truncate text-xs text-base-content/70" title={cycle.sub_state}>
                                   {cycle.sub_state}
                                 </span>
                               ) : null}
@@ -574,7 +576,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                               )}
                             </div>
                           ) : (
-                            <p className="text-sm text-base-content/60">No positions.</p>
+                            <p className="text-sm text-base-content/70">No positions.</p>
                           )}
                         </div>
                       )}
@@ -587,9 +589,10 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                 <div className="join border border-base-300/60">
                   <button
                     type="button"
-                    className="btn btn-ghost btn-sm join-item gap-1 rounded-none border-0 first:rounded-l-lg last:rounded-r-lg"
+                    className="btn btn-ghost btn-sm join-item gap-1 rounded-none border-0 first:rounded-l-lg last:rounded-r-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     disabled={!reportsData?.previous}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    aria-label="Previous page"
                   >
                     <ChevronLeft className="h-4 w-4" aria-hidden />
                     Previous
@@ -601,9 +604,10 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                   </span>
                   <button
                     type="button"
-                    className="btn btn-ghost btn-sm join-item gap-1 rounded-none border-0 first:rounded-l-lg last:rounded-r-lg"
+                    className="btn btn-ghost btn-sm join-item gap-1 rounded-none border-0 first:rounded-l-lg last:rounded-r-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     disabled={!reportsData?.next}
                     onClick={() => setPage((p) => p + 1)}
+                    aria-label="Next page"
                   >
                     Next
                     <ChevronRight className="h-4 w-4" aria-hidden />

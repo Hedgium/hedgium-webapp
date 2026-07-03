@@ -127,19 +127,23 @@ const BrokerSetup: React.FC = () => {
           <h1 className="text-xl font-semibold tracking-tight text-base-content">
             Connect your broker
           </h1>
-          <p className="mt-1 text-sm text-base-content/60">
+          <p className="mt-1 text-sm text-base-content/70">
             Add credentials to link your trading account
           </p>
         </div>
 
         <div className="rounded-xl border border-base-300 bg-base-100 p-6 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
-              <label className="block text-xs font-medium text-base-content/80 mb-1.5">Broker</label>
+              <label htmlFor="brokerName" className="block text-xs font-medium text-base-content/80 mb-1.5">Broker</label>
               <select
+                id="brokerName"
+                name="brokerName"
+                required
+                aria-required="true"
                 value={brokerName}
                 onChange={(e) => setBrokerName(e.target.value)}
-                className="select select-bordered select-sm w-full h-9 text-sm bg-base-100"
+                className="select select-bordered select-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
               >
                 <option value="">Select broker</option>
                 <option value="ZERODHA">Zerodha</option>
@@ -149,44 +153,54 @@ const BrokerSetup: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <label className="text-xs font-medium text-base-content/80">Broker User ID</label>
+                <label htmlFor="brokerUserId" className="text-xs font-medium text-base-content/80">Broker User ID</label>
                 {brokerName && (
                   <button
                     type="button"
                     onClick={() => openHelp("broker_user_id")}
-                    className="text-primary hover:opacity-80 p-0.5 cursor-pointer"
+                    className="text-primary hover:opacity-80 p-0.5 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="How to get Broker User ID"
                     title="How to get credentials"
                   >
-                    <HelpCircle className="h-3.5 w-3.5" />
+                    <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 )}
               </div>
               <input
+                id="brokerUserId"
+                name="brokerUserId"
                 type="text"
+                required
+                aria-required="true"
                 value={brokerUserId}
                 onChange={(e) => setBrokerUserId(e.target.value)}
-                className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                 placeholder="Broker user ID"
               />
             </div>
             {brokerName === "KOTAKNEO" && (
               <div>
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <label className="text-xs font-medium text-base-content/80">API Key</label>
+                  <label htmlFor="apiKey" className="text-xs font-medium text-base-content/80">API Key</label>
                   <button
                     type="button"
                     onClick={() => openHelp("api_key")}
-                    className="text-primary hover:opacity-80 p-0.5 cursor-pointer"
+                    className="text-primary hover:opacity-80 p-0.5 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="How to get API Key"
                     title="How to get credentials"
                   >
-                    <HelpCircle className="h-3.5 w-3.5" />
+                    <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 </div>
                 <input
+                  id="apiKey"
+                  name="apiKey"
                   type="text"
+                  required
+                  aria-required="true"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                  className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                   placeholder="API key"
                 />
               </div>
@@ -194,21 +208,26 @@ const BrokerSetup: React.FC = () => {
             {(brokerName === "ZERODHA" || brokerName === "SHOONYA") && (
               <div>
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <label className="text-xs font-medium text-base-content/80">Secret Key</label>
+                  <label htmlFor="secretKey" className="text-xs font-medium text-base-content/80">Secret Key</label>
                   <button
                     type="button"
                     onClick={() => openHelp("secret_key")}
-                    className="text-primary hover:opacity-80 p-0.5 cursor-pointer"
+                    className="text-primary hover:opacity-80 p-0.5 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="How to get Secret Key"
                     title="How to get credentials"
                   >
-                    <HelpCircle className="h-3.5 w-3.5" />
+                    <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 </div>
                 <input
+                  id="secretKey"
+                  name="secretKey"
                   type="text"
+                  required
+                  aria-required="true"
                   value={secretKey}
                   onChange={(e) => setSecretKey(e.target.value)}
-                  className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                  className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                   placeholder="Secret key"
                 />
               </div>
@@ -216,23 +235,28 @@ const BrokerSetup: React.FC = () => {
             {brokerName && (
               <div>
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <label className="text-xs font-medium text-base-content/80">
+                  <label htmlFor="brokerTwofa" className="text-xs font-medium text-base-content/80">
                     TOTP Secret
                   </label>
                   <button
                     type="button"
                     onClick={() => openHelp("broker_twofa")}
-                    className="text-primary hover:opacity-80 p-0.5 cursor-pointer"
+                    className="text-primary hover:opacity-80 p-0.5 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="How to get TOTP Secret"
                     title="How to get credentials"
                   >
-                    <HelpCircle className="h-3.5 w-3.5" />
+                    <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 </div>
                 <input
+                  id="brokerTwofa"
+                  name="brokerTwofa"
                   type="text"
+                  required
+                  aria-required="true"
                   value={brokerTwofa}
                   onChange={(e) => setBrokerTwofa(e.target.value)}
-                  className="input input-bordered input-sm w-full h-9 text-sm bg-base-100"
+                  className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                   placeholder="TOTP secret"
                 />
               </div>
@@ -242,15 +266,25 @@ const BrokerSetup: React.FC = () => {
               <button
                 type="submit"
                 disabled={submitting || redirecting}
-                className="btn btn-primary btn-sm flex-1 h-9 text-sm font-medium normal-case"
+                aria-busy={submitting || redirecting}
+                className="btn btn-primary btn-sm flex-1 h-9 text-sm font-medium normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 disabled:cursor-not-allowed disabled:opacity-90 disabled:!bg-primary disabled:!text-primary-content"
               >
-                {redirecting ? "Redirecting..." : submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save broker"}
+                {redirecting ? (
+                  "Redirecting..."
+                ) : submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    <span>Saving…</span>
+                  </>
+                ) : (
+                  "Save broker"
+                )}
               </button>
               <button
                 type="button"
                 disabled={submitting || redirecting}
                 onClick={handleSkip}
-                className="btn btn-outline btn-sm flex-1 h-9 text-sm normal-case"
+                className="btn btn-outline btn-sm flex-1 h-9 text-sm normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
               >
                 Skip for now
               </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import TradeCyclePositionsSkeleton from "@/components/skeletons/TradeCyclePositionsSkeleton";
 import { sandboxFetch } from "@/utils/sandboxApi";
@@ -47,6 +47,7 @@ function formatDate(iso: string | undefined): string {
 export default function SandboxPositionsContent() {
   const { sandboxPlan } = useSandboxStore();
   const alert = useAlert();
+  const tabsId = useId();
 
   const [e1Risk, setE1Risk] = useState<SandboxE1Risk>("MEDIUM");
   const [phase, setPhase] = useState<SandboxPhase>("before");
@@ -203,57 +204,57 @@ export default function SandboxPositionsContent() {
     <>
       <section className="mb-8">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/45">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/70">
             Summary
           </p>
           <button
             type="button"
             onClick={() => void refreshAll()}
             disabled={refreshing || loadingDashboard}
-            className="btn btn-ghost btn-sm gap-2 self-start border border-base-300/70"
+            aria-busy={refreshing}
+            className="btn btn-circle btn-ghost btn-sm h-9 min-h-9 w-9 min-w-9 shrink-0 self-start border border-base-300 bg-base-100/80 hover:border-primary/35 hover:bg-base-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:self-auto"
             aria-label="Refresh sandbox data"
           >
             <RotateCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} aria-hidden />
-            Refresh
           </button>
         </div>
 
         {loadingDashboard ? (
-          <div className="space-y-4">
-            <div className="h-10 w-48 animate-pulse rounded-xl border border-base-300/40 bg-base-100/70" />
+          <div className="space-y-4 rounded-2xl border border-base-300 bg-base-100/55 p-5 backdrop-blur-sm">
+            <div className="h-10 w-48 animate-pulse rounded-xl border border-base-300 bg-base-200/50" />
             {[...Array(2)].map((_, i) => (
               <div key={i} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {[...Array(3)].map((__, j) => (
                   <div
                     key={j}
-                    className="h-28 animate-pulse rounded-2xl border border-base-300/40 bg-base-100/70"
+                    className="h-28 animate-pulse rounded-2xl border border-base-300 bg-base-200/50"
                   />
                 ))}
               </div>
             ))}
           </div>
         ) : !dashboard?.configured ? (
-          <div className="rounded-2xl border border-dashed border-warning/40 bg-warning/5 px-6 py-8 text-center">
+          <div className="rounded-2xl border border-dashed border-warning/50 bg-warning/5 px-6 py-8 text-center">
             <p className="text-sm font-medium text-base-content">
               {dashboard?.detail ?? "Sandbox not configured for this plan."}
             </p>
-            <p className="mt-2 text-xs text-base-content/60">
+            <p className="mt-2 text-xs text-base-content/70">
               Ask your administrator to assign a reference account for this plan tier.
             </p>
           </div>
         ) : (
-          <div className="space-y-5">
-            <div className="flex flex-col gap-3 rounded-2xl border border-base-300/60 bg-base-200/35 p-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-5 rounded-2xl border border-base-300 bg-base-100/55 p-5 backdrop-blur-sm md:p-6">
+            <div className="flex flex-col gap-3 rounded-xl border border-base-300 bg-base-200/40 p-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-base-content/50">
+                <p className="text-xs font-medium uppercase tracking-wider text-base-content/70">
                   E1 risk tier
                 </p>
-                <p className="mt-1 text-[11px] text-base-content/45">
+                <p className="mt-1 text-[11px] text-base-content/70">
                   Simulated on {formatMoneyIN(notional, { decimals: 0 })}
                 </p>
               </div>
               <select
-                className="select select-bordered select-sm w-full max-w-xs"
+                className="select select-bordered select-sm h-9 min-h-9 w-full max-w-xs border-base-300 bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 value={e1Risk}
                 onChange={(e) => setE1Risk(e.target.value as SandboxE1Risk)}
                 aria-label="E1 risk tier"
@@ -279,14 +280,14 @@ export default function SandboxPositionsContent() {
             />
 
             <div className="flex justify-center">
-              <div className="rounded-2xl border border-base-300/60 bg-base-200/35 px-6 py-3 text-center">
-                <p className="text-xs font-medium uppercase tracking-wider text-base-content/50">
+              <div className="rounded-xl border border-base-300 bg-base-200/40 px-6 py-3 text-center">
+                <p className="text-xs font-medium uppercase tracking-wider text-base-content/70">
                   DOJ
                 </p>
                 <p className="mt-1 text-lg font-semibold tabular-nums text-base-content md:text-xl">
                   {formatDate(dashboard.doj)}
                 </p>
-                <p className="mt-0.5 text-[11px] text-base-content/45">Your date of joining</p>
+                <p className="mt-0.5 text-[11px] text-base-content/70">Your date of joining</p>
               </div>
             </div>
 
@@ -323,82 +324,103 @@ export default function SandboxPositionsContent() {
                   Strategies
                 </h2>
               </div>
-              <p className="text-sm text-base-content/55">
+              <p className="text-sm text-base-content/70">
                 Reference account on this plan (illustrative)
               </p>
             </div>
           </div>
 
-          <div role="tablist" className="tabs tabs-boxed w-fit bg-base-200/60 p-1">
+          <div
+            role="tablist"
+            aria-label="Strategy phase"
+            className="join w-fit rounded-xl border border-base-300 bg-base-200/50 p-0.5"
+          >
             <button
+              id={`${tabsId}-tab-before`}
               type="button"
               role="tab"
-              className={`tab ${phase === "before" ? "tab-active" : ""}`}
+              className={`join-item btn btn-sm h-9 min-h-9 border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                phase === "before" ? "btn-primary" : "btn-ghost"
+              }`}
               aria-selected={phase === "before"}
+              aria-controls={`${tabsId}-panel`}
+              tabIndex={phase === "before" ? 0 : -1}
               onClick={() => setPhase("before")}
             >
               Before joining
             </button>
             <button
+              id={`${tabsId}-tab-after`}
               type="button"
               role="tab"
-              className={`tab ${phase === "after" ? "tab-active" : ""}`}
+              className={`join-item btn btn-sm h-9 min-h-9 border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                phase === "after" ? "btn-primary" : "btn-ghost"
+              }`}
               aria-selected={phase === "after"}
+              aria-controls={`${tabsId}-panel`}
+              tabIndex={phase === "after" ? 0 : -1}
               onClick={() => setPhase("after")}
             >
               After joining
             </button>
           </div>
 
-          {loadingCycles ? (
-            <div className="grid grid-cols-1 gap-6">
-              {[...Array(2)].map((_, i) => (
-                <TradeCyclePositionsSkeleton key={i} />
-              ))}
-            </div>
-          ) : tradeCycles.length > 0 ? (
-            <div className="space-y-5">
+          <div
+            id={`${tabsId}-panel`}
+            role="tabpanel"
+            aria-labelledby={phase === "before" ? `${tabsId}-tab-before` : `${tabsId}-tab-after`}
+          >
+            {loadingCycles ? (
               <div className="grid grid-cols-1 gap-6">
-                {tradeCycles.map((cycle) => (
-                  <TradeCycleWithPositionsCard
-                    key={cycle.id}
-                    tradeCycle={{
-                      ...cycle,
-                      id: String(cycle.id),
-                      state: cycle.state as
-                        | "NEW"
-                        | "ACTIVATED"
-                        | "ADJUSTED"
-                        | "PENDING"
-                        | "COMPLETED"
-                        | "STOPPED",
-                    }}
-                    fetchFn={fetchFn}
-                  />
+                {[...Array(2)].map((_, i) => (
+                  <TradeCyclePositionsSkeleton key={i} />
                 ))}
               </div>
-              {hasMoreCycles ? (
-                <div className="flex justify-center">
-                  <button
-                    type="button"
-                    onClick={handleLoadMoreCycles}
-                    disabled={loadingMoreCycles}
-                    className="btn btn-outline btn-sm min-w-32"
-                  >
-                    {loadingMoreCycles ? "Loading..." : "Load more"}
-                  </button>
+            ) : tradeCycles.length > 0 ? (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 gap-6">
+                  {tradeCycles.map((cycle) => (
+                    <TradeCycleWithPositionsCard
+                      key={cycle.id}
+                      tradeCycle={{
+                        ...cycle,
+                        id: String(cycle.id),
+                        state: cycle.state as
+                          | "NEW"
+                          | "ACTIVATED"
+                          | "ADJUSTED"
+                          | "PENDING"
+                          | "COMPLETED"
+                          | "STOPPED",
+                      }}
+                      fetchFn={fetchFn}
+                    />
+                  ))}
                 </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-base-300/70 bg-base-100/40 px-6 py-12 text-center">
-              <p className="text-sm text-base-content/60">
-                {phase === "before"
-                  ? "No strategies in the reference account before your joining date."
-                  : "No strategies on the reference account after your joining date yet."}
-              </p>
-            </div>
-          )}
+                {hasMoreCycles ? (
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={handleLoadMoreCycles}
+                      disabled={loadingMoreCycles}
+                      aria-busy={loadingMoreCycles}
+                      className="btn btn-outline btn-sm min-w-32 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      {loadingMoreCycles ? "Loading…" : "Load more"}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-base-300 bg-base-100/40 px-6 py-12 text-center backdrop-blur-sm">
+                <p className="text-sm text-base-content/70">
+                  {phase === "before"
+                    ? "No strategies in the reference account before your joining date."
+                    : "No strategies on the reference account after your joining date yet."}
+                </p>
+              </div>
+            )}
+          </div>
         </section>
       ) : null}
     </>
@@ -430,7 +452,7 @@ function PeriodSummaryGroup({
     <div className="space-y-3">
       <div>
         <p className="text-sm font-semibold text-base-content">{title}</p>
-        <p className="text-xs text-base-content/50">{subtitle}</p>
+        <p className="text-xs text-base-content/70">{subtitle}</p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <SummaryCard label={e2Label} sub={e2Sub} value={e2Value} />
@@ -443,8 +465,8 @@ function PeriodSummaryGroup({
 
 function RoiSummaryCard({ value, percent }: { value: number; percent: number }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4">
-      <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
+    <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-base-100/80 p-4">
+      <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">
         Total (E1 + E2)
       </p>
       <p
@@ -469,18 +491,18 @@ function SummaryCard({
   value: number | null;
 }) {
   return (
-    <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-      <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
+    <div className="rounded-2xl border border-base-300 bg-base-200/40 p-4">
+      <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">
         {label}
       </p>
       <p
         className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${
-          value == null ? "text-base-content/50" : signedClass(value)
+          value == null ? "text-base-content/70" : signedClass(value)
         }`}
       >
         {value == null ? "—" : formatMoneyIN(value, { decimals: 0 })}
       </p>
-      <p className="mt-1 text-[11px] text-base-content/45">{sub}</p>
+      <p className="mt-1 text-[11px] text-base-content/70">{sub}</p>
     </div>
   );
 }

@@ -59,20 +59,20 @@ const VerificationPending: React.FC = () => {
       </div>
 
       <div className="mt-6 w-full max-w-[400px]">
-        <div className="rounded-xl border border-base-300 bg-base-100 p-6 text-center">
+        <div className="rounded-xl border border-base-300 bg-base-100 p-6 text-center" role="status" aria-live="polite" aria-busy={redirecting}>
           {redirecting ? (
             <p className="text-sm font-medium text-base-content/80">Redirecting to home...</p>
           ) : (
             <>
               <div className="flex justify-center mb-4">
                 <div className="rounded-full bg-warning/10 p-3">
-                  <Clock className="w-8 h-8 text-warning" />
+                  <Clock className="w-8 h-8 text-warning" aria-hidden="true" />
                 </div>
               </div>
               <h1 className="text-xl font-semibold text-base-content tracking-tight">
                 Verification pending
               </h1>
-              <p className="text-sm text-base-content/60 mt-2">
+              <p className="text-sm text-base-content/70 mt-2">
                 Your profile is under review. We&apos;ll notify you once verification is complete. Please make sure to upload your documents in case you have not done it yet. You can skip this step for now and continue to home.
               </p>
               <div className="flex flex-col mt-4 flex-wrap gap-2 justify-center">
@@ -80,18 +80,20 @@ const VerificationPending: React.FC = () => {
                   type="button"
                   disabled={uploadRedirecting || submitting}
                   onClick={handleUploadDocuments}
-                  className="btn btn-primary btn-sm text-sm normal-case"
+                  aria-busy={uploadRedirecting}
+                  className="btn btn-primary btn-sm text-sm normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 disabled:cursor-not-allowed disabled:opacity-90 disabled:!bg-primary disabled:!text-primary-content"
                 >
-                  <FileUp className="w-4 h-4 shrink-0" />
-                  {uploadRedirecting ? "..." : "Upload or update documents"}
+                  <FileUp className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  {uploadRedirecting ? "Redirecting…" : "Upload or update documents"}
                 </button>
                 <button
                   type="button"
                   disabled={submitting || uploadRedirecting}
                   onClick={handleSkip}
-                  className="btn btn-outline btn-sm text-sm normal-case"
+                  aria-busy={submitting}
+                  className="btn btn-outline btn-sm text-sm normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                 >
-                  Skip verification
+                  {submitting ? "Skipping…" : "Skip verification"}
                 </button>
               </div>
             </>

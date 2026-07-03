@@ -72,9 +72,14 @@ export default function OnboardingTermsPage() {
 
   if (!user || user.signup_step !== "email_verified") {
     return (
-      <div className="flex w-full flex-col items-center justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
-        <p className="mt-3 text-sm text-base-content/60">Loading…</p>
+      <div
+        className="flex w-full flex-col items-center justify-center py-16"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+        <p className="mt-3 text-sm text-base-content/70">Loading…</p>
       </div>
     );
   }
@@ -94,28 +99,27 @@ export default function OnboardingTermsPage() {
             <h1 className="text-xl font-semibold tracking-tight text-base-content print:text-black">
               Terms &amp; Conditions
             </h1>
-            <p className="mt-1 text-sm text-base-content/60 print:text-black">
+            <p className="mt-1 text-sm text-base-content/70 print:text-black">
               Version {TERMS_VERSION}. Please read carefully before continuing.
             </p>
           </div>
-          <a
-            href="#printable"
-            onClick={(e) => {
-              e.preventDefault();
-              window.print();
-            }}
-            className="btn btn-ghost btn-sm shrink-0 self-center gap-1.5 normal-case sm:self-start print:hidden"
-            title="Print terms and conditions"
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="btn btn-ghost btn-sm shrink-0 self-center gap-1.5 normal-case sm:self-start print:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <Printer className="size-4" aria-hidden />
+            <Printer className="size-4" aria-hidden="true" />
             Print
-          </a>
+          </button>
         </div>
 
         <div className="rounded-xl border border-base-300 bg-base-100 shadow-sm print:border-0 print:bg-white print:shadow-none">
           <div
             id="printable"
-            className="terms-printable max-h-[min(420px,55vh)] overflow-y-auto border-b border-base-300 px-4 py-4 sm:px-5 print:max-h-none print:overflow-visible print:border-0 print:bg-white print:text-black"
+            tabIndex={0}
+            role="region"
+            aria-label="Terms and conditions, scrollable"
+            className="terms-printable max-h-[min(420px,55vh)] overflow-y-auto border-b border-base-300 px-4 py-4 sm:px-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset print:max-h-none print:overflow-visible print:border-0 print:bg-white print:text-black"
           >
             <h2 className="text-sm font-semibold text-base-content print:text-black">
               Mandatory terms and conditions to clients
@@ -156,7 +160,9 @@ export default function OnboardingTermsPage() {
             <label className="flex cursor-pointer items-start gap-3 text-left text-sm text-base-content">
               <input
                 type="checkbox"
-                className="checkbox checkbox-primary mt-0.5 shrink-0"
+                required
+                aria-required="true"
+                className="checkbox checkbox-primary mt-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
               />
@@ -170,12 +176,20 @@ export default function OnboardingTermsPage() {
               type="button"
               disabled={!agreed || submitting}
               onClick={handleAccept}
-              className="btn btn-primary btn-sm h-10 w-full text-sm font-medium normal-case"
+              aria-busy={submitting}
+              className="btn btn-primary btn-sm h-10 w-full text-sm font-medium normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 disabled:cursor-not-allowed disabled:opacity-90 disabled:!bg-primary disabled:!text-primary-content"
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue"}
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  <span>Submitting…</span>
+                </>
+              ) : (
+                "Continue"
+              )}
             </button>
 
-            <p className="text-center text-[11px] text-base-content/50">
+            <p className="text-center text-[11px] text-base-content/70">
               You must accept these terms to proceed with profile completion and research services.
             </p>
           </div>
@@ -186,7 +200,7 @@ export default function OnboardingTermsPage() {
             href="/onboarding/verify-email"
             className="inline-flex min-h-10 w-fit items-center gap-1 rounded-lg px-2 py-2 text-sm font-medium text-base-content transition-colors hover:bg-base-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           >
-            <ChevronLeft className="size-4 shrink-0" aria-hidden />
+            <ChevronLeft className="size-4 shrink-0" aria-hidden="true" />
             Back to email verification
           </Link>
         </div>

@@ -61,7 +61,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
                 <KycStatusIndicator className="shrink-0" />
               </div>
               {displayEmail ? (
-                <p className="text-xs text-base-content/60 truncate">{displayEmail}</p>
+                <p className="text-xs text-base-content/70 truncate">{displayEmail}</p>
               ) : null}
               {/* <div className="mt-1 flex items-center gap-2">
                 <span className={`text-xs font-medium ${isLegends ? "text-warning" : "text-primary"} truncate`}>
@@ -78,37 +78,44 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
         </div>
 
         {/* Navigation items */}
-        <nav className="flex-1 overflow-y-auto px-4 mt-4">
+        <nav className="flex-1 overflow-y-auto px-4 mt-4" aria-label="Primary">
           <ul className="gap-2 space-y-1">
             {showSandbox ? (
               <li>
                 <Link
                   href="/sandbox"
-                  className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all hover:bg-base-300/70 text-warning"
+                  className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all hover:bg-base-300/70 text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  <FlaskConical className="h-5 w-5" />
+                  <FlaskConical className="h-5 w-5" aria-hidden="true" />
                   <span className="font-medium">Sandbox</span>
                 </Link>
               </li>
             ) : null}
             {tabs.map((tab, idx) => {
               const active = pathname === tab.href;
+              const showUnread = tab.name === "Alerts" && unreadCount > 0;
               return (
                 <li key={idx}>
                   <Link
                     href={tab.href}
-                    className={`flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all ${active ? "bg-base-300 text-primary" : "hover:bg-base-300/70"
+                    className={`flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? "bg-base-300 text-primary" : "hover:bg-base-300/70"
                       }`}
                     aria-current={active ? "page" : undefined}
                   >
-                    {tab.icon}
+                    <span aria-hidden="true">{tab.icon}</span>
                     <span className="font-medium">{tab.name}</span>
 
                     {/* Unread indicator for Alerts */}
-                    {tab.name === "Alerts" && unreadCount > 0 && (
-                      <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                    {showUnread && (
+                      <span
+                        className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full"
+                        aria-hidden="true"
+                      >
                         {unreadCount}
                       </span>
+                    )}
+                    {showUnread && (
+                      <span className="sr-only">, {unreadCount} unread</span>
                     )}
                   </Link>
                 </li>
@@ -126,13 +133,13 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="btn btn-ghost justify-start normal-case gap-2 hover:bg-base-300/70 hover:border-none"
-              aria-label="Toggle theme"
+              className="btn btn-ghost justify-start normal-case gap-2 hover:bg-base-300/70 hover:border-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
               {theme === "dark" ? (
-                <Sun className="h-4 w-4" />
+                <Sun className="h-4 w-4" aria-hidden="true" />
               ) : (
-                <Moon className="h-4 w-4" />
+                <Moon className="h-4 w-4" aria-hidden="true" />
               )}
               <span>Theme</span>
             </button>
@@ -142,10 +149,10 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
                 logout();
                 router.push("/");
               }}
-              className="btn btn-ghost justify-start normal-case gap-2 text-error hover:bg-base-300/70 hover:border-none hover:text-error-content"
+              className="btn btn-ghost justify-start normal-case gap-2 text-error hover:bg-base-300/70 hover:border-none hover:text-error-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Logout"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4" aria-hidden="true" />
               <span>Logout</span>
             </button>
           </div>
@@ -156,28 +163,36 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
 
   // ----- Mobile bottom dock -----
   return (
-    <div className="dock md:hidden z-40 backdrop-blur-sm">
+    <nav className="dock md:hidden z-40 backdrop-blur-sm" aria-label="Primary">
       {tabs.map((tab, index) => {
         const active = pathname === tab.href;
+        const showUnread = tab.name === "Alerts" && unreadCount > 0;
         return (
           <button
             key={index}
             onClick={() => sendToPage(tab.href)}
+            aria-current={active ? "page" : undefined}
             className={`relative text-xs transition-all ${active ? "active text-primary" : ""}`}
           >
-            {tab.icon}
-            <span className="btm-nav-label">{tab.name}</span>
+            <span aria-hidden="true">{tab.icon}</span>
+            <span className="btm-nav-label">
+              {tab.name}
+              {showUnread && <span className="sr-only">, {unreadCount} unread</span>}
+            </span>
 
             {/* Unread indicator for Alerts */}
-            {tab.name === "Alerts" && unreadCount > 0 && (
-              <span className="absolute top-0 right-0 mt-0 mr-2 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full">
+            {showUnread && (
+              <span
+                className="absolute top-0 right-0 mt-0 mr-2 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full"
+                aria-hidden="true"
+              >
                 {unreadCount}
               </span>
             )}
           </button>
         );
       })}
-    </div>
+    </nav>
 
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useId, useState, useEffect } from "react";
 import { authFetch } from "@/utils/api";
 import { Eye, EyeOff } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
@@ -29,6 +29,7 @@ const PasswordInput: React.FC<{
   toggleShowPassword: () => void;
   placeholder: string;
   error?: string;
+  onEnter?: () => void;
 }> = ({
   label,
   name,
@@ -38,37 +39,50 @@ const PasswordInput: React.FC<{
   toggleShowPassword,
   placeholder,
   error,
-}) => (
-  <div className="form-control">
-    <label className="label">
-      <span className="label-text text-base-content">{label}</span>
-    </label>
-    <div className="relative">
-      <input
-        type={showPassword ? "text" : "password"}
-        name={name}
-        value={value}
-        onChange={onChange}
-        className={`input input-bordered w-full pr-10 ${
-          error ? "input-error" : ""
-        }`}
-        placeholder={placeholder}
-      />
-      <button
-        type="button"
-        className="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/60"
-        onClick={toggleShowPassword}
-      >
-        {showPassword ? (
-          <EyeOff className="h-6 w-6" />
-        ) : (
-          <Eye className="h-6 w-6" />
-        )}
-      </button>
+  onEnter,
+}) => {
+  const inputId = useId();
+  const errorId = `${inputId}-error`;
+  return (
+    <div className="form-control">
+      <label className="label" htmlFor={inputId}>
+        <span className="label-text text-base-content">{label}</span>
+      </label>
+      <div className="relative">
+        <input
+          id={inputId}
+          type={showPassword ? "text" : "password"}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required
+          aria-required="true"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          autoComplete={name === "currentPassword" ? "current-password" : "new-password"}
+          onKeyDown={(e) => { if (e.key === "Enter") onEnter?.(); }}
+          className={`input input-bordered w-full pr-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+            error ? "input-error" : ""
+          }`}
+          placeholder={placeholder}
+        />
+        <button
+          type="button"
+          className="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          onClick={toggleShowPassword}
+          aria-label={showPassword ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+        >
+          {showPassword ? (
+            <EyeOff className="h-6 w-6" aria-hidden="true" />
+          ) : (
+            <Eye className="h-6 w-6" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+      {error && <p id={errorId} role="alert" className="mt-2 text-sm text-error">{error}</p>}
     </div>
-    {error && <p className="mt-2 text-sm text-error">{error}</p>}
-  </div>
-);
+  );
+};
 
 
 interface BrokerState {
@@ -145,8 +159,8 @@ const PasswordTab: React.FC = () => {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const handlePasswordSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+  const handlePasswordSubmit = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault();
     let valid = true;
     const newErrors: Errors = {};
 
@@ -215,6 +229,7 @@ const PasswordTab: React.FC = () => {
           toggleShowPassword={() => setShowCurrentPassword(!showCurrentPassword)}
           placeholder="Enter your current password"
           error={errors.currentPassword}
+          onEnter={() => handlePasswordSubmit()}
         />
         <PasswordInput
           label="New Password"
@@ -225,6 +240,7 @@ const PasswordTab: React.FC = () => {
           toggleShowPassword={() => setShowNewPassword(!showNewPassword)}
           placeholder="Enter your new password"
           error={errors.newPassword}
+          onEnter={() => handlePasswordSubmit()}
         />
         <PasswordInput
           label="Confirm New Password"
@@ -235,13 +251,16 @@ const PasswordTab: React.FC = () => {
           toggleShowPassword={() => setShowConfirmPassword(!showConfirmPassword)}
           placeholder="Confirm your new password"
           error={errors.confirmPassword}
+          onEnter={() => handlePasswordSubmit()}
         />
         <button
+          type="button"
           onClick={handlePasswordSubmit}
           disabled={loading}
-          className="btn btn-primary w-full"
+          aria-busy={loading}
+          className="btn btn-primary w-full disabled:!bg-primary disabled:!text-primary-content disabled:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
         >
-          {loading ? "Updating..." : "Update Password"}
+          {loading ? "Updating…" : "Update Password"}
         </button>
       </div>
     </div>

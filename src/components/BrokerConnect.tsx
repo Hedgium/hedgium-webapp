@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "nextjs-toploader/app";
 import { authFetch } from "@/utils/api";
 import { brokerLoginWithPolling } from "@/utils/brokerLogin";
@@ -96,6 +96,19 @@ export default function BrokerLoginStatus() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const metricsFetchGen = useRef(0);
   const metricsLoadedForProfileRef = useRef<number | null>(null);
+  const loginModalRef = useRef<HTMLDialogElement>(null);
+  const loginModalHeadingId = useId();
+  const loginPasswordId = useId();
+
+  useEffect(() => {
+    const node = loginModalRef.current;
+    if (!node) return;
+    if (showLoginModal && !node.open) {
+      node.showModal();
+    } else if (!showLoginModal && node.open) {
+      node.close();
+    }
+  }, [showLoginModal]);
 
   const fetchAccountMetrics = useCallback(async () => {
     if (!user) return;
@@ -250,8 +263,15 @@ export default function BrokerLoginStatus() {
       if (metricsDropdownRef.current?.contains(e.target as Node)) return;
       setMetricsOpen(false);
     };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMetricsOpen(false);
+    };
     document.addEventListener("pointerdown", onPointerDown, true);
-    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [metricsOpen]);
 
   // Load live E1 / cash metrics once per logged-in profile (no profile bar reload loop).
@@ -318,7 +338,7 @@ export default function BrokerLoginStatus() {
           ) : !broker.hasProfile || !broker.verified ? (
             /* No profile OR setup not completed */
             <div className="flex items-center gap-2">
-              <span className="text-sm text-base-content/60">
+              <span className="text-sm text-base-content/70">
                 {broker.hasProfile ? "Broker setup incomplete" : "No broker connected"}
               </span>
               <button
@@ -332,9 +352,9 @@ export default function BrokerLoginStatus() {
                     router.push("/add-broker");
                   }
                 }}
-                className="btn btn-primary btn-sm gap-1.5"
+                className="btn btn-primary btn-sm gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 {broker.hasProfile ? "Complete Setup" : "Add Broker"}
               </button>
             </div>
@@ -353,7 +373,7 @@ export default function BrokerLoginStatus() {
                       <button
                         onClick={() => { setShowLoginModal(true); setLoginError(null); }}
                         disabled={loggingIn}
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-primary btn-sm disabled:!bg-primary disabled:!text-primary-content disabled:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
                       >
                         Login
                       </button>
@@ -371,10 +391,13 @@ export default function BrokerLoginStatus() {
                     type="button"
                     aria-expanded={metricsOpen}
                     aria-haspopup="true"
-                    className="btn btn-ghost btn-sm h-auto min-h-0 gap-1 px-2 py-1 font-normal normal-case"
+                    aria-label={`Account metrics, margin ${
+                      broker.margin != null ? formatMoneyIN(broker.margin, { decimals: 0 }) : "unavailable"
+                    }`}
+                    className="btn btn-ghost btn-sm h-auto min-h-0 gap-1 px-2 py-1 font-normal normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     onClick={() => setMetricsOpen((o) => !o)}
                   >
-                    <span className="text-sm">
+                    <span className="text-sm" aria-hidden="true">
                       <span className="font-medium">Margin:</span>{" "}
                       <span className="tabular-nums">
                         {broker.margin != null
@@ -384,16 +407,13 @@ export default function BrokerLoginStatus() {
                     </span>
                     <ChevronDown
                       className={`h-4 w-4 shrink-0 opacity-60 transition-transform ${metricsOpen ? "rotate-180" : ""}`}
-                      aria-hidden
+                      aria-hidden="true"
                     />
                   </button>
-                  <ul
-                    className="dropdown-content menu z-[200] mt-1 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-                    role="menu"
-                  >
+                  <ul className="dropdown-content menu z-[200] mt-1 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">
                     <li className="pointer-events-none px-2 py-1">
                       <div className="flex justify-between gap-3 text-sm">
-                        <span className="text-base-content/60">E1 Total</span>
+                        <span className="text-base-content/70">E1 Total</span>
                         <span className="tabular-nums font-medium">
                           {accountMetrics.loading
                             ? "…"
@@ -405,7 +425,7 @@ export default function BrokerLoginStatus() {
                     </li>
                     <li className="pointer-events-none px-2 py-1">
                       <div className="flex justify-between gap-3 text-sm">
-                        <span className="text-base-content/60">E1 PnL</span>
+                        <span className="text-base-content/70">E1 PnL</span>
                         <span
                           className={`tabular-nums font-medium ${signedClass(accountMetrics.engine1Pnl)}`}
                         >
@@ -419,7 +439,7 @@ export default function BrokerLoginStatus() {
                     </li>
                     <li className="pointer-events-none px-2 py-1">
                       <div className="flex justify-between gap-3 text-sm">
-                        <span className="text-base-content/60">Avl cash</span>
+                        <span className="text-base-content/70">Avl cash</span>
                         <span className="tabular-nums font-medium">
                           {accountMetrics.loading
                             ? "…"
@@ -444,7 +464,7 @@ export default function BrokerLoginStatus() {
                     <li className="mt-1 border-t border-base-300/80 pt-1">
                       <button
                         type="button"
-                        className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm"
+                        className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         onClick={() => {
                           setMetricsOpen(false);
                           void refreshAccountValues();
@@ -453,7 +473,7 @@ export default function BrokerLoginStatus() {
                       >
                         <RotateCw
                           className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-                          aria-hidden
+                          aria-hidden="true"
                         />
                         Refresh
                       </button>
@@ -468,60 +488,74 @@ export default function BrokerLoginStatus() {
       </div>
 
       {/* ── Login Modal ── */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-base-100 p-6 rounded-xl shadow-xl max-w-md w-full">
-            <h3 className="font-bold text-lg mb-2">Login to {broker.name}</h3>
-            <p className="text-sm text-base-content/70 mb-4">
-              Your {broker.name === "KOTAKNEO" ? "MPIN" : "password"} is only used to
-              sign in with your broker for this session. We do not store it.
-            </p>
+      <dialog
+        ref={loginModalRef}
+        className="modal"
+        aria-labelledby={loginModalHeadingId}
+        onClose={() => { setShowLoginModal(false); setPassword(""); setLoginError(null); }}
+        onCancel={() => setShowLoginModal(false)}
+      >
+        <div className="modal-box max-w-md">
+          <h3 id={loginModalHeadingId} className="font-bold text-lg mb-2">
+            Login to {broker.name}
+          </h3>
+          <p className="text-sm text-base-content/70 mb-4">
+            Your {broker.name === "KOTAKNEO" ? "MPIN" : "password"} is only used to
+            sign in with your broker for this session. We do not store it.
+          </p>
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  {broker.name === "KOTAKNEO" ? "MPIN" : "Password"}
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setLoginError(null); }}
-                  className={`input input-bordered w-full ${loginError ? "input-error" : ""}`}
-                  placeholder={`Enter ${broker.name === "KOTAKNEO" ? "MPIN" : "password"}`}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleBrokerLogin(); }}
-                  autoFocus
-                />
-                {loginError && (
-                  <div className="flex items-center gap-1.5 text-error text-sm mt-2">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    <span>{loginError}</span>
-                  </div>
-                )}
-              </div>
+          <div className="space-y-3">
+            <div>
+              <label htmlFor={loginPasswordId} className="block text-sm font-medium mb-2">
+                {broker.name === "KOTAKNEO" ? "MPIN" : "Password"}
+              </label>
+              <input
+                id={loginPasswordId}
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setLoginError(null); }}
+                className={`input input-bordered w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${loginError ? "input-error" : ""}`}
+                placeholder={`Enter ${broker.name === "KOTAKNEO" ? "MPIN" : "password"}`}
+                onKeyDown={(e) => { if (e.key === "Enter") handleBrokerLogin(); }}
+                aria-invalid={loginError ? true : undefined}
+                aria-describedby={loginError ? `${loginPasswordId}-error` : undefined}
+                autoFocus
+              />
+              {loginError && (
+                <div id={`${loginPasswordId}-error`} role="alert" className="flex items-center gap-1.5 text-error text-sm mt-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+            </div>
 
-              <div className="flex gap-2 justify-end pt-1">
-                <button
-                  onClick={() => { setShowLoginModal(false); setPassword(""); setLoginError(null); }}
-                  className="btn btn-ghost"
-                  disabled={loggingIn}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleBrokerLogin}
-                  disabled={loggingIn || !password}
-                  className="btn btn-primary"
-                >
-                  {loggingIn
-                    ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Logging in...</>
-                    : "Login"
-                  }
-                </button>
-              </div>
+            <div className="flex gap-2 justify-end pt-1">
+              <button
+                onClick={() => { setShowLoginModal(false); setPassword(""); setLoginError(null); }}
+                className="btn btn-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                disabled={loggingIn}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBrokerLogin}
+                disabled={loggingIn || !password}
+                aria-busy={loggingIn}
+                className="btn btn-primary disabled:!bg-primary disabled:!text-primary-content disabled:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
+              >
+                {loggingIn
+                  ? <><Loader2 className="h-4 w-4 animate-spin mr-2" aria-hidden="true" />Logging in…</>
+                  : "Login"
+                }
+              </button>
             </div>
           </div>
         </div>
-      )}
+        <form method="dialog" className="modal-backdrop">
+          <button aria-label="Close">close</button>
+        </form>
+      </dialog>
     </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
@@ -32,6 +32,17 @@ const ProfileTab: React.FC = () => {
     useState<RelationshipManagerInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [verifyEmailModalOpen, setVerifyEmailModalOpen] = useState(false);
+  const verifyEmailDialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const node = verifyEmailDialogRef.current;
+    if (!node) return;
+    if (verifyEmailModalOpen && !node.open) {
+      node.showModal();
+    } else if (!verifyEmailModalOpen && node.open) {
+      node.close();
+    }
+  }, [verifyEmailModalOpen]);
 
   /** Load active profile (auto trade + relationship manager) from /profiles/me/ */
   const fetchProfile = async () => {
@@ -195,7 +206,7 @@ const ProfileTab: React.FC = () => {
                     onChange={toggleAutoTrade}
                   />
                 </label>
-                <p className="text-xs text-base-content/60 mt-1">
+                <p className="text-xs text-base-content/70 mt-1">
                   Enable automatic trading for your strategies
                 </p>
               </div>
@@ -208,14 +219,20 @@ const ProfileTab: React.FC = () => {
         )}
 
         {error && (
-          <div className="alert alert-error">
+          <div className="alert alert-error" role="alert">
             <span className="text-sm">{error}</span>
           </div>
         )}
 
-        {verifyEmailModalOpen && (
-          <dialog open className="modal modal-open">
-            <div className="modal-box max-h-[85vh] overflow-y-auto w-11/12 max-w-md">
+        <dialog
+          ref={verifyEmailDialogRef}
+          className="modal"
+          aria-label="Verify email"
+          onClose={() => setVerifyEmailModalOpen(false)}
+          onCancel={() => setVerifyEmailModalOpen(false)}
+        >
+          <div className="modal-box max-h-[85vh] overflow-y-auto w-11/12 max-w-md">
+            {verifyEmailModalOpen && (
               <VerifyEmail
                 autoSendOnMount={true}
                 showSkip={false}
@@ -226,26 +243,21 @@ const ProfileTab: React.FC = () => {
                   updateUser({ email_verified: true, signup_step: "email_verified" });
                 }}
               />
-              <div className="modal-action pt-2">
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm normal-case"
-                  onClick={() => setVerifyEmailModalOpen(false)}
-                >
-                  Close
-                </button>
-              </div>
+            )}
+            <div className="modal-action pt-2">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                onClick={() => setVerifyEmailModalOpen(false)}
+              >
+                Close
+              </button>
             </div>
-            <div
-              className="modal-backdrop"
-              onClick={() => setVerifyEmailModalOpen(false)}
-              onKeyDown={(e) => e.key === "Escape" && setVerifyEmailModalOpen(false)}
-              role="button"
-              tabIndex={0}
-              aria-label="Close modal"
-            />
-          </dialog>
-        )}
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button aria-label="Close">close</button>
+          </form>
+        </dialog>
       </div>
     </div>
   );

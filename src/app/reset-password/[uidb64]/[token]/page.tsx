@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Lock, ArrowLeft, Loader2 } from "lucide-react";
+import AuthFlowBrand from "@/components/AuthFlowBrand";
 import { myFetch } from "@/utils/api";
 
 export default function ResetPasswordPage() {
@@ -64,22 +65,23 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
-        <div className="w-full max-w-[380px]">
-          <div className="text-center mb-6">
-            <h1 className="text-xl font-semibold text-base-content tracking-tight">
-              Password <span className="text-primary">reset</span>
-            </h1>
-          </div>
-          <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
-            <p className="text-sm text-success text-center mb-4">
+      <div className="w-full max-w-[400px]">
+        <AuthFlowBrand />
+        <div className="text-center mb-6">
+          <h1 className="text-xl font-semibold text-base-content tracking-tight">
+            Password <span className="text-primary">reset</span>
+          </h1>
+        </div>
+        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+          <div className="space-y-4" role="status" aria-live="polite">
+            <p className="text-sm text-success text-center">
               Your password has been reset. You can now log in with your new password.
             </p>
             <Link
               href="/"
-              className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case gap-2"
+              className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Back to login
             </Link>
           </div>
@@ -89,92 +91,109 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-8">
-      <div className="w-full max-w-[380px]">
-        <div className="text-center mb-6">
-          <h1 className="text-xl font-semibold text-base-content tracking-tight">
-            Set new <span className="text-primary">password</span>
-          </h1>
-          <p className="text-sm text-base-content/60 mt-1">
-            Enter your new password below
-          </p>
-        </div>
+    <div className="w-full max-w-[400px]">
+      <AuthFlowBrand />
+      <div className="text-center mb-6">
+        <h1 className="text-xl font-semibold text-base-content tracking-tight">
+          Set new <span className="text-primary">password</span>
+        </h1>
+        <p className="text-sm text-base-content/70 mt-1">
+          Enter your new password below
+        </p>
+      </div>
 
-        <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="newPassword" className="block text-xs font-medium text-base-content/80 mb-1.5">
-                New password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
-                <input
-                  id="newPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={8}
-                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${
-                    newPasswordError ? "input-error" : ""
-                  }`}
-                  value={newPassword}
-                  onChange={(e) => {
-                    setNewPassword(e.target.value);
-                    setNewPasswordError("");
-                  }}
-                  placeholder="••••••••"
-                  disabled={isSubmitting}
-                />
-              </div>
-              {newPasswordError && <p className="mt-1 text-xs text-error">{newPasswordError}</p>}
+      <div className="bg-base-100 rounded-xl border border-base-300 shadow-sm p-6">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <div>
+            <label htmlFor="newPassword" className="block text-xs font-medium text-base-content/80 mb-1.5">
+              New password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" aria-hidden="true" />
+              <input
+                id="newPassword"
+                name="newPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                aria-required="true"
+                minLength={8}
+                aria-invalid={!!newPasswordError}
+                aria-describedby={newPasswordError ? "newPassword-error" : undefined}
+                className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${
+                  newPasswordError ? "input-error" : ""
+                }`}
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  setNewPasswordError("");
+                }}
+                placeholder="••••••••"
+                disabled={isSubmitting}
+              />
             </div>
+            {newPasswordError && <p id="newPassword-error" role="alert" className="mt-1 text-xs text-error">{newPasswordError}</p>}
+          </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-xs font-medium text-base-content/80 mb-1.5">
-                Confirm password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={8}
-                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${
-                    confirmError ? "input-error" : ""
-                  }`}
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    setConfirmError("");
-                  }}
-                  placeholder="••••••••"
-                  disabled={isSubmitting}
-                />
-              </div>
-              {confirmError && <p className="mt-1 text-xs text-error">{confirmError}</p>}
+          <div>
+            <label htmlFor="confirmPassword" className="block text-xs font-medium text-base-content/80 mb-1.5">
+              Confirm password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" aria-hidden="true" />
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                aria-required="true"
+                minLength={8}
+                aria-invalid={!!confirmError}
+                aria-describedby={confirmError ? "confirmPassword-error" : undefined}
+                className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${
+                  confirmError ? "input-error" : ""
+                }`}
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setConfirmError("");
+                }}
+                placeholder="••••••••"
+                disabled={isSubmitting}
+              />
             </div>
+            {confirmError && <p id="confirmPassword-error" role="alert" className="mt-1 text-xs text-error">{confirmError}</p>}
+          </div>
 
-            {submitError && <p className="text-xs text-error text-center">{submitError}</p>}
+          {submitError && <p role="alert" className="text-xs text-error text-center">{submitError}</p>}
 
-            <button
-              type="submit"
-              className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reset password"}
-            </button>
-          </form>
+          <button
+            type="submit"
+            className="btn btn-primary btn-sm w-full h-9 text-sm font-medium normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 disabled:cursor-not-allowed disabled:opacity-90 disabled:!bg-primary disabled:!text-primary-content"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                <span>Resetting…</span>
+              </>
+            ) : (
+              "Reset password"
+            )}
+          </button>
+        </form>
 
-          <p className="text-center mt-4">
-            <Link
-              href="/"
-              className="text-xs text-base-content/50 hover:text-primary inline-flex items-center gap-1"
-            >
-              <ArrowLeft className="h-3 w-3" />
-              Back to login
-            </Link>
-          </p>
-        </div>
+        <p className="text-center mt-4">
+          <Link
+            href="/"
+            className="text-xs text-base-content/70 hover:text-primary inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          >
+            <ArrowLeft className="h-3 w-3" aria-hidden="true" />
+            Back to login
+          </Link>
+        </p>
       </div>
     </div>
   );

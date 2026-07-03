@@ -187,7 +187,7 @@ function Onboarding() {
             </>
           )}
         </h1>
-        <p className="mt-1 text-sm text-base-content/60">
+        <p className="mt-1 text-sm text-base-content/70">
           {isEditingExisting
             ? "Change your details if needed, then continue to email verification."
             : "Create your account to get started"}
@@ -195,109 +195,146 @@ function Onboarding() {
       </div>
 
       <div className="rounded-xl border border-base-300 bg-base-100 p-6">
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4" noValidate>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-base-content/80 mb-1.5">First name</label>
+                <label htmlFor="first_name" className="block text-xs font-medium text-base-content/80 mb-1.5">First name</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" aria-hidden="true" />
                   <input
+                    id="first_name"
+                    name="first_name"
                     type="text"
                     autoComplete="given-name"
-                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${first_nameError ? "input-error" : ""}`}
+                    required
+                    aria-required="true"
+                    aria-invalid={!!first_nameError}
+                    aria-describedby={first_nameError ? "first_name-error" : undefined}
+                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${first_nameError ? "input-error" : ""}`}
                     value={first_name}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="First"
                   />
                 </div>
-                {first_nameError && <p className="mt-1 text-xs text-error">{first_nameError}</p>}
+                {first_nameError && <p id="first_name-error" role="alert" className="mt-1 text-xs text-error">{first_nameError}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-base-content/80 mb-1.5">Last name</label>
+                <label htmlFor="last_name" className="block text-xs font-medium text-base-content/80 mb-1.5">Last name</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" aria-hidden="true" />
                   <input
+                    id="last_name"
+                    name="last_name"
                     type="text"
                     autoComplete="family-name"
-                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${last_nameError ? "input-error" : ""}`}
+                    required
+                    aria-required="true"
+                    aria-invalid={!!last_nameError}
+                    aria-describedby={last_nameError ? "last_name-error" : undefined}
+                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${last_nameError ? "input-error" : ""}`}
                     value={last_name}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Last"
                   />
                 </div>
-                {last_nameError && <p className="mt-1 text-xs text-error">{last_nameError}</p>}
+                {last_nameError && <p id="last_name-error" role="alert" className="mt-1 text-xs text-error">{last_nameError}</p>}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-base-content/80 mb-1.5">Email</label>
+              <label htmlFor="email" className="block text-xs font-medium text-base-content/80 mb-1.5">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" aria-hidden="true" />
                 <input
+                  id="email"
+                  name="email"
                   type="email"
                   autoComplete="email"
-                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${emailError ? "input-error" : ""}`}
+                  required
+                  aria-required="true"
+                  aria-invalid={!!emailError}
+                  aria-describedby={emailError ? "email-error" : undefined}
+                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${emailError ? "input-error" : ""}`}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                 />
               </div>
-              {emailError && <p className="mt-1 text-xs text-error">{emailError}</p>}
+              {emailError && <p id="email-error" role="alert" className="mt-1 text-xs text-error">{emailError}</p>}
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-base-content/80 mb-1.5">Mobile</label>
+              <label htmlFor="mobile" className="block text-xs font-medium text-base-content/80 mb-1.5">Mobile</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" aria-hidden="true" />
                 <input
+                  id="mobile"
+                  name="mobile"
                   type="tel"
+                  inputMode="numeric"
                   autoComplete="tel"
-                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${mobileError ? "input-error" : ""}`}
+                  required
+                  aria-required="true"
+                  aria-invalid={!!mobileError}
+                  aria-describedby={mobileError ? "mobile-error" : undefined}
+                  className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${mobileError ? "input-error" : ""}`}
                   value={mobile}
                   onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
                   placeholder="10-digit mobile number"
                 />
               </div>
-              {mobileError && <p className="mt-1 text-xs text-error">{mobileError}</p>}
+              {mobileError && <p id="mobile-error" role="alert" className="mt-1 text-xs text-error">{mobileError}</p>}
             </div>
 
             {!isEditingExisting && (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-base-content/80 mb-1.5">Password</label>
+                  <label htmlFor="password" className="block text-xs font-medium text-base-content/80 mb-1.5">Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" aria-hidden="true" />
                     <input
+                      id="password"
+                      name="password"
                       type="password"
                       autoComplete="new-password"
-                      className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${passwordError ? "input-error" : ""}`}
+                      required
+                      aria-required="true"
+                      aria-invalid={!!passwordError}
+                      aria-describedby={passwordError ? "password-error" : undefined}
+                      className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${passwordError ? "input-error" : ""}`}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                     />
                   </div>
-                  {passwordError && <p className="mt-1 text-xs text-error">{passwordError}</p>}
+                  {passwordError && <p id="password-error" role="alert" className="mt-1 text-xs text-error">{passwordError}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-base-content/80 mb-1.5">Confirm password</label>
+                  <label htmlFor="confirmPassword" className="block text-xs font-medium text-base-content/80 mb-1.5">Confirm password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/60 pointer-events-none z-10" aria-hidden="true" />
                     <input
+                      id="confirmPassword"
+                      name="confirmPassword"
                       type="password"
                       autoComplete="new-password"
-                      className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 ${confirmPasswordError ? "input-error" : ""}`}
+                      required
+                      aria-required="true"
+                      aria-invalid={!!confirmPasswordError}
+                      aria-describedby={confirmPasswordError ? "confirmPassword-error" : undefined}
+                      className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${confirmPasswordError ? "input-error" : ""}`}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
                     />
                   </div>
-                  {confirmPasswordError && <p className="mt-1 text-xs text-error">{confirmPasswordError}</p>}
+                  {confirmPasswordError && <p id="confirmPassword-error" role="alert" className="mt-1 text-xs text-error">{confirmPasswordError}</p>}
                 </div>
               </>
             )}
 
-            {error && <p className="text-xs text-error text-center py-1">{error}</p>}
+            {error && <p role="alert" className="text-xs text-error text-center py-1">{error}</p>}
 
             <button
               type="submit"
@@ -322,9 +359,9 @@ function Onboarding() {
         </div>
 
       {!isEditingExisting && (
-        <p className="mt-5 text-center text-xs text-base-content/50">
+        <p className="mt-5 text-center text-xs text-base-content/70">
           Already have an account?{" "}
-          <Link href="/" className="font-medium text-primary hover:underline">
+          <Link href="/" className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
             Log in
           </Link>
         </p>
