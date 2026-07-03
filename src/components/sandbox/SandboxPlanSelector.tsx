@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSandboxStore, type SandboxPlan } from "@/store/sandboxStore";
+import type { SandboxE1Risk } from "@/types/sandbox";
 
 const PLANS: { id: SandboxPlan; label: string }[] = [
   { id: "BASIC", label: "25L" },
@@ -9,8 +10,14 @@ const PLANS: { id: SandboxPlan; label: string }[] = [
   { id: "LEGENDS", label: "1 Cr" },
 ];
 
+const E1_OPTIONS: { id: SandboxE1Risk; label: string }[] = [
+  { id: "LOW", label: "Low (7%)" },
+  { id: "MEDIUM", label: "Medium (9%)" },
+  { id: "HIGH", label: "High (12%)" },
+];
+
 export default function SandboxPlanSelector() {
-  const { sandboxPlan, setSandboxPlan } = useSandboxStore();
+  const { sandboxPlan, setSandboxPlan, sandboxE1Risk, setSandboxE1Risk } = useSandboxStore();
   const value = sandboxPlan ?? "BASIC";
 
   return (
@@ -26,6 +33,21 @@ export default function SandboxPlanSelector() {
           onChange={(e) => setSandboxPlan(e.target.value as SandboxPlan)}
         >
           {PLANS.map(({ id, label }) => (
+            <option key={id} value={id}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <label htmlFor="sandbox-e1-risk" className="text-sm font-medium text-base-content/80">
+          E1 risk tier
+        </label>
+        <select
+          id="sandbox-e1-risk"
+          className="select select-bordered select-sm h-9 min-h-9 w-auto min-w-[11rem] border-base-300 bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          value={sandboxE1Risk}
+          onChange={(e) => setSandboxE1Risk(e.target.value as SandboxE1Risk)}
+        >
+          {E1_OPTIONS.map(({ id, label }) => (
             <option key={id} value={id}>
               {label}
             </option>

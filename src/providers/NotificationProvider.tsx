@@ -5,9 +5,10 @@ import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import useAlertStore from "@/store/alertStore";
+import { isDemoUser } from "@/lib/demo";
 
 export default function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const { accessToken } = useAuthStore();
+  const { accessToken, user } = useAuthStore();
   const { addNotification, fetchNotifications } = useNotificationStore();
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -23,6 +24,12 @@ export default function NotificationProvider({ children }: { children: React.Rea
 
     // Load alerts via HTTP regardless of WebSocket — WS is only for live pushes.
     void fetchNotifications();
+
+    if (isDemoUser(user)) {
+      return () => {
+        mountedRef.current = false;
+      };
+    }
 
     const connectWebSocket = () => {
       if (!mountedRef.current) return;
@@ -111,7 +118,7 @@ export default function NotificationProvider({ children }: { children: React.Rea
     };
     // fetchNotifications and addNotification are stable Zustand actions — safe to omit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
+  }, [accessToken, user?.is_demo]);
 
   return <>{children}</>;
 }

@@ -40,7 +40,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
 
   const { unreadCount } = useNotificationStore();
   const { hasAssigned, loading: tradeCyclesLoading } = useHasAssignedTradeCycles();
-  const showSandbox = !tradeCyclesLoading && hasAssigned === false;
+  const showSandbox = user?.is_demo || (!tradeCyclesLoading && hasAssigned === false);
 
   const sendToPage = (url: string) => {
     router.push(url);

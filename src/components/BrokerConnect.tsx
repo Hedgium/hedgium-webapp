@@ -6,6 +6,7 @@ import { authFetch } from "@/utils/api";
 import { brokerLoginWithPolling } from "@/utils/brokerLogin";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import { useAuthStore } from "@/store/authStore";
+import { isDemoUser } from "@/lib/demo";
 import { RotateCw, Plus, AlertCircle, Loader2, ChevronDown } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import { LiveHolding } from "@/types/positions";
@@ -68,6 +69,7 @@ export default function BrokerLoginStatus() {
   const router = useRouter();
   const alert = useAlert();
   const { user, brokerNeedsRefresh, setBrokerNeedsRefresh } = useAuthStore();
+  const isDemo = isDemoUser(user);
 
   const [broker, setBroker] = useState<BrokerState>({
     loading: true,
@@ -335,7 +337,7 @@ export default function BrokerLoginStatus() {
           {broker.loading ? (
             <p className="text-sm opacity-70 animate-pulse">Checking broker status...</p>
 
-          ) : !broker.hasProfile || !broker.verified ? (
+          ) : !isDemo && (!broker.hasProfile || !broker.verified) ? (
             /* No profile OR setup not completed */
             <div className="flex items-center gap-2">
               <span className="text-sm text-base-content/70">
@@ -366,7 +368,7 @@ export default function BrokerLoginStatus() {
                 <span>Broker:</span>
                 {broker.loggedIn ? (
                   <span className="font-medium">{broker.name}</span>
-                ) : (
+                ) : !isDemo ? (
                   <>
                     <span className="text-error font-medium">Not logged in</span>
                     {broker.name && (
@@ -379,6 +381,8 @@ export default function BrokerLoginStatus() {
                       </button>
                     )}
                   </>
+                ) : (
+                  <span className="font-medium">{broker.name}</span>
                 )}
               </div>
 
@@ -488,6 +492,7 @@ export default function BrokerLoginStatus() {
       </div>
 
       {/* ── Login Modal ── */}
+      {!isDemo && (
       <dialog
         ref={loginModalRef}
         className="modal"
@@ -556,6 +561,7 @@ export default function BrokerLoginStatus() {
           <button aria-label="Close">close</button>
         </form>
       </dialog>
+      )}
     </>
   );
 }

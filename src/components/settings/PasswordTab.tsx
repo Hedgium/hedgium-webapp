@@ -5,6 +5,7 @@ import { authFetch } from "@/utils/api";
 import { Eye, EyeOff } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import { useAuthStore } from "@/store/authStore";
+import { isDemoUser } from "@/lib/demo";
 
 
 
@@ -161,6 +162,7 @@ const PasswordTab: React.FC = () => {
 
   const handlePasswordSubmit = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
+    if (isDemoUser(user)) return;
     let valid = true;
     const newErrors: Errors = {};
 
@@ -219,6 +221,11 @@ const PasswordTab: React.FC = () => {
   return (
     <div className="card bg-base-100 border border-base-300 p-6">
       <h2 className="text-2xl font-bold mb-6 text-base-content">Change Password</h2>
+      {isDemoUser(user) ? (
+        <p className="text-sm text-base-content/70" role="status">
+          Password cannot be changed on the preview account used for accessibility review.
+        </p>
+      ) : (
       <div className="space-y-4">
         <PasswordInput
           label="Current Password"
@@ -263,6 +270,7 @@ const PasswordTab: React.FC = () => {
           {loading ? "Updating…" : "Update Password"}
         </button>
       </div>
+      )}
     </div>
   );
 };

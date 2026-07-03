@@ -50,6 +50,13 @@ export default function RootLayoutClient({
         return;
       }
 
+      if (user?.is_demo) {
+        if (isLoginRootPath(pathname) || pathname?.startsWith('/onboarding')) {
+          router.push('/home');
+        }
+        return;
+      }
+
       if (user?.kyc_skipped) {
         const inAppShell = isAppShellPath(pathname);
         const isSandbox = pathname?.startsWith('/sandbox');

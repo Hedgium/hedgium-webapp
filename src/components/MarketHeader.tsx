@@ -6,6 +6,8 @@ import { useTickStream } from "@/hooks/useTickStream";
 import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
 import { authFetch } from "@/utils/api";
 import MarketDataCardSkeleton from "./skeletons/MarketDataCardSkeleton";
+import { useAuthStore } from "@/store/authStore";
+import { isDemoUser } from "@/lib/demo";
 
 interface MarketData {
   name: string;
@@ -42,6 +44,8 @@ const POLLING_INTERVAL_MS = 60_000;
 const WS_STABLE_GRACE_MS = 10_000;
 
 export default function MarketHeader() {
+  const user = useAuthStore((s) => s.user);
+  const isDemo = isDemoUser(user);
   const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [activeUnderlyings, setActiveUnderlyings] = useState<UnderlyingToken[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,8 +55,9 @@ export default function MarketHeader() {
   const [isWsStable, setIsWsStable] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Fetch active underlyings from trade cycles
+  // Fetch active underlyings from trade cycles (not available in demo fixtures).
   useEffect(() => {
+    if (isDemo) return;
     async function fetchActiveUnderlyings() {
       try {
         const res = await authFetch("trade-cycles/active-underlyings/");
@@ -67,7 +72,7 @@ export default function MarketHeader() {
       }
     }
     fetchActiveUnderlyings();
-  }, []);
+  }, [isDemo]);
 
   // Combine static instruments with active underlyings
   const allInstruments = useMemo(() => {
@@ -90,7 +95,7 @@ export default function MarketHeader() {
 
   // Subscribe to all configured instruments
   const { ticks, isConnected } = useTickStream(
-    allInstruments.map((inst) => ({ token: inst.token, mode: inst.mode }))
+    isDemo ? [] : allInstruments.map((inst) => ({ token: inst.token, mode: inst.mode }))
   );
 
   const buildDataFromQuotes = (
@@ -164,7 +169,7 @@ export default function MarketHeader() {
   }, [allInstruments]);
 
   useVisibilityAwareInterval(fetchFromApi, POLLING_INTERVAL_MS, {
-    enabled: !isWsStable && allInstruments.length > 0,
+    enabled: (isDemo || !isWsStable) && allInstruments.length > 0,
     runImmediately: true,
   });
 

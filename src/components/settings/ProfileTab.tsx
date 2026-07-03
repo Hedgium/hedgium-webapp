@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
+import { isDemoUser } from "@/lib/demo";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import VerifyEmail from "@/components/VerifyEmail";
@@ -77,7 +78,7 @@ const ProfileTab: React.FC = () => {
 
   /** 🔄 Toggle auto trade allowed */
   const toggleAutoTrade = async () => {
-    if (!user || profileId == null) return;
+    if (!user || profileId == null || isDemoUser(user)) return;
     setError(null);
 
     const newValue = !autoTradeAllowed;
@@ -143,6 +144,7 @@ const ProfileTab: React.FC = () => {
               <p className="text-xs text-base-content/70 mb-2">
                 Verify your email to secure your account and receive important updates.
               </p>
+              {!isDemoUser(user) ? (
               <button
                 type="button"
                 className="btn btn-outline btn-sm normal-case"
@@ -150,6 +152,7 @@ const ProfileTab: React.FC = () => {
               >
                 Verify email
               </button>
+              ) : null}
             </div>
           )}
         </div>
@@ -204,10 +207,14 @@ const ProfileTab: React.FC = () => {
                     className="toggle toggle-primary"
                     checked={autoTradeAllowed}
                     onChange={toggleAutoTrade}
+                    disabled={isDemoUser(user)}
+                    aria-disabled={isDemoUser(user)}
                   />
                 </label>
                 <p className="text-xs text-base-content/70 mt-1">
-                  Enable automatic trading for your strategies
+                  {isDemoUser(user)
+                    ? "Preview account — settings are read-only."
+                    : "Enable automatic trading for your strategies"}
                 </p>
               </div>
             ) : (

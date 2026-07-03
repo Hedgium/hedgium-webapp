@@ -2,6 +2,35 @@ import Cookies from "js-cookie";
 import { useAuthStore } from "@/store/authStore";
 
 /**
+ * When `user.is_demo` is true (from `GET users/auth/me/`), route data calls to
+ * `/api/demo/...` synthetic fixtures. Auth and `users/token/*` stay on real paths.
+ */
+export function resolveDemoEndpoint(endpoint: string, isDemo: boolean): string {
+  const raw = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
+  if (!isDemo) return raw;
+  if (raw === "users" || raw.startsWith("users/auth/") || raw.startsWith("users/token/")) {
+    return raw;
+  }
+  if (raw.startsWith("users/")) {
+    return raw;
+  }
+  if (raw.startsWith("demo/")) {
+    return raw;
+  }
+
+  const [pathPart, queryPart] = raw.split("?", 2);
+  let normalized = pathPart.replace(
+    /^positions\/pnl\/refresh\/trades\/async\/\d+\/?$/,
+    "positions/pnl/refresh/trades/async/"
+  );
+  if (!normalized.endsWith("/")) {
+    normalized += "/";
+  }
+  const withQuery = queryPart ? `${normalized}?${queryPart}` : normalized;
+  return `demo/${withQuery}`;
+}
+
+/**
  * Utility: Build URL with query params
  */
 function buildUrl(
@@ -56,7 +85,9 @@ export async function authFetch(
   options: RequestInit = {},
   queryParams?: Record<string, string | number | boolean>
 ): Promise<Response> {
-  const url = buildUrl(endpoint, queryParams);
+  const { user } = useAuthStore.getState();
+  const resolved = resolveDemoEndpoint(endpoint, Boolean(user?.is_demo));
+  const url = buildUrl(resolved, queryParams);
   const csrftoken = Cookies.get("csrftoken") ?? "";
 
   const { accessToken, refreshAccessToken } = useAuthStore.getState();
