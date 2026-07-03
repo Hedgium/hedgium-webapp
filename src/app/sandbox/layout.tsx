@@ -22,11 +22,21 @@ export default function SandboxLayout({
 
   return (
     <NotificationProvider>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <div className="flex h-screen flex-col">
-        <div className="shrink-0 border-b border-base-300 bg-gradient-to-r from-primary/12 via-primary/8 to-secondary/10 px-4 py-2.5 text-center text-xs leading-snug text-base-content/90 backdrop-blur-sm md:text-xs">
+        <div
+          role="status"
+          className="shrink-0 border-b border-base-300 bg-gradient-to-r from-primary/12 via-primary/8 to-secondary/10 px-4 py-2.5 text-center text-xs leading-snug text-base-content/90 backdrop-blur-sm md:text-xs"
+        >
           {BANNER}
         </div>
-        <main className="flex flex-1 flex-col overflow-y-auto bg-base-200">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex flex-1 flex-col overflow-y-auto bg-base-200 outline-none"
+        >
           <AuthNav />
           <div className="flex-1">{children}</div>
           <AuthFooter />

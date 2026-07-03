@@ -137,6 +137,8 @@ export default function PositionsPage() {
     <div className="relative min-h-screen">
  
       <div className="relative mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
+        <h1 className="sr-only">Positions</h1>
+
         {/* PnL summary — positions/pnl/summary/ (cycles scoped by total_updated_at on backend) */}
         <section className="mb-8">
             {/* <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" /> */}
@@ -220,7 +222,7 @@ export default function PositionsPage() {
                 onClick={() => void reloadPositions()}
                 disabled={refreshing}
                 aria-busy={refreshing}
-                className="btn btn-circle btn-ghost shrink-0 self-start border border-base-300/70 bg-base-100/80 hover:border-primary/35 hover:bg-base-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:self-auto"
+                className="btn btn-circle btn-ghost shrink-0 self-start min-h-11 min-w-11 border border-base-300/70 bg-base-100/80 hover:border-primary/35 hover:bg-base-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:self-auto"
                 aria-label={refreshing ? "Reloading positions" : "Reload positions"}
               >
                 <RotateCw

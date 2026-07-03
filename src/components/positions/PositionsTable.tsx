@@ -42,25 +42,26 @@ export default function PositionsTable({
 
   if (positions.length === 0) {
     return (
-      <p className="text-sm text-gray-400 text-center py-3">No positions yet.</p>
+      <p className="text-sm text-base-content/70 text-center py-3">No positions yet.</p>
     );
   }
 
   return (
     <div className={`overflow-x-auto ${className}`}>
       <table className="table w-full text-sm">
+        <caption className="sr-only">Open positions</caption>
         <thead>
-          <tr className="text-xs text-gray-500 uppercase">
-            <th>Instrument</th>
-            <th>Qty(B/S)</th>
-            <th>Buy Avg</th>
-            <th>Sell Avg</th>
-            <th>Unrealised</th>
-            <th>Realised</th>
-            <th>PnL</th>
-            <th className="min-w-[8rem] max-w-[14rem]">Note</th>
-            {showOrdersCount && <th>Orders</th>}
-            {showAdminTradesAction && <th className="w-28">Actions</th>}
+          <tr className="text-xs text-base-content/70 uppercase">
+            <th scope="col">Instrument</th>
+            <th scope="col">Qty(B/S)</th>
+            <th scope="col">Buy Avg</th>
+            <th scope="col">Sell Avg</th>
+            <th scope="col">Unrealised</th>
+            <th scope="col">Realised</th>
+            <th scope="col">PnL</th>
+            <th scope="col" className="min-w-[8rem] max-w-[14rem]">Note</th>
+            {showOrdersCount && <th scope="col">Orders</th>}
+            {showAdminTradesAction && <th scope="col" className="w-28">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -90,9 +91,9 @@ export default function PositionsTable({
                 <td className={pnlColor}>
                   <div className="flex items-center gap-1 font-semibold">
                     {pos.pnl >= 0 ? (
-                      <TrendingUp width={12} />
+                      <TrendingUp width={12} aria-hidden="true" />
                     ) : (
-                      <TrendingDown width={12} />
+                      <TrendingDown width={12} aria-hidden="true" />
                     )}
                     {formatMoneyIN(pos.pnl)}
                   </div>

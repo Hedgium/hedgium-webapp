@@ -49,11 +49,21 @@ export default function AdminLayoutClient({
         </div>
       ) : (
         <div className="flex flex-col h-screen">
+          <a href="#main-content" className="skip-link">
+            Skip to main content
+          </a>
           <div className="flex flex-1 overflow-hidden">
-            <aside className="hidden md:flex md:flex-col md:shrink-0 bg-base-200 border-r border-base-300 rounded-box overflow-hidden">
+            <aside
+              aria-label="Admin sidebar"
+              className="hidden md:flex md:flex-col md:shrink-0 bg-base-200 border-r border-base-300 rounded-box overflow-hidden"
+            >
               <AdminSidebar />
             </aside>
-            <main className="flex-1 bg-base-200 overflow-y-auto flex flex-col">
+            <main
+              id="main-content"
+              tabIndex={-1}
+              className="flex-1 bg-base-200 overflow-y-auto flex flex-col outline-none"
+            >
               <div className="flex-1">{children}</div>
             </main>
           </div>

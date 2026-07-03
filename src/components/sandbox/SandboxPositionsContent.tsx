@@ -205,7 +205,7 @@ export default function SandboxPositionsContent() {
             onClick={() => void refreshAll()}
             disabled={refreshing || loadingDashboard}
             aria-busy={refreshing}
-            className="btn btn-circle btn-ghost btn-sm h-9 min-h-9 w-9 min-w-9 shrink-0 self-start border border-base-300 bg-base-100/80 hover:border-primary/35 hover:bg-base-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:self-auto"
+            className="btn btn-circle btn-ghost btn-sm min-h-11 min-w-11 shrink-0 self-start border border-base-300 bg-base-100/80 hover:border-primary/35 hover:bg-base-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:self-auto"
             aria-label="Refresh sandbox data"
           >
             <RotateCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} aria-hidden />
@@ -339,6 +339,8 @@ export default function SandboxPositionsContent() {
             id={`${tabsId}-panel`}
             role="tabpanel"
             aria-labelledby={phase === "before" ? `${tabsId}-tab-before` : `${tabsId}-tab-after`}
+            aria-live="polite"
+            aria-busy={loadingMoreCycles}
           >
             {loadingCycles ? (
               <div className="grid grid-cols-1 gap-6">

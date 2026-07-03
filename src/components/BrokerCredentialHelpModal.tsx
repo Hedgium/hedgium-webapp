@@ -133,7 +133,7 @@ export default function BrokerCredentialHelpModal({
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={step.imageUrl}
-                              alt=""
+                              alt={typeof step.text === "string" ? step.text : "Broker credential setup screenshot"}
                               className="h-auto w-full object-contain"
                             />
                           </div>

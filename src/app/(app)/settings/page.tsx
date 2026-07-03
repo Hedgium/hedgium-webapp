@@ -1,14 +1,12 @@
 "use client";
 
 import { useId, useState } from "react";
-import { User, Shield, Palette, Bell, CreditCard, ChevronLeft } from "lucide-react";
+import { User, Shield, Palette, ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 
 import PasswordTab from "@/components/settings/PasswordTab";
 import ProfileTab from "@/components/settings/ProfileTab";
-import NotificationsTab from "@/components/settings/NotificationsTab";
-import SubscriptionTab from "@/components/settings/SubscriptionTab";
 import ThemeTab from "@/components/settings/ThemeTab";
 
 const SettingsPage: React.FC = () => {
@@ -21,8 +19,6 @@ const SettingsPage: React.FC = () => {
     { id: "profile", label: "Profile", icon: <User className="h-5 w-5" aria-hidden="true" /> },
     { id: "password", label: "Password", icon: <Shield className="h-5 w-5" aria-hidden="true" /> },
     { id: "theme", label: "Theme", icon: <Palette className="h-5 w-5" aria-hidden="true" /> },
-    // { id: "notifications", label: "Notifications", icon: <Bell className="h-5 w-5" aria-hidden="true" /> },
-    // { id: "subscription", label: "Subscription", icon: <CreditCard className="h-5 w-5" aria-hidden="true" /> },
   ];
 
   return (
@@ -73,13 +69,10 @@ const SettingsPage: React.FC = () => {
             id={`${tabPanelId}-panel`}
             role="tabpanel"
             aria-labelledby={`${tabPanelId}-tab-${activeTab}`}
-            tabIndex={0}
           >
             {activeTab === "profile" && <ProfileTab />}
             {activeTab === "password" && <PasswordTab />}
             {activeTab === "theme" && <ThemeTab theme={theme} setTheme={setTheme} />}
-            {activeTab === "notifications" && <NotificationsTab />}
-            {activeTab === "subscription" && <SubscriptionTab />}
           </div>
         </div>
       </div>

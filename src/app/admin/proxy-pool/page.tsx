@@ -280,6 +280,7 @@ export default function AdminProxyPoolPage() {
           <input
             type="search"
             placeholder="Search IP address or proxy host…"
+            aria-label="Search IP address or proxy host"
             className="input input-bordered input-sm w-full pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

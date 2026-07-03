@@ -15,9 +15,9 @@ const OTP_AUTOSEND_STORAGE_KEY = "hedgium_otp_autosend";
 export interface VerifyEmailProps {
   /** Email to verify. Default: current user email from auth store */
   email?: string | null;
-  /** Path to navigate after successful verification. Default: /onboarding/complete-profile */
+  /** Path to navigate after successful verification. Empty string skips navigation. */
   successPath?: string;
-  /** Path to navigate when user skips. Default: /onboarding/complete-profile */
+  /** Path to navigate when user skips. Empty string skips navigation. */
   skipPath?: string;
   /** Send OTP automatically on mount. Default: true */
   autoSendOnMount?: boolean;
@@ -38,8 +38,8 @@ export interface VerifyEmailProps {
  */
 export default function VerifyEmail({
   email: emailProp,
-  successPath = "/onboarding/terms",
-  skipPath = "/onboarding/terms",
+  successPath = "",
+  skipPath = "",
   autoSendOnMount = true,
   showSkip = true,
   className,

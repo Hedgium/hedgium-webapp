@@ -66,7 +66,7 @@ export default function AdminSidebar() {
       </div>
 
       {/* Navigation items */}
-      <nav className="flex-1 overflow-y-auto px-2 py-4">
+      <nav className="flex-1 overflow-y-auto px-2 py-4" aria-label="Admin navigation">
         <ul className="gap-2 space-y-1">
           {tabs.map((tab, idx) => {
             const active =

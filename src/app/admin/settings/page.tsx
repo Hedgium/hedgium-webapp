@@ -217,6 +217,7 @@ export default function AdminSystemConfigPage() {
           <input
             type="search"
             placeholder="Search key..."
+            aria-label="Search configuration keys"
             className="input input-bordered input-sm w-full pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -273,19 +274,21 @@ export default function AdminSystemConfigPage() {
                     <div className="flex justify-end gap-1">
                       <button
                         type="button"
-                        className="btn btn-ghost btn-xs"
+                        className="btn btn-ghost btn-sm min-h-11 min-w-11"
                         title="Edit"
+                        aria-label={`Edit ${r.key}`}
                         onClick={() => openEdit(r)}
                       >
-                        <Pencil className="size-3.5" />
+                        <Pencil className="size-3.5" aria-hidden />
                       </button>
                       <button
                         type="button"
-                        className="btn btn-ghost btn-xs text-error"
+                        className="btn btn-ghost btn-sm min-h-11 min-w-11 text-error"
                         title="Delete"
+                        aria-label={`Delete ${r.key}`}
                         onClick={() => void handleDelete(r)}
                       >
-                        <Trash2 className="size-3.5" />
+                        <Trash2 className="size-3.5" aria-hidden />
                       </button>
                     </div>
                   </td>

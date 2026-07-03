@@ -81,7 +81,7 @@ export default function AuthNav() {
             aria-expanded={menuOpen}
             aria-haspopup="true"
             aria-label={`Account menu for ${displayName}`}
-            className="btn btn-primary btn-circle btn-sm w-8 h-8 min-h-8 p-0 text-xs font-bold border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
+            className="btn btn-primary btn-circle btn-sm min-h-11 min-w-11 p-0 text-xs font-bold border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
             onClick={() => setMenuOpen((o) => !o)}
           >
             <span className="flex h-full w-full items-center justify-center rounded-full" aria-hidden="true">
@@ -101,11 +101,6 @@ export default function AuthNav() {
                 >
                   Plan: {planName}
                 </span>
-                {/* {!isLegends && user?.active_subscription?.plan?.name ? (
-                  <Link href="/upgrade" className="text-[11px] text-primary hover:underline">
-                    Upgrade
-                  </Link>
-                ) : null} */}
               </div>
             </li>
             <li>

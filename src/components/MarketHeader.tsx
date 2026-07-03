@@ -206,16 +206,17 @@ export default function MarketHeader() {
     <section className="mb-0">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/50">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/70">
             Market
           </span>
           <span
             className={`h-1.5 w-1.5 rounded-full ${source === "ws" ? "bg-success" : source === "api" ? "bg-info" : "bg-base-content/30"}`}
-            title={source === "ws" ? "Live" : source === "api" ? "Polling" : "Idle"}
+            role="img"
+            aria-label={source === "ws" ? "Live data" : source === "api" ? "Polling data" : "Idle"}
           />
         </div>
         {lastUpdatedAt ? (
-          <span className="text-xs tabular-nums text-base-content/50">
+          <span className="text-xs tabular-nums text-base-content/70">
             {new Date(lastUpdatedAt).toLocaleTimeString()}
           </span>
         ) : null}
@@ -247,9 +248,9 @@ export default function MarketHeader() {
                       }`}
                   >
                     {item.change >= 0 ? (
-                      <TrendingUp width={16} height={16} className="mr-1 shrink-0" />
+                      <TrendingUp width={16} height={16} className="mr-1 shrink-0" aria-hidden="true" />
                     ) : (
-                      <TrendingDown width={16} height={16} className="mr-1 shrink-0" />
+                      <TrendingDown width={16} height={16} className="mr-1 shrink-0" aria-hidden="true" />
                     )}
                     <span>
                       {item.change >= 0 ? "+" : ""}

@@ -160,9 +160,9 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
             <div className="mx-auto mt-5 flex max-w-xs flex-col gap-2">
               <Link href="/settings" className="btn btn-primary btn-sm gap-2 rounded-full">
                 <ExternalLink className="h-4 w-4" aria-hidden />
-                Upgrade account
+                Account settings
               </Link>
-              <a href="mailto:support@hedgium.com" className="btn btn-ghost btn-sm rounded-full">
+              <a href="mailto:support@hedgium.in" className="btn btn-ghost btn-sm rounded-full">
                 Contact Hedgium
               </a>
             </div>

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import {  usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
 import { useAuthStore } from "@/store/authStore";
+import { onboardingPathForUser } from "@/lib/onboardingSteps";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { accessToken, isInitializing, user } = useAuthStore();
@@ -18,26 +19,8 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   if (!accessToken) return null;
 
-  // Determine the KYC route based on the user's current step
-  const kycRoute = () => {
-    switch (user?.signup_step) {
-      case "initiated":
-        return "/onboarding/verify-email";
-      case "email_verified":
-        return "/onboarding/terms";
-      case "terms_accepted":
-        return "/onboarding/complete-profile";
-      case "documents_uploaded":
-      case "broker_profile_added":
-        return "/onboarding/verification";
-      default:
-        return "/home";
-    }
-  };
-
   return (
     <>
-      {/* Show KYC reminder if user is not verified */}
       {user?.signup_step !== "verified" && (
         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 flex justify-between items-center">
           <p className="text-sm font-medium">
@@ -45,7 +28,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
           </p>
           <button
             className="btn btn-sm btn-primary"
-            onClick={() => router.push(kycRoute())}
+            onClick={() => router.push(onboardingPathForUser())}
           >
             Complete KYC
           </button>

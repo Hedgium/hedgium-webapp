@@ -222,6 +222,7 @@ export default function AdminMarketPage() {
               <input
                 type="search"
                 placeholder="Search symbol..."
+                aria-label="Search market symbols"
                 className="input input-bordered input-sm w-full pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

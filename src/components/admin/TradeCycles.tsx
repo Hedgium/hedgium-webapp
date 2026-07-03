@@ -779,8 +779,9 @@ export default function TradeCycles({
             </p>
             <div className="flex gap-2 mb-4">
               <input
-                type="text"
+                type="search"
                 placeholder="Search by email..."
+                aria-label="Search trade cycles by email"
                 className="input input-bordered input-sm flex-1"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}

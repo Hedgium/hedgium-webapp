@@ -278,6 +278,15 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
       <div className="relative mx-auto max-w-7xl space-y-10 px-4 py-8 md:px-8 md:py-10">
         {header}
 
+        {!isAdmin && !header ? (
+          <header className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-base-content md:text-3xl">Reports</h1>
+            <p className="text-sm text-base-content/70">
+              PnL summaries, performance charts, and trade cycle history.
+            </p>
+          </header>
+        ) : null}
+
         {isAdmin ? (
           <div className="flex justify-end">
             <button
@@ -375,7 +384,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary shrink-0" aria-hidden />
-              <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">Reports</h2>
+              <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">Charts</h2>
             </div>
             <p className="max-w-xl text-sm text-base-content/70">
               Margin and PnL trends, then past trade cycles
@@ -502,6 +511,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                         className="flex w-full flex-col gap-3 p-4 text-left md:flex-row md:items-center md:justify-between md:gap-4 md:p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
                         onClick={() => void toggleCycleDetails(cycle.id)}
                         aria-expanded={expanded}
+                        aria-label={`${expanded ? "Collapse" : "Expand"} positions for ${cycle.name}`}
                       >
                         <div className="flex min-w-0 flex-1 items-start gap-3">
                           <span
@@ -570,7 +580,9 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                           ) : cycleDetails[cycle.id] ? (
                             <div className="space-y-4">
                               {cycleDetails[cycle.id].error ? (
-                                <p className="text-sm text-error">Failed to load positions. Try again.</p>
+                                <p className="text-sm text-error" role="alert">
+                                  Failed to load positions. Try again.
+                                </p>
                               ) : (
                                 <PositionsTable positions={cycleDetails[cycle.id].positions} />
                               )}

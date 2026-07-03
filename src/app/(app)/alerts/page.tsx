@@ -142,7 +142,11 @@ export default function NotificationsPage() {
             </div>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-base-300/50 bg-base-100/55 backdrop-blur-sm">
-              <ul className="divide-y divide-base-300/50">
+              <ul
+                className="divide-y divide-base-300/50"
+                aria-live="polite"
+                aria-relevant="additions removals"
+              >
                 {filterNotifications.map((notification) => {
                   const showDot = previouslyUnreadIds.has(notification.id);
                   const borderAccent =

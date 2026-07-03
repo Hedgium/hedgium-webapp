@@ -86,8 +86,7 @@ export default function HomePage() {
       </div>
 
       <div className="relative mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-8">
-        {/* Hero */}
-
+        <h1 className="sr-only">Home</h1>
 
         {/* Market */}
           <MarketHeader />

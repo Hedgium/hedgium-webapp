@@ -29,7 +29,7 @@ export default function DemoModeBanner() {
         <button
           type="button"
           onClick={() => setDismissed(true)}
-          className="btn btn-ghost btn-xs btn-square shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="btn btn-ghost btn-sm btn-square min-h-11 min-w-11 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           aria-label="Dismiss preview mode notice"
         >
           <X className="h-4 w-4" aria-hidden="true" />

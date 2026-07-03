@@ -384,6 +384,7 @@ export default function AdminClientPnlPage() {
               type="search"
               className="min-w-0 grow"
               placeholder="Search client / email"
+              aria-label="Search client or email"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
