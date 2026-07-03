@@ -10,7 +10,6 @@ const legacyHedgiumToRoot = [
   "reports",
   "alerts",
   "settings",
-  "upgrade",
   "add-broker",
 ].flatMap((segment) => [
   {
@@ -45,6 +44,24 @@ const consolidatedLegalRedirects = [
   },
 ]);
 
+const onboardingLegacyRedirects = [
+  "verify-email",
+  "terms",
+  "complete-profile",
+  "verification",
+].flatMap((segment) => [
+  {
+    source: `/onboarding/${segment}`,
+    destination: "/onboarding",
+    permanent: true,
+  },
+  {
+    source: `/onboarding/${segment}/`,
+    destination: "/onboarding",
+    permanent: true,
+  },
+]);
+
 module.exports = withBundleAnalyzer({
   async redirects() {
     return [
@@ -60,6 +77,13 @@ module.exports = withBundleAnalyzer({
       { source: "/sandbox/reports/", destination: "/sandbox", permanent: true },
       { source: "/sandbox/settings", destination: "/sandbox", permanent: true },
       { source: "/sandbox/settings/", destination: "/sandbox", permanent: true },
+      { source: "/login", destination: "/", permanent: true },
+      { source: "/login/", destination: "/", permanent: true },
+      { source: "/upgrade", destination: "/settings", permanent: true },
+      { source: "/upgrade/", destination: "/settings", permanent: true },
+      { source: "/hedgium/upgrade", destination: "/settings", permanent: true },
+      { source: "/hedgium/upgrade/", destination: "/settings", permanent: true },
+      ...onboardingLegacyRedirects,
       ...consolidatedLegalRedirects,
       ...legacyHedgiumToRoot,
     ];

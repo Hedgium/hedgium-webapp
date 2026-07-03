@@ -28,7 +28,7 @@ export default function SandboxPage() {
                 Sandbox
               </h1>
             </div>
-            <p className="text-sm text-base-content/55">
+            <p className="text-sm text-base-content/70">
               Explore illustrative performance on a reference account for your plan tier.
             </p>
           </div>

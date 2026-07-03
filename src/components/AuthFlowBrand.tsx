@@ -22,8 +22,8 @@ export default function AuthFlowBrand({ className = "mb-5" }: AuthFlowBrandProps
 
   return (
     <Link
-      href="/welcome"
-      aria-label="Hedgium — return to welcome page"
+      href="/"
+      aria-label="Hedgium — return to sign in"
       className={`block rounded-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-200 ${className}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

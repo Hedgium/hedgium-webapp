@@ -4,6 +4,7 @@ import { Info, BadgeCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { authFetch } from "@/utils/api";
+import { onboardingPathForUser } from "@/lib/onboardingSteps";
 
 const PENDING_TIP =
   "Your profile verification is pending. Complete KYC to unlock full access. Tap to continue.";
@@ -38,23 +39,7 @@ export default function KycStatusIndicator({ className = "", variant = "default"
     } catch {
       /* still navigate */
     }
-    switch (user.signup_step) {
-      case "initiated":
-        router.push("/onboarding/verify-email");
-        break;
-      case "email_verified":
-        router.push("/onboarding/terms");
-        break;
-      case "terms_accepted":
-        router.push("/onboarding/complete-profile");
-        break;
-      case "documents_uploaded":
-      case "broker_profile_added":
-        router.push("/onboarding/verification");
-        break;
-      default:
-        router.push("/home");
-    }
+    router.push(onboardingPathForUser());
   };
 
   if (verified) {

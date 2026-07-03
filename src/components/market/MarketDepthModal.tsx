@@ -252,24 +252,27 @@ export default function MarketDepthModal({
   const totalSellQty = sellLevels.reduce((sum, l) => sum + (l.quantity || 0), 0);
 
   return (
-    <div className="modal modal-open">
+    <div className="modal modal-open" role="dialog" aria-modal="true" aria-labelledby="market-depth-title">
       <div className="modal-box w-11/12 max-w-3xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold">Market depth</h3>
+          <h3 id="market-depth-title" className="text-lg font-bold">Market depth</h3>
           <button
             type="button"
-            className="btn btn-ghost btn-sm"
+            className="btn btn-ghost btn-sm min-h-11 min-w-11"
             onClick={onClose}
-            title="Close"
+            aria-label="Close"
           >
-            <X size={16} />
+            <X size={16} aria-hidden />
           </button>
         </div>
 
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-[160px_1fr]">
-          <select
-            className="select select-bordered select-sm"
-            value={instrumentType}
+          <label className="form-control w-full">
+            <span className="label-text text-xs mb-1">Instrument type</span>
+            <select
+              className="select select-bordered select-sm"
+              aria-label="Instrument type"
+              value={instrumentType}
             onChange={(e) => {
               setInstrumentType(e.target.value as MarketDepthInstrumentType);
               setSelected(null);
@@ -282,6 +285,9 @@ export default function MarketDepthModal({
               </option>
             ))}
           </select>
+          </label>
+          <label className="form-control w-full">
+            <span className="label-text text-xs mb-1">Instrument</span>
           <AsyncSelect<InstrumentOption>
             cacheOptions
             defaultOptions
@@ -289,9 +295,12 @@ export default function MarketDepthModal({
             value={selected}
             onChange={(option) => setSelected(option as InstrumentOption | null)}
             placeholder="Search instrument (e.g., RELIANCE, INFY, NIFTY)…"
+            aria-label="Search instrument"
+            inputId="market-depth-instrument-search"
             classNamePrefix="react-select"
             styles={reactSelectStyles}
           />
+          </label>
         </div>
 
         {!selected && (

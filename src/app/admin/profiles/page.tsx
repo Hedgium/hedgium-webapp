@@ -177,6 +177,7 @@ export default function ProfilesPage() {
                 name="profile-search-query"
                 autoComplete="off"
                 placeholder="Search profiles..."
+                aria-label="Search profiles"
                 className="input input-bordered input-sm w-full pl-10 h-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

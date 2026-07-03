@@ -488,7 +488,11 @@ export default function BrokerLoginStatus() {
             </>
           )}
         </div>
-        {statusError && <p className="text-error text-sm mt-2">{statusError}</p>}
+        {statusError && (
+          <p className="text-error text-sm mt-2" role="alert">
+            {statusError}
+          </p>
+        )}
       </div>
 
       {/* ── Login Modal ── */}

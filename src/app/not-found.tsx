@@ -22,6 +22,7 @@ export default function Custom404() {
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -44,7 +45,7 @@ export default function Custom404() {
             </p>
             
             <div className="card-actions justify-center mt-6">
-              <Link href="/welcome" className="btn btn-primary">
+              <Link href="/" className="btn btn-primary">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5 mr-2"
@@ -62,7 +63,7 @@ export default function Custom404() {
             </div>
 
             <div className="mt-6">
-              <p className="text-sm text-base-content/50">
+              <p className="text-sm text-base-content/70">
                 Need help? Contact our support team or check our market status
               </p>
             </div>

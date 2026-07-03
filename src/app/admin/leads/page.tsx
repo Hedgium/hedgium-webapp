@@ -179,8 +179,9 @@ export default function AdminLeadsPage() {
         <div className="flex flex-wrap items-center gap-4">
           <label className="text-sm font-medium">Filters:</label>
           <input
-            type="text"
+            type="search"
             placeholder="Search mobile or name..."
+            aria-label="Search leads by mobile or name"
             className="input input-bordered input-sm w-48"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

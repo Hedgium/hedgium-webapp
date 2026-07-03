@@ -1,12 +1,10 @@
 /**
  * Routes that do not require a logged-in session for the AuthInitializing gate.
- * Login lives at `/`; marketing at `/welcome`.
+ * Login lives at `/`. Marketing site is separate (`hedgium_frontend`).
  */
 const PUBLIC_PATH_EXACT = new Set([
   "/",
-  "/welcome",
   "/login",
-  "/get-started",
   "/forgot-password",
   "/onboarding",
 ]);
@@ -14,7 +12,6 @@ const PUBLIC_PATH_EXACT = new Set([
 /** Prefix match: path equals prefix or starts with prefix + "/" */
 const PUBLIC_PATH_PREFIXES = [
   "/reset-password/",
-  "/onboarding/",
 ] as const;
 
 /** Root URL where the login form lives (`/`). */

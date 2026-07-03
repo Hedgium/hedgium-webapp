@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useId, useRef } from "react";
 import { LivePosition, LivePositionsData } from "@/types/positions";
 import { formatMoneyIN } from "@/utils/formatNumber";
 
@@ -19,46 +19,70 @@ export default function LivePositionsModal({
   brokerName,
   title,
 }: LivePositionsModalProps) {
-  if (!isOpen) return null;
-
+  const titleId = useId();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const positionsList = positions?.data?.net || [];
+  const modalTitle = title || `Live Positions${brokerName ? ` - ${brokerName}` : ""}`;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    closeButtonRef.current?.focus();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      role="presentation"
     >
+      <button
+        type="button"
+        className="absolute inset-0 cursor-default"
+        aria-label="Close dialog"
+        onClick={onClose}
+      />
       <div
-        className="bg-base-200 rounded-lg p-6 max-w-6xl w-full max-h-[80vh] overflow-auto"
-        onClick={(e) => e.stopPropagation()}
+        className="relative z-10 bg-base-200 rounded-lg p-6 max-w-6xl w-full max-h-[80vh] overflow-auto mx-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
       >
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">
-            {title || `Live Positions${brokerName ? ` - ${brokerName}` : ""}`}
-          </h3>
+          <h2 id={titleId} className="text-xl font-bold">
+            {modalTitle}
+          </h2>
           <button
+            ref={closeButtonRef}
+            type="button"
             onClick={onClose}
-            className="btn btn-sm btn-circle"
+            className="btn btn-sm btn-circle min-h-11 min-w-11"
             aria-label="Close"
           >
-            ✕
+            <span aria-hidden="true">✕</span>
           </button>
         </div>
 
         {positionsList.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="table table-zebra w-full">
+              <caption className="sr-only">Live broker positions</caption>
               <thead>
                 <tr>
-                  <th>Instrument</th>
-                  <th>Qty</th>
-                  <th>Buy Qty</th>
-                  <th>Sell Qty</th>
-                  <th>Avg Price</th>
-                  <th>LTP</th>
-                  <th>Realised Total</th>
-                  <th>Unrealised Total</th>
-                  <th>P&L</th>
+                  <th scope="col">Instrument</th>
+                  <th scope="col">Qty</th>
+                  <th scope="col">Buy Qty</th>
+                  <th scope="col">Sell Qty</th>
+                  <th scope="col">Avg Price</th>
+                  <th scope="col">LTP</th>
+                  <th scope="col">Realised Total</th>
+                  <th scope="col">Unrealised Total</th>
+                  <th scope="col">P&amp;L</th>
                 </tr>
               </thead>
               <tbody>
@@ -91,8 +115,8 @@ export default function LivePositionsModal({
                     <td
                       className={
                         position.pnl && position.pnl >= 0
-                          ? "text-green-400"
-                          : "text-red-400"
+                          ? "text-success"
+                          : "text-error"
                       }
                     >
                       {position.pnl !== undefined
@@ -105,10 +129,9 @@ export default function LivePositionsModal({
             </table>
           </div>
         ) : (
-          <p className="text-center text-gray-400 py-8">No positions found</p>
+          <p className="text-center text-base-content/70 py-8">No positions found</p>
         )}
       </div>
     </div>
   );
 }
-

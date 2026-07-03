@@ -29,8 +29,6 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
   const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
   const displayName = fullName || user?.username || "User";
   const displayEmail = user?.email || "";
-  const planName = user?.active_subscription?.plan?.name || "No Active Plan";
-  const isLegends = planName === "LEGENDS";
   const initials = displayName
     .split(" ")
     .filter(Boolean)
@@ -63,16 +61,6 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
               {displayEmail ? (
                 <p className="text-xs text-base-content/70 truncate">{displayEmail}</p>
               ) : null}
-              {/* <div className="mt-1 flex items-center gap-2">
-                <span className={`text-xs font-medium ${isLegends ? "text-warning" : "text-primary"} truncate`}>
-                  Plan: {planName}
-                </span>
-                {!isLegends && user?.active_subscription?.plan?.name ? (
-                  <Link href="/upgrade" className="text-[11px] text-primary hover:underline">
-                    Upgrade
-                  </Link>
-                ) : null}
-              </div> */}
             </div>
           </div>
         </div>
