@@ -49,10 +49,7 @@ export default function KycStatusIndicator({ className = "", variant = "default"
           className={`${tipClass} ${className}`}
           data-tip={VERIFIED_TIP}
         >
-          <span
-            className="inline-flex items-center gap-1 rounded-full border border-success/25 bg-success/10 px-2 py-1 text-success shadow-sm"
-            aria-label={VERIFIED_TIP}
-          >
+          <span className="inline-flex items-center gap-1 rounded-full border border-success/25 bg-success/10 px-2 py-1 text-success shadow-sm">
             <BadgeCheck className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
             <span className="text-[11px] font-semibold leading-none tracking-tight">Verified</span>
           </span>
@@ -61,7 +58,7 @@ export default function KycStatusIndicator({ className = "", variant = "default"
     }
     return (
       <div className={`${tipClass} ${className}`} data-tip={VERIFIED_TIP}>
-        <span className="inline-flex text-success" aria-label={VERIFIED_TIP}>
+        <span className="inline-flex text-success" role="img" aria-label={VERIFIED_TIP}>
           <BadgeCheck className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
         </span>
       </div>

@@ -433,14 +433,17 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
               )}
             </div>
             <div className="rounded-2xl border border-base-300/60 bg-base-100/80 p-4 md:p-6 backdrop-blur-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
-                <h3
-                  className="text-lg font-semibold"
-                  title="Bars are month-on-month change in total PnL (daily snapshots). Summary cards use different rules—for example “last month” filters positions by when totals were last updated, not this chart’s change."
+              <div className="mb-4 space-y-1">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
+                  <h3 className="text-lg font-semibold">PnL (monthly)</h3>
+                </div>
+                <p
+                  id="pnl-monthly-chart-desc"
+                  className="text-xs leading-relaxed text-base-content/70"
                 >
-                  PnL (monthly)
-                </h3>
+                  Bars are month-on-month change in total PnL (daily snapshots). Summary cards use different rules—for example “last month” filters positions by when totals were last updated, not this chart’s change.
+                </p>
               </div>
               {loadingCharts ? (
                 <ReportsChartSkeleton />
@@ -449,7 +452,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                   No PnL snapshot data yet
                 </div>
               ) : (
-                <div className="h-64">
+                <div className="h-64" aria-describedby="pnl-monthly-chart-desc">
                   <ReportsPnlMonthlyBarChart data={pnlChartData} />
                 </div>
               )}
@@ -533,10 +536,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                                 #{cycle.id}
                               </span>
                               {isAdmin && cycle.strategy_name ? (
-                                <span
-                                  className="inline-flex max-w-[12rem] items-center truncate rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
-                                  title={cycle.strategy_name}
-                                >
+                                <span className="inline-flex max-w-[12rem] items-center truncate rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                                   {cycle.strategy_name}
                                 </span>
                               ) : null}
@@ -547,7 +547,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                                 {cycle.state}
                               </span>
                               {cycle.sub_state ? (
-                                <span className="truncate text-xs text-base-content/70" title={cycle.sub_state}>
+                                <span className="truncate text-xs text-base-content/70">
                                   {cycle.sub_state}
                                 </span>
                               ) : null}
