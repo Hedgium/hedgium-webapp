@@ -140,11 +140,14 @@ export default function PositionsPage() {
         <h1 className="sr-only">Positions</h1>
 
         {/* PnL summary — positions/pnl/summary/ (cycles scoped by total_updated_at on backend) */}
-        <section className="mb-8">
+        <section className="mb-8" aria-labelledby="positions-summary-heading">
             {/* <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" /> */}
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/70">
+            <h2
+              id="positions-summary-heading"
+              className="m-0 mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/70"
+            >
               Summary
-            </p>
+            </h2>
 
             {loadingSummary ? (
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -156,50 +159,53 @@ export default function PositionsPage() {
                 ))}
               </div>
             ) : pnlSummary ? (
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4">
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">YTD</p>
-                  <p className={`text-lg font-bold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.ytd_pnl)}`}>
+                  <dt className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">YTD</dt>
+                  <dd className={`m-0 text-lg font-bold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.ytd_pnl)}`}>
                     {formatMoneyIN(pnlSummary.ytd_pnl)}
-                  </p>
-                  <p className="mt-1 text-[11px] text-base-content/70">FY to date</p>
+                  </dd>
+                  <dd className="m-0 mt-1 text-[11px] text-base-content/70">FY to date</dd>
                 </div>
                 <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-                  <div className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-base-content/70">
+                  <dt className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-base-content/70">
                     <TrendingUp className="h-3.5 w-3.5 shrink-0 text-primary/80" aria-hidden />
                     Monthly P&amp;L
-                  </div>
-                  <p className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.pnl)}`}>
+                  </dt>
+                  <dd className={`m-0 text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.pnl)}`}>
                     {formatMoneyIN(pnlSummary.pnl)}
-                  </p>
-                  <p className="mt-1 text-[11px] text-base-content/70">{pnlSummary.month}</p>
+                  </dd>
+                  <dd className="m-0 mt-1 text-[11px] text-base-content/70">{pnlSummary.month}</dd>
                 </div>
                 <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">Realised</p>
-                  <p className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.realised)}`}>
+                  <dt className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">Realised</dt>
+                  <dd className={`m-0 text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.realised)}`}>
                     {formatMoneyIN(pnlSummary.realised)}
-                  </p>
-                  <p className="mt-1 text-[11px] text-base-content/70">{pnlSummary.month}</p>
+                  </dd>
+                  <dd className="m-0 mt-1 text-[11px] text-base-content/70">{pnlSummary.month}</dd>
                 </div>
                 <div className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4">
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">M2M</p>
-                  <p className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.m2m)}`}>
+                  <dt className="mb-1 text-xs font-medium uppercase tracking-wider text-base-content/70">M2M</dt>
+                  <dd className={`m-0 text-lg font-semibold tabular-nums leading-tight md:text-xl ${signedClass(pnlSummary.m2m)}`}>
                     {formatMoneyIN(pnlSummary.m2m)}
-                  </p>
-                  <p className="mt-1 text-[11px] text-base-content/70">{pnlSummary.month}</p>
+                  </dd>
+                  <dd className="m-0 mt-1 text-[11px] text-base-content/70">{pnlSummary.month}</dd>
                 </div>
-              </div>
+              </dl>
             ) : (
               <p className="text-sm text-base-content/70">Summary unavailable.</p>
             )}
         </section>
 
-        <section className="space-y-6">
+        <section className="space-y-6" aria-labelledby="strategy-positions-heading">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-primary" aria-hidden />
-                <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">
+                <h2
+                  id="strategy-positions-heading"
+                  className="text-xl font-semibold tracking-tight text-base-content md:text-2xl"
+                >
                   Strategy-wise Positions
                 </h2>
               </div>

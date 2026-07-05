@@ -94,12 +94,15 @@ export default function HomePage() {
         <br />
 
         {/* Strategies */}
-        <section className="space-y-6">
+        <section className="space-y-6" aria-labelledby="active-strategies-heading">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <LayoutGrid className="h-5 w-5 text-primary" aria-hidden />
-                <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">
+                <h2
+                  id="active-strategies-heading"
+                  className="text-xl font-semibold tracking-tight text-base-content md:text-2xl"
+                >
                   Active strategies
                 </h2>
               </div>

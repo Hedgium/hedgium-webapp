@@ -203,12 +203,15 @@ export default function MarketHeader() {
   }, [ticks, allInstruments, isWsStable]);
 
   return (
-    <section className="mb-0">
+    <section className="mb-0" aria-labelledby="market-heading">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/70">
+          <h2
+            id="market-heading"
+            className="m-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/80"
+          >
             Market
-          </span>
+          </h2>
           <span
             className={`h-1.5 w-1.5 rounded-full ${source === "ws" ? "bg-success" : source === "api" ? "bg-info" : "bg-base-content/30"}`}
             role="img"
@@ -216,7 +219,7 @@ export default function MarketHeader() {
           />
         </div>
         {lastUpdatedAt ? (
-          <span className="text-xs tabular-nums text-base-content/70">
+          <span className="text-xs tabular-nums text-base-content/80">
             {new Date(lastUpdatedAt).toLocaleTimeString()}
           </span>
         ) : null}

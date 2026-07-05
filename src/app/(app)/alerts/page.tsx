@@ -111,7 +111,13 @@ export default function NotificationsPage() {
                   onClick={() => setFilter("all")}
                 >
                   All
-                  <span className="ml-1 tabular-nums opacity-80">({notifications.length})</span>
+                  <span
+                    className={`ml-1 tabular-nums ${
+                      filter === "all" ? "text-primary-content" : "text-base-content/70"
+                    }`}
+                  >
+                    ({notifications.length})
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -122,7 +128,13 @@ export default function NotificationsPage() {
                   onClick={() => setFilter("unread")}
                 >
                   Unread at visit
-                  <span className="ml-1 tabular-nums opacity-80">({previouslyUnreadIds.size})</span>
+                  <span
+                    className={`ml-1 tabular-nums ${
+                      filter === "unread" ? "text-primary-content" : "text-base-content/70"
+                    }`}
+                  >
+                    ({previouslyUnreadIds.size})
+                  </span>
                 </button>
               </div>
             </div>

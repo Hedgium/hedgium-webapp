@@ -100,7 +100,6 @@ export default function PositionsTable({
                 </td>
                 <td
                   className="max-w-[14rem] truncate text-xs text-base-content/80"
-                  title={pos.note?.trim() || undefined}
                 >
                   {pos.note?.trim() ? pos.note.trim() : "—"}
                 </td>
