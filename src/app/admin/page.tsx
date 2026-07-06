@@ -46,6 +46,8 @@ interface Strategy {
   spread_spot_by_underlying: SpotByUnderlying | null;
   completed: boolean;
   completed_at: string | null;
+  auto_match_count: number;
+  auto_match_max: number | null;
   versions: Version[];
 }
 
@@ -477,17 +479,34 @@ export default function Page() {
                           {strategy.name}
                         </Link>
                       </td>
-                      <td>
-                        {strategy.completed ? (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
-                            <CheckCircle className="size-3.5" />
-                            Completed
+                      <td className="align-top">
+                        <div className="flex flex-col items-start gap-1">
+                          {strategy.completed ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+                              <CheckCircle className="size-3.5" />
+                              Completed
+                            </span>
+                          ) : (
+                            <span className="inline-flex px-2 py-0.5 rounded-md bg-base-300/50 text-base-content/80 text-xs font-medium">
+                              Active
+                            </span>
+                          )}
+                          <span
+                            title="Auto-match runs used / max allowed"
+                            className={`text-[13px] tabular-nums font-medium ${
+                              strategy.auto_match_max != null &&
+                              (strategy.auto_match_count ?? 0) >= strategy.auto_match_max
+                                ? "text-warning"
+                                : "text-base-content/70"
+                            }`}
+                          >
+                            Auto match{" "}
+                            {strategy.auto_match_count ?? 0}
+                            {strategy.auto_match_max != null
+                              ? ` / ${strategy.auto_match_max}`
+                              : ""}
                           </span>
-                        ) : (
-                          <span className="inline-flex px-2 py-0.5 rounded-md bg-base-300/50 text-base-content/80 text-xs font-medium">
-                            Active
-                          </span>
-                        )}
+                        </div>
                       </td>
                       <td className="text-right align-top min-w-[6.5rem]">
                         <div className="flex flex-col items-end gap-0.5 tabular-nums text-sm whitespace-nowrap">
