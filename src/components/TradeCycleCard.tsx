@@ -102,7 +102,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
       state: "ACTIVATED",
     }));
     try {
-      const res = await authFetch(url);
+      const res = await authFetch(url, { method: "POST" });
       const data = await res.json();
       console.log("Activated:", data);
     } catch (err) {
