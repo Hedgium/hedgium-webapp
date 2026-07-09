@@ -50,12 +50,17 @@ export default function AdminMarketPage() {
       try {
         let endpoint: string;
         if (nextPageUrl) {
-          try {
-            const parsed = new URL(nextPageUrl);
-            const q = parsed.search ? parsed.search.slice(1) : "";
-            endpoint = q ? `market/strike-steps/?${q}` : "market/strike-steps/";
-          } catch {
-            endpoint = "market/strike-steps/";
+          if (/^https?:\/\//i.test(nextPageUrl)) {
+            try {
+              const parsed = new URL(nextPageUrl);
+              const q = parsed.search ? parsed.search.slice(1) : "";
+              endpoint = q ? `market/strike-steps/?${q}` : "market/strike-steps/";
+            } catch {
+              endpoint = "market/strike-steps/";
+            }
+          } else {
+            // normalizeNext() stores a relative path — use it as-is
+            endpoint = nextPageUrl;
           }
         } else {
           const params = new URLSearchParams();

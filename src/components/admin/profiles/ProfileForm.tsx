@@ -417,7 +417,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                                 Order value factor
                                 <span
                                     className="tooltip tooltip-right"
-                                    data-tip="1 = 10 Lakhs"
+                                    data-tip="1 = BASE_ORDER_VALUE (refer settings)"
                                 >
                                     <span className="inline-flex h-4 w-4 cursor-default select-none items-center justify-center rounded-full bg-base-300 text-[10px] font-bold text-base-content">
                                         i
