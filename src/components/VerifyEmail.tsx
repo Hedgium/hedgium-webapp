@@ -50,6 +50,7 @@ export default function VerifyEmail({
   const router = useRouter();
   const alert = useAlert();
   const email = emailProp ?? user?.email;
+  const mobile = user?.mobile?.replace(/\D/g, "").slice(-10) || null;
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [verifying, setVerifying] = useState(false);
@@ -84,7 +85,7 @@ export default function VerifyEmail({
     try {
       const res = await authFetch("users/send-otp/", {
         method: "POST",
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, mobile: mobile || undefined }),
       });
       if (res.ok) {
         setHasSent(true);
@@ -96,7 +97,12 @@ export default function VerifyEmail({
         } catch {
           // ignore
         }
-        alert.success("Code sent. Check your inbox.", { duration: 3000 });
+        alert.success(
+          mobile
+            ? "Code sent. Check your email and WhatsApp."
+            : "Code sent. Check your inbox.",
+          { duration: 3000 }
+        );
         startCooldown();
       } else {
         const data = await res.json().catch(() => ({}));
@@ -112,7 +118,7 @@ export default function VerifyEmail({
     } finally {
       setSending(false);
     }
-  }, [email, sending, alert, startCooldown]);
+  }, [email, mobile, sending, alert, startCooldown]);
 
   // Clean up cooldown interval only on unmount (so "Resend in Xs" countdown is not killed when sendOtp ref changes)
   useEffect(() => {
@@ -173,7 +179,7 @@ export default function VerifyEmail({
     try {
       const res = await authFetch("users/verify-otp/", {
         method: "POST",
-        body: JSON.stringify({ email, otp: code }),
+        body: JSON.stringify({ email, mobile: mobile || undefined, otp: code }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -228,9 +234,31 @@ export default function VerifyEmail({
         Verify your email
       </h2>
       <p className="text-sm text-base-content/70 text-center mt-1">
-        {hasSent
-          ? <>We sent a 6-digit code to <span className="font-medium text-base-content">{email}</span></>
-          : <>We&apos;ll send a 6-digit code to <span className="font-medium text-base-content">{email}</span></>}
+        {hasSent ? (
+          mobile ? (
+            <>
+              We sent a 6-digit code to{" "}
+              <span className="font-medium text-base-content">{email}</span> and{" "}
+              <span className="font-medium text-base-content">+91 {mobile}</span> on WhatsApp
+            </>
+          ) : (
+            <>
+              We sent a 6-digit code to{" "}
+              <span className="font-medium text-base-content">{email}</span>
+            </>
+          )
+        ) : mobile ? (
+          <>
+            We&apos;ll send a 6-digit code to{" "}
+            <span className="font-medium text-base-content">{email}</span> and{" "}
+            <span className="font-medium text-base-content">+91 {mobile}</span> on WhatsApp
+          </>
+        ) : (
+          <>
+            We&apos;ll send a 6-digit code to{" "}
+            <span className="font-medium text-base-content">{email}</span>
+          </>
+        )}
       </p>
 
       <fieldset className="mt-4">
