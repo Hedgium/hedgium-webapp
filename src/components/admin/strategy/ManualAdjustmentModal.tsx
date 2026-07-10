@@ -7,7 +7,7 @@ import LegForm from "@/components/admin/builder/LegForm";
 import { BuilderLegCreate, BuilderLegUpdate } from "@/types/builder";
 import useAlert from "@/hooks/useAlert";
 
-interface AdjustmentLeg {
+export interface AdjustmentLeg {
     leg_index: number;
     action: string;
     instrument: string;
@@ -19,8 +19,17 @@ interface AdjustmentLeg {
     token: string;
 }
 
+export interface ManualAdjustmentInitialValues {
+    title?: string;
+    notes?: string;
+    autoTrade?: boolean;
+    exchange?: string;
+    legs?: AdjustmentLeg[];
+}
+
 interface Props {
     strategyId: number;
+    initialValues?: ManualAdjustmentInitialValues;
     onClose: () => void;
     onSuccess: () => void;
 }
@@ -34,12 +43,18 @@ function formatExpiry(dateStr: string): string {
     return `${year} ${month} ${day}`;
 }
 
-export default function ManualAdjustmentModal({ strategyId, onClose, onSuccess }: Props) {
-    const [title, setTitle] = useState("");
-    const [notes, setNotes] = useState("");
-    const [autoTrade, setAutoTrade] = useState(false);
-    const [exchange, setExchange] = useState("NFO");
-    const [legs, setLegs] = useState<AdjustmentLeg[]>([]);
+export default function ManualAdjustmentModal({
+    strategyId,
+    initialValues,
+    onClose,
+    onSuccess,
+}: Props) {
+    const isDuplicate = (initialValues?.legs?.length ?? 0) > 0;
+    const [title, setTitle] = useState(initialValues?.title ?? "");
+    const [notes, setNotes] = useState(initialValues?.notes ?? "");
+    const [autoTrade, setAutoTrade] = useState(initialValues?.autoTrade ?? false);
+    const [exchange, setExchange] = useState(initialValues?.exchange ?? "NFO");
+    const [legs, setLegs] = useState<AdjustmentLeg[]>(initialValues?.legs ?? []);
     const [addingLeg, setAddingLeg] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const alert = useAlert();
@@ -124,7 +139,9 @@ export default function ManualAdjustmentModal({ strategyId, onClose, onSuccess }
 
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
-                    <h3 className="font-bold text-xl">Add Manual Adjustment</h3>
+                    <h3 className="font-bold text-xl">
+                        {isDuplicate ? "Duplicate Adjustment" : "Add Manual Adjustment"}
+                    </h3>
                     <button onClick={onClose} className="btn btn-ghost btn-sm btn-circle">
                         <X size={18} />
                     </button>

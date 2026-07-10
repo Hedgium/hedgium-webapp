@@ -5,23 +5,28 @@ import StrategyLegs from "./StrategyLegs";
 import { authFetch } from "@/utils/api";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import useAlert from "@/hooks/useAlert";
-import { ChevronRight, Trash2 } from "lucide-react";
+import { ChevronRight, Copy, Trash2 } from "lucide-react";
 
 const ADJUSTMENTS_PAGE_SIZE = 3;
 
-interface AdjustmentLeg {
+export interface AdjustmentLeg {
   leg_index: number;
   action: string;
   instrument: string;
   quantity: number;
   price?: number | null;
   order_type: string;
+  exchange?: string;
+  lot_size?: number;
+  token?: string | null;
 }
 
-interface AdjustmentData {
+export interface AdjustmentData {
   id: number;
   version: number;
   title: string | null;
+  notes?: string | null;
+  auto_trade?: boolean;
   created_at: string;
   completed: boolean;
   approved: boolean;
@@ -37,9 +42,13 @@ interface PaginatedAdjustments {
 function Adjustment({
   adj,
   onDelete,
+  onDuplicate,
+  canDuplicate,
 }: {
   adj: AdjustmentData;
   onDelete?: () => void;
+  onDuplicate?: (adj: AdjustmentData) => void;
+  canDuplicate?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [adjustment, setAdjustment] = useState(adj);
@@ -160,6 +169,24 @@ function Adjustment({
             {adjustment.approved ? "Approved" : "Approve"}
           </button>
 
+          {canDuplicate && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate?.(adjustment);
+              }}
+              disabled={adjustment.legs.length === 0}
+              className="btn btn-sm btn-ghost"
+              title={
+                adjustment.legs.length === 0
+                  ? "No legs to duplicate"
+                  : "Duplicate this adjustment"
+              }
+            >
+              <Copy size={14} />
+            </button>
+          )}
+
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -218,10 +245,14 @@ export default function Adjustments({
   strategyId,
   refreshVersion = 0,
   onRefresh,
+  onDuplicate,
+  canDuplicate = false,
 }: {
   strategyId: number;
   refreshVersion?: number;
   onRefresh?: () => void;
+  onDuplicate?: (adj: AdjustmentData) => void;
+  canDuplicate?: boolean;
 }) {
   const [adjustments, setAdjustments] = useState<AdjustmentData[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -281,7 +312,13 @@ export default function Adjustments({
   return (
     <div className="mt-2">
       {adjustments.map((adj) => (
-        <Adjustment key={adj.id} adj={adj} onDelete={handleDelete} />
+        <Adjustment
+          key={adj.id}
+          adj={adj}
+          onDelete={handleDelete}
+          onDuplicate={onDuplicate}
+          canDuplicate={canDuplicate}
+        />
       ))}
       {nextPage != null && (
         <div className="mt-2 flex justify-center">
