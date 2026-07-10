@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { authFetch } from "@/utils/api";
-import Adjustments from "@/components/admin/Adjustments";
+import Adjustments, { type AdjustmentData } from "@/components/admin/Adjustments";
 import Link from "next/link";
 import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
@@ -13,7 +13,9 @@ import useAlert from "@/hooks/useAlert";
 import { CheckCircle, ChevronLeft, Plus, Layers, Table2, RotateCcw, RotateCw } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
 import StrategyTradeCyclesSkeleton from "@/components/skeletons/StrategyTradeCyclesSkeleton";
-import ManualAdjustmentModal from "@/components/admin/strategy/ManualAdjustmentModal";
+import ManualAdjustmentModal, {
+  type ManualAdjustmentInitialValues,
+} from "@/components/admin/strategy/ManualAdjustmentModal";
 
 const StrategyOptionChainModal = dynamic(
   () => import("@/components/admin/strategy/StrategyOptionChainModal"),
@@ -93,6 +95,26 @@ function StatCell({
   );
 }
 
+function mapAdjustmentToInitial(adj: AdjustmentData): ManualAdjustmentInitialValues {
+  return {
+    title: adj.title ? `Copy of ${adj.title}` : `Copy of v${adj.version}`,
+    notes: adj.notes ?? "",
+    autoTrade: adj.auto_trade ?? false,
+    exchange: adj.legs[0]?.exchange ?? "NFO",
+    legs: adj.legs.map((leg) => ({
+      leg_index: leg.leg_index,
+      action: leg.action,
+      instrument: leg.instrument,
+      quantity: leg.quantity,
+      price: leg.price ?? null,
+      order_type: leg.order_type,
+      exchange: leg.exchange ?? "NFO",
+      lot_size: leg.lot_size ?? 75,
+      token: leg.token ?? "",
+    })),
+  };
+}
+
 export default function StrategyDetailPage() {
   const [strategy, setStrategy] = useState<StrategyDetail | null>(null);
   const [trade_cycles, setTradeCycles] = useState([]);
@@ -100,7 +122,8 @@ export default function StrategyDetailPage() {
   const [tradeCyclesLoading, setTradeCyclesLoading] = useState(false);
   const [completingStrategy, setCompletingStrategy] = useState(false);
   const [uncompletingStrategy, setUncompletingStrategy] = useState(false);
-  const [showManualAdjustment, setShowManualAdjustment] = useState(false);
+  const [manualAdjustmentInitial, setManualAdjustmentInitial] =
+    useState<ManualAdjustmentInitialValues | null>(null);
   const [showOptionChainModal, setShowOptionChainModal] = useState(false);
   const [strategyRefreshing, setStrategyRefreshing] = useState(false);
   const [adjustmentsRefreshVersion, setAdjustmentsRefreshVersion] = useState(0);
@@ -454,7 +477,7 @@ export default function StrategyDetailPage() {
               {!strategy?.completed && (
                 <button
                   type="button"
-                  onClick={() => setShowManualAdjustment(true)}
+                  onClick={() => setManualAdjustmentInitial({})}
                   className="btn btn-ghost btn-sm gap-1.5 text-primary hover:bg-primary/10"
                 >
                   <Plus className="size-4" />
@@ -477,6 +500,8 @@ export default function StrategyDetailPage() {
             strategyId={strategyId}
             refreshVersion={adjustmentsRefreshVersion}
             onRefresh={() => fetchStrategyData({ silent: true })}
+            canDuplicate={!strategy?.completed}
+            onDuplicate={(adj) => setManualAdjustmentInitial(mapAdjustmentToInitial(adj))}
           />
         </div>
 
@@ -528,10 +553,11 @@ export default function StrategyDetailPage() {
           )}
         </div>
 
-        {showManualAdjustment && (
+        {manualAdjustmentInitial !== null && (
           <ManualAdjustmentModal
             strategyId={strategyId}
-            onClose={() => setShowManualAdjustment(false)}
+            initialValues={manualAdjustmentInitial}
+            onClose={() => setManualAdjustmentInitial(null)}
             onSuccess={() => refreshStrategyAndAdjustments({ silent: true })}
           />
         )}

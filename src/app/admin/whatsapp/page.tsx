@@ -15,9 +15,22 @@ type Conversation = {
   lead_id: number | null;
   lead_name: string | null;
   last_message_preview: string;
+  last_message_at: string | null;
   can_reply_freeform: boolean;
   last_inbound_at: string | null;
 };
+
+function sortConversationsByRecent(conversations: Conversation[]): Conversation[] {
+  return [...conversations].sort((a, b) => {
+    const aTime = a.last_message_at
+      ? new Date(a.last_message_at).getTime()
+      : 0;
+    const bTime = b.last_message_at
+      ? new Date(b.last_message_at).getTime()
+      : 0;
+    return bTime - aTime;
+  });
+}
 
 type Message = {
   id: number;
@@ -80,7 +93,7 @@ export default function AdminWhatsAppPage() {
       const res = await authFetch(`myadmin/whatsapp/conversations/?${params}`);
       if (!res.ok) throw new Error("Failed to load conversations");
       const data: Paginated<Conversation> = await res.json();
-      setConversations(data.results || []);
+      setConversations(sortConversationsByRecent(data.results || []));
     } catch {
       if (!silent) alertRef.current.error("Failed to load WhatsApp conversations");
     } finally {
@@ -159,7 +172,10 @@ export default function AdminWhatsAppPage() {
         throw new Error(err.error || "Failed to send message");
       }
       setDraft("");
-      await fetchMessages(selectedId, false);
+      await Promise.all([
+        fetchMessages(selectedId, false),
+        fetchConversations(true),
+      ]);
       alert.success("Message sent");
     } catch (e) {
       alert.error(e instanceof Error ? e.message : "Failed to send message");
@@ -204,7 +220,7 @@ export default function AdminWhatsAppPage() {
                   key={c.id}
                   type="button"
                   onClick={() => setSelectedId(c.id)}
-                  className={`w-full text-left px-3 py-3 border-b border-base-200 hover:bg-base-200/60 transition-colors ${
+                  className={`w-full cursor-pointer text-left px-3 py-3 border-b border-base-200 hover:bg-base-200/60 transition-colors ${
                     selectedId === c.id ? "bg-base-200" : ""
                   }`}
                 >
