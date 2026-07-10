@@ -11,7 +11,19 @@ type StrikeStep = {
   strike_step: number | string;
 };
 
-const MARKET_TABS = [{ id: "strike-steps", label: "Strike steps" }] as const;
+type ContractLot = {
+  id: number;
+  symbol: string;
+  exchange: string;
+  lot_size: number;
+};
+
+const MARKET_TABS = [
+  { id: "strike-steps", label: "Strike steps" },
+  { id: "contract-lots", label: "Contract lots" },
+] as const;
+
+const EXCHANGE_OPTIONS = ["MCX", "NFO", "BFO", "CDS", "NCDEX"] as const;
 
 function normalizeNext(next: string | null): string | null {
   if (!next) return null;
@@ -22,31 +34,48 @@ export default function AdminMarketPage() {
   const [activeTab, setActiveTab] = useState<(typeof MARKET_TABS)[number]["id"]>(
     "strike-steps"
   );
-  const [rows, setRows] = useState<StrikeStep[]>([]);
-  const [nextPage, setNextPage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<StrikeStep | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [symbol, setSymbol] = useState("");
+  const [strikeRows, setStrikeRows] = useState<StrikeStep[]>([]);
+  const [strikeNextPage, setStrikeNextPage] = useState<string | null>(null);
+  const [strikeLoading, setStrikeLoading] = useState(true);
+  const [strikeSearchQuery, setStrikeSearchQuery] = useState("");
+  const [strikeDebouncedSearch, setStrikeDebouncedSearch] = useState("");
+  const [strikeModalOpen, setStrikeModalOpen] = useState(false);
+  const [strikeEditing, setStrikeEditing] = useState<StrikeStep | null>(null);
+  const [strikeSaving, setStrikeSaving] = useState(false);
+  const [strikeSymbol, setStrikeSymbol] = useState("");
   const [strikeStep, setStrikeStep] = useState("");
+
+  const [contractRows, setContractRows] = useState<ContractLot[]>([]);
+  const [contractNextPage, setContractNextPage] = useState<string | null>(null);
+  const [contractLoading, setContractLoading] = useState(true);
+  const [contractSearchQuery, setContractSearchQuery] = useState("");
+  const [contractDebouncedSearch, setContractDebouncedSearch] = useState("");
+  const [contractExchangeFilter, setContractExchangeFilter] = useState("");
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [contractEditing, setContractEditing] = useState<ContractLot | null>(null);
+  const [contractSaving, setContractSaving] = useState(false);
+  const [contractSymbol, setContractSymbol] = useState("");
+  const [contractExchange, setContractExchange] = useState("MCX");
+  const [contractLotSize, setContractLotSize] = useState("");
 
   const alert = useAlert();
   const alertRef = useRef(alert);
   alertRef.current = alert;
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 350);
+    const t = setTimeout(() => setStrikeDebouncedSearch(strikeSearchQuery.trim()), 350);
     return () => clearTimeout(t);
-  }, [searchQuery]);
+  }, [strikeSearchQuery]);
 
-  const fetchRows = useCallback(
+  useEffect(() => {
+    const t = setTimeout(() => setContractDebouncedSearch(contractSearchQuery.trim()), 350);
+    return () => clearTimeout(t);
+  }, [contractSearchQuery]);
+
+  const fetchStrikeRows = useCallback(
     async (nextPageUrl?: string) => {
-      setLoading(true);
+      setStrikeLoading(true);
       try {
         let endpoint: string;
         if (nextPageUrl) {
@@ -59,13 +88,12 @@ export default function AdminMarketPage() {
               endpoint = "market/strike-steps/";
             }
           } else {
-            // normalizeNext() stores a relative path — use it as-is
             endpoint = nextPageUrl;
           }
         } else {
           const params = new URLSearchParams();
           params.set("page_size", "50");
-          if (debouncedSearch) params.set("search", debouncedSearch);
+          if (strikeDebouncedSearch) params.set("search", strikeDebouncedSearch);
           endpoint = `market/strike-steps/?${params.toString()}`;
         }
 
@@ -78,49 +106,108 @@ export default function AdminMarketPage() {
         const resultRows = (data.results || []) as StrikeStep[];
 
         if (nextPageUrl) {
-          setRows((prev) => [...prev, ...resultRows]);
+          setStrikeRows((prev) => [...prev, ...resultRows]);
         } else {
-          setRows(resultRows);
+          setStrikeRows(resultRows);
         }
-        setNextPage(normalizeNext(data.next as string | null));
+        setStrikeNextPage(normalizeNext(data.next as string | null));
       } catch (e) {
         console.error(e);
         alertRef.current.error(
           e instanceof Error ? e.message : "Failed to fetch strike steps"
         );
       } finally {
-        setLoading(false);
+        setStrikeLoading(false);
       }
     },
-    [debouncedSearch]
+    [strikeDebouncedSearch]
+  );
+
+  const fetchContractRows = useCallback(
+    async (nextPageUrl?: string) => {
+      setContractLoading(true);
+      try {
+        let endpoint: string;
+        if (nextPageUrl) {
+          if (/^https?:\/\//i.test(nextPageUrl)) {
+            try {
+              const parsed = new URL(nextPageUrl);
+              const q = parsed.search ? parsed.search.slice(1) : "";
+              endpoint = q ? `market/contract-lots/?${q}` : "market/contract-lots/";
+            } catch {
+              endpoint = "market/contract-lots/";
+            }
+          } else {
+            endpoint = nextPageUrl;
+          }
+        } else {
+          const params = new URLSearchParams();
+          params.set("page_size", "50");
+          if (contractDebouncedSearch) params.set("search", contractDebouncedSearch);
+          if (contractExchangeFilter) params.set("exchange", contractExchangeFilter);
+          endpoint = `market/contract-lots/?${params.toString()}`;
+        }
+
+        const res = await authFetch(endpoint);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as { detail?: string }).detail || "Failed to fetch contract lots");
+        }
+        const data = await res.json();
+        const resultRows = (data.results || []) as ContractLot[];
+
+        if (nextPageUrl) {
+          setContractRows((prev) => [...prev, ...resultRows]);
+        } else {
+          setContractRows(resultRows);
+        }
+        setContractNextPage(normalizeNext(data.next as string | null));
+      } catch (e) {
+        console.error(e);
+        alertRef.current.error(
+          e instanceof Error ? e.message : "Failed to fetch contract lots"
+        );
+      } finally {
+        setContractLoading(false);
+      }
+    },
+    [contractDebouncedSearch, contractExchangeFilter]
   );
 
   useEffect(() => {
-    void fetchRows();
-  }, [fetchRows]);
+    if (activeTab === "strike-steps") {
+      void fetchStrikeRows();
+    }
+  }, [activeTab, fetchStrikeRows]);
 
-  const openCreate = () => {
-    setEditing(null);
-    setSymbol("");
+  useEffect(() => {
+    if (activeTab === "contract-lots") {
+      void fetchContractRows();
+    }
+  }, [activeTab, fetchContractRows]);
+
+  const openStrikeCreate = () => {
+    setStrikeEditing(null);
+    setStrikeSymbol("");
     setStrikeStep("");
-    setModalOpen(true);
+    setStrikeModalOpen(true);
   };
 
-  const openEdit = (row: StrikeStep) => {
-    setEditing(row);
-    setSymbol(row.symbol);
+  const openStrikeEdit = (row: StrikeStep) => {
+    setStrikeEditing(row);
+    setStrikeSymbol(row.symbol);
     setStrikeStep(String(row.strike_step));
-    setModalOpen(true);
+    setStrikeModalOpen(true);
   };
 
-  const closeModal = () => {
-    setModalOpen(false);
-    setEditing(null);
+  const closeStrikeModal = () => {
+    setStrikeModalOpen(false);
+    setStrikeEditing(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleStrikeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanSymbol = symbol.trim().toUpperCase();
+    const cleanSymbol = strikeSymbol.trim().toUpperCase();
     const parsedStep = Number(strikeStep);
     if (!cleanSymbol) {
       alert.error("Symbol is required");
@@ -131,15 +218,15 @@ export default function AdminMarketPage() {
       return;
     }
 
-    setSaving(true);
+    setStrikeSaving(true);
     try {
       const body = JSON.stringify({
         symbol: cleanSymbol,
         strike_step: parsedStep,
       });
 
-      if (editing) {
-        const res = await authFetch(`market/strike-steps/${editing.id}/`, {
+      if (strikeEditing) {
+        const res = await authFetch(`market/strike-steps/${strikeEditing.id}/`, {
           method: "PATCH",
           body,
         });
@@ -148,7 +235,7 @@ export default function AdminMarketPage() {
           throw new Error((err as { detail?: string }).detail || "Update failed");
         }
         const updated = (await res.json()) as StrikeStep;
-        setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+        setStrikeRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
         alert.success("Strike step updated");
       } else {
         const res = await authFetch("market/strike-steps/", {
@@ -160,20 +247,20 @@ export default function AdminMarketPage() {
           throw new Error((err as { detail?: string }).detail || "Create failed");
         }
         const created = (await res.json()) as StrikeStep;
-        setRows((prev) => [created, ...prev]);
+        setStrikeRows((prev) => [created, ...prev]);
         alert.success("Strike step created");
       }
 
-      closeModal();
+      closeStrikeModal();
     } catch (e) {
       console.error(e);
       alert.error(e instanceof Error ? e.message : "Save failed");
     } finally {
-      setSaving(false);
+      setStrikeSaving(false);
     }
   };
 
-  const handleDelete = async (row: StrikeStep) => {
+  const handleStrikeDelete = async (row: StrikeStep) => {
     if (!confirm(`Delete strike step for ${row.symbol}?`)) return;
     try {
       const res = await authFetch(`market/strike-steps/${row.id}/`, {
@@ -183,8 +270,108 @@ export default function AdminMarketPage() {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { detail?: string }).detail || "Delete failed");
       }
-      setRows((prev) => prev.filter((r) => r.id !== row.id));
+      setStrikeRows((prev) => prev.filter((r) => r.id !== row.id));
       alert.success("Strike step deleted");
+    } catch (e) {
+      console.error(e);
+      alert.error(e instanceof Error ? e.message : "Delete failed");
+    }
+  };
+
+  const openContractCreate = () => {
+    setContractEditing(null);
+    setContractSymbol("");
+    setContractExchange("MCX");
+    setContractLotSize("");
+    setContractModalOpen(true);
+  };
+
+  const openContractEdit = (row: ContractLot) => {
+    setContractEditing(row);
+    setContractSymbol(row.symbol);
+    setContractExchange(row.exchange);
+    setContractLotSize(String(row.lot_size));
+    setContractModalOpen(true);
+  };
+
+  const closeContractModal = () => {
+    setContractModalOpen(false);
+    setContractEditing(null);
+  };
+
+  const handleContractSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanSymbol = contractSymbol.trim().toUpperCase();
+    const cleanExchange = contractExchange.trim().toUpperCase();
+    const parsedLotSize = Number(contractLotSize);
+    if (!cleanSymbol) {
+      alert.error("Symbol is required");
+      return;
+    }
+    if (!cleanExchange) {
+      alert.error("Exchange is required");
+      return;
+    }
+    if (!Number.isFinite(parsedLotSize) || parsedLotSize <= 0 || !Number.isInteger(parsedLotSize)) {
+      alert.error("Lot size must be a positive whole number");
+      return;
+    }
+
+    setContractSaving(true);
+    try {
+      const body = JSON.stringify({
+        symbol: cleanSymbol,
+        exchange: cleanExchange,
+        lot_size: parsedLotSize,
+      });
+
+      if (contractEditing) {
+        const res = await authFetch(`market/contract-lots/${contractEditing.id}/`, {
+          method: "PATCH",
+          body,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as { detail?: string }).detail || "Update failed");
+        }
+        const updated = (await res.json()) as ContractLot;
+        setContractRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+        alert.success("Contract lot updated");
+      } else {
+        const res = await authFetch("market/contract-lots/", {
+          method: "POST",
+          body,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as { detail?: string }).detail || "Create failed");
+        }
+        const created = (await res.json()) as ContractLot;
+        setContractRows((prev) => [created, ...prev]);
+        alert.success("Contract lot created");
+      }
+
+      closeContractModal();
+    } catch (e) {
+      console.error(e);
+      alert.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setContractSaving(false);
+    }
+  };
+
+  const handleContractDelete = async (row: ContractLot) => {
+    if (!confirm(`Delete contract lot for ${row.exchange}:${row.symbol}?`)) return;
+    try {
+      const res = await authFetch(`market/contract-lots/${row.id}/`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { detail?: string }).detail || "Delete failed");
+      }
+      setContractRows((prev) => prev.filter((r) => r.id !== row.id));
+      alert.success("Contract lot deleted");
     } catch (e) {
       console.error(e);
       alert.error(e instanceof Error ? e.message : "Delete failed");
@@ -227,13 +414,13 @@ export default function AdminMarketPage() {
               <input
                 type="search"
                 placeholder="Search symbol..."
-                aria-label="Search market symbols"
+                aria-label="Search strike step symbols"
                 className="input input-bordered input-sm w-full pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={strikeSearchQuery}
+                onChange={(e) => setStrikeSearchQuery(e.target.value)}
               />
             </div>
-            <button type="button" className="btn btn-primary btn-sm gap-2" onClick={openCreate}>
+            <button type="button" className="btn btn-primary btn-sm gap-2" onClick={openStrikeCreate}>
               <Plus className="size-4" />
               Add strike step
             </button>
@@ -250,20 +437,20 @@ export default function AdminMarketPage() {
                 </tr>
               </thead>
               <tbody>
-                {loading && rows.length === 0 ? (
+                {strikeLoading && strikeRows.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center py-12 text-base-content/60">
                       Loading strike steps...
                     </td>
                   </tr>
-                ) : rows.length === 0 ? (
+                ) : strikeRows.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center py-12 text-base-content/60">
                       No strike steps found.
                     </td>
                   </tr>
                 ) : (
-                  rows.map((r) => (
+                  strikeRows.map((r) => (
                     <tr key={r.id} className="hover">
                       <td className="font-mono">{r.id}</td>
                       <td className="font-semibold">{r.symbol}</td>
@@ -274,7 +461,7 @@ export default function AdminMarketPage() {
                             type="button"
                             className="btn btn-ghost btn-xs"
                             title="Edit"
-                            onClick={() => openEdit(r)}
+                            onClick={() => openStrikeEdit(r)}
                           >
                             <Pencil className="size-3.5" />
                           </button>
@@ -282,7 +469,7 @@ export default function AdminMarketPage() {
                             type="button"
                             className="btn btn-ghost btn-xs text-error"
                             title="Delete"
-                            onClick={() => void handleDelete(r)}
+                            onClick={() => void handleStrikeDelete(r)}
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -295,13 +482,13 @@ export default function AdminMarketPage() {
             </table>
           </div>
 
-          {nextPage && (
+          {strikeNextPage && (
             <div className="flex justify-center mt-4">
               <button
                 type="button"
                 className="btn btn-outline btn-sm"
-                onClick={() => void fetchRows(nextPage)}
-                disabled={loading}
+                onClick={() => void fetchStrikeRows(strikeNextPage)}
+                disabled={strikeLoading}
               >
                 Load more
               </button>
@@ -310,19 +497,132 @@ export default function AdminMarketPage() {
         </>
       )}
 
-      {modalOpen && (
+      {activeTab === "contract-lots" && (
+        <>
+          <p className="text-sm text-base-content/70 mb-4">
+            Economic lot sizes per underlying and exchange. Used during instrument sync when
+            broker CSV reports incorrect values (e.g. MCX lot_size=1).
+          </p>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[12rem]">
+              <div className="relative flex-1 min-w-[12rem] max-w-md">
+                <Search className="absolute z-10 left-3 top-1/2 -translate-y-1/2 size-4 opacity-50" />
+                <input
+                  type="search"
+                  placeholder="Search symbol..."
+                  aria-label="Search contract lot symbols"
+                  className="input input-bordered input-sm w-full pl-9"
+                  value={contractSearchQuery}
+                  onChange={(e) => setContractSearchQuery(e.target.value)}
+                />
+              </div>
+              <select
+                className="select select-bordered select-sm"
+                aria-label="Filter by exchange"
+                value={contractExchangeFilter}
+                onChange={(e) => setContractExchangeFilter(e.target.value)}
+              >
+                <option value="">All exchanges</option>
+                {EXCHANGE_OPTIONS.map((ex) => (
+                  <option key={ex} value={ex}>
+                    {ex}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="button" className="btn btn-primary btn-sm gap-2" onClick={openContractCreate}>
+              <Plus className="size-4" />
+              Add contract lot
+            </button>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border border-base-300 bg-base-100">
+            <table className="table table-sm">
+              <thead>
+                <tr className="bg-base-200">
+                  <th>ID</th>
+                  <th>Symbol</th>
+                  <th>Exchange</th>
+                  <th>Lot size</th>
+                  <th className="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contractLoading && contractRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-12 text-base-content/60">
+                      Loading contract lots...
+                    </td>
+                  </tr>
+                ) : contractRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-12 text-base-content/60">
+                      No contract lots found.
+                    </td>
+                  </tr>
+                ) : (
+                  contractRows.map((r) => (
+                    <tr key={r.id} className="hover">
+                      <td className="font-mono">{r.id}</td>
+                      <td className="font-semibold">{r.symbol}</td>
+                      <td>{r.exchange}</td>
+                      <td>{r.lot_size}</td>
+                      <td className="text-end">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-xs"
+                            title="Edit"
+                            onClick={() => openContractEdit(r)}
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-xs text-error"
+                            title="Delete"
+                            onClick={() => void handleContractDelete(r)}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {contractNextPage && (
+            <div className="flex justify-center mt-4">
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={() => void fetchContractRows(contractNextPage)}
+                disabled={contractLoading}
+              >
+                Load more
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {strikeModalOpen && (
         <div className="modal modal-open">
           <div className="modal-box max-w-md">
             <h3 className="font-bold text-lg mb-4">
-              {editing ? `Edit strike step #${editing.id}` : "Add strike step"}
+              {strikeEditing ? `Edit strike step #${strikeEditing.id}` : "Add strike step"}
             </h3>
-            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3">
+            <form onSubmit={(e) => void handleStrikeSubmit(e)} className="space-y-3">
               <label className="form-control w-full">
                 <span className="label-text text-sm">Symbol</span>
                 <input
                   className="input input-bordered input-sm w-full"
-                  value={symbol}
-                  onChange={(e) => setSymbol(e.target.value)}
+                  value={strikeSymbol}
+                  onChange={(e) => setStrikeSymbol(e.target.value)}
                   placeholder="e.g. NIFTY"
                   required
                 />
@@ -340,11 +640,11 @@ export default function AdminMarketPage() {
                 />
               </label>
               <div className="modal-action">
-                <button type="button" className="btn btn-ghost" onClick={closeModal}>
+                <button type="button" className="btn btn-ghost" onClick={closeStrikeModal}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? "Saving..." : editing ? "Save" : "Create"}
+                <button type="submit" className="btn btn-primary" disabled={strikeSaving}>
+                  {strikeSaving ? "Saving..." : strikeEditing ? "Save" : "Create"}
                 </button>
               </div>
             </form>
@@ -353,7 +653,71 @@ export default function AdminMarketPage() {
             type="button"
             className="modal-backdrop bg-black/50"
             aria-label="Close"
-            onClick={closeModal}
+            onClick={closeStrikeModal}
+          />
+        </div>
+      )}
+
+      {contractModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-4">
+              {contractEditing ? `Edit contract lot #${contractEditing.id}` : "Add contract lot"}
+            </h3>
+            <form onSubmit={(e) => void handleContractSubmit(e)} className="space-y-3">
+              <label className="form-control w-full">
+                <span className="label-text text-sm">Symbol</span>
+                <input
+                  className="input input-bordered input-sm w-full"
+                  value={contractSymbol}
+                  onChange={(e) => setContractSymbol(e.target.value)}
+                  placeholder="e.g. CRUDEOIL"
+                  required
+                />
+              </label>
+              <label className="form-control w-full">
+                <span className="label-text text-sm">Exchange</span>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={contractExchange}
+                  onChange={(e) => setContractExchange(e.target.value)}
+                  required
+                >
+                  {EXCHANGE_OPTIONS.map((ex) => (
+                    <option key={ex} value={ex}>
+                      {ex}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="form-control w-full">
+                <span className="label-text text-sm">Lot size</span>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  className="input input-bordered input-sm w-full"
+                  value={contractLotSize}
+                  onChange={(e) => setContractLotSize(e.target.value)}
+                  placeholder="e.g. 100"
+                  required
+                />
+              </label>
+              <div className="modal-action">
+                <button type="button" className="btn btn-ghost" onClick={closeContractModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={contractSaving}>
+                  {contractSaving ? "Saving..." : contractEditing ? "Save" : "Create"}
+                </button>
+              </div>
+            </form>
+          </div>
+          <button
+            type="button"
+            className="modal-backdrop bg-black/50"
+            aria-label="Close"
+            onClick={closeContractModal}
           />
         </div>
       )}
