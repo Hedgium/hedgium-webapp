@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { useNotificationStore } from "@/store/notificationStore";
+import { useWhatsAppStore } from "@/store/whatsappStore";
 
 const tabs = [
   { name: "Strategies", href: "/admin", icon: <LineChart className="h-5 w-5" /> },
@@ -25,12 +26,25 @@ const tabs = [
   { name: "Payments", href: "/admin/payments", icon: <CreditCard className="h-5 w-5" /> },
 ];
 
+const WHATSAPP_UNREAD_POLL_MS = 120_000;
+
+function tabBadgeCount(
+  tabName: string,
+  unreadAlertCount: number,
+  whatsappUnreadCount: number
+) {
+  if (tabName === "Alerts") return unreadAlertCount;
+  if (tabName === "WhatsApp") return whatsappUnreadCount;
+  return 0;
+}
+
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { logout } = useAuthStore();
   const { unreadCount } = useNotificationStore();
+  const { unreadCount: whatsappUnreadCount, fetchUnreadCount } = useWhatsAppStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Load sidebar state from localStorage on mount
@@ -45,6 +59,12 @@ export default function AdminSidebar() {
   useEffect(() => {
     localStorage.setItem("adminSidebarCollapsed", isCollapsed.toString());
   }, [isCollapsed]);
+
+  useEffect(() => {
+    void fetchUnreadCount();
+    const interval = setInterval(() => void fetchUnreadCount(), WHATSAPP_UNREAD_POLL_MS);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -76,6 +96,17 @@ export default function AdminSidebar() {
                 : tab.href === "/admin/research"
                   ? pathname.startsWith("/admin/research")
                   : pathname === tab.href;
+            const badgeCount = tabBadgeCount(
+              tab.name,
+              unreadCount,
+              whatsappUnreadCount
+            );
+            const badgeLabel =
+              tab.name === "WhatsApp" ? "unread WhatsApp messages" : "unread alerts";
+            const badgeClassName =
+              tab.name === "WhatsApp"
+                ? "bg-primary text-primary-content"
+                : "bg-error text-error-content";
             return (
               <li key={idx}>
                 <Link
@@ -88,21 +119,23 @@ export default function AdminSidebar() {
                 >
                   <span className="relative inline-flex shrink-0 items-center justify-center">
                     {tab.icon}
-                    {tab.name === "Alerts" && unreadCount > 0 && isCollapsed ? (
+                    {badgeCount > 0 && isCollapsed ? (
                       <span
-                        className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[9px] font-bold leading-none text-error-content"
-                        aria-label={`${unreadCount} unread alerts`}
+                        className={`absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold leading-none ${badgeClassName}`}
+                        aria-label={`${badgeCount} ${badgeLabel}`}
                       >
-                        {unreadCount > 99 ? "99+" : unreadCount}
+                        {badgeCount > 99 ? "99+" : badgeCount}
                       </span>
                     ) : null}
                   </span>
                   {!isCollapsed ? (
                     <>
                       <span className="min-w-0 flex-1 font-medium">{tab.name}</span>
-                      {tab.name === "Alerts" && unreadCount > 0 ? (
-                        <span className="inline-flex min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-error px-2 py-0.5 text-[10px] font-bold text-error-content">
-                          {unreadCount > 99 ? "99+" : unreadCount}
+                      {badgeCount > 0 ? (
+                        <span
+                          className={`inline-flex min-w-[1.25rem] shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold ${badgeClassName}`}
+                        >
+                          {badgeCount > 99 ? "99+" : badgeCount}
                         </span>
                       ) : null}
                     </>
