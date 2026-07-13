@@ -1,19 +1,10 @@
 import { create } from "zustand";
 import { authFetch } from "@/utils/api";
 import { useAuthStore } from "@/store/authStore";
+import type { Notification } from "@/types/notifications";
 
+export type { Notification } from "@/types/notifications";
 export type NotificationDaysFilter = 1 | 7;
-
-export interface Notification {
-  id: number;
-  type: "INFO" | "SUCCESS" | "WARNING" | "ERROR";
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-  related_model_name: string | null;
-  related_model_id: number | null;
-}
 
 interface NotificationState {
   notifications: Notification[];
@@ -77,15 +68,19 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   addNotification: (n) =>
     set((state) => {
-      if (state.notifications.some((existing) => existing.id === n.id)) {
+      const normalized: Notification = {
+        ...n,
+        source: n.source ?? "client",
+      };
+      if (state.notifications.some((existing) => existing.id === normalized.id)) {
         return state;
       }
-      if (!notificationWithinDays(n, state.daysFilter)) {
+      if (!notificationWithinDays(normalized, state.daysFilter)) {
         return state;
       }
       return {
-        notifications: [n, ...state.notifications],
-        unreadCount: state.unreadCount + (n.read ? 0 : 1),
+        notifications: [normalized, ...state.notifications],
+        unreadCount: state.unreadCount + (normalized.read ? 0 : 1),
       };
     }),
 

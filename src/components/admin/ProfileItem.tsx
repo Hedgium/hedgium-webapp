@@ -92,17 +92,9 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
     const handleSendLoginReminder = async () => {
         setSendingReminder(true);
         try {
-            // Assuming endpoint structure, can be adjusted
-            await authFetch(`notifications/`,
-                {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        user_id: profile.user.id,
-                        type: 'INFO',
-                        title: 'Login reminder',
-                        message: 'Please login to your account to continue'
-                    })
-                });
+            await authFetch(`profiles/${profile.id}/send-login-reminder/`, {
+                method: "POST",
+            });
             alert.success("Login reminder sent successfully");
             // alert('Login reminder sent');
         } catch {

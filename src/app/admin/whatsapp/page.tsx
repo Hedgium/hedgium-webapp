@@ -2,6 +2,7 @@
 
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
+import { useWhatsAppStore } from "@/store/whatsappStore";
 import { MessageCircle, Search, Send } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -60,6 +61,29 @@ function displayLabel(c: Conversation) {
   return c.user_name || c.lead_name || c.display_name || formatPhone(c.wa_id);
 }
 
+function isPendingMessage(m: Message) {
+  return m.id < 0;
+}
+
+function mergeMessagesWithPending(
+  serverMessages: Message[],
+  pending: Message[]
+): Message[] {
+  const merged = [...serverMessages];
+  for (const p of pending) {
+    const alreadySaved = serverMessages.some(
+      (m) =>
+        m.direction === "outbound" &&
+        m.body === p.body &&
+        Math.abs(
+          new Date(m.created_at).getTime() - new Date(p.created_at).getTime()
+        ) < 60_000
+    );
+    if (!alreadySaved) merged.push(p);
+  }
+  return merged;
+}
+
 const CONVERSATIONS_POLL_MS = 30_000;
 const MESSAGES_POLL_MS = 20_000;
 
@@ -77,6 +101,9 @@ export default function AdminWhatsAppPage() {
   const alert = useAlert();
   const alertRef = useRef(alert);
   alertRef.current = alert;
+  const fetchUnreadCount = useWhatsAppStore((s) => s.fetchUnreadCount);
+  const fetchUnreadCountRef = useRef(fetchUnreadCount);
+  fetchUnreadCountRef.current = fetchUnreadCount;
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
 
@@ -110,12 +137,18 @@ export default function AdminWhatsAppPage() {
       if (!res.ok) throw new Error("Failed to load messages");
       const data: Paginated<Message> = await res.json();
       const sorted = [...(data.results || [])].reverse();
-      setMessages(sorted);
+      setMessages((prev) =>
+        mergeMessagesWithPending(
+          sorted,
+          prev.filter(isPendingMessage)
+        )
+      );
       setConversations((prev) =>
         prev.map((c) =>
           c.id === conversationId ? { ...c, unread_count: 0 } : c
         )
       );
+      void fetchUnreadCountRef.current();
     } catch {
       if (!silent) alertRef.current.error("Failed to load messages");
     } finally {
@@ -157,27 +190,55 @@ export default function AdminWhatsAppPage() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!selectedId || !draft.trim()) return;
+    if (!selectedId || !draft.trim() || sending) return;
+
+    const body = draft.trim();
+    const tempId = -Date.now();
+    const sentAt = new Date().toISOString();
+    const optimisticMessage: Message = {
+      id: tempId,
+      direction: "outbound",
+      message_type: "text",
+      body,
+      status: "sending",
+      created_at: sentAt,
+      sent_by_name: null,
+    };
+
+    setDraft("");
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setConversations((prev) =>
+      sortConversationsByRecent(
+        prev.map((c) =>
+          c.id === selectedId
+            ? {
+                ...c,
+                last_message_preview: body.slice(0, 80),
+                last_message_at: sentAt,
+              }
+            : c
+        )
+      )
+    );
+
     setSending(true);
     try {
       const res = await authFetch(
         `myadmin/whatsapp/conversations/${selectedId}/send/`,
         {
           method: "POST",
-          body: JSON.stringify({ body: draft.trim() }),
+          body: JSON.stringify({ body }),
         }
       );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to send message");
       }
-      setDraft("");
-      await Promise.all([
-        fetchMessages(selectedId, false),
-        fetchConversations(true),
-      ]);
-      alert.success("Message sent");
+      void fetchMessages(selectedId, true);
+      void fetchConversations(true);
     } catch (e) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setDraft(body);
       alert.error(e instanceof Error ? e.message : "Failed to send message");
     } finally {
       setSending(false);
@@ -281,7 +342,9 @@ export default function AdminWhatsAppPage() {
                       <div
                         className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
                           m.direction === "outbound"
-                            ? "bg-primary text-primary-content"
+                            ? `bg-primary text-primary-content${
+                                m.status === "sending" ? " opacity-70" : ""
+                              }`
                             : "bg-base-200"
                         }`}
                       >
@@ -299,6 +362,7 @@ export default function AdminWhatsAppPage() {
                             day: "numeric",
                             month: "short",
                           })}
+                          {m.status === "sending" ? " · Sending…" : ""}
                           {m.direction === "outbound" && m.sent_by_name
                             ? ` · ${m.sent_by_name}`
                             : ""}
@@ -328,7 +392,7 @@ export default function AdminWhatsAppPage() {
                     }
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
-                    disabled={!selected.can_reply_freeform || sending}
+                    disabled={!selected.can_reply_freeform}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -340,7 +404,7 @@ export default function AdminWhatsAppPage() {
                     type="button"
                     className="btn btn-primary"
                     disabled={
-                      !selected.can_reply_freeform || sending || !draft.trim()
+                      !selected.can_reply_freeform || !draft.trim()
                     }
                     onClick={handleSend}
                   >
