@@ -79,6 +79,13 @@ export default function AdminAlertsPage() {
     severityFilter,
     statusFilter,
   });
+  const modalFilterCount = countActiveFilters({
+    daysFilter,
+    sourceFilter,
+    entityFilter,
+    severityFilter: DEFAULT_FILTERS.severityFilter,
+    statusFilter,
+  });
 
   const fetchAlerts = useCallback(async () => {
     setLoading(true);
@@ -205,9 +212,9 @@ export default function AdminAlertsPage() {
               >
                 <SlidersHorizontal className="h-4 w-4" aria-hidden />
                 Filters
-                {activeFilterCount > 0 ? (
+                {modalFilterCount > 0 ? (
                   <span className="badge badge-primary badge-sm tabular-nums">
-                    {activeFilterCount}
+                    {modalFilterCount}
                   </span>
                 ) : null}
               </button>
@@ -222,6 +229,24 @@ export default function AdminAlertsPage() {
                 </button>
               )}
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterButton
+              active={severityFilter === "all"}
+              onClick={() => applyFilter(setSeverityFilter, "all")}
+            >
+              All
+            </FilterButton>
+            {(["INFO", "SUCCESS", "WARNING", "ERROR"] as NotificationType[]).map((type) => (
+              <FilterButton
+                key={type}
+                active={severityFilter === type}
+                onClick={() => applyFilter(setSeverityFilter, type)}
+              >
+                {type}
+              </FilterButton>
+            ))}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -308,7 +333,7 @@ export default function AdminAlertsPage() {
               <div>
                 <h2 className="text-lg font-bold text-base-content">Filter alerts</h2>
                 <p className="mt-0.5 text-sm text-base-content/55">
-                  Narrow by period, source, entity, severity, or read status.
+                  Narrow by period, source, entity, or read status.
                 </p>
               </div>
               <button
@@ -376,26 +401,6 @@ export default function AdminAlertsPage() {
                       onClick={() => applyFilter(setEntityFilter, key)}
                     >
                       {ENTITY_LABELS[key]}
-                    </FilterButton>
-                  ))}
-                </div>
-              </FilterSection>
-
-              <FilterSection label="Severity">
-                <div className="flex flex-wrap gap-2">
-                  <FilterButton
-                    active={severityFilter === "all"}
-                    onClick={() => applyFilter(setSeverityFilter, "all")}
-                  >
-                    All
-                  </FilterButton>
-                  {(["INFO", "SUCCESS", "WARNING", "ERROR"] as NotificationType[]).map((type) => (
-                    <FilterButton
-                      key={type}
-                      active={severityFilter === type}
-                      onClick={() => applyFilter(setSeverityFilter, type)}
-                    >
-                      {type}
                     </FilterButton>
                   ))}
                 </div>
