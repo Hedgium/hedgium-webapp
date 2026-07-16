@@ -3,7 +3,7 @@
 import { authFetch } from "@/utils/api";
 import Link from "next/link";
 import React from "react";
-import { CheckCircle, LayoutList, ListRestart, RefreshCw } from "lucide-react";
+import { CheckCircle, Info, LayoutList, ListRestart, RefreshCw } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
@@ -21,6 +21,27 @@ interface Version {
 
 /** Symbol -> LTP at last metric cache update (from backend JSON fields). */
 type SpotByUnderlying = Record<string, number>;
+
+interface ExpiryPremiumNotional {
+  expiry: string;
+  call_premium: number;
+  put_premium: number;
+  call_notional: number;
+  put_notional: number;
+}
+
+interface StrategyPremiumNotional {
+  strategy_id: number;
+  master_trade_cycle_id: number | null;
+  spot_by_underlying: SpotByUnderlying;
+  by_expiry: ExpiryPremiumNotional[];
+  totals: {
+    call_premium: number;
+    put_premium: number;
+    call_notional: number;
+    put_notional: number;
+  };
+}
 
 interface Strategy {
   id: number;
@@ -115,11 +136,48 @@ export default function Page() {
   const [refreshingMetrics, setRefreshingMetrics] = React.useState(false);
   const [orderBy, setOrderBy] = React.useState("-created_at");
   const [completed, setCompleted] = React.useState("false");
+  const [premiumNotionalByStrategy, setPremiumNotionalByStrategy] =
+    React.useState<Record<number, StrategyPremiumNotional>>({});
+  const [loadingPremiumNotional, setLoadingPremiumNotional] =
+    React.useState(false);
 
   const STRATEGIES_POLL_MS = 60_000;
   const METRICS_REFRESH_INTERVAL_MS = 120_000;
 
   const refreshMetricsInFlightRef = React.useRef(false);
+
+  const fetchPremiumNotional = React.useCallback(
+    async (strategyList: Strategy[]) => {
+      if (strategyList.length === 0) {
+        setPremiumNotionalByStrategy({});
+        return;
+      }
+      const ids = strategyList.map((s) => s.id).join(",");
+      setLoadingPremiumNotional(true);
+      try {
+        const res = await authFetch(
+          `myadmin/strategies/premium-notional/?strategy_ids=${encodeURIComponent(ids)}`
+        );
+        if (!res.ok) {
+          console.error("premium-notional fetch failed", res.status);
+          return;
+        }
+        const data = (await res.json()) as {
+          strategies?: StrategyPremiumNotional[];
+        };
+        const map: Record<number, StrategyPremiumNotional> = {};
+        for (const row of data.strategies ?? []) {
+          map[row.strategy_id] = row;
+        }
+        setPremiumNotionalByStrategy(map);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingPremiumNotional(false);
+      }
+    },
+    []
+  );
 
   const fetchStrategies = React.useCallback(
     async (options?: { background?: boolean }) => {
@@ -139,7 +197,9 @@ export default function Page() {
         } else {
           setNext(null);
         }
-        setStrategies(data.results ?? []);
+        const results: Strategy[] = data.results ?? [];
+        setStrategies(results);
+        void fetchPremiumNotional(results);
       } catch (e) {
         console.error(e);
         if (!background) setStrategies([]);
@@ -147,7 +207,7 @@ export default function Page() {
         if (!background) setLoading(false);
       }
     },
-    [completed, orderBy]
+    [completed, orderBy, fetchPremiumNotional]
   );
 
   React.useEffect(() => {
@@ -262,7 +322,12 @@ export default function Page() {
     } else {
       setNext(null);
     }
-    setStrategies((prev) => [...prev, ...(data.results ?? [])]);
+    const added: Strategy[] = data.results ?? [];
+    setStrategies((prev) => {
+      const merged = [...prev, ...added];
+      void fetchPremiumNotional(merged);
+      return merged;
+    });
     setLoading(false);
   }
 
@@ -340,6 +405,97 @@ export default function Page() {
             @ {line}
           </span>
         ))}
+      </span>
+    );
+  };
+
+  const formatExpiryLabel = (iso: string) => {
+    try {
+      const d = new Date(`${iso}T00:00:00`);
+      return d.toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "short",
+        year: "2-digit",
+      });
+    } catch {
+      return iso;
+    }
+  };
+
+  const PremiumNotionalInfo = ({ strategyId }: { strategyId: number }) => {
+    const row = premiumNotionalByStrategy[strategyId];
+    const hasData = row && row.by_expiry.length > 0;
+
+    return (
+      <span className="relative inline-flex group/premium">
+        <button
+          type="button"
+          className={`btn btn-ghost btn-xs btn-square ${
+            hasData ? "text-base-content/60" : "text-base-content/30"
+          }`}
+          aria-label="Premium and notional by expiry"
+          title={
+            loadingPremiumNotional && !row
+              ? "Loading premium / notional…"
+              : hasData
+                ? "Premium & notional by expiry"
+                : "No premium / notional data"
+          }
+        >
+          {loadingPremiumNotional && !row ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            <Info className="size-3.5" />
+          )}
+        </button>
+        {hasData && (
+          <span
+            className="pointer-events-none invisible opacity-0 group-hover/premium:visible group-hover/premium:opacity-100 transition-opacity absolute z-30 right-0 top-full mt-1 w-[18rem] rounded-lg border border-base-300 bg-base-100 p-2 shadow-lg text-left"
+            role="tooltip"
+          >
+            <span className="block text-[10px] font-medium text-base-content/60 mb-1.5">
+              Premium (qty×LTP) · Notional (qty×spot)
+            </span>
+            <table className="w-full text-[11px] tabular-nums leading-tight">
+              <thead>
+                <tr className="text-base-content/50 text-left">
+                  <th className="font-medium pr-1 pb-0.5">Exp</th>
+                  <th className="font-medium text-right pr-1 pb-0.5">CE Prem</th>
+                  <th className="font-medium text-right pr-1 pb-0.5">PE Prem</th>
+                  <th className="font-medium text-right pr-1 pb-0.5">CE Not</th>
+                  <th className="font-medium text-right pb-0.5">PE Not</th>
+                </tr>
+              </thead>
+              <tbody>
+                {row.by_expiry.map((exp) => (
+                  <tr key={exp.expiry} className="border-t border-base-300/40">
+                    <td className="pr-1 py-0.5 whitespace-nowrap text-base-content/70">
+                      {formatExpiryLabel(exp.expiry)}
+                    </td>
+                    <td
+                      className={`text-right pr-1 py-0.5 ${pnlColor(exp.call_premium)}`}
+                    >
+                      {formatMoneyIN(exp.call_premium)}
+                    </td>
+                    <td
+                      className={`text-right pr-1 py-0.5 ${pnlColor(exp.put_premium)}`}
+                    >
+                      {formatMoneyIN(exp.put_premium)}
+                    </td>
+                    <td
+                      className={`text-right pr-1 py-0.5 ${pnlColor(exp.call_notional)}`}
+                    >
+                      {formatMoneyIN(exp.call_notional)}
+                    </td>
+                    <td className={`text-right py-0.5 ${pnlColor(exp.put_notional)}`}>
+                      {formatMoneyIN(exp.put_notional)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </span>
+        )}
       </span>
     );
   };
@@ -534,11 +690,14 @@ export default function Page() {
                       </td>
                       <td className="text-right align-top min-w-[7.5rem]">
                         <div className="flex flex-col items-end gap-0.5 tabular-nums text-sm whitespace-nowrap">
-                          <span
-                            title="Net delta"
-                            className="font-medium text-base-content/90"
-                          >
-                            {formatGreek(strategy.greek_delta)}
+                          <span className="inline-flex items-center justify-end gap-0.5">
+                            <span
+                              title="Net delta"
+                              className="font-medium text-base-content/90"
+                            >
+                              {formatGreek(strategy.greek_delta)}
+                            </span>
+                            <PremiumNotionalInfo strategyId={strategy.id} />
                           </span>
                           <span
                             title="Net gamma"
