@@ -3,6 +3,7 @@
 import { authFetch } from "@/utils/api";
 import Link from "next/link";
 import React from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle, Info, LayoutList, ListRestart, RefreshCw } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
@@ -424,11 +425,33 @@ export default function Page() {
 
   const PremiumNotionalInfo = ({ strategyId }: { strategyId: number }) => {
     const row = premiumNotionalByStrategy[strategyId];
-    const hasData = row && row.by_expiry.length > 0;
+    const hasData = Boolean(row && row.by_expiry.length > 0);
+    const btnRef = React.useRef<HTMLButtonElement>(null);
+    const [open, setOpen] = React.useState(false);
+    const [pos, setPos] = React.useState<{ top: number; left: number } | null>(
+      null
+    );
+
+    const show = React.useCallback(() => {
+      if (!hasData) return;
+      const el = btnRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const width = 288; // 18rem
+      const left = Math.min(
+        Math.max(8, r.right - width),
+        window.innerWidth - width - 8
+      );
+      setPos({ top: r.bottom + 4, left });
+      setOpen(true);
+    }, [hasData]);
+
+    const hide = React.useCallback(() => setOpen(false), []);
 
     return (
-      <span className="relative inline-flex group/premium">
+      <>
         <button
+          ref={btnRef}
           type="button"
           className={`btn btn-ghost btn-xs btn-square ${
             hasData ? "text-base-content/60" : "text-base-content/30"
@@ -441,6 +464,10 @@ export default function Page() {
                 ? "Premium & notional by expiry"
                 : "No premium / notional data"
           }
+          onMouseEnter={show}
+          onMouseLeave={hide}
+          onFocus={show}
+          onBlur={hide}
         >
           {loadingPremiumNotional && !row ? (
             <span className="loading loading-spinner loading-xs" />
@@ -448,55 +475,74 @@ export default function Page() {
             <Info className="size-3.5" />
           )}
         </button>
-        {hasData && (
-          <span
-            className="pointer-events-none invisible opacity-0 group-hover/premium:visible group-hover/premium:opacity-100 transition-opacity absolute z-30 right-0 top-full mt-1 w-[18rem] rounded-lg border border-base-300 bg-base-100 p-2 shadow-lg text-left"
-            role="tooltip"
-          >
-            <span className="block text-[10px] font-medium text-base-content/60 mb-1.5">
-              Premium (qty×LTP) · Notional (qty×spot)
-            </span>
-            <table className="w-full text-[11px] tabular-nums leading-tight">
-              <thead>
-                <tr className="text-base-content/50 text-left">
-                  <th className="font-medium pr-1 pb-0.5">Exp</th>
-                  <th className="font-medium text-right pr-1 pb-0.5">CE Prem</th>
-                  <th className="font-medium text-right pr-1 pb-0.5">PE Prem</th>
-                  <th className="font-medium text-right pr-1 pb-0.5">CE Not</th>
-                  <th className="font-medium text-right pb-0.5">PE Not</th>
-                </tr>
-              </thead>
-              <tbody>
-                {row.by_expiry.map((exp) => (
-                  <tr key={exp.expiry} className="border-t border-base-300/40">
-                    <td className="pr-1 py-0.5 whitespace-nowrap text-base-content/70">
-                      {formatExpiryLabel(exp.expiry)}
-                    </td>
-                    <td
-                      className={`text-right pr-1 py-0.5 ${pnlColor(exp.call_premium)}`}
-                    >
-                      {formatMoneyIN(exp.call_premium)}
-                    </td>
-                    <td
-                      className={`text-right pr-1 py-0.5 ${pnlColor(exp.put_premium)}`}
-                    >
-                      {formatMoneyIN(exp.put_premium)}
-                    </td>
-                    <td
-                      className={`text-right pr-1 py-0.5 ${pnlColor(exp.call_notional)}`}
-                    >
-                      {formatMoneyIN(exp.call_notional)}
-                    </td>
-                    <td className={`text-right py-0.5 ${pnlColor(exp.put_notional)}`}>
-                      {formatMoneyIN(exp.put_notional)}
-                    </td>
+        {open &&
+          hasData &&
+          row &&
+          pos &&
+          createPortal(
+            <div
+              className="pointer-events-none fixed z-[100] w-[18rem] rounded-lg border border-base-300 bg-base-100 p-2 shadow-xl text-left"
+              style={{ top: pos.top, left: pos.left }}
+              role="tooltip"
+            >
+              <div className="text-[10px] font-medium text-base-content/60 mb-1.5">
+                Premium (qty×LTP) · Notional (qty×spot)
+              </div>
+              <table className="w-full text-[11px] tabular-nums leading-tight bg-base-100">
+                <thead>
+                  <tr className="text-base-content/50 text-left bg-base-100">
+                    <th className="font-medium pr-1 pb-0.5 bg-base-100">Exp</th>
+                    <th className="font-medium text-right pr-1 pb-0.5 bg-base-100">
+                      CE Prem
+                    </th>
+                    <th className="font-medium text-right pr-1 pb-0.5 bg-base-100">
+                      PE Prem
+                    </th>
+                    <th className="font-medium text-right pr-1 pb-0.5 bg-base-100">
+                      CE Not
+                    </th>
+                    <th className="font-medium text-right pb-0.5 bg-base-100">
+                      PE Not
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </span>
-        )}
-      </span>
+                </thead>
+                <tbody className="bg-base-100">
+                  {row.by_expiry.map((exp) => (
+                    <tr
+                      key={exp.expiry}
+                      className="border-t border-base-300/40 bg-base-100"
+                    >
+                      <td className="pr-1 py-0.5 whitespace-nowrap text-base-content/70 bg-base-100">
+                        {formatExpiryLabel(exp.expiry)}
+                      </td>
+                      <td
+                        className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(exp.call_premium)}`}
+                      >
+                        {formatMoneyIN(exp.call_premium)}
+                      </td>
+                      <td
+                        className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(exp.put_premium)}`}
+                      >
+                        {formatMoneyIN(exp.put_premium)}
+                      </td>
+                      <td
+                        className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(exp.call_notional)}`}
+                      >
+                        {formatMoneyIN(exp.call_notional)}
+                      </td>
+                      <td
+                        className={`text-right py-0.5 bg-base-100 ${pnlColor(exp.put_notional)}`}
+                      >
+                        {formatMoneyIN(exp.put_notional)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>,
+            document.body
+          )}
+      </>
     );
   };
 
