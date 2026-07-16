@@ -70,6 +70,8 @@ interface Strategy {
   completed_at: string | null;
   auto_match_count: number;
   auto_match_max: number | null;
+  auto_approve_count: number;
+  auto_approve_max: number | null;
   versions: Version[];
 }
 
@@ -695,7 +697,7 @@ export default function Page() {
                           )}
                           <span
                             title="Auto-match runs used / max allowed"
-                            className={`text-[13px] tabular-nums font-medium ${
+                            className={`text-[13px] tabular-nums font-medium whitespace-nowrap ${
                               strategy.auto_match_max != null &&
                               (strategy.auto_match_count ?? 0) >= strategy.auto_match_max
                                 ? "text-warning"
@@ -706,6 +708,22 @@ export default function Page() {
                             {strategy.auto_match_count ?? 0}
                             {strategy.auto_match_max != null
                               ? ` / ${strategy.auto_match_max}`
+                              : ""}
+                          </span>
+                          <span
+                            title="Auto-approve runs used / max allowed"
+                            className={`text-[13px] tabular-nums font-medium whitespace-nowrap ${
+                              strategy.auto_approve_max != null &&
+                              (strategy.auto_approve_count ?? 0) >=
+                                strategy.auto_approve_max
+                                ? "text-warning"
+                                : "text-base-content/70"
+                            }`}
+                          >
+                            Auto adv{" "}
+                            {strategy.auto_approve_count ?? 0}
+                            {strategy.auto_approve_max != null
+                              ? ` / ${strategy.auto_approve_max}`
                               : ""}
                           </span>
                         </div>
