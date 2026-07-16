@@ -720,7 +720,7 @@ export default function Page() {
                                 : "text-base-content/70"
                             }`}
                           >
-                            Auto adv{" "}
+                            Auto adj{" "}
                             {strategy.auto_approve_count ?? 0}
                             {strategy.auto_approve_max != null
                               ? ` / ${strategy.auto_approve_max}`
