@@ -5,7 +5,8 @@ import Link from "next/link";
 import React from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle, Info, LayoutList, ListRestart, RefreshCw } from "lucide-react";
-import { formatMoneyIN } from "@/utils/formatNumber";
+import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
+
 import useAlert from "@/hooks/useAlert";
 import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
 
@@ -439,7 +440,7 @@ export default function Page() {
       const el = btnRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      const width = 288; // 18rem
+      const width = 384; // 24rem
       const left = Math.min(
         Math.max(8, r.right - width),
         window.innerWidth - width - 8
@@ -483,7 +484,7 @@ export default function Page() {
           pos &&
           createPortal(
             <div
-              className="pointer-events-none fixed z-[100] w-[18rem] rounded-lg border border-base-300 bg-base-100 p-2 shadow-xl text-left"
+              className="pointer-events-none fixed z-[100] w-[24rem] rounded-lg border border-base-300 bg-base-100 p-2 shadow-xl text-left"
               style={{ top: pos.top, left: pos.left }}
               role="tooltip"
             >
@@ -520,25 +521,45 @@ export default function Page() {
                       <td
                         className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(exp.call_premium)}`}
                       >
-                        {formatMoneyIN(exp.call_premium)}
+                        {formatLakhsIN(exp.call_premium)}
                       </td>
                       <td
                         className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(exp.put_premium)}`}
                       >
-                        {formatMoneyIN(exp.put_premium)}
+                        {formatLakhsIN(exp.put_premium)}
                       </td>
                       <td
                         className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(exp.call_notional)}`}
                       >
-                        {formatMoneyIN(exp.call_notional)}
+                        {formatLakhsIN(exp.call_notional)}
                       </td>
                       <td
                         className={`text-right py-0.5 bg-base-100 ${pnlColor(exp.put_notional)}`}
                       >
-                        {formatMoneyIN(exp.put_notional)}
+                        {formatLakhsIN(exp.put_notional)}
                       </td>
                     </tr>
                   ))}
+
+                  <tr className="border-t border-base-300 bg-base-100 font-medium">
+                      <td className="pr-1 py-0.5 whitespace-nowrap text-base-content/70 bg-base-100">
+                        Net
+                      </td>
+                      <td className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(row.totals.call_premium)}`}>
+                        {formatLakhsIN(row.totals.call_premium)}
+                      </td>
+                      <td className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(row.totals.put_premium)}`}>
+                        {formatLakhsIN(row.totals.put_premium)}
+                      </td>
+                      <td className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(row.totals.call_notional)}`}>
+                        {formatLakhsIN(row.totals.call_notional)}
+                      </td>
+                      <td className={`text-right py-0.5 bg-base-100 ${pnlColor(row.totals.put_notional)}`}>
+                        {formatLakhsIN(row.totals.put_notional)}
+                      </td>
+                    </tr>
+
+                 
                 </tbody>
               </table>
             </div>,
