@@ -3,8 +3,10 @@
 import React from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
+import PositionGreeksCell from "@/components/admin/PositionGreeksCell";
+import type { PositionGreeksSnapshot } from "@/types/positions";
 
-export interface Position {
+export interface Position extends PositionGreeksSnapshot {
   id: number;
   instrument: string;
   buy_quantity: number;
@@ -26,6 +28,7 @@ interface PositionsTableProps {
   /** Staff-only: show a control to inspect stored trades for this position (admin UI). */
   showAdminTradesAction?: boolean;
   onAdminViewTrades?: (position: Position) => void;
+  showGreeks?: boolean;
   className?: string;
 }
 
@@ -34,6 +37,7 @@ export default function PositionsTable({
   showOrdersCount = false,
   showAdminTradesAction = false,
   onAdminViewTrades,
+  showGreeks = false,
   className = "",
 }: PositionsTableProps) {
   const getPnLColor = (pnl: number) => {
@@ -59,6 +63,7 @@ export default function PositionsTable({
             <th scope="col">Unrealised</th>
             <th scope="col">Realised</th>
             <th scope="col">PnL</th>
+            {showGreeks && <th scope="col">Greeks</th>}
             <th scope="col" className="min-w-[8rem] max-w-[14rem]">Note</th>
             {showOrdersCount && <th scope="col">Orders</th>}
             {showAdminTradesAction && <th scope="col" className="w-28">Actions</th>}
@@ -98,6 +103,11 @@ export default function PositionsTable({
                     {formatMoneyIN(pos.pnl)}
                   </div>
                 </td>
+                {showGreeks && (
+                  <td>
+                    <PositionGreeksCell greeks={pos} compact />
+                  </td>
+                )}
                 <td
                   className="max-w-[14rem] truncate text-xs text-base-content/80"
                 >

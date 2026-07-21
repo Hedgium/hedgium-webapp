@@ -1,3 +1,13 @@
+export interface PositionGreeksSnapshot {
+  greek_delta?: number | string | null;
+  greek_gamma?: number | string | null;
+  greek_theta?: number | string | null;
+  greek_vega?: number | string | null;
+  greek_updated_at?: string | null;
+  greek_source?: string | null;
+  greek_spot?: number | string | null;
+}
+
 export interface LivePosition {
   tradingsymbol: string;
   exchange?: string;
