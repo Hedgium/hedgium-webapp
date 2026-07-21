@@ -3,12 +3,25 @@
 import { authFetch } from "@/utils/api";
 import Link from "next/link";
 import React from "react";
+import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import { CheckCircle, Info, LayoutList, ListRestart, RefreshCw } from "lucide-react";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 
 import useAlert from "@/hooks/useAlert";
 import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
+
+const OverallPnlSummary = dynamic(
+  () => import("@/components/admin/OverallPnlSummary"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mb-3 flex h-8 items-center rounded-lg border border-base-300 bg-base-100 px-3">
+        <span className="loading loading-spinner loading-xs text-primary" />
+      </div>
+    ),
+  }
+);
 
 const REFRESH_ACTIVE_STRATEGY_TASKS = [
   "refresh-pnl-active-strategies",
@@ -88,12 +101,16 @@ const ORDER_OPTIONS = [
 function buildStrategiesUrl(params: {
   completed: string;
   orderBy: string;
+  startDate: string;
+  endDate: string;
 }): string {
   const search = new URLSearchParams();
   search.set("page", "1");
   search.set("page_size", "10");
   if (params.completed) search.set("completed", params.completed);
   if (params.orderBy) search.set("order_by", params.orderBy);
+  if (params.startDate) search.set("start_date", params.startDate);
+  if (params.endDate) search.set("end_date", params.endDate);
   return `myadmin/strategies/?${search.toString()}`;
 }
 
@@ -140,6 +157,8 @@ export default function Page() {
   const [refreshingMetrics, setRefreshingMetrics] = React.useState(false);
   const [orderBy, setOrderBy] = React.useState("-created_at");
   const [completed, setCompleted] = React.useState("false");
+  const [startDate, setStartDate] = React.useState("");
+  const [endDate, setEndDate] = React.useState("");
   const [premiumNotionalByStrategy, setPremiumNotionalByStrategy] =
     React.useState<Record<number, StrategyPremiumNotional>>({});
   const [loadingPremiumNotional, setLoadingPremiumNotional] =
@@ -190,7 +209,7 @@ export default function Page() {
         setLoading(true);
         setStrategies([]);
       }
-      const url = buildStrategiesUrl({ completed, orderBy });
+      const url = buildStrategiesUrl({ completed, orderBy, startDate, endDate });
       try {
         const res = await authFetch(url);
         const data = await res.json();
@@ -211,7 +230,7 @@ export default function Page() {
         if (!background) setLoading(false);
       }
     },
-    [completed, orderBy, fetchPremiumNotional]
+    [completed, orderBy, startDate, endDate, fetchPremiumNotional]
   );
 
   React.useEffect(() => {
@@ -606,11 +625,38 @@ export default function Page() {
               <option value="true">Completed</option>
               <option value="false">Not completed</option>
             </select>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="input input-bordered input-sm w-auto"
+              title="Start date"
+              aria-label="Start date"
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="input input-bordered input-sm w-auto"
+              title="End date"
+              aria-label="End date"
+            />
           </div>
         </header>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 mb-4">
+
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           
+          <div>
+        <OverallPnlSummary
+          startDate={startDate}
+          endDate={endDate}
+          completed={completed}
+        />
+        </div>
+
+
           <div className="flex items-center justify-end gap-1 shrink-0">
             <button
               type="button"
@@ -637,6 +683,8 @@ export default function Page() {
               />
             </button>
           </div>
+
+
         </div>
 
         <div className="rounded-xl border border-base-300/50 bg-base-100 overflow-hidden">

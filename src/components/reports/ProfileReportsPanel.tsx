@@ -438,12 +438,12 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                   <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
                   <h3 className="text-lg font-semibold">PnL (monthly)</h3>
                 </div>
-                <p
+                {/* <p
                   id="pnl-monthly-chart-desc"
                   className="text-xs leading-relaxed text-base-content/70"
                 >
                   Bars are month-on-month change in total PnL (daily snapshots). Summary cards use different rules—for example “last month” filters positions by when totals were last updated, not this chart’s change.
-                </p>
+                </p> */}
               </div>
               {loadingCharts ? (
                 <ReportsChartSkeleton />
