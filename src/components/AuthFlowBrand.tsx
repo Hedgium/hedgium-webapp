@@ -30,6 +30,8 @@ export default function AuthFlowBrand({ className = "mb-5" }: AuthFlowBrandProps
       <img
         src={iconSrc}
         alt=""
+        role="presentation"
+        aria-hidden="true"
         className="mx-auto h-9 w-auto sm:h-12"
       />
     </Link>

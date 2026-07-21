@@ -416,7 +416,6 @@ export default function AdminClientPnlPage() {
         </div>
       </div>
 
-
       <div className="overflow-x-auto rounded-xl border border-base-300 bg-base-100 shadow-sm">
         <table className="table table-zebra table-sm md:table-md">
           <thead>
@@ -510,7 +509,7 @@ export default function AdminClientPnlPage() {
                           title="E2 reports"
                         >
                           <BarChart3 className="h-3.5 w-3.5" aria-hidden />
-                          <span className="hidden sm:inline">Reports</span>
+                          <span className="hidden sm:inline">E2 Reports</span>
                         </Link>
                         {!row.brokerLoggedIn ? (
                           <span className="badge badge-warning badge-xs">offline</span>
