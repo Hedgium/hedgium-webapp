@@ -466,12 +466,36 @@ export default function StrategyOptionChainModal({
     setDraftManualSpot({});
   }, [underlying, selectedExpiry, tab, chainViewMode]);
 
+  /** Fingerprint of tokens currently in the table — changes on expiry/tab/view switches. */
+  const optionTokensKey = useMemo(() => {
+    return rows
+      .map((r) => r.zerodha_instrument_token)
+      .filter((t): t is number => typeof t === "number" && t > 0)
+      .slice()
+      .sort((a, b) => a - b)
+      .join(",");
+  }, [rows]);
+
+  /**
+   * Quotes poll only every 90s and does not restart when `rows.length` stays > 0.
+   * Re-fetch LTP immediately whenever the displayed option tokens change (e.g. expiry).
+   */
+  useEffect(() => {
+    if (!optionTokensKey) {
+      setTicks({});
+      return;
+    }
+    setTicks({});
+    void pollLive();
+  }, [optionTokensKey, pollLive]);
+
   useVisibilityAwareInterval(
     () => void pollLive(),
     OPTION_CHAIN_LIVE_POLL_MS,
     {
       enabled: rows.length > 0,
-      runImmediately: true,
+      // Token-key effect above handles the first fetch when rows appear / change.
+      runImmediately: false,
     }
   );
 
