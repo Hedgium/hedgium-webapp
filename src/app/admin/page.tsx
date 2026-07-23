@@ -106,7 +106,7 @@ function buildStrategiesUrl(params: {
 }): string {
   const search = new URLSearchParams();
   search.set("page", "1");
-  search.set("page_size", "10");
+  search.set("page_size", "20");
   if (params.completed) search.set("completed", params.completed);
   if (params.orderBy) search.set("order_by", params.orderBy);
   if (params.startDate) search.set("start_date", params.startDate);
@@ -590,7 +590,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-base-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-10xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
