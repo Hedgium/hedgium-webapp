@@ -70,12 +70,13 @@ export default function PositionGreeksCell({ greeks, compact = false }: Position
   return (
     <div className="min-w-[7rem] space-y-0.5 tabular-nums">
       <div className="text-xs font-medium">
-        <span className="text-base-content/60">Δ</span> {delta}
-        <span className="mx-1 text-base-content/30">/</span>
-        <span className="text-base-content/60">Γ</span> {gamma}
+        {delta} 
+        {spot != null ? <span className="text-base-content/60 text-[10px]" > @ {formatGreekValue(spot)}</span> : null}
+        
       </div>
       {!compact && (theta !== "—" || vega !== "—") ? (
         <div className="text-[11px] text-base-content/70">
+          <span className="text-base-content/60">Γ</span> {gamma}
           <span className="text-base-content/50">Θ</span> {theta}
           <span className="mx-1 text-base-content/30">·</span>
           <span className="text-base-content/50">V</span> {vega}
@@ -84,7 +85,7 @@ export default function PositionGreeksCell({ greeks, compact = false }: Position
       <div className="flex flex-wrap items-center gap-1 text-[10px] text-base-content/60">
         {/* {source ? <span className="badge badge-ghost badge-xs">{source}</span> : null} */}
         {updatedAt ? <span>{updatedAt}</span> : null}
-        {spot != null ? <span>@ {formatGreekValue(spot)}</span> : null}
+        {/* {spot != null ? <span>@ {formatGreekValue(spot)}</span> : null} */}
       </div>
     </div>
   );
