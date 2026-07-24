@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
+  RefreshCw,
   SlidersHorizontal,
   Trash2,
   X,
@@ -203,6 +204,8 @@ export default function AdminAlertsPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+    
+
               <button
                 type="button"
                 className="btn btn-sm btn-outline gap-2"
@@ -260,7 +263,21 @@ export default function AdminAlertsPage() {
             </p>
             {loading && alerts.length > 0 ? (
               <span className="loading loading-spinner loading-sm text-primary" aria-label="Refreshing" />
-            ) : null}
+            ) : 
+            <button
+            type="button"
+            className="btn btn-sm btn-outline gap-2"
+            onClick={() => void fetchAlerts()}
+            disabled={loading}
+            aria-label="Reload alerts"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              aria-hidden
+            />
+          </button>
+            
+            }
           </div>
         </section>
 
