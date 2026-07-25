@@ -28,6 +28,7 @@ export default function AdminProxyPoolPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [validity, setValidity] = useState("");
   const [assignedProfileId, setAssignedProfileId] = useState<string>("");
 
   const alert = useAlert();
@@ -127,6 +128,7 @@ export default function AdminProxyPoolPage() {
     setUsername("");
     setPassword("");
     setIsActive(true);
+    setValidity("");
     setAssignedProfileId("");
     void loadProfileOptions();
     setModalOpen(true);
@@ -141,6 +143,7 @@ export default function AdminProxyPoolPage() {
     setUsername(row.username || "");
     setPassword("");
     setIsActive(row.is_active);
+    setValidity(row.validity ? row.validity.slice(0, 10) : "");
     setAssignedProfileId(
       row.assigned_profile ? String(row.assigned_profile.id) : ""
     );
@@ -172,6 +175,8 @@ export default function AdminProxyPoolPage() {
         return;
       }
 
+      const validityValue = validity.trim() ? validity.trim() : null;
+
       if (editing) {
         const body: Record<string, unknown> = {
           broker_name: brokerName,
@@ -180,6 +185,7 @@ export default function AdminProxyPoolPage() {
           port: portNum,
           username: username.trim() || null,
           is_active: isActive,
+          validity: validityValue,
           assigned_profile_id: assigned,
         };
         if (password.trim()) body.password = password.trim();
@@ -203,6 +209,7 @@ export default function AdminProxyPoolPage() {
           port: portNum,
           username: username.trim() || null,
           is_active: isActive,
+          validity: validityValue,
         };
         if (password.trim()) body.password = password.trim();
         if (assigned != null) body.assigned_profile_id = assigned;
@@ -312,6 +319,7 @@ export default function AdminProxyPoolPage() {
               <th>Port</th>
               <th>Username</th>
               <th>Active</th>
+              <th>Validity</th>
               <th>Assigned profile</th>
               <th className="text-end">Actions</th>
             </tr>
@@ -319,13 +327,13 @@ export default function AdminProxyPoolPage() {
           <tbody>
             {loading && rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-12 text-base-content/60">
+                <td colSpan={10} className="text-center py-12 text-base-content/60">
                   Loading…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-12 text-base-content/60">
+                <td colSpan={10} className="text-center py-12 text-base-content/60">
                   No proxy pool rows yet.
                 </td>
               </tr>
@@ -343,6 +351,7 @@ export default function AdminProxyPoolPage() {
                     {r.username ? "••••••••" : "—"}
                   </td>
                   <td>{r.is_active ? "Yes" : "No"}</td>
+                  <td className="font-mono text-xs">{r.validity || "—"}</td>
                   <td className="text-sm max-w-[280px]">
                     {r.assigned_profile ? (
                       <div className="space-y-0.5">
@@ -492,6 +501,18 @@ export default function AdminProxyPoolPage() {
                   onChange={(e) => setIsActive(e.target.checked)}
                 />
                 <span className="text-sm">Active (used for order proxy resolution)</span>
+              </label>
+              <label className="form-control w-full">
+                <span className="label-text text-sm">Validity</span>
+                <span className="text-xs text-base-content/60 block -mt-0.5 mb-1">
+                  Lease end date from the proxy provider. Leave blank if unknown.
+                </span>
+                <input
+                  type="date"
+                  className="input input-bordered input-sm w-full"
+                  value={validity}
+                  onChange={(e) => setValidity(e.target.value)}
+                />
               </label>
               <label className="form-control w-full">
                 <span className="label-text text-sm">Assign profile ({brokerName})</span>
