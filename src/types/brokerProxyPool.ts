@@ -24,6 +24,8 @@ export type BrokerProxyPool = {
   port: number;
   username: string | null;
   is_active: boolean;
+  /** ISO date (YYYY-MM-DD) until which the proxy lease is valid; null if unset. */
+  validity: string | null;
   assigned_profile: BrokerProxyPoolAssignedProfile | null;
   created_at: string;
   updated_at: string;
