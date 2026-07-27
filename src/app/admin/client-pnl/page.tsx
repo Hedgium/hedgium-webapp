@@ -41,6 +41,11 @@ type ClientPnlRow = {
 };
 
 const FETCH_CONCURRENCY = 4;
+const MAX_ROW_ATTEMPTS = 3;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function signedClass(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "text-base-content/60";
@@ -291,7 +296,12 @@ export default function AdminClientPnlPage() {
     );
 
     await mapWithConcurrency(profileList, FETCH_CONCURRENCY, async (profile) => {
-      const metrics = await fetchRowMetrics(profile);
+      let metrics = await fetchRowMetrics(profile);
+      for (let attempt = 1; attempt < MAX_ROW_ATTEMPTS && metrics.error; attempt++) {
+        if (refreshGen.current !== gen) return;
+        await sleep(400 * attempt);
+        metrics = await fetchRowMetrics(profile);
+      }
       if (refreshGen.current !== gen) return;
 
       setRows((prev) =>
