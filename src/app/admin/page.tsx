@@ -164,7 +164,7 @@ export default function Page() {
   const [loadingPremiumNotional, setLoadingPremiumNotional] =
     React.useState(false);
 
-  const STRATEGIES_POLL_MS = 60_000;
+  const STRATEGIES_POLL_MS = 25_000;
   const METRICS_REFRESH_INTERVAL_MS = 120_000;
 
   const refreshMetricsInFlightRef = React.useRef(false);
