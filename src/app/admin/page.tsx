@@ -78,6 +78,7 @@ interface Strategy {
   greek_gamma: number | string | null;
   greek_updated_at: string | null;
   greek_spot_by_underlying: SpotByUnderlying | null;
+  greek_delta_by_underlying: SpotByUnderlying | null;
   wpnl_spot_by_underlying: SpotByUnderlying | null;
   spread_spot_by_underlying: SpotByUnderlying | null;
   completed: boolean;
@@ -588,6 +589,153 @@ export default function Page() {
     );
   };
 
+  const AbsoluteDeltaInfo = ({ strategy }: { strategy: Strategy }) => {
+    const deltas = strategy.greek_delta_by_underlying;
+    const spots = strategy.greek_spot_by_underlying;
+    const symbols = Array.from(
+      new Set([
+        ...Object.keys(deltas || {}),
+        ...Object.keys(spots || {}),
+      ])
+    )
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+
+    const rows = symbols.map((sym) => {
+      const delta = toNum(deltas?.[sym] ?? null);
+      const spot = toNum(spots?.[sym] ?? null);
+      const abs =
+        delta != null && spot != null && spot > 0 ? delta * spot : null;
+      return { sym, delta, spot, abs };
+    });
+    const hasData = rows.some((r) => r.delta != null || r.spot != null);
+    const combinedAbs = rows.reduce(
+      (sum, r) => (r.abs != null ? sum + r.abs : sum),
+      0
+    );
+    const hasCombined = rows.some((r) => r.abs != null);
+
+    const btnRef = React.useRef<HTMLButtonElement>(null);
+    const [open, setOpen] = React.useState(false);
+    const [pos, setPos] = React.useState<{ top: number; left: number } | null>(
+      null
+    );
+
+    const show = React.useCallback(() => {
+      if (!hasData) return;
+      const el = btnRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const width = 320;
+      const left = Math.min(
+        Math.max(8, r.right - width),
+        window.innerWidth - width - 8
+      );
+      setPos({ top: r.bottom + 4, left });
+      setOpen(true);
+    }, [hasData]);
+
+    const hide = React.useCallback(() => setOpen(false), []);
+
+    return (
+      <>
+        <button
+          ref={btnRef}
+          type="button"
+          className={`btn btn-ghost btn-xs btn-square ${
+            hasData ? "text-base-content/60" : "text-base-content/30"
+          }`}
+          aria-label="Absolute delta by spot"
+          title={
+            hasData
+              ? "Absolute delta (Δ × spot) by underlying"
+              : "No per-underlying delta / spot"
+          }
+          onMouseEnter={show}
+          onMouseLeave={hide}
+          onFocus={show}
+          onBlur={hide}
+        >
+          <Info className="size-3.5" />
+        </button>
+        {open &&
+          hasData &&
+          pos &&
+          createPortal(
+            <div
+              className="pointer-events-none fixed z-[100] w-[20rem] rounded-lg border border-base-300 bg-base-100 p-2 shadow-xl text-left"
+              style={{ top: pos.top, left: pos.left }}
+              role="tooltip"
+            >
+              <div className="text-[10px] font-medium text-base-content/60 mb-1.5">
+                Absolute delta = Δ × spot (lakhs)
+              </div>
+              <table className="w-full text-[11px] tabular-nums leading-tight bg-base-100">
+                <thead>
+                  <tr className="text-base-content/50 text-left bg-base-100">
+                    <th className="font-medium pr-1 pb-0.5 bg-base-100">Und</th>
+                    <th className="font-medium text-right pr-1 pb-0.5 bg-base-100">
+                      Δ
+                    </th>
+                    <th className="font-medium text-right pr-1 pb-0.5 bg-base-100">
+                      Spot
+                    </th>
+                    <th className="font-medium text-right pb-0.5 bg-base-100">
+                      Abs Δ
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-base-100">
+                  {rows.map((r) => (
+                    <tr
+                      key={r.sym}
+                      className="border-t border-base-300/40 bg-base-100"
+                    >
+                      <td className="pr-1 py-0.5 whitespace-nowrap text-base-content/70 bg-base-100">
+                        {r.sym}
+                      </td>
+                      <td
+                        className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(r.delta)}`}
+                      >
+                        {r.delta != null ? formatGreek(r.delta) : "—"}
+                      </td>
+                      <td className="text-right pr-1 py-0.5 bg-base-100 text-base-content/70">
+                        {r.spot != null ? formatSpotPrice(r.spot) : "—"}
+                      </td>
+                      <td
+                        className={`text-right py-0.5 bg-base-100 ${pnlColor(r.abs)}`}
+                      >
+                        {r.abs != null ? formatLakhsIN(r.abs) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  {hasCombined ? (
+                    <tr className="border-t border-base-300 bg-base-100 font-medium">
+                      <td className="pr-1 py-0.5 whitespace-nowrap text-base-content/70 bg-base-100">
+                        Combined
+                      </td>
+                      <td className="text-right pr-1 py-0.5 bg-base-100 text-base-content/50">
+                        —
+                      </td>
+                      <td className="text-right pr-1 py-0.5 bg-base-100 text-base-content/50">
+                        —
+                      </td>
+                      <td
+                        className={`text-right py-0.5 bg-base-100 ${pnlColor(combinedAbs)}`}
+                      >
+                        {formatLakhsIN(combinedAbs)}
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>,
+            document.body
+          )}
+      </>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-base-200">
       <div className="max-w-10xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -830,7 +978,7 @@ export default function Page() {
                             >
                               {formatGreek(strategy.greek_delta)}
                             </span>
-                            <PremiumNotionalInfo strategyId={strategy.id} />
+                            <AbsoluteDeltaInfo strategy={strategy} />
                           </span>
                           <span
                             title="Net gamma"
@@ -849,14 +997,17 @@ export default function Page() {
                       </td>
                       <td className="text-right align-top min-w-[7rem]">
                         <div className="flex flex-col items-end gap-1 min-w-[7rem]">
-                          <span
-                            className={`font-semibold tabular-nums text-sm whitespace-nowrap ${pnlColor(
-                              toNum(strategy.pnl_total)
-                            )}`}
-                          >
-                            {toNum(strategy.pnl_total) != null
-                              ? formatMoneyIN(toNum(strategy.pnl_total)!)
-                              : "—"}
+                          <span className="inline-flex items-center justify-end gap-0.5">
+                            <span
+                              className={`font-semibold tabular-nums text-sm whitespace-nowrap ${pnlColor(
+                                toNum(strategy.pnl_total)
+                              )}`}
+                            >
+                              {toNum(strategy.pnl_total) != null
+                                ? formatMoneyIN(toNum(strategy.pnl_total)!)
+                                : "—"}
+                            </span>
+                            <PremiumNotionalInfo strategyId={strategy.id} />
                           </span>
                           <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
                             {formatSnapshotAt(strategy.pnl_updated_at) ?? "—"}

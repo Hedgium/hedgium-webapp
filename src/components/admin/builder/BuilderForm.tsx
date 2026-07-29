@@ -810,13 +810,13 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 <div className="form-control md:col-span-2">
                     <label className="label py-0">
                         <span className="label-text text-sm font-medium text-base-content/80">
-                            Delta band (Greeks task, per underlying)
+                            Absolute delta band (lakhs, combined underlyings)
                         </span>
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label className="label py-0">
-                                <span className="label-text text-xs text-base-content/70">Min (net delta)</span>
+                                <span className="label-text text-xs text-base-content/70">Min (lakhs)</span>
                             </label>
                             <input
                                 type="number"
@@ -827,13 +827,13 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleSubmit(e);
                                 }}
-                                placeholder="e.g. -200 (empty = off)"
+                                placeholder="e.g. -2 (empty = off)"
                                 className="input input-bordered input-sm h-9 w-full"
                             />
                         </div>
                         <div>
                             <label className="label py-0">
-                                <span className="label-text text-xs text-base-content/70">Max (net delta)</span>
+                                <span className="label-text text-xs text-base-content/70">Max (lakhs)</span>
                             </label>
                             <input
                                 type="number"
@@ -844,14 +844,15 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleSubmit(e);
                                 }}
-                                placeholder="e.g. 200 (both required to enable)"
+                                placeholder="e.g. 2 (both required to enable)"
                                 className="input input-bordered input-sm h-9 w-full"
                             />
                         </div>
                     </div>
                     <label className="label">
                         <span className="text-xs text-base-content/60">
-                            Leave either field empty to disable. Net delta per underlying is compared to these bounds directly.
+                            Leave either field empty to disable. Values are in lakhs (2 = ₹2L).
+                            Breach check: sum(net_delta × spot) across all underlyings vs min/max × 1,00,000.
                         </span>
                     </label>
                 </div>
