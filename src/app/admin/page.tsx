@@ -391,6 +391,28 @@ export default function Page() {
     });
   };
 
+  /** Combined absolute delta = Σ (Δ × spot) across underlyings. */
+  const combinedAbsDelta = (strategy: Strategy): number | null => {
+    const deltas = strategy.greek_delta_by_underlying;
+    const spots = strategy.greek_spot_by_underlying;
+    if (!deltas && !spots) return null;
+    const symbols = new Set([
+      ...Object.keys(deltas || {}),
+      ...Object.keys(spots || {}),
+    ]);
+    let sum = 0;
+    let any = false;
+    for (const sym of symbols) {
+      if (!sym) continue;
+      const delta = toNum(deltas?.[sym] ?? null);
+      const spot = toNum(spots?.[sym] ?? null);
+      if (delta == null || spot == null || spot <= 0) continue;
+      sum += delta * spot;
+      any = true;
+    }
+    return any ? sum : null;
+  };
+
   const formatSpotPrice = (v: number | string) => {
     const n = typeof v === "number" ? v : Number(v);
     if (!Number.isFinite(n)) return String(v);
@@ -973,10 +995,12 @@ export default function Page() {
                         <div className="flex flex-col items-end gap-0.5 tabular-nums text-sm whitespace-nowrap">
                           <span className="inline-flex items-center justify-end gap-0.5">
                             <span
-                              title="Net delta"
-                              className="font-medium text-base-content/90"
+                              title="Combined absolute delta (Δ × spot)"
+                              className={`font-medium text-base-content/90 ${pnlColor(
+                                combinedAbsDelta(strategy)
+                              )}`}
                             >
-                              {formatGreek(strategy.greek_delta)}
+                              {formatLakhsIN(combinedAbsDelta(strategy))}
                             </span>
                             <AbsoluteDeltaInfo strategy={strategy} />
                           </span>
