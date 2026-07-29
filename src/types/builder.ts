@@ -76,9 +76,9 @@ export interface StrategyBuilder {
     strategy_template: StrategyTemplate;
     builder_legs: BuilderLeg[];
     supergroup_ids: number[];
-    /** Per-underlying Greeks band: net delta lower bound (null with max = disabled) */
+    /** Absolute-delta band lower bound in lakhs (combined sum(net_delta×spot); null with max = disabled) */
     delta_band_min?: number | null;
-    /** Per-underlying Greeks band: net delta upper bound */
+    /** Absolute-delta band upper bound in lakhs (2 = ₹2L) */
     delta_band_max?: number | null;
     /** Per-underlying spot deviation lower bound in percentage from last captured spot. */
     spot_dev_pct_min?: number | null;
