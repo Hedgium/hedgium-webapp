@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, Mail, Lock, Loader2, Phone } from "lucide-react";
+import { User, Mail, Lock, Loader2, Phone, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import AuthFlowBrand from "@/components/AuthFlowBrand";
 import { myFetch, authFetch } from "@/utils/api";
@@ -25,6 +25,8 @@ export default function SignupStep({ onComplete }: SignupStepProps) {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [first_nameError, setFirstNameError] = useState("");
   const [last_nameError, setLastNameError] = useState("");
@@ -293,17 +295,29 @@ export default function SignupStep({ onComplete }: SignupStepProps) {
                   <input
                     id="password"
                     name="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
                     required
                     aria-required="true"
                     aria-invalid={!!passwordError}
                     aria-describedby={passwordError ? "password-error" : undefined}
-                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${passwordError ? "input-error" : ""}`}
+                    className={`input input-bordered input-sm w-full h-9 pl-9 pr-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${passwordError ? "input-error" : ""}`}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 z-10 flex items-center pr-3 text-base-content/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </button>
                 </div>
                 {passwordError && <p id="password-error" role="alert" className="mt-1 text-xs text-error">{passwordError}</p>}
               </div>
@@ -315,17 +329,29 @@ export default function SignupStep({ onComplete }: SignupStepProps) {
                   <input
                     id="confirmPassword"
                     name="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     autoComplete="new-password"
                     required
                     aria-required="true"
                     aria-invalid={!!confirmPasswordError}
                     aria-describedby={confirmPasswordError ? "confirmPassword-error" : undefined}
-                    className={`input input-bordered input-sm w-full h-9 pl-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${confirmPasswordError ? "input-error" : ""}`}
+                    className={`input input-bordered input-sm w-full h-9 pl-9 pr-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${confirmPasswordError ? "input-error" : ""}`}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 z-10 flex items-center pr-3 text-base-content/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </button>
                 </div>
                 {confirmPasswordError && <p id="confirmPassword-error" role="alert" className="mt-1 text-xs text-error">{confirmPasswordError}</p>}
               </div>

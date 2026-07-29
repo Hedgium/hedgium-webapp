@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import AuthFlowBrand from "@/components/AuthFlowBrand";
@@ -18,6 +18,7 @@ export function getSafeNext(next: string | null): string | null {
 function LoginPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -136,17 +137,29 @@ function LoginPageContent() {
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 required
                 aria-required="true"
                 aria-invalid={passwordError ? true : undefined}
                 aria-describedby={passwordError ? "password-error" : undefined}
-                className={`input input-bordered input-sm h-9 w-full bg-base-100 pl-9 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${passwordError ? "input-error" : "border-base-content/50"}`}
+                className={`input input-bordered input-sm h-9 w-full bg-base-100 pl-9 pr-9 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100 ${passwordError ? "input-error" : "border-base-content/50"}`}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 z-10 flex items-center pr-3 text-base-content/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
             </div>
             {passwordError ? (
               <p id="password-error" role="alert" className="mt-1 text-xs text-error">
