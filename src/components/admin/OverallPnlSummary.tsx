@@ -15,6 +15,8 @@ type OverallPnlSummaryProps = {
   startDate: string;
   endDate: string;
   completed: string;
+  /** Bump to force a refetch (e.g. after metrics refresh tasks). */
+  refreshKey?: number;
 };
 
 function signedClass(value: number | null | undefined): string {
@@ -41,6 +43,7 @@ export default function OverallPnlSummary({
   startDate,
   endDate,
   completed,
+  refreshKey = 0,
 }: OverallPnlSummaryProps) {
   const [data, setData] = useState<OverallPnlResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +70,7 @@ export default function OverallPnlSummary({
 
   useEffect(() => {
     void fetchOverallPnl();
-  }, [fetchOverallPnl]);
+  }, [fetchOverallPnl, refreshKey]);
 
   return (
     <div className="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 px-3 py-1.5">

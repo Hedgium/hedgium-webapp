@@ -164,6 +164,7 @@ export default function Page() {
     React.useState<Record<number, StrategyPremiumNotional>>({});
   const [loadingPremiumNotional, setLoadingPremiumNotional] =
     React.useState(false);
+  const [overallPnlRefreshKey, setOverallPnlRefreshKey] = React.useState(0);
 
   const STRATEGIES_POLL_MS = 25_000;
   const METRICS_REFRESH_INTERVAL_MS = 120_000;
@@ -312,6 +313,7 @@ export default function Page() {
           );
         }
         await fetchStrategies(listOpts);
+        setOverallPnlRefreshKey((k) => k + 1);
       } catch (e) {
         console.error(e);
         if (!silent) {
@@ -322,6 +324,7 @@ export default function Page() {
           );
         }
         await fetchStrategies(listOpts);
+        setOverallPnlRefreshKey((k) => k + 1);
       } finally {
         setRefreshingMetrics(false);
         refreshMetricsInFlightRef.current = false;
@@ -823,6 +826,7 @@ export default function Page() {
           startDate={startDate}
           endDate={endDate}
           completed={completed}
+          refreshKey={overallPnlRefreshKey}
         />
         </div>
 
