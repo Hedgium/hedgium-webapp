@@ -10,6 +10,7 @@ import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 
 import useAlert from "@/hooks/useAlert";
 import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
+import ResearchReportNameAffordance from "@/components/admin/ResearchReportNameAffordance";
 
 const OverallPnlSummary = dynamic(
   () => import("@/components/admin/OverallPnlSummary"),
@@ -21,6 +22,11 @@ const OverallPnlSummary = dynamic(
       </div>
     ),
   }
+);
+
+const ResearchReportHtmlModal = dynamic(
+  () => import("@/components/admin/ResearchReportHtmlModal"),
+  { ssr: false }
 );
 
 const REFRESH_ACTIVE_STRATEGY_TASKS = [
@@ -81,6 +87,7 @@ interface Strategy {
   greek_delta_by_underlying: SpotByUnderlying | null;
   wpnl_spot_by_underlying: SpotByUnderlying | null;
   spread_spot_by_underlying: SpotByUnderlying | null;
+  underlying_names?: string[];
   completed: boolean;
   completed_at: string | null;
   auto_match_count: number;
@@ -165,6 +172,12 @@ export default function Page() {
   const [loadingPremiumNotional, setLoadingPremiumNotional] =
     React.useState(false);
   const [overallPnlRefreshKey, setOverallPnlRefreshKey] = React.useState(0);
+  const [reportSymbols, setReportSymbols] = React.useState<Set<string>>(
+    () => new Set()
+  );
+  const [reportModalSymbols, setReportModalSymbols] = React.useState<
+    string[] | null
+  >(null);
 
   const STRATEGIES_POLL_MS = 25_000;
   const METRICS_REFRESH_INTERVAL_MS = 120_000;
@@ -238,6 +251,30 @@ export default function Page() {
   React.useEffect(() => {
     void fetchStrategies();
   }, [fetchStrategies]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await authFetch("market/research-reports/symbols/");
+        if (!res.ok) return;
+        const data = (await res.json()) as { symbols?: string[] };
+        if (cancelled) return;
+        setReportSymbols(
+          new Set(
+            (data.symbols ?? [])
+              .map((s) => (s || "").trim().toUpperCase())
+              .filter(Boolean)
+          )
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useVisibilityAwareInterval(
     () => fetchStrategies({ background: true }),
@@ -905,6 +942,10 @@ export default function Page() {
 
                 {strategies.map((strategy) => {
                   const last = lastAdjustment(strategy);
+                  const matchingReportSymbols = (strategy.underlying_names ?? [])
+                    .map((s) => s.trim().toUpperCase())
+                    .filter((s) => s && reportSymbols.has(s))
+                    .sort();
                   return (
                     <tr
                       key={strategy.id}
@@ -919,12 +960,18 @@ export default function Page() {
                         </Link>
                       </td>
                       <td>
-                        <Link
-                          href={`/admin/strategy/${strategy.id}`}
-                          className="link link-hover link-primary font-medium"
-                        >
-                          {strategy.name}
-                        </Link>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Link
+                            href={`/admin/strategy/${strategy.id}`}
+                            className="link link-hover link-primary font-medium truncate"
+                          >
+                            {strategy.name}
+                          </Link>
+                          <ResearchReportNameAffordance
+                            symbols={matchingReportSymbols}
+                            onOpen={setReportModalSymbols}
+                          />
+                        </div>
                       </td>
                       <td className="align-top">
                         <div className="flex flex-col items-start gap-1">
@@ -1141,6 +1188,13 @@ export default function Page() {
           </div>
         )}
       </div>
+
+      {reportModalSymbols && reportModalSymbols.length > 0 && (
+        <ResearchReportHtmlModal
+          symbols={reportModalSymbols}
+          onClose={() => setReportModalSymbols(null)}
+        />
+      )}
     </div>
   );
 }

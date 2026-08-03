@@ -8,6 +8,8 @@ import SignUpStepper from "@/components/SignUpStepper";
 import VerifyEmail from "@/components/VerifyEmail";
 import SignupStep from "@/components/onboarding/SignupStep";
 import TermsStep from "@/components/onboarding/TermsStep";
+import FeesStep from "@/components/onboarding/FeesStep";
+import MandateStep from "@/components/onboarding/MandateStep";
 import CompleteProfileStep from "@/components/onboarding/CompleteProfileStep";
 import VerificationStep from "@/components/onboarding/VerificationStep";
 import { useAuthStore } from "@/store/authStore";
@@ -21,9 +23,13 @@ const STEPPER_STEP_IDS: Record<OnboardingStep, string | null> = {
   signup: null,
   "verify-email": "initiated",
   terms: "terms",
+  fees: "agreements",
+  mandate: "agreements",
   "complete-profile": "documents_uploaded",
   verification: "documents_uploaded",
 };
+
+const WIDE_STEPS: OnboardingStep[] = ["terms", "fees", "mandate"];
 
 export default function OnboardingFlow() {
   const router = useRouter();
@@ -47,7 +53,7 @@ export default function OnboardingFlow() {
 
   const stepperId = STEPPER_STEP_IDS[step];
   const showStepper = stepperId !== null;
-  const contentWidth = step === "terms" ? "max-w-2xl" : "max-w-[400px]";
+  const contentWidth = WIDE_STEPS.includes(step) ? "max-w-2xl" : "max-w-[400px]";
 
   const clearOverride = () => setViewOverride(null);
 
@@ -90,6 +96,20 @@ export default function OnboardingFlow() {
             onComplete={clearOverride}
           />
         );
+      case "fees":
+        return (
+          <FeesStep
+            onBack={() => setViewOverride("terms")}
+            onComplete={clearOverride}
+          />
+        );
+      case "mandate":
+        return (
+          <MandateStep
+            onBack={() => setViewOverride("fees")}
+            onComplete={clearOverride}
+          />
+        );
       case "complete-profile":
         return <CompleteProfileStep onComplete={clearOverride} />;
       case "verification":
@@ -114,7 +134,7 @@ export default function OnboardingFlow() {
   return (
     <div className="flex w-full flex-col items-center">
       {showStepper && (
-        <div className={`w-full ${step === "terms" ? "max-w-2xl" : "max-w-2xl"} space-y-4 print:hidden`}>
+        <div className="w-full max-w-2xl space-y-4 print:hidden">
           <div className="flex w-full justify-center">
             <AuthFlowBrand className="mb-0" />
           </div>

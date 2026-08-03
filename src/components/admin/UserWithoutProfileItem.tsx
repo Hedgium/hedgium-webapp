@@ -25,6 +25,8 @@ const SIGNUP_STEPS = [
   { value: "initiated", label: "Initiated" },
   { value: "email_verified", label: "Email Verified" },
   { value: "terms_accepted", label: "Terms Accepted" },
+  { value: "fees_accepted", label: "Fees Accepted" },
+  { value: "mandate_accepted", label: "Mandate Accepted" },
   { value: "documents_uploaded", label: "Documents Uploaded" },
   { value: "broker_profile_added", label: "Broker Profile Added" },
   { value: "verified", label: "Verified" },

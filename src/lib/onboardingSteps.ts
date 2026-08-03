@@ -2,12 +2,16 @@ export type OnboardingStep =
   | "signup"
   | "verify-email"
   | "terms"
+  | "fees"
+  | "mandate"
   | "complete-profile"
   | "verification";
 
 export type OnboardingViewOverride =
   | "signup"
   | "verify-email"
+  | "terms"
+  | "fees"
   | "complete-profile"
   | null;
 
@@ -24,6 +28,10 @@ export function stepFromSignupStep(
     case "email_verified":
       return "terms";
     case "terms_accepted":
+      return "fees";
+    case "fees_accepted":
+      return "mandate";
+    case "mandate_accepted":
       return "complete-profile";
     case "documents_uploaded":
     case "broker_profile_added":
@@ -43,6 +51,12 @@ export function resolveOnboardingStep(
   }
   if (viewOverride === "verify-email" && signupStep === "email_verified") {
     return "verify-email";
+  }
+  if (viewOverride === "terms" && signupStep === "terms_accepted") {
+    return "terms";
+  }
+  if (viewOverride === "fees" && signupStep === "fees_accepted") {
+    return "fees";
   }
   if (
     viewOverride === "complete-profile" &&
