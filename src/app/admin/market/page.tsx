@@ -18,9 +18,17 @@ type ContractLot = {
   lot_size: number;
 };
 
+type ResearchReport = {
+  id: number;
+  symbol: string;
+  report_html: string;
+  updated_at: string;
+};
+
 const MARKET_TABS = [
   { id: "strike-steps", label: "Strike steps" },
   { id: "contract-lots", label: "Contract lots" },
+  { id: "research-reports", label: "Research reports" },
 ] as const;
 
 const EXCHANGE_OPTIONS = ["MCX", "NFO", "BFO", "CDS", "NCDEX"] as const;
@@ -59,6 +67,17 @@ export default function AdminMarketPage() {
   const [contractExchange, setContractExchange] = useState("MCX");
   const [contractLotSize, setContractLotSize] = useState("");
 
+  const [reportRows, setReportRows] = useState<ResearchReport[]>([]);
+  const [reportNextPage, setReportNextPage] = useState<string | null>(null);
+  const [reportLoading, setReportLoading] = useState(true);
+  const [reportSearchQuery, setReportSearchQuery] = useState("");
+  const [reportDebouncedSearch, setReportDebouncedSearch] = useState("");
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportEditing, setReportEditing] = useState<ResearchReport | null>(null);
+  const [reportSaving, setReportSaving] = useState(false);
+  const [reportSymbol, setReportSymbol] = useState("");
+  const [reportHtml, setReportHtml] = useState("");
+
   const alert = useAlert();
   const alertRef = useRef(alert);
   alertRef.current = alert;
@@ -72,6 +91,11 @@ export default function AdminMarketPage() {
     const t = setTimeout(() => setContractDebouncedSearch(contractSearchQuery.trim()), 350);
     return () => clearTimeout(t);
   }, [contractSearchQuery]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setReportDebouncedSearch(reportSearchQuery.trim()), 350);
+    return () => clearTimeout(t);
+  }, [reportSearchQuery]);
 
   const fetchStrikeRows = useCallback(
     async (nextPageUrl?: string) => {
@@ -174,6 +198,58 @@ export default function AdminMarketPage() {
     [contractDebouncedSearch, contractExchangeFilter]
   );
 
+  const fetchReportRows = useCallback(
+    async (nextPageUrl?: string) => {
+      setReportLoading(true);
+      try {
+        let endpoint: string;
+        if (nextPageUrl) {
+          if (/^https?:\/\//i.test(nextPageUrl)) {
+            try {
+              const parsed = new URL(nextPageUrl);
+              const q = parsed.search ? parsed.search.slice(1) : "";
+              endpoint = q ? `market/research-reports/?${q}` : "market/research-reports/";
+            } catch {
+              endpoint = "market/research-reports/";
+            }
+          } else {
+            endpoint = nextPageUrl;
+          }
+        } else {
+          const params = new URLSearchParams();
+          params.set("page_size", "50");
+          if (reportDebouncedSearch) params.set("search", reportDebouncedSearch);
+          endpoint = `market/research-reports/?${params.toString()}`;
+        }
+
+        const res = await authFetch(endpoint);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(
+            (err as { detail?: string }).detail || "Failed to fetch research reports"
+          );
+        }
+        const data = await res.json();
+        const resultRows = (data.results || []) as ResearchReport[];
+
+        if (nextPageUrl) {
+          setReportRows((prev) => [...prev, ...resultRows]);
+        } else {
+          setReportRows(resultRows);
+        }
+        setReportNextPage(normalizeNext(data.next as string | null));
+      } catch (e) {
+        console.error(e);
+        alertRef.current.error(
+          e instanceof Error ? e.message : "Failed to fetch research reports"
+        );
+      } finally {
+        setReportLoading(false);
+      }
+    },
+    [reportDebouncedSearch]
+  );
+
   useEffect(() => {
     if (activeTab === "strike-steps") {
       void fetchStrikeRows();
@@ -185,6 +261,12 @@ export default function AdminMarketPage() {
       void fetchContractRows();
     }
   }, [activeTab, fetchContractRows]);
+
+  useEffect(() => {
+    if (activeTab === "research-reports") {
+      void fetchReportRows();
+    }
+  }, [activeTab, fetchReportRows]);
 
   const openStrikeCreate = () => {
     setStrikeEditing(null);
@@ -376,6 +458,107 @@ export default function AdminMarketPage() {
       console.error(e);
       alert.error(e instanceof Error ? e.message : "Delete failed");
     }
+  };
+
+  const openReportCreate = () => {
+    setReportEditing(null);
+    setReportSymbol("");
+    setReportHtml("");
+    setReportModalOpen(true);
+  };
+
+  const openReportEdit = (row: ResearchReport) => {
+    setReportEditing(row);
+    setReportSymbol(row.symbol);
+    setReportHtml(row.report_html);
+    setReportModalOpen(true);
+  };
+
+  const closeReportModal = () => {
+    setReportModalOpen(false);
+    setReportEditing(null);
+  };
+
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanSymbol = reportSymbol.trim().toUpperCase();
+    const cleanHtml = reportHtml.trim();
+    if (!cleanSymbol) {
+      alert.error("Symbol is required");
+      return;
+    }
+    if (!cleanHtml) {
+      alert.error("Report HTML is required");
+      return;
+    }
+
+    setReportSaving(true);
+    try {
+      const body = JSON.stringify({
+        symbol: cleanSymbol,
+        report_html: reportHtml,
+      });
+
+      if (reportEditing) {
+        const res = await authFetch(`market/research-reports/${reportEditing.id}/`, {
+          method: "PATCH",
+          body,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as { detail?: string }).detail || "Update failed");
+        }
+        const updated = (await res.json()) as ResearchReport;
+        setReportRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+        alert.success("Research report updated");
+      } else {
+        const res = await authFetch("market/research-reports/", {
+          method: "POST",
+          body,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as { detail?: string }).detail || "Create failed");
+        }
+        const created = (await res.json()) as ResearchReport;
+        setReportRows((prev) => {
+          const withoutDup = prev.filter((r) => r.symbol !== created.symbol);
+          return [created, ...withoutDup];
+        });
+        alert.success("Research report saved");
+      }
+
+      closeReportModal();
+    } catch (e) {
+      console.error(e);
+      alert.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setReportSaving(false);
+    }
+  };
+
+  const handleReportDelete = async (row: ResearchReport) => {
+    if (!confirm(`Delete research report for ${row.symbol}?`)) return;
+    try {
+      const res = await authFetch(`market/research-reports/${row.id}/`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { detail?: string }).detail || "Delete failed");
+      }
+      setReportRows((prev) => prev.filter((r) => r.id !== row.id));
+      alert.success("Research report deleted");
+    } catch (e) {
+      console.error(e);
+      alert.error(e instanceof Error ? e.message : "Delete failed");
+    }
+  };
+
+  const formatUpdatedAt = (value: string) => {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
   };
 
   return (
@@ -610,6 +793,102 @@ export default function AdminMarketPage() {
         </>
       )}
 
+      {activeTab === "research-reports" && (
+        <>
+          <p className="text-sm text-base-content/70 mb-4">
+            HTML research reports per underlying symbol. One report per symbol; saving again
+            updates the existing row.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div className="relative flex-1 min-w-[12rem] max-w-md">
+              <Search className="absolute z-10 left-3 top-1/2 -translate-y-1/2 size-4 opacity-50" />
+              <input
+                type="search"
+                placeholder="Search symbol..."
+                aria-label="Search research report symbols"
+                className="input input-bordered input-sm w-full pl-9"
+                value={reportSearchQuery}
+                onChange={(e) => setReportSearchQuery(e.target.value)}
+              />
+            </div>
+            <button type="button" className="btn btn-primary btn-sm gap-2" onClick={openReportCreate}>
+              <Plus className="size-4" />
+              Add research report
+            </button>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border border-base-300 bg-base-100">
+            <table className="table table-sm">
+              <thead>
+                <tr className="bg-base-200">
+                  <th>ID</th>
+                  <th>Symbol</th>
+                  <th>Updated</th>
+                  <th className="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reportLoading && reportRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-12 text-base-content/60">
+                      Loading research reports...
+                    </td>
+                  </tr>
+                ) : reportRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-12 text-base-content/60">
+                      No research reports found.
+                    </td>
+                  </tr>
+                ) : (
+                  reportRows.map((r) => (
+                    <tr key={r.id} className="hover">
+                      <td className="font-mono">{r.id}</td>
+                      <td className="font-semibold">{r.symbol}</td>
+                      <td className="text-sm text-base-content/70">{formatUpdatedAt(r.updated_at)}</td>
+                      <td className="text-end">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-xs"
+                            title="Edit"
+                            onClick={() => openReportEdit(r)}
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-xs text-error"
+                            title="Delete"
+                            onClick={() => void handleReportDelete(r)}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {reportNextPage && (
+            <div className="flex justify-center mt-4">
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={() => void fetchReportRows(reportNextPage)}
+                disabled={reportLoading}
+              >
+                Load more
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
       {strikeModalOpen && (
         <div className="modal modal-open">
           <div className="modal-box max-w-md">
@@ -718,6 +997,54 @@ export default function AdminMarketPage() {
             className="modal-backdrop bg-black/50"
             aria-label="Close"
             onClick={closeContractModal}
+          />
+        </div>
+      )}
+
+      {reportModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-3xl">
+            <h3 className="font-bold text-lg mb-4">
+              {reportEditing
+                ? `Edit research report #${reportEditing.id}`
+                : "Add research report"}
+            </h3>
+            <form onSubmit={(e) => void handleReportSubmit(e)} className="space-y-3">
+              <label className="form-control w-full">
+                <span className="label-text text-sm">Symbol</span>
+                <input
+                  className="input input-bordered input-sm w-full"
+                  value={reportSymbol}
+                  onChange={(e) => setReportSymbol(e.target.value)}
+                  placeholder="e.g. NIFTY"
+                  required
+                />
+              </label>
+              <label className="form-control w-full">
+                <span className="label-text text-sm">Report HTML</span>
+                <textarea
+                  className="textarea textarea-bordered w-full font-mono text-xs min-h-64"
+                  value={reportHtml}
+                  onChange={(e) => setReportHtml(e.target.value)}
+                  placeholder="Paste full HTML report..."
+                  required
+                />
+              </label>
+              <div className="modal-action">
+                <button type="button" className="btn btn-ghost" onClick={closeReportModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={reportSaving}>
+                  {reportSaving ? "Saving..." : reportEditing ? "Save" : "Create"}
+                </button>
+              </div>
+            </form>
+          </div>
+          <button
+            type="button"
+            className="modal-backdrop bg-black/50"
+            aria-label="Close"
+            onClick={closeReportModal}
           />
         </div>
       )}

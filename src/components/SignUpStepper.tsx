@@ -10,6 +10,7 @@ type Step = {
 const steps: Step[] = [
   { id: "initiated", name: "Initiated" },
   { id: "terms", name: "Terms" },
+  { id: "agreements", name: "Fees & Mandate" },
   { id: "documents_uploaded", name: "Upload Documents" },
   { id: "verified", name: "Verified" },
 ];

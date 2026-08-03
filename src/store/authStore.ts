@@ -41,6 +41,8 @@ export interface User {
   signup_step: string;
   terms_accepted_at?: string | null;
   terms_version?: string | null;
+  client_category?: string | null;
+  gstin?: string | null;
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
   kyc_skipped: boolean;

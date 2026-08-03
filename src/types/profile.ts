@@ -8,6 +8,8 @@ export interface User {
     signup_step?: string | null;
     terms_accepted_at?: string | null;
     terms_version?: string | null;
+    client_category?: string | null;
+    gstin?: string | null;
     verified?: boolean | null;
     last_login?: string | null;
     aadhar_number?: string | null;
