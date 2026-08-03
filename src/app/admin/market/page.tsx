@@ -2,8 +2,9 @@
 
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
-import { CandlestickChart, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { CandlestickChart, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import ResearchReportHtmlModal from "@/components/admin/ResearchReportHtmlModal";
 
 type StrikeStep = {
   id: number;
@@ -77,6 +78,7 @@ export default function AdminMarketPage() {
   const [reportSaving, setReportSaving] = useState(false);
   const [reportSymbol, setReportSymbol] = useState("");
   const [reportHtml, setReportHtml] = useState("");
+  const [reportViewing, setReportViewing] = useState<ResearchReport | null>(null);
 
   const alert = useAlert();
   const alertRef = useRef(alert);
@@ -852,6 +854,14 @@ export default function AdminMarketPage() {
                           <button
                             type="button"
                             className="btn btn-ghost btn-xs"
+                            title="View HTML"
+                            onClick={() => setReportViewing(r)}
+                          >
+                            <Eye className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-xs"
                             title="Edit"
                             onClick={() => openReportEdit(r)}
                           >
@@ -1047,6 +1057,14 @@ export default function AdminMarketPage() {
             onClick={closeReportModal}
           />
         </div>
+      )}
+
+      {reportViewing && (
+        <ResearchReportHtmlModal
+          symbols={[reportViewing.symbol]}
+          htmlBySymbol={{ [reportViewing.symbol]: reportViewing.report_html }}
+          onClose={() => setReportViewing(null)}
+        />
       )}
     </div>
   );
