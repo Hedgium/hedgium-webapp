@@ -93,7 +93,7 @@ export default function ResearchReportHtmlModal({
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box max-w-5xl w-full h-[85vh] flex flex-col p-0 overflow-hidden">
+      <div className="modal-box w-screen h-screen max-w-none max-h-none rounded-none flex flex-col p-0 overflow-hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-base-300 shrink-0">
           <div className="min-w-0">
             <h3 className="font-bold text-lg truncate">

@@ -7,7 +7,7 @@ type Props = {
   onOpen: (symbols: string[]) => void;
 };
 
-/** Icon button shown next to a strategy name when research reports exist. */
+/** Research-report control shown under a strategy name when reports exist. */
 export default function ResearchReportNameAffordance({ symbols, onOpen }: Props) {
   if (symbols.length === 0) return null;
 
@@ -19,7 +19,7 @@ export default function ResearchReportNameAffordance({ symbols, onOpen }: Props)
   return (
     <button
       type="button"
-      className="btn btn-ghost btn-xs btn-square text-primary shrink-0"
+      className="btn btn-ghost btn-xs h-auto min-h-0 px-1 py-0.5 gap-1 text-primary font-normal normal-case"
       title={label}
       aria-label={label}
       onClick={(e) => {
@@ -28,7 +28,10 @@ export default function ResearchReportNameAffordance({ symbols, onOpen }: Props)
         onOpen(symbols);
       }}
     >
-      <FileText className="size-3.5" />
+      <FileText className="size-3 shrink-0" />
+      <span className="text-[11px] leading-tight break-words whitespace-normal text-left">
+        {symbols.join(", ")}
+      </span>
     </button>
   );
 }

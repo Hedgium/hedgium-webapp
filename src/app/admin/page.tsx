@@ -904,7 +904,9 @@ export default function Page() {
               <thead>
                 <tr className="border-b border-base-300/50">
                   <th className="font-medium text-base-content/70">ID</th>
-                  <th className="font-medium text-base-content/70">Name</th>
+                  <th className="font-medium text-base-content/70 max-w-[10rem]">
+                    Name
+                  </th>
                   <th className="font-medium text-base-content/70">Status</th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[6.5rem]">
                     Orders
@@ -959,11 +961,11 @@ export default function Page() {
                         {strategy.id}
                         </Link>
                       </td>
-                      <td>
-                        <div className="flex items-center gap-1.5 min-w-0">
+                      <td className="align-top max-w-[10rem]">
+                        <div className="flex flex-col items-start gap-0.5 min-w-0">
                           <Link
                             href={`/admin/strategy/${strategy.id}`}
-                            className="link link-hover link-primary font-medium truncate"
+                            className="link link-hover link-primary font-medium break-words whitespace-normal leading-snug"
                           >
                             {strategy.name}
                           </Link>
