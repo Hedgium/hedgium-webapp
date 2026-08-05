@@ -22,9 +22,18 @@ type ContractLot = {
 type ResearchReport = {
   id: number;
   symbol: string;
-  report_html: string;
+  report_html: string | null;
+  research_required: boolean;
+  research_until: string | null;
   updated_at: string;
 };
+
+const REPORT_ORDERING_OPTIONS = [
+  { value: "-updated_at", label: "Updated (newest)" },
+  { value: "updated_at", label: "Updated (oldest)" },
+  { value: "symbol", label: "Symbol (A–Z)" },
+  { value: "-symbol", label: "Symbol (Z–A)" },
+] as const;
 
 const MARKET_TABS = [
   { id: "strike-steps", label: "Strike steps" },
@@ -73,11 +82,14 @@ export default function AdminMarketPage() {
   const [reportLoading, setReportLoading] = useState(true);
   const [reportSearchQuery, setReportSearchQuery] = useState("");
   const [reportDebouncedSearch, setReportDebouncedSearch] = useState("");
+  const [reportOrdering, setReportOrdering] = useState<string>("-updated_at");
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportEditing, setReportEditing] = useState<ResearchReport | null>(null);
   const [reportSaving, setReportSaving] = useState(false);
   const [reportSymbol, setReportSymbol] = useState("");
   const [reportHtml, setReportHtml] = useState("");
+  const [reportRequired, setReportRequired] = useState(false);
+  const [reportUntil, setReportUntil] = useState("");
   const [reportViewing, setReportViewing] = useState<ResearchReport | null>(null);
 
   const alert = useAlert();
@@ -221,6 +233,7 @@ export default function AdminMarketPage() {
           const params = new URLSearchParams();
           params.set("page_size", "50");
           if (reportDebouncedSearch) params.set("search", reportDebouncedSearch);
+          if (reportOrdering) params.set("ordering", reportOrdering);
           endpoint = `market/research-reports/?${params.toString()}`;
         }
 
@@ -249,7 +262,7 @@ export default function AdminMarketPage() {
         setReportLoading(false);
       }
     },
-    [reportDebouncedSearch]
+    [reportDebouncedSearch, reportOrdering]
   );
 
   useEffect(() => {
@@ -466,13 +479,17 @@ export default function AdminMarketPage() {
     setReportEditing(null);
     setReportSymbol("");
     setReportHtml("");
+    setReportRequired(false);
+    setReportUntil("");
     setReportModalOpen(true);
   };
 
   const openReportEdit = (row: ResearchReport) => {
     setReportEditing(row);
     setReportSymbol(row.symbol);
-    setReportHtml(row.report_html);
+    setReportHtml(row.report_html || "");
+    setReportRequired(Boolean(row.research_required));
+    setReportUntil(row.research_until || "");
     setReportModalOpen(true);
   };
 
@@ -484,13 +501,8 @@ export default function AdminMarketPage() {
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanSymbol = reportSymbol.trim().toUpperCase();
-    const cleanHtml = reportHtml.trim();
     if (!cleanSymbol) {
       alert.error("Symbol is required");
-      return;
-    }
-    if (!cleanHtml) {
-      alert.error("Report HTML is required");
       return;
     }
 
@@ -498,7 +510,9 @@ export default function AdminMarketPage() {
     try {
       const body = JSON.stringify({
         symbol: cleanSymbol,
-        report_html: reportHtml,
+        report_html: reportHtml.trim() ? reportHtml : null,
+        research_required: reportRequired,
+        research_until: reportUntil.trim() ? reportUntil.trim() : null,
       });
 
       if (reportEditing) {
@@ -814,6 +828,20 @@ export default function AdminMarketPage() {
                 onChange={(e) => setReportSearchQuery(e.target.value)}
               />
             </div>
+            <label className="form-control">
+              <select
+                className="select select-bordered select-sm"
+                aria-label="Sort research reports"
+                value={reportOrdering}
+                onChange={(e) => setReportOrdering(e.target.value)}
+              >
+                {REPORT_ORDERING_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button type="button" className="btn btn-primary btn-sm gap-2" onClick={openReportCreate}>
               <Plus className="size-4" />
               Add research report
@@ -826,6 +854,8 @@ export default function AdminMarketPage() {
                 <tr className="bg-base-200">
                   <th>ID</th>
                   <th>Symbol</th>
+                  <th>Required</th>
+                  <th>Until</th>
                   <th>Updated</th>
                   <th className="text-end">Actions</th>
                 </tr>
@@ -833,13 +863,13 @@ export default function AdminMarketPage() {
               <tbody>
                 {reportLoading && reportRows.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-12 text-base-content/60">
+                    <td colSpan={6} className="text-center py-12 text-base-content/60">
                       Loading research reports...
                     </td>
                   </tr>
                 ) : reportRows.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-12 text-base-content/60">
+                    <td colSpan={6} className="text-center py-12 text-base-content/60">
                       No research reports found.
                     </td>
                   </tr>
@@ -848,17 +878,23 @@ export default function AdminMarketPage() {
                     <tr key={r.id} className="hover">
                       <td className="font-mono">{r.id}</td>
                       <td className="font-semibold">{r.symbol}</td>
+                      <td>{r.research_required ? "Yes" : "No"}</td>
+                      <td className="text-sm text-base-content/70">
+                        {r.research_until || "—"}
+                      </td>
                       <td className="text-sm text-base-content/70">{formatUpdatedAt(r.updated_at)}</td>
                       <td className="text-end">
                         <div className="flex justify-end gap-1">
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-xs"
-                            title="View HTML"
-                            onClick={() => setReportViewing(r)}
-                          >
-                            <Eye className="size-3.5" />
-                          </button>
+                          {r.report_html?.trim() ? (
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-xs"
+                              title="View HTML"
+                              onClick={() => setReportViewing(r)}
+                            >
+                              <Eye className="size-3.5" />
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             className="btn btn-ghost btn-xs"
@@ -1019,7 +1055,7 @@ export default function AdminMarketPage() {
                 ? `Edit research report #${reportEditing.id}`
                 : "Add research report"}
             </h3>
-            <form onSubmit={(e) => void handleReportSubmit(e)} className="space-y-3">
+            <form onSubmit={(e) => void handleReportSubmit(e)} className="flex flex-col space-y-2">
               <label className="form-control w-full">
                 <span className="label-text text-sm">Symbol</span>
                 <input
@@ -1030,16 +1066,38 @@ export default function AdminMarketPage() {
                   required
                 />
               </label>
+              
+              <label className="label cursor-pointer justify-start gap-3 pt-2">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-sm"
+                  checked={reportRequired}
+                  onChange={(e) => setReportRequired(e.target.checked)}
+                />
+                <span className="label-text text-sm">Research required (include in stream underlyings)</span>
+              </label>
+
               <label className="form-control w-full">
-                <span className="label-text text-sm">Report HTML</span>
+                <span className="label-text text-sm">Research until (optional)</span>
+                <input
+                  type="date"
+                  className="input input-bordered input-sm w-full"
+                  value={reportUntil}
+                  onChange={(e) => setReportUntil(e.target.value)}
+                />
+              </label>
+
+
+              <label className="form-control w-full">
+                <span className="label-text text-sm">Report HTML (optional)</span>
                 <textarea
                   className="textarea textarea-bordered w-full font-mono text-xs min-h-64"
                   value={reportHtml}
                   onChange={(e) => setReportHtml(e.target.value)}
                   placeholder="Paste full HTML report..."
-                  required
                 />
               </label>
+
               <div className="modal-action">
                 <button type="button" className="btn btn-ghost" onClick={closeReportModal}>
                   Cancel
@@ -1059,7 +1117,7 @@ export default function AdminMarketPage() {
         </div>
       )}
 
-      {reportViewing && (
+      {reportViewing && reportViewing.report_html && (
         <ResearchReportHtmlModal
           symbols={[reportViewing.symbol]}
           htmlBySymbol={{ [reportViewing.symbol]: reportViewing.report_html }}

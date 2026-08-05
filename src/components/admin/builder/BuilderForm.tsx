@@ -35,6 +35,16 @@ interface InstrumentSearchResult {
     lot_size: number;
 }
 
+/** Last expiry date per calendar month (monthly contracts), sorted ascending. */
+function monthlyExpiriesFromList(expiries: string[]): string[] {
+    const byMonth = new Map<string, string>();
+    for (const d of expiries) {
+        if (!d || d.length < 7) continue;
+        byMonth.set(d.slice(0, 7), d);
+    }
+    return Array.from(byMonth.values()).sort();
+}
+
 const reactSelectStyles: StylesConfig<UnderlyingOption> = {
     control: (base, state) => ({
         ...base,
@@ -84,16 +94,17 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         auto_match_allowed: false,
         auto_match_max: null,
         supergroup_ids: [],
-        delta_band_min: null,
-        delta_band_max: null,
-        spot_dev_pct_min: null,
-        spot_dev_pct_max: null,
-        num_lots_delta_band_adjust: null,
-        adjustment_strike_distance: 0,
-        shift_enabled: false,
-        shift_strike_distance_itm: null,
-        shift_strike_distance_otm: null,
-        sell_exposure_limit_lacs: null,
+        delta_band_min: -25,
+        delta_band_max: 25,
+        spot_dev_pct_min: -0.6,
+        spot_dev_pct_max: 0.6,
+        num_lots_delta_band_adjust: 2,
+        adjustment_strike_distance: 1,
+        shift_enabled: true,
+        compulsory_shift_enabled: false,
+        shift_strike_distance_itm: 2,
+        shift_strike_distance_otm: 5,
+        sell_exposure_limit_lacs: 50,
     });
     const [supergroups, setSupergroups] = useState<SuperGroup[]>([]);
     const [loadingSupergroups, setLoadingSupergroups] = useState(false);
@@ -188,6 +199,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         ? 0
                         : Number(initialData.adjustment_strike_distance),
                 shift_enabled: initialData.shift_enabled ?? false,
+                compulsory_shift_enabled: initialData.compulsory_shift_enabled ?? false,
                 shift_strike_distance_itm:
                     initialData.shift_strike_distance_itm == null
                         ? null
@@ -363,6 +375,9 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             setPresetToken('');
             setPresetSpotPrice(null);
             setPresetAtmStrike(null);
+            setPresetExpiry('');
+            setPresetNearExpiry('');
+            setPresetFarExpiry('');
             return;
         }
         const parts = option.label.split(' - ');
@@ -394,6 +409,37 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         } else {
             setPresetSpotPrice(null);
             setPresetAtmStrike(null);
+        }
+
+        const inputs = legPresetConfig?.inputs ?? [];
+        const needsExpiry = inputs.includes('expiry');
+        const needsNearFar =
+            inputs.includes('near_expiry') || inputs.includes('far_expiry');
+        if (!needsExpiry && !needsNearFar) {
+            return;
+        }
+        try {
+            const exchange = formData.exchange || 'NFO';
+            const exRes = await authFetch('optionchain/expiries/', {}, {
+                underlying_symbol: symbol,
+                exchange,
+            });
+            const exData = await exRes.json();
+            const list: string[] = Array.isArray(exData.expiries) ? exData.expiries : [];
+            const monthly = monthlyExpiriesFromList(list);
+            if (needsExpiry) {
+                setPresetExpiry(monthly[0] ?? '');
+            }
+            if (inputs.includes('near_expiry')) {
+                setPresetNearExpiry(monthly[0] ?? '');
+            }
+            if (inputs.includes('far_expiry')) {
+                setPresetFarExpiry(monthly[1] ?? '');
+            }
+        } catch {
+            if (needsExpiry) setPresetExpiry('');
+            if (inputs.includes('near_expiry')) setPresetNearExpiry('');
+            if (inputs.includes('far_expiry')) setPresetFarExpiry('');
         }
     };
 
@@ -968,6 +1014,19 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div>
 
                 <div className="form-control">
+                    <label className="label cursor-pointer justify-start gap-4 py-0">
+                        <span className="label-text text-sm font-medium text-base-content/80">Compulsory shift (full qty, top priority)</span>
+                        <input
+                            type="checkbox"
+                            name="compulsory_shift_enabled"
+                            checked={formData.compulsory_shift_enabled ?? false}
+                            onChange={handleChange}
+                            className="toggle toggle-primary"
+                        />
+                    </label>
+                </div>
+
+                <div className="form-control">
                     <label className="label py-0">
                         <span className="label-text text-sm font-medium text-base-content/80">Shift distance ITM (strikes)</span>
                     </label>
@@ -1061,7 +1120,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                             />
                             <label className="label py-0">
                                 <span className="text-xs text-base-content/60">
-                                    Token: {presetToken || '—'}, strike step: {presetStrikeStep}, lot size: {presetLotSize}
+                                    Token: {presetToken || '—'}, strike step: {presetStrikeStep},
                                     {presetSpotPrice != null ? `, spot: ${presetSpotPrice}` : ''}
                                     {presetAtmStrike != null ? `, ATM: ${presetAtmStrike}` : ''}
                                 </span>
