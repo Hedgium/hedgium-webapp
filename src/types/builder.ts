@@ -87,6 +87,7 @@ export interface StrategyBuilder {
     num_lots_delta_band_adjust?: number | null;
     adjustment_strike_distance?: number;
     shift_enabled?: boolean;
+    compulsory_shift_enabled?: boolean;
     shift_strike_distance_itm?: number | null;
     shift_strike_distance_otm?: number | null;
     sell_exposure_limit_lacs?: number | null;
@@ -117,6 +118,7 @@ export interface StrategyBuilderCreate {
     num_lots_delta_band_adjust?: number | null;
     adjustment_strike_distance?: number;
     shift_enabled?: boolean;
+    compulsory_shift_enabled?: boolean;
     shift_strike_distance_itm?: number | null;
     shift_strike_distance_otm?: number | null;
     sell_exposure_limit_lacs?: number | null;
@@ -147,6 +149,7 @@ export interface StrategyBuilderUpdate {
     num_lots_delta_band_adjust?: number | null;
     adjustment_strike_distance?: number;
     shift_enabled?: boolean;
+    compulsory_shift_enabled?: boolean;
     shift_strike_distance_itm?: number | null;
     shift_strike_distance_otm?: number | null;
     sell_exposure_limit_lacs?: number | null;
