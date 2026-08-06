@@ -2,9 +2,29 @@
 
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
-import { CandlestickChart, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  CandlestickChart,
+  Eye,
+  FileText,
+  Package,
+  Pencil,
+  Plus,
+  Ruler,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ResearchReportHtmlModal from "@/components/admin/ResearchReportHtmlModal";
+
+type StrikeCsvUploadResponse = {
+  message: string;
+  total_records: number;
+  created?: number;
+  updated?: number;
+  unchanged?: number;
+  updated_symbols?: string[];
+};
 
 type StrikeStep = {
   id: number;
@@ -35,11 +55,39 @@ const REPORT_ORDERING_OPTIONS = [
   { value: "-symbol", label: "Symbol (Z–A)" },
 ] as const;
 
-const MARKET_TABS = [
-  { id: "strike-steps", label: "Strike steps" },
-  { id: "contract-lots", label: "Contract lots" },
-  { id: "research-reports", label: "Research reports" },
-] as const;
+type MarketTabId = "strike-steps" | "contract-lots" | "research-reports";
+
+const MARKET_TABS: {
+  id: MarketTabId;
+  label: string;
+  shortLabel: string;
+  description: string;
+  icon: typeof Ruler;
+}[] = [
+  {
+    id: "strike-steps",
+    label: "Strike steps",
+    shortLabel: "Steps",
+    description: "Tick size per underlying. Upload a CSV to create or update by symbol.",
+    icon: Ruler,
+  },
+  {
+    id: "contract-lots",
+    label: "Contract lots",
+    shortLabel: "Lots",
+    description:
+      "Economic lot sizes per underlying and exchange. Used when broker CSV reports incorrect values.",
+    icon: Package,
+  },
+  {
+    id: "research-reports",
+    label: "Research reports",
+    shortLabel: "Reports",
+    description:
+      "HTML research reports per underlying. One report per symbol; saving again updates the existing row.",
+    icon: FileText,
+  },
+];
 
 const EXCHANGE_OPTIONS = ["MCX", "NFO", "BFO", "CDS", "NCDEX"] as const;
 
@@ -49,9 +97,8 @@ function normalizeNext(next: string | null): string | null {
 }
 
 export default function AdminMarketPage() {
-  const [activeTab, setActiveTab] = useState<(typeof MARKET_TABS)[number]["id"]>(
-    "strike-steps"
-  );
+  const [activeTab, setActiveTab] = useState<MarketTabId>("strike-steps");
+  const activeTabMeta = MARKET_TABS.find((t) => t.id === activeTab)!;
 
   const [strikeRows, setStrikeRows] = useState<StrikeStep[]>([]);
   const [strikeNextPage, setStrikeNextPage] = useState<string | null>(null);
@@ -63,6 +110,10 @@ export default function AdminMarketPage() {
   const [strikeSaving, setStrikeSaving] = useState(false);
   const [strikeSymbol, setStrikeSymbol] = useState("");
   const [strikeStep, setStrikeStep] = useState("");
+  const [strikeCsvModalOpen, setStrikeCsvModalOpen] = useState(false);
+  const [strikeCsvFile, setStrikeCsvFile] = useState<File | null>(null);
+  const [strikeCsvUploading, setStrikeCsvUploading] = useState(false);
+  const strikeCsvInputRef = useRef<HTMLInputElement>(null);
 
   const [contractRows, setContractRows] = useState<ContractLot[]>([]);
   const [contractNextPage, setContractNextPage] = useState<string | null>(null);
@@ -375,6 +426,61 @@ export default function AdminMarketPage() {
     }
   };
 
+  const openStrikeCsvModal = () => {
+    setStrikeCsvFile(null);
+    if (strikeCsvInputRef.current) strikeCsvInputRef.current.value = "";
+    setStrikeCsvModalOpen(true);
+  };
+
+  const closeStrikeCsvModal = () => {
+    setStrikeCsvModalOpen(false);
+    setStrikeCsvFile(null);
+    if (strikeCsvInputRef.current) strikeCsvInputRef.current.value = "";
+  };
+
+  const handleStrikeCsvUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!strikeCsvFile) {
+      alert.error("Please select a CSV file");
+      return;
+    }
+    const name = strikeCsvFile.name.toLowerCase();
+    if (!name.endsWith(".csv") && !name.endsWith(".txt")) {
+      alert.error("Invalid file type. Please upload a CSV/TSV text file.");
+      return;
+    }
+    setStrikeCsvUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", strikeCsvFile);
+      const res = await authFetch("market/upload-csv/", {
+        method: "POST",
+        body,
+      });
+      const data = (await res.json().catch(() => ({}))) as Partial<StrikeCsvUploadResponse> & {
+        detail?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.message || data.detail || "CSV upload failed");
+      }
+      const updatedCount = data.updated ?? 0;
+      if (updatedCount > 0) {
+        alert.success(data.message || `Updated ${updatedCount} strike steps`);
+      } else if ((data.created ?? 0) > 0) {
+        alert.success(data.message || `Created ${data.created} strike steps`);
+      } else {
+        alert.success(data.message || "No strike step values changed");
+      }
+      closeStrikeCsvModal();
+      await fetchStrikeRows();
+    } catch (err) {
+      console.error(err);
+      alert.error(err instanceof Error ? err.message : "CSV upload failed");
+    } finally {
+      setStrikeCsvUploading(false);
+    }
+  };
+
   const openContractCreate = () => {
     setContractEditing(null);
     setContractSymbol("");
@@ -579,32 +685,61 @@ export default function AdminMarketPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto lg:px-8">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <CandlestickChart className="size-8 text-primary" />
+      <header className="mb-6">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 rounded-xl bg-primary/10 p-2.5">
+            <CandlestickChart className="size-6 text-primary" aria-hidden />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold">Market</h1>
-            <p className="text-sm text-base-content/70">
-              Admin controls for market-related configurations.
+            <h1 className="text-2xl font-semibold tracking-tight text-base-content">
+              Market
+            </h1>
+            <p className="mt-1 text-sm text-base-content/55">
+              {activeTabMeta.description}
             </p>
           </div>
         </div>
+      </header>
+
+      <div
+        className="mb-5 inline-flex w-full flex-col gap-1 rounded-xl border border-base-300/80 bg-base-200/40 p-1 sm:w-auto sm:flex-row"
+        role="tablist"
+        aria-label="Market configuration"
+      >
+        {MARKET_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const selected = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              id={`market-tab-${tab.id}`}
+              aria-controls={`market-panel-${tab.id}`}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-colors sm:min-w-[10.5rem] ${
+                selected
+                  ? "bg-base-100 text-base-content ring-1 ring-base-300/60"
+                  : "cursor-pointer text-base-content/65 hover:bg-base-100/60 hover:text-base-content"
+              }`}
+            >
+              <Icon
+                className={`size-4 shrink-0 ${selected ? "text-primary" : "opacity-80"}`}
+                aria-hidden
+              />
+              <span className="sm:hidden">{tab.shortLabel}</span>
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="tabs tabs-boxed tabs-sm mb-5">
-        {MARKET_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            className={`tab ${activeTab === tab.id ? "tab-active" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
+      <section
+        id={`market-panel-${activeTab}`}
+        role="tabpanel"
+        aria-labelledby={`market-tab-${activeTab}`}
+      >
       {activeTab === "strike-steps" && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -619,10 +754,20 @@ export default function AdminMarketPage() {
                 onChange={(e) => setStrikeSearchQuery(e.target.value)}
               />
             </div>
-            <button type="button" className="btn btn-primary btn-sm gap-2" onClick={openStrikeCreate}>
-              <Plus className="size-4" />
-              Add strike step
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-outline btn-sm gap-2"
+                onClick={openStrikeCsvModal}
+              >
+                <Upload className="size-4" />
+                Upload CSV
+              </button>
+              <button type="button" className="btn btn-primary btn-sm gap-2" onClick={openStrikeCreate}>
+                <Plus className="size-4" />
+                Add strike step
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-base-300 bg-base-100">
@@ -698,11 +843,6 @@ export default function AdminMarketPage() {
 
       {activeTab === "contract-lots" && (
         <>
-          <p className="text-sm text-base-content/70 mb-4">
-            Economic lot sizes per underlying and exchange. Used during instrument sync when
-            broker CSV reports incorrect values (e.g. MCX lot_size=1).
-          </p>
-
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[12rem]">
               <div className="relative flex-1 min-w-[12rem] max-w-md">
@@ -811,12 +951,9 @@ export default function AdminMarketPage() {
 
       {activeTab === "research-reports" && (
         <>
-          <p className="text-sm text-base-content/70 mb-4">
-            HTML research reports per underlying symbol. One report per symbol; saving again
-            updates the existing row.
-          </p>
-
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+
+            <div className="flex flex-wrap items-center gap-2 flex-1">
             <div className="relative flex-1 min-w-[12rem] max-w-md">
               <Search className="absolute z-10 left-3 top-1/2 -translate-y-1/2 size-4 opacity-50" />
               <input
@@ -828,6 +965,7 @@ export default function AdminMarketPage() {
                 onChange={(e) => setReportSearchQuery(e.target.value)}
               />
             </div>
+
             <label className="form-control">
               <select
                 className="select select-bordered select-sm"
@@ -842,6 +980,10 @@ export default function AdminMarketPage() {
                 ))}
               </select>
             </label>
+            
+            </div>
+
+            
             <button type="button" className="btn btn-primary btn-sm gap-2" onClick={openReportCreate}>
               <Plus className="size-4" />
               Add research report
@@ -933,6 +1075,72 @@ export default function AdminMarketPage() {
             </div>
           )}
         </>
+      )}
+      </section>
+
+      {strikeCsvModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-2">Upload strike step CSV</h3>
+            <p className="text-sm text-base-content/70 mb-4">
+              Creates missing symbols and updates existing ones. CSV/TSV data rows start from
+              line 3. Column 1 = symbol, column 4 = strike step (min per symbol is kept).
+            </p>
+            <form onSubmit={(e) => void handleStrikeCsvUpload(e)} className="space-y-3">
+              <label className="form-control w-full">
+                <span className="label-text text-sm">CSV file</span>
+                <input
+                  ref={strikeCsvInputRef}
+                  type="file"
+                  accept=".csv,.txt,text/csv,text/plain"
+                  className="file-input file-input-bordered file-input-sm w-full"
+                  onChange={(e) => setStrikeCsvFile(e.target.files?.[0] ?? null)}
+                  required
+                />
+              </label>
+              {strikeCsvFile ? (
+                <p className="text-xs text-base-content/60 truncate">
+                  Selected: {strikeCsvFile.name}
+                </p>
+              ) : null}
+              <div className="modal-action">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={closeStrikeCsvModal}
+                  disabled={strikeCsvUploading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary gap-2"
+                  disabled={strikeCsvUploading || !strikeCsvFile}
+                >
+                  {strikeCsvUploading ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="size-4" />
+                      Upload &amp; update
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+          <button
+            type="button"
+            className="modal-backdrop bg-black/50"
+            aria-label="Close"
+            onClick={() => {
+              if (!strikeCsvUploading) closeStrikeCsvModal();
+            }}
+          />
+        </div>
       )}
 
       {strikeModalOpen && (
