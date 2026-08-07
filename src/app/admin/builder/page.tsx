@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { authFetch } from "@/utils/api";
-import { sendBuilderPnlEmails } from "@/services/builder";
+import { sendBuilderPnlEmails, sendBuilderPnlWhatsapp } from "@/services/builder";
 import { StrategyBuilder, BuilderLeg, StrategyBuilderCreate, StrategyBuilderUpdate, BuilderLegCreate, BuilderLegUpdate } from "@/types/builder";
 import BuilderItem from "@/components/admin/builder/BuilderItem";
 import useAlert from "@/hooks/useAlert";
@@ -167,6 +167,22 @@ export default function BuilderPage() {
         }
     };
 
+    const handleSendPnlWhatsapp = async (builderId: number) => {
+        try {
+            const result = await sendBuilderPnlWhatsapp(builderId);
+            if (result.ok) {
+                alert.success(
+                    `${result.data.message} Task ID: ${result.data.task_id}`
+                );
+            } else {
+                alert.error(result.data.message || 'Failed to queue PnL WhatsApp');
+            }
+        } catch (error) {
+            console.error('Error sending PnL WhatsApp:', error);
+            alert.error('Failed to queue PnL WhatsApp');
+        }
+    };
+
     // --- Leg Actions ---
 
     const handleAddLeg = (builderId: number) => {
@@ -304,6 +320,7 @@ export default function BuilderPage() {
                                 onDeleteLeg={handleDeleteLeg}
                                 onRefreshStatus={handleRefreshStatus}
                                 onSendPnlEmails={handleSendPnlEmails}
+                                onSendPnlWhatsapp={handleSendPnlWhatsapp}
                             />
                         ))}
                         {builders.length === 0 && (

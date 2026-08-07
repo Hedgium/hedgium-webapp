@@ -62,6 +62,8 @@ export default function CompleteProfileStep({ onComplete }: CompleteProfileStepP
         throw new Error(errorData.detail || errorData.message || detailsRes.statusText);
       }
 
+      const detailsBody = await detailsRes.json();
+
       if (!skip) {
         if (panDocument || aadharDocument) {
           const formData = new FormData();
@@ -72,12 +74,31 @@ export default function CompleteProfileStep({ onComplete }: CompleteProfileStepP
             const errorData = await documentsRes.json();
             throw new Error(errorData.message || documentsRes.statusText);
           }
+          const docsBody = await documentsRes.json();
+          updateUser({
+            kyc_skipped: skip,
+            signup_step: docsBody.signup_step ?? "documents_uploaded",
+            verified: docsBody.verified,
+            onboarding: docsBody.onboarding,
+          });
+        } else {
+          updateUser({
+            kyc_skipped: skip,
+            signup_step: detailsBody.signup_step ?? "documents_uploaded",
+            verified: detailsBody.verified,
+            onboarding: detailsBody.onboarding,
+          });
         }
-        updateUser({ kyc_skipped: skip, signup_step: "documents_uploaded" });
         alert.success("Profile updated", { duration: 3000 });
         onComplete();
         return;
       }
+      updateUser({
+        kyc_skipped: true,
+        signup_step: detailsBody.signup_step,
+        verified: detailsBody.verified,
+        onboarding: detailsBody.onboarding,
+      });
       alert.success("Skipped KYC", { duration: 3000 });
     } catch (e) {
       console.error("saveProfile:", e);

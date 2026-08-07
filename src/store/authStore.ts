@@ -41,6 +41,8 @@ export interface User {
   signup_step: string;
   terms_accepted_at?: string | null;
   terms_version?: string | null;
+  fees_version?: string | null;
+  mandate_version?: string | null;
   client_category?: string | null;
   gstin?: string | null;
   created_at: string; // ISO date string
@@ -51,6 +53,16 @@ export interface User {
   is_staff: boolean | false;
   is_demo?: boolean;
   role?: string;
+  onboarding?: {
+    email_verified: boolean;
+    terms_accepted: boolean;
+    fees_accepted: boolean;
+    mandate_accepted: boolean;
+    documents_uploaded: boolean;
+    broker_profile_added: boolean;
+    pending: string[];
+    complete: boolean;
+  } | null;
 }
 
 interface AuthState {

@@ -186,7 +186,10 @@ export default function AdminWhatsAppPage() {
   }, [selectedId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
   }, [messages]);
 
   const handleSend = async () => {
@@ -246,16 +249,16 @@ export default function AdminWhatsAppPage() {
   };
 
   return (
-    <div className="p-4 lg:p-6 h-full flex flex-col max-w-7xl mx-auto w-full">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="p-4 lg:p-6 h-dvh min-h-0 flex flex-col max-w-7xl mx-auto w-full overflow-hidden">
+      <div className="flex items-center gap-2 mb-4 shrink-0">
         <MessageCircle className="size-6 text-primary" />
         <h1 className="text-2xl font-bold">WhatsApp Inbox</h1>
       </div>
 
-      <div className="flex flex-1 min-h-0 gap-4 h-[calc(100vh-8rem)]">
+      <div className="flex flex-1 min-h-0 gap-4">
         {/* Conversation list */}
-        <div className="w-full md:w-80 shrink-0 flex flex-col bg-base-100 rounded-lg border border-base-300 overflow-hidden">
-          <div className="p-3 border-b border-base-300">
+        <div className="w-full md:w-80 shrink-0 flex flex-col min-h-0 bg-base-100 rounded-lg border border-base-300 overflow-hidden">
+          <div className="p-3 border-b border-base-300 shrink-0">
             <label className="input input-bordered input-sm flex items-center gap-2">
               <Search className="size-4 opacity-60" />
               <input
@@ -267,7 +270,7 @@ export default function AdminWhatsAppPage() {
               />
             </label>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             {loadingConversations && conversations.length === 0 ? (
               <p className="p-4 text-sm text-base-content/60">Loading...</p>
             ) : conversations.length === 0 ? (
@@ -310,14 +313,14 @@ export default function AdminWhatsAppPage() {
         </div>
 
         {/* Message thread */}
-        <div className="flex-1 flex flex-col bg-base-100 rounded-lg border border-base-300 overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col min-h-0 bg-base-100 rounded-lg border border-base-300 overflow-hidden min-w-0">
           {!selected ? (
             <div className="flex-1 flex items-center justify-center text-base-content/50">
               Select a conversation
             </div>
           ) : (
             <>
-              <div className="px-4 py-3 border-b border-base-300">
+              <div className="px-4 py-3 border-b border-base-300 shrink-0">
                 <p className="font-semibold">{displayLabel(selected)}</p>
                 <p className="text-sm text-base-content/60">
                   {formatPhone(selected.wa_id)}
@@ -326,7 +329,7 @@ export default function AdminWhatsAppPage() {
                 </p>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
                 {loadingMessages && messages.length === 0 ? (
                   <p className="text-sm text-base-content/60">Loading messages...</p>
                 ) : messages.length === 0 ? (
@@ -374,7 +377,7 @@ export default function AdminWhatsAppPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="p-3 border-t border-base-300">
+              <div className="p-3 border-t border-base-300 shrink-0">
                 {!selected.can_reply_freeform ? (
                   <p className="text-xs text-warning mb-2">
                     Free-form replies are only available within 24 hours of the

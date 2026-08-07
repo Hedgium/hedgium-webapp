@@ -94,6 +94,9 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
         signup_step: data.signup_step,
         client_category: data.client_category ?? clientCategory,
         gstin: data.gstin ?? gstin.trim().toUpperCase(),
+        fees_version: data.fees_version as string | null | undefined,
+        verified: data.verified,
+        onboarding: data.onboarding ?? undefined,
       });
       alert.success("Fee Schedule accepted.", { duration: 2500 });
       onComplete();

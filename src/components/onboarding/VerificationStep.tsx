@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "nextjs-toploader/app";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
+import { isOnboardingComplete } from "@/lib/onboardingSteps";
 
 type VerificationStepProps = {
   onUploadDocuments: () => void;
@@ -37,7 +38,7 @@ export default function VerificationStep({ onUploadDocuments }: VerificationStep
   };
 
   useEffect(() => {
-    if (user?.signup_step === "verified") {
+    if (isOnboardingComplete(user)) {
       setRedirecting(true);
       alert.success("Verified. Redirecting to home.");
       router.push("/home");

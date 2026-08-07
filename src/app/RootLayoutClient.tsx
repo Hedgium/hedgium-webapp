@@ -50,16 +50,21 @@ export default function RootLayoutClient({
       }
 
       if (user?.kyc_skipped) {
-        const inAppShell = isAppShellPath(pathname);
-        const isSandbox = pathname?.startsWith('/sandbox');
-        const isAdmin = pathname?.startsWith('/admin') || pathname?.startsWith('/myadmin');
-        if (!inAppShell && !isSandbox && !isAdmin) {
-          router.push('/home');
+        const legalPending = user.onboarding?.pending?.some((p) =>
+          ["email_verified", "terms", "fees", "mandate"].includes(p)
+        );
+        if (!legalPending) {
+          const inAppShell = isAppShellPath(pathname);
+          const isSandbox = pathname?.startsWith('/sandbox');
+          const isAdmin = pathname?.startsWith('/admin') || pathname?.startsWith('/myadmin');
+          if (!inAppShell && !isSandbox && !isAdmin) {
+            router.push('/home');
+          }
+          return;
         }
-        return;
       }
 
-      if (isOnboardingIncomplete(user?.signup_step)) {
+      if (isOnboardingIncomplete(user)) {
         if (pathname !== ONBOARDING_PATH) {
           router.push(ONBOARDING_PATH);
         }

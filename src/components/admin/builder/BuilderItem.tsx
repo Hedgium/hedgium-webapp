@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StrategyBuilder, BuilderLeg } from '@/types/builder';
-import { Edit2, Trash2, RotateCw, Plus, Mail } from 'lucide-react';
+import { Edit2, Trash2, RotateCw, Plus, Mail, MessageCircle } from 'lucide-react';
 import BuilderLegItem from './BuilderLegItem';
 import { formatDateTimeMinutes } from '@/utils/formatDate';
 
@@ -13,6 +13,7 @@ interface BuilderItemProps {
     onDeleteLeg: (legId: number) => void;
     onRefreshStatus: (builderId: number) => void;
     onSendPnlEmails: (builderId: number) => Promise<void>;
+    onSendPnlWhatsapp: (builderId: number) => Promise<void>;
 }
 
 export default function BuilderItem({
@@ -24,9 +25,11 @@ export default function BuilderItem({
     onDeleteLeg,
     onRefreshStatus,
     onSendPnlEmails,
+    onSendPnlWhatsapp,
 }: BuilderItemProps) {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isSendingPnlEmails, setIsSendingPnlEmails] = useState(false);
+    const [isSendingPnlWhatsapp, setIsSendingPnlWhatsapp] = useState(false);
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
@@ -43,6 +46,18 @@ export default function BuilderItem({
             await onSendPnlEmails(builder.id);
         } finally {
             setIsSendingPnlEmails(false);
+        }
+    };
+
+    const handleSendPnlWhatsapp = async () => {
+        if (!confirm(`Send PnL WhatsApp to all clients for "${builder.name}"?`)) {
+            return;
+        }
+        setIsSendingPnlWhatsapp(true);
+        try {
+            await onSendPnlWhatsapp(builder.id);
+        } finally {
+            setIsSendingPnlWhatsapp(false);
         }
     };
 
@@ -70,20 +85,36 @@ export default function BuilderItem({
 
                 <div className="flex items-center space-x-2 mt-4 md:mt-0">
                     {builder.status === 'EXITED' && (
-                        <button
-                            type="button"
-                            onClick={handleSendPnlEmails}
-                            disabled={isSendingPnlEmails}
-                            className="btn btn-outline btn-sm btn-primary gap-1"
-                            title="Send PnL Emails"
-                        >
-                            {isSendingPnlEmails ? (
-                                <span className="loading loading-spinner loading-xs" />
-                            ) : (
-                                <Mail size={16} />
-                            )}
-                            Send PnL Emails
-                        </button>
+                        <>
+                            <button
+                                type="button"
+                                onClick={handleSendPnlEmails}
+                                disabled={isSendingPnlEmails}
+                                className="btn btn-outline btn-sm btn-primary gap-1"
+                                title="Send PnL Emails"
+                            >
+                                {isSendingPnlEmails ? (
+                                    <span className="loading loading-spinner loading-xs" />
+                                ) : (
+                                    <Mail size={16} />
+                                )}
+                                Send PnL Emails
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSendPnlWhatsapp}
+                                disabled={isSendingPnlWhatsapp}
+                                className="btn btn-outline btn-sm btn-primary gap-1"
+                                title="Send WhatsApp"
+                            >
+                                {isSendingPnlWhatsapp ? (
+                                    <span className="loading loading-spinner loading-xs" />
+                                ) : (
+                                    <MessageCircle size={16} />
+                                )}
+                                Send WhatsApp
+                            </button>
+                        </>
                     )}
                     <button
                         onClick={handleRefresh}
