@@ -318,8 +318,9 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                             />
                         </label>
                         <p className="text-xs text-base-content/50 mt-1">
-                            Checking this force-completes the onboarding checklist. Uncheck a checklist
-                            item below to require that step only (also unchecks verified).
+                            Checking this force-completes the onboarding checklist. Unchecking fees or
+                            mandate keeps the user verified (docs re-accept only). Other checklist
+                            items still uncheck verified.
                         </p>
                     </div>
                     <div className="md:col-span-2 space-y-2 rounded-lg border border-base-300 bg-base-100 p-3">
@@ -366,10 +367,13 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                                             checked={checked}
                                             onChange={(e) => {
                                                 const next = e.target.checked;
+                                                const keepVerified =
+                                                    field.key === "fees_accepted" ||
+                                                    field.key === "mandate_accepted";
                                                 setFormData((prev) => ({
                                                     ...prev,
                                                     [field.key]: next,
-                                                    ...(next
+                                                    ...(next || keepVerified
                                                         ? {}
                                                         : { user_verified: false }),
                                                 }));
