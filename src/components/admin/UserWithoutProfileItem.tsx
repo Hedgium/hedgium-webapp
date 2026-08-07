@@ -1,12 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { User, Profile } from "@/types/profile";
 import type { BrokerProxyPool } from "@/types/brokerProxyPool";
 import { Edit2, UserPlus, FileText } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import { userRoleLabel } from "@/constants/userRoles";
+import {
+  ONBOARDING_CHECKLIST_FIELDS,
+  fetchConsentVersionConfig,
+  type ConsentVersionConfig,
+} from "@/lib/consentVersions";
 
 export interface UserWithoutProfile {
   id: null;
@@ -64,8 +69,26 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
     aadhar_number: item.user.aadhar_number || "",
     signup_step: item.user.signup_step || "initiated",
     verified: item.user.verified ?? false,
+    email_verified: item.user.email_verified ?? false,
+    terms_accepted: item.user.terms_accepted ?? false,
+    fees_accepted: item.user.fees_accepted ?? false,
+    mandate_accepted: item.user.mandate_accepted ?? false,
+    documents_uploaded: item.user.documents_uploaded ?? false,
+    broker_profile_added: item.user.broker_profile_added ?? false,
   });
+  const [consentVersions, setConsentVersions] = useState<ConsentVersionConfig | null>(null);
   const alert = useAlert();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const versions = await fetchConsentVersionConfig();
+      if (!cancelled) setConsentVersions(versions);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const { user } = item;
   const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email;
@@ -109,6 +132,12 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
       aadhar_number: user.aadhar_number || "",
       signup_step: item.user.signup_step || "initiated",
       verified: item.user.verified ?? false,
+      email_verified: item.user.email_verified ?? false,
+      terms_accepted: item.user.terms_accepted ?? false,
+      fees_accepted: item.user.fees_accepted ?? false,
+      mandate_accepted: item.user.mandate_accepted ?? false,
+      documents_uploaded: item.user.documents_uploaded ?? false,
+      broker_profile_added: item.user.broker_profile_added ?? false,
     });
     setEditModalOpen(true);
   };
@@ -433,6 +462,39 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
                     className="checkbox checkbox-sm"
                   />
                 </label>
+                <p className="text-xs text-base-content/50 mt-1">
+                  Uncheck a checklist item below to force that step only.
+                </p>
+              </div>
+              <div className="rounded-lg border border-base-300 bg-base-100 p-3 space-y-2">
+                <p className="text-sm font-medium">Onboarding checklist</p>
+                <p className="text-xs text-base-content/50">
+                  Versions from System Config
+                  {consentVersions?.researchTerms
+                    ? ` — terms ${consentVersions.researchTerms}`
+                    : ""}
+                </p>
+                {ONBOARDING_CHECKLIST_FIELDS.map((field) => (
+                  <label
+                    key={field.key}
+                    className="label cursor-pointer justify-start gap-3 py-1"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={Boolean(formData[field.key as keyof typeof formData])}
+                      onChange={(e) => {
+                        const next = e.target.checked;
+                        setFormData((f) => ({
+                          ...f,
+                          [field.key]: next,
+                          ...(next ? {} : { verified: false }),
+                        }));
+                      }}
+                      className="checkbox checkbox-sm"
+                    />
+                    <span className="label-text text-sm">{field.label}</span>
+                  </label>
+                ))}
               </div>
               <div className="modal-action pt-4">
                 <button type="button" onClick={() => setEditModalOpen(false)} className="btn btn-ghost btn-sm">

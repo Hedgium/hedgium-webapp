@@ -29,6 +29,19 @@ export type OnboardingConsentUser = {
   gstin?: string | null;
   terms_accepted_at?: string | null;
   terms_version?: string | null;
+  fees_version?: string | null;
+  mandate_version?: string | null;
+  verified?: boolean;
+  onboarding?: {
+    email_verified: boolean;
+    terms_accepted: boolean;
+    fees_accepted: boolean;
+    mandate_accepted: boolean;
+    documents_uploaded: boolean;
+    broker_profile_added: boolean;
+    pending: string[];
+    complete: boolean;
+  } | null;
   [key: string]: unknown;
 };
 

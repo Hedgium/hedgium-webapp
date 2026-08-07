@@ -16,6 +16,7 @@ import { useAuthStore } from "@/store/authStore";
 import {
   type OnboardingStep,
   type OnboardingViewOverride,
+  isOnboardingComplete,
   resolveOnboardingStep,
 } from "@/lib/onboardingSteps";
 
@@ -37,19 +38,19 @@ export default function OnboardingFlow() {
   const [viewOverride, setViewOverride] = useState<OnboardingViewOverride>(null);
 
   const step = useMemo(
-    () => resolveOnboardingStep(user?.signup_step, Boolean(accessToken), viewOverride),
-    [user?.signup_step, accessToken, viewOverride]
+    () => resolveOnboardingStep(user, Boolean(accessToken), viewOverride),
+    [user, accessToken, viewOverride]
   );
 
   useEffect(() => {
     setViewOverride(null);
-  }, [user?.signup_step]);
+  }, [user?.signup_step, user?.onboarding?.pending?.join(",")]);
 
   useEffect(() => {
-    if (accessToken && user?.signup_step === "verified") {
+    if (accessToken && isOnboardingComplete(user)) {
       router.push("/home");
     }
-  }, [accessToken, user?.signup_step, router]);
+  }, [accessToken, user, router]);
 
   const stepperId = STEPPER_STEP_IDS[step];
   const showStepper = stepperId !== null;

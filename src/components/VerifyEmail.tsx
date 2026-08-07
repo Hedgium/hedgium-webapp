@@ -195,8 +195,14 @@ export default function VerifyEmail({
           setError(updateErr?.detail || "Email verified, but failed to update profile state.");
           return;
         }
+        const updated = await updateRes.json();
         alert.success("Email verified.", { duration: 3000 });
-        updateUser({ signup_step: "email_verified", email_verified: true });
+        updateUser({
+          signup_step: updated.signup_step ?? "email_verified",
+          email_verified: true,
+          verified: updated.verified,
+          onboarding: updated.onboarding ?? undefined,
+        });
         onVerified?.();
         if (successPath) {
           setRedirecting(true);
@@ -216,7 +222,28 @@ export default function VerifyEmail({
   };
 
   const handleSkip = () => {
-    updateUser({ signup_step: "email_verified", email_verified: true });
+    const pending = (user?.onboarding?.pending || []).filter((p) => p !== "email_verified");
+    updateUser({
+      signup_step: "email_verified",
+      email_verified: true,
+      onboarding: user?.onboarding
+        ? {
+            ...user.onboarding,
+            email_verified: true,
+            pending: pending.length ? pending : ["terms", "fees", "mandate", "documents", "broker"],
+            complete: false,
+          }
+        : {
+            email_verified: true,
+            terms_accepted: false,
+            fees_accepted: false,
+            mandate_accepted: false,
+            documents_uploaded: false,
+            broker_profile_added: false,
+            pending: ["terms", "fees", "mandate", "documents", "broker"],
+            complete: false,
+          },
+    });
     onSkip?.();
     if (skipPath) router.push(skipPath);
   };

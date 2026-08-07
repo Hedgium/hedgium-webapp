@@ -54,6 +54,8 @@ export default function TermsStep({ onBack, onComplete }: TermsStepProps) {
         signup_step: data.signup_step,
         terms_accepted_at: data.terms_accepted_at as string | null | undefined,
         terms_version: data.terms_version as string | null | undefined,
+        verified: data.verified,
+        onboarding: data.onboarding ?? undefined,
       });
       alert.success("Terms accepted.", { duration: 2500 });
       onComplete();

@@ -59,7 +59,12 @@ export default function MandateStep({ onBack, onComplete }: MandateStepProps) {
         typed_full_name: typedFullName.trim(),
         accepted: true,
       });
-      updateUser({ signup_step: data.signup_step });
+      updateUser({
+        signup_step: data.signup_step,
+        mandate_version: data.mandate_version as string | null | undefined,
+        verified: data.verified,
+        onboarding: data.onboarding ?? undefined,
+      });
       alert.success("Client Mandate accepted.", { duration: 2500 });
       onComplete();
     } catch (e) {

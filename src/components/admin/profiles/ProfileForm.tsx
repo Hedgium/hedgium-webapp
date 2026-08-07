@@ -2,11 +2,22 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Search, UserCircle2, X } from 'lucide-react';
 import { Profile } from '@/types/profile';
 import { authFetch } from '@/utils/api';
+import {
+    ONBOARDING_CHECKLIST_FIELDS,
+    fetchConsentVersionConfig,
+    type ConsentVersionConfig,
+} from '@/lib/consentVersions';
 
 export type ProfileFormPayload = Partial<Profile> & {
     mobile?: string | null;
     signup_step?: string | null;
     user_verified?: boolean;
+    email_verified?: boolean;
+    terms_accepted?: boolean;
+    fees_accepted?: boolean;
+    mandate_accepted?: boolean;
+    documents_uploaded?: boolean;
+    broker_profile_added?: boolean;
     proxy_password?: string;
     relationship_manager_id?: number | null;
 };
@@ -61,11 +72,18 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         mobile: '',
         signup_step: 'initiated',
         user_verified: false,
+        email_verified: false,
+        terms_accepted: false,
+        fees_accepted: false,
+        mandate_accepted: false,
+        documents_uploaded: false,
+        broker_profile_added: false,
         proxy_host: '',
         proxy_port: '' as string,
         proxy_username: '',
         proxy_password: '',
     });
+    const [consentVersions, setConsentVersions] = useState<ConsentVersionConfig | null>(null);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const submittingRef = useRef(false);
@@ -125,6 +143,17 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
     }, [debouncedRmSearch]);
 
     useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            const versions = await fetchConsentVersionConfig();
+            if (!cancelled) setConsentVersions(versions);
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
         if (!initialData) return;
         const u = initialData.user;
         setFormData({
@@ -139,6 +168,12 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             mobile: u?.mobile ?? '',
             signup_step: u?.signup_step ?? 'initiated',
             user_verified: u?.verified ?? false,
+            email_verified: u?.email_verified ?? false,
+            terms_accepted: u?.terms_accepted ?? false,
+            fees_accepted: u?.fees_accepted ?? false,
+            mandate_accepted: u?.mandate_accepted ?? false,
+            documents_uploaded: u?.documents_uploaded ?? false,
+            broker_profile_added: u?.broker_profile_added ?? false,
             proxy_host: initialData.proxy_host ?? '',
             proxy_port:
                 initialData.proxy_port !== null && initialData.proxy_port !== undefined
@@ -193,6 +228,12 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             mobile: formData.mobile || null,
             signup_step: formData.signup_step || null,
             user_verified: formData.user_verified,
+            email_verified: formData.email_verified,
+            terms_accepted: formData.terms_accepted,
+            fees_accepted: formData.fees_accepted,
+            mandate_accepted: formData.mandate_accepted,
+            documents_uploaded: formData.documents_uploaded,
+            broker_profile_added: formData.broker_profile_added,
             proxy_host: formData.proxy_host.trim() || null,
             proxy_port: formData.proxy_port.trim()
                 ? parseInt(formData.proxy_port, 10)
@@ -276,6 +317,78 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                                 className="checkbox"
                             />
                         </label>
+                        <p className="text-xs text-base-content/50 mt-1">
+                            Checking this force-completes the onboarding checklist. Uncheck a checklist
+                            item below to require that step only (also unchecks verified).
+                        </p>
+                    </div>
+                    <div className="md:col-span-2 space-y-2 rounded-lg border border-base-300 bg-base-100 p-3">
+                        <p className="text-sm font-medium text-base-content/80">Onboarding checklist</p>
+                        <p className="text-xs text-base-content/50">
+                            Current versions from System Config
+                            {consentVersions?.researchTerms
+                                ? ` — terms ${consentVersions.researchTerms}, fees ${consentVersions.feeSchedule || "—"}, mandate ${consentVersions.clientMandate || "—"}`
+                                : " (loading…)"}
+                            . Edit versions under Admin → Settings.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {ONBOARDING_CHECKLIST_FIELDS.map((field) => {
+                                const checked = Boolean(
+                                    formData[field.key as keyof typeof formData]
+                                );
+                                const userVersion =
+                                    field.key === "terms_accepted"
+                                        ? initialData.user?.terms_version
+                                        : field.key === "fees_accepted"
+                                          ? initialData.user?.fees_version
+                                          : field.key === "mandate_accepted"
+                                            ? initialData.user?.mandate_version
+                                            : null;
+                                const currentVersion =
+                                    "versionKey" in field &&
+                                    field.versionKey &&
+                                    consentVersions
+                                        ? consentVersions[field.versionKey]
+                                        : null;
+                                const stale =
+                                    checked &&
+                                    currentVersion &&
+                                    userVersion &&
+                                    userVersion !== currentVersion;
+                                return (
+                                    <label
+                                        key={field.key}
+                                        className="label cursor-pointer justify-start gap-3 py-1"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            name={field.key}
+                                            checked={checked}
+                                            onChange={(e) => {
+                                                const next = e.target.checked;
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    [field.key]: next,
+                                                    ...(next
+                                                        ? {}
+                                                        : { user_verified: false }),
+                                                }));
+                                            }}
+                                            className="checkbox checkbox-sm"
+                                        />
+                                        <span className="label-text text-sm">
+                                            {field.label}
+                                            {userVersion ? (
+                                                <span className="ml-1 text-xs text-base-content/50">
+                                                    ({userVersion}
+                                                    {stale ? " · stale" : ""})
+                                                </span>
+                                            ) : null}
+                                        </span>
+                                    </label>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </FormCollapse>

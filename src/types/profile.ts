@@ -8,6 +8,14 @@ export interface User {
     signup_step?: string | null;
     terms_accepted_at?: string | null;
     terms_version?: string | null;
+    fees_version?: string | null;
+    mandate_version?: string | null;
+    email_verified?: boolean | null;
+    terms_accepted?: boolean | null;
+    fees_accepted?: boolean | null;
+    mandate_accepted?: boolean | null;
+    documents_uploaded?: boolean | null;
+    broker_profile_added?: boolean | null;
     client_category?: string | null;
     gstin?: string | null;
     verified?: boolean | null;
