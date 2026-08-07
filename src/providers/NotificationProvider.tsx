@@ -15,15 +15,27 @@ export default function NotificationProvider({ children }: { children: React.Rea
   const retryCountRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(false);
+  /** True after the first HTTP notifications fetch for this login; reset on logout. */
+  const hasFetchedNotificationsRef = useRef(false);
   const maxRetries = 5;
+
+  // Reset fetch-once gate when the user logs out.
+  useEffect(() => {
+    if (!accessToken) {
+      hasFetchedNotificationsRef.current = false;
+    }
+  }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken) return;
 
     mountedRef.current = true;
 
-    // Load alerts via HTTP regardless of WebSocket — WS is only for live pushes.
-    void fetchNotifications();
+    // Load alerts once per authenticated session — not on every JWT rotation.
+    if (!hasFetchedNotificationsRef.current) {
+      hasFetchedNotificationsRef.current = true;
+      void fetchNotifications();
+    }
 
     if (isDemoUser(user)) {
       return () => {

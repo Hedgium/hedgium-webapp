@@ -65,6 +65,16 @@ export interface User {
   } | null;
 }
 
+/** Renew __app_session gate cookie (httpOnly) so it stays aligned with refresh_token. */
+async function renewAppSession(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    await fetch("/api/session", { method: "GET", credentials: "include" });
+  } catch {
+    // Non-fatal — proxy calls may still fail with session_required and clearLocalSession.
+  }
+}
+
 interface AuthState {
   accessToken: string | null;
   user: User | null;
@@ -79,6 +89,8 @@ interface AuthState {
   refreshAccessToken: () => Promise<boolean>;
   fetchUser: () => Promise<void>;
   logout: () => Promise<void>;
+  /** Clear local JWT state without calling logout API (used by authFetch on hard auth failure). */
+  clearLocalSession: () => void;
   autoLogin: () => Promise<void>;
   startAutoRefresh: () => void;
   stopAutoRefresh: () => void;
@@ -155,6 +167,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     const data = await res.json();
+    await renewAppSession();
     set({ accessToken: data.access_token, isLoading: false });
     set({ isInitializing: false });
 
@@ -176,14 +189,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (res.ok) {
         const data = await res.json();
+        await renewAppSession();
         set({ accessToken: data.access_token });
         return true;
       } else {
-        set({ accessToken: null, user: null });
+        get().clearLocalSession();
         return false;
       }
     } catch {
-      set({ accessToken: null, user: null });
+      get().clearLocalSession();
       return false;
     }
   },
@@ -204,8 +218,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else {
         set({ user: null });
         if (res.status === 401 || res.status === 403) {
-          get().stopAutoRefresh();
-          set({ accessToken: null });
+          get().clearLocalSession();
         }
       }
     } catch {
@@ -213,11 +226,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  clearLocalSession: () => {
+    get().stopAutoRefresh();
+    set({ accessToken: null, user: null });
+  },
+
   logout: async () => {
     // console.log("Logout Called");
-    get().stopAutoRefresh();
     const accessT = get().accessToken;
-    set({ accessToken: null, user: null });
+    get().clearLocalSession();
 
     await fetch("/api/proxy/users/auth/logout/", {
       method: "POST",
@@ -239,9 +256,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // if (!keys) {
     //   get().userKeyCreateUpdate();
     // }
-    
-    if (ok) get().startAutoRefresh();
-    
+
+    // Only start refresh loop if we still have a session after fetchUser
+    // (fetchUser may clearLocalSession on session_required / 401).
+    if (get().accessToken) get().startAutoRefresh();
   },
 
   startAutoRefresh: () => {
