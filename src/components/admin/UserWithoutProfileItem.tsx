@@ -463,7 +463,8 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
                   />
                 </label>
                 <p className="text-xs text-base-content/50 mt-1">
-                  Uncheck a checklist item below to force that step only.
+                  Uncheck fees or mandate to require re-accept without unverifying. Other
+                  checklist items still uncheck verified.
                 </p>
               </div>
               <div className="rounded-lg border border-base-300 bg-base-100 p-3 space-y-2">
@@ -484,10 +485,12 @@ export default function UserWithoutProfileItem({ item, onUpdate, onProfileCreate
                       checked={Boolean(formData[field.key as keyof typeof formData])}
                       onChange={(e) => {
                         const next = e.target.checked;
+                        const keepVerified =
+                          field.key === "fees_accepted" || field.key === "mandate_accepted";
                         setFormData((f) => ({
                           ...f,
                           [field.key]: next,
-                          ...(next ? {} : { verified: false }),
+                          ...(next || keepVerified ? {} : { verified: false }),
                         }));
                       }}
                       className="checkbox checkbox-sm"
