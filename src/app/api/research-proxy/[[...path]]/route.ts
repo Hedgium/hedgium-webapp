@@ -14,9 +14,10 @@ export async function POST(request: Request) {
 async function requireStaff(request: Request): Promise<NextResponse | null> {
   const session = await getSessionCookie();
   if (!session) {
+    // 403 (not 401) so clients do not treat this as JWT expiry and refresh-loop.
     return NextResponse.json(
-      { error: "Unauthorized - no valid session" },
-      { status: 401 }
+      { error: "session_required" },
+      { status: 403 }
     );
   }
 

@@ -1,6 +1,31 @@
 import Cookies from "js-cookie";
 import { useAuthStore } from "@/store/authStore";
 
+/** Shared in-flight refresh so concurrent 401s do not stampede. */
+let refreshInFlight: Promise<boolean> | null = null;
+
+async function singleFlightRefresh(): Promise<boolean> {
+  const { refreshAccessToken } = useAuthStore.getState();
+  if (!refreshAccessToken) return false;
+  if (!refreshInFlight) {
+    refreshInFlight = refreshAccessToken().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
+async function isSessionRequiredResponse(res: Response): Promise<boolean> {
+  if (res.status !== 403) return false;
+  try {
+    const clone = res.clone();
+    const data = (await clone.json()) as { error?: string };
+    return data?.error === "session_required";
+  } catch {
+    return false;
+  }
+}
+
 /**
  * When `user.is_demo` is true (from `GET users/auth/me/`), route data calls to
  * `/api/demo/...` synthetic fixtures. Auth and `users/token/*` stay on real paths.
@@ -51,6 +76,42 @@ function isFormData(body: unknown): body is FormData {
 }
 
 /**
+ * Authenticated fetch with single-flight refresh.
+ * Does not refresh on proxy `session_required` (403) — clears local session instead.
+ */
+async function withAuthRetry(
+  doFetch: (token?: string) => Promise<Response>,
+  options?: { canRetry?: () => boolean }
+): Promise<Response> {
+  const { accessToken, clearLocalSession } = useAuthStore.getState();
+  let res = await doFetch(accessToken || undefined);
+
+  if (await isSessionRequiredResponse(res)) {
+    clearLocalSession();
+    return res;
+  }
+
+  if (res.status === 401 && (options?.canRetry?.() ?? true)) {
+    const refreshed = await singleFlightRefresh();
+    if (refreshed) {
+      const { accessToken: newToken } = useAuthStore.getState();
+      res = await doFetch(newToken || undefined);
+
+      if (await isSessionRequiredResponse(res)) {
+        clearLocalSession();
+        return res;
+      }
+
+      if (res.status === 401) {
+        clearLocalSession();
+      }
+    }
+  }
+
+  return res;
+}
+
+/**
  * Generic fetch (no auth)
  */
 export async function myFetch(
@@ -90,8 +151,6 @@ export async function authFetch(
   const url = buildUrl(resolved, queryParams);
   const csrftoken = Cookies.get("csrftoken") ?? "";
 
-  const { accessToken, refreshAccessToken } = useAuthStore.getState();
-
   const doFetch = async (token?: string) => {
     const headers: HeadersInit = {
       "X-CSRFToken": csrftoken,
@@ -110,17 +169,7 @@ export async function authFetch(
     });
   };
 
-  let res = await doFetch(accessToken || undefined);
-
-  if (res.status === 401 && refreshAccessToken) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      const { accessToken: newToken } = useAuthStore.getState();
-      res = await doFetch(newToken || undefined);
-    }
-  }
-
-  return res;
+  return withAuthRetry(doFetch);
 }
 
 function buildResearchUrl(
@@ -144,7 +193,6 @@ export async function researchFetch(
 ): Promise<Response> {
   const url = buildResearchUrl(symbol, options);
   const csrftoken = Cookies.get("csrftoken") ?? "";
-  const { accessToken, refreshAccessToken } = useAuthStore.getState();
 
   const doFetch = async (token?: string) => {
     const headers: HeadersInit = {
@@ -160,17 +208,9 @@ export async function researchFetch(
     });
   };
 
-  let res = await doFetch(accessToken || undefined);
-
-  if (res.status === 401 && refreshAccessToken && !options?.signal?.aborted) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      const { accessToken: newToken } = useAuthStore.getState();
-      res = await doFetch(newToken || undefined);
-    }
-  }
-
-  return res;
+  return withAuthRetry(doFetch, {
+    canRetry: () => !options?.signal?.aborted,
+  });
 }
 
 function buildResearchProxyUrl(
@@ -197,7 +237,6 @@ export async function researchProxyFetch(
 ): Promise<Response> {
   const url = buildResearchProxyUrl(path, queryParams);
   const csrftoken = Cookies.get("csrftoken") ?? "";
-  const { accessToken, refreshAccessToken } = useAuthStore.getState();
 
   const doFetch = async (token?: string) => {
     const headers: HeadersInit = {
@@ -218,15 +257,5 @@ export async function researchProxyFetch(
     });
   };
 
-  let res = await doFetch(accessToken || undefined);
-
-  if (res.status === 401 && refreshAccessToken) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      const { accessToken: newToken } = useAuthStore.getState();
-      res = await doFetch(newToken || undefined);
-    }
-  }
-
-  return res;
+  return withAuthRetry(doFetch);
 }
