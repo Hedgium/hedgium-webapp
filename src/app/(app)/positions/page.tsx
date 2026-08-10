@@ -146,7 +146,7 @@ export default function PositionsPage() {
               id="positions-summary-heading"
               className="m-0 mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/70"
             >
-              Summary
+              E2 Summary
             </h2>
 
             {loadingSummary ? (
