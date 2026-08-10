@@ -8,7 +8,6 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  BarChart3,
   Wallet,
   ChevronDown,
   ChevronUp,
@@ -26,6 +25,8 @@ import {
   parsePnlSnapshotsResponse,
 } from "@/components/reports/ReportCharts";
 import type { ChartPeriod, PnlSnapshotRow } from "@/components/reports/ReportCharts";
+import PnlSummarySection from "@/components/reports/PnlSummarySection";
+import AllocationSummarySection from "@/components/reports/AllocationSummarySection";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionsTable, { type Position } from "@/components/positions/PositionsTable";
@@ -36,8 +37,8 @@ import useAlert from "@/hooks/useAlert";
 import {
   fetchAccountCreatedAt,
   fetchAllocationSummary,
+  fetchE2PnlSummary,
   fetchMarginSnapshots,
-  fetchPnlPeriodSummary,
   fetchPnlSnapshots,
   fetchTradeCycleReports,
   pollTaskUntilDone,
@@ -45,7 +46,7 @@ import {
 } from "@/services/reports";
 import type {
   AllocationSummary,
-  PnlPeriodSummary,
+  E2PnlSummary,
   ReportsScope,
   TradeCycleReportsResponse,
 } from "@/types/reports";
@@ -96,7 +97,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const [pnlSummary, setPnlSummary] = useState<PnlPeriodSummary | null>(null);
+  const [pnlSummary, setPnlSummary] = useState<E2PnlSummary | null>(null);
   const [allocationSummary, setAllocationSummary] = useState<AllocationSummary | null>(null);
   const [reportsData, setReportsData] = useState<TradeCycleReportsResponse | null>(null);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("daily");
@@ -165,26 +166,12 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
     setLoading(true);
     try {
       const [pnl, alloc, createdAt] = await Promise.all([
-        fetchPnlPeriodSummary(stableScope),
+        fetchE2PnlSummary(stableScope),
         fetchAllocationSummary(stableScope),
         fetchAccountCreatedAt(stableScope),
       ]);
-      if (pnl) {
-        setPnlSummary({
-          all_time: pnl.all_time,
-          last_month: pnl.last_month,
-          last_week: pnl.last_week,
-          today: pnl.today,
-        });
-      }
-      if (alloc) {
-        setAllocationSummary({
-          all_time: alloc.all_time,
-          last_month: alloc.last_month,
-          last_week: alloc.last_week,
-          today: alloc.today,
-        });
-      }
+      setPnlSummary(pnl);
+      setAllocationSummary(alloc);
       if (createdAt) setAccountCreatedAt(createdAt);
     } catch (e) {
       console.error("Error fetching summaries:", e);
@@ -278,15 +265,6 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
       <div className="relative mx-auto max-w-7xl space-y-10 px-4 py-8 md:px-8 md:py-10">
         {header}
 
-        {!isAdmin && !header ? (
-          <header className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight text-base-content md:text-3xl">Reports</h1>
-            <p className="text-sm text-base-content/70">
-              PnL summaries, performance charts, and trade cycle history.
-            </p>
-          </header>
-        ) : null}
-
         {isAdmin ? (
           <div className="flex justify-end">
             <button
@@ -306,76 +284,21 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
           <ReportsSummarySkeleton />
         ) : (
           (pnlSummary || allocationSummary) && (
-            <section className="space-y-6">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-primary shrink-0" aria-hidden />
-                  <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">
-                    At a glance
-                  </h2>
-                </div>
-                <p className="max-w-xl text-sm text-base-content/70">
-                  {isAdmin
-                    ? "Engine 2 (strategy) PnL summary and allocated trade cycle counts for this profile."
-                    : "PnL summary and allocated trade cycle counts by period."}
-                </p>
-              </div>
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10">
-                {pnlSummary && (
-                  <div>
-                    <div className="mb-3 flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
-                      <h3 className="text-sm font-semibold uppercase tracking-wide text-base-content/80">
-                        {isAdmin ? "E2 PnL summary" : "PnL summary"}
-                      </h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {Object.entries(pnlSummary).map(([period, value]) => (
-                        <div
-                          key={period}
-                          className="rounded-xl border border-base-300/50 bg-base-100/80 p-3"
-                        >
-                          <span className="text-xs text-base-content/70 uppercase">
-                            {period.replace(/_/g, " ")}
-                          </span>
-                          <p
-                            className={`mt-1 font-semibold tabular-nums ${
-                              value != null && value >= 0 ? "text-success" : "text-error"
-                            }`}
-                          >
-                            {formatMoneyIN(value ?? 0)}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {allocationSummary && (
-                  <div>
-                    <div className="mb-3 flex items-center gap-2">
-                      <Briefcase className="h-5 w-5 text-primary" aria-hidden />
-                      <h3 className="text-sm font-semibold uppercase tracking-wide text-base-content/80">
-                        Allocated trade cycles
-                      </h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {Object.entries(allocationSummary).map(([period, value]) => (
-                        <div
-                          key={period}
-                          className="rounded-xl border border-base-300/50 bg-base-100/80 p-3"
-                        >
-                          <span className="text-xs text-base-content/70 uppercase">
-                            {period.replace(/_/g, " ")}
-                          </span>
-                          <p className="mt-1 font-semibold tabular-nums text-primary">
-                            {value != null ? value : 0}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+            <section className="space-y-8">
+              {pnlSummary ? (
+                <PnlSummarySection
+                  pnlSummary={pnlSummary}
+                  accountCreatedAt={accountCreatedAt}
+                />
+              ) : null}
+
+              {allocationSummary ? (
+                <AllocationSummarySection
+                  allocationSummary={allocationSummary}
+                  pnlInceptionDate={pnlSummary?.pnl_inception_date}
+                  accountCreatedAt={accountCreatedAt}
+                />
+              ) : null}
             </section>
           )
         )}

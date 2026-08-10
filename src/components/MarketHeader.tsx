@@ -203,7 +203,7 @@ export default function MarketHeader() {
   }, [ticks, allInstruments, isWsStable]);
 
   return (
-    <section className="mb-0" aria-labelledby="market-heading">
+    <section className="mb-8" aria-labelledby="market-heading">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
           <h2

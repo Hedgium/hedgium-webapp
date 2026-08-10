@@ -30,7 +30,9 @@ interface Props {
 
 const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) => {
   const alert = useAlert();
+  const isSandbox = Boolean(fetchFn);
   const doFetch = fetchFn ?? authFetch;
+  const [cycle, setCycle] = useState<TradeCycle>(tradeCycle);
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -47,6 +49,10 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) =
     total_sell_qty: number;
   } | null>(null);
 
+  useEffect(() => {
+    setCycle(tradeCycle);
+  }, [tradeCycle]);
+
   const getTradeCyclePositions = useCallback(async (id: string, loadAll: boolean = false) => {
     if (loadAll) {
       setLoadingMore(true);
@@ -56,8 +62,8 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) =
     }
     try {
       const url = loadAll 
-        ? `trade-cycles/${tradeCycle.id}/details?load_all=true`
-        : `trade-cycles/${tradeCycle.id}/details`;
+        ? `trade-cycles/${id}/details?load_all=true`
+        : `trade-cycles/${id}/details`;
       const res = await doFetch(url);
       const data = await res.json();
       setUnmappedOrders(data.unmapped_orders)
@@ -74,19 +80,40 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) =
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [tradeCycle.id]);
+  }, [cycle.id, fetchFn]);
 
   async function loadAllPositions() {
-    await getTradeCyclePositions(tradeCycle.id, true);
+    await getTradeCyclePositions(cycle.id, true);
+  }
+
+  async function activateTradeCycle() {
+    alert("Trade Cycle Activated", {
+      duration: 2000,
+    });
+
+    setCycle((prev) => ({
+      ...prev,
+      state: "ACTIVATED",
+    }));
+    try {
+      const res = await authFetch(`trade-cycles/activate-trade/${cycle.id}/`, {
+        method: "POST",
+      });
+      await res.json();
+    } catch (err) {
+      console.error("Activation failed:", err);
+    }
   }
 
   useEffect(() => {
-    if (tradeCycle) getTradeCyclePositions(tradeCycle?.id);
-  }, [tradeCycle, getTradeCyclePositions]);
+    if (cycle) getTradeCyclePositions(cycle.id);
+  }, [cycle.id, getTradeCyclePositions]);
 
   const statusMap: Record<string, JSX.Element> = {
     NEW: <Clock width={14} className="text-warning" />,
     PENDING: <Clock width={14} className="text-warning" />,
+    ACTIVATED: <Clock width={14} className="text-warning" />,
+    ADJUSTED: <CheckCircle width={14} className="text-success" />,
     COMPLETED: <CheckCircle width={14} className="text-success" />,
     STOPPED: <XCircle width={14} className="text-error" />,
   };
@@ -97,7 +124,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) =
 
   return (
     <div
-      id={tradeCycle.id}
+      id={cycle.id}
       className="group relative w-full overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20"
     >
       {/* <div
@@ -108,15 +135,26 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) =
         <div className="mb-4 flex flex-col gap-3 border-b border-base-300/60 pb-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
             <h3 className="text-lg font-semibold leading-snug tracking-tight text-base-content md:text-xl">
-              {tradeCycle.name}
+              {cycle.name}
             </h3>
-            <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-base-300/70 bg-base-200/50 px-2.5 py-0.5 text-xs font-medium text-base-content/85">
-              {statusMap[tradeCycle.state]} {tradeCycle.state}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-base-300/70 bg-base-200/50 px-2.5 py-0.5 text-xs font-medium text-base-content/85">
+                {statusMap[cycle.state]} {cycle.state}
+              </span>
+              {cycle.state === "NEW" && !isSandbox && (
+                <button
+                  type="button"
+                  onClick={activateTradeCycle}
+                  className="btn btn-outline btn-primary btn-xs rounded-full border-primary/40 px-4"
+                >
+                  Activate
+                </button>
+              )}
+            </div>
           </div>
           <div className="shrink-0 text-right text-[11px] tabular-nums text-base-content/45">
-            <div>#{tradeCycle.id}</div>
-            <div className="mt-0.5">{new Date(tradeCycle.created_at).toLocaleDateString()}</div>
+            <div>#{cycle.id}</div>
+            <div className="mt-0.5">{new Date(cycle.created_at).toLocaleDateString()}</div>
           </div>
         </div>
 

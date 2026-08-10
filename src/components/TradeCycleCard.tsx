@@ -34,7 +34,15 @@ interface TradeCycleInput {
   state: string;
   sub_state: string;
   created_at: string;
+  pnl_total?: number | string | null;
+  pnl_updated_at?: string | null;
   adjustments?: unknown[];
+}
+
+function pnlClass(value: number): string {
+  if (value > 0) return "text-success";
+  if (value < 0) return "text-error";
+  return "text-base-content/75";
 }
 
 interface Props {
@@ -89,6 +97,11 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
   const legs: Leg[] = latestAdjustment?.legs ?? [];
   const isLocked = cycle.state === "LOCKED";
   const { pill: statePillClass, icon: stateIcon } = stateStyles(cycle.state);
+  const pnlTotal =
+    cycle.pnl_total == null || cycle.pnl_total === ""
+      ? null
+      : Number(cycle.pnl_total);
+  const hasPnl = pnlTotal != null && !Number.isNaN(pnlTotal);
 
   async function activateTradeCycle() {
     const url = `trade-cycles/activate-trade/${cycle.id}/`;
@@ -173,7 +186,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
           <>
             <div className="mb-3 flex items-center justify-between gap-2">
               <span className="text-[11px] font-semibold tracking-[0.18em] text-base-content/45">
-                LEGS
+                INITIAL LEGS
               </span>
               {legs.length > 0 ? (
                 <span className="text-xs tabular-nums text-base-content/40">{legs.length} total</span>
@@ -236,26 +249,43 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
         <div className="flex-1 min-h-2" />
 
         {!isLocked && (
-          <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-base-300/50 pt-4">
-            {cycle.state !== "NEW" && (
-              <Link
-                href={isSandbox ? "/sandbox" : "/positions"}
-                className="btn btn-primary btn-sm gap-1.5 rounded-full px-5 shadow-sm shadow-primary/15"
-              >
-                View positions
-                <ArrowRight className="h-3.5 w-3.5 opacity-90" aria-hidden />
-              </Link>
+          <div className="mt-5 flex flex-wrap items-end justify-between gap-3 border-t border-base-300/50 pt-4">
+            {hasPnl ? (
+              <div className="flex items-baseline gap-2">
+                <span className="text-[11px] font-semibold tracking-[0.14em] text-base-content/45">
+                  PnL
+                </span>
+                <span
+                  className={`text-base font-semibold tabular-nums md:text-lg ${pnlClass(pnlTotal)}`}
+                >
+                  {formatMoneyIN(pnlTotal)}
+                </span>
+              </div>
+            ) : (
+              <div />
             )}
 
-            {cycle.state === "NEW" && !isSandbox && (
-              <button
-                type="button"
-                onClick={activateTradeCycle}
-                className="btn btn-outline btn-primary btn-sm rounded-full border-primary/40 px-5"
-              >
-                Activate
-              </button>
-            )}
+            <div className="flex flex-wrap justify-end gap-2">
+              {cycle.state !== "NEW" && (
+                <Link
+                  href={isSandbox ? "/sandbox" : "/positions"}
+                  className="btn btn-primary btn-sm gap-1.5 rounded-full px-5 shadow-sm shadow-primary/15"
+                >
+                  View positions
+                  <ArrowRight className="h-3.5 w-3.5 opacity-90" aria-hidden />
+                </Link>
+              )}
+
+              {cycle.state === "NEW" && !isSandbox && (
+                <button
+                  type="button"
+                  onClick={activateTradeCycle}
+                  className="btn btn-outline btn-primary btn-sm rounded-full border-primary/40 px-5"
+                >
+                  Activate
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

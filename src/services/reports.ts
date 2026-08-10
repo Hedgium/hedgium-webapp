@@ -1,6 +1,7 @@
 import { authFetch } from "@/utils/api";
 import type {
   AllocationSummary,
+  E2PnlSummary,
   MarginSnapshotRow,
   PnlPeriodSummary,
   ReportsScope,
@@ -19,6 +20,13 @@ function pnlPeriodPath(scope: ReportsScope): string {
     return `positions/pnl/${scope.profileId}/`;
   }
   return "positions/pnl/";
+}
+
+function e2PnlSummaryPath(scope: ReportsScope): string {
+  if (scope.mode === "admin") {
+    return `positions/pnl/summary/${scope.profileId}/`;
+  }
+  return "positions/pnl/summary/";
 }
 
 function allocationSummaryPath(scope: ReportsScope): string {
@@ -62,6 +70,12 @@ export async function fetchPnlPeriodSummary(scope: ReportsScope): Promise<PnlPer
   if (!res.ok) return null;
   const data = (await res.json()) as { pnl_summary?: PnlPeriodSummary };
   return data.pnl_summary ?? null;
+}
+
+export async function fetchE2PnlSummary(scope: ReportsScope): Promise<E2PnlSummary | null> {
+  const res = await authFetch(e2PnlSummaryPath(scope));
+  if (!res.ok) return null;
+  return (await res.json()) as E2PnlSummary;
 }
 
 export async function fetchAllocationSummary(scope: ReportsScope): Promise<AllocationSummary | null> {

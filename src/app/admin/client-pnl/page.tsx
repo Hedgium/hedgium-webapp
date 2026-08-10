@@ -13,9 +13,13 @@ import { USER_ROLE_FILTER_OPTIONS, userRoleLabel } from "@/constants/userRoles";
 type PnlSummary = {
   month: string;
   quarter: string;
+  fy?: string;
+  week?: string;
+  week_pnl?: number;
   pnl: number;
   quarter_pnl: number;
   ytd_pnl: number;
+  all_time_pnl?: number;
 };
 
 type LiveMargin = {

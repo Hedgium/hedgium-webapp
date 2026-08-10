@@ -1,9 +1,13 @@
 export type TradeCycleAllocationSummary = {
+  week?: string;
+  month?: string;
+  quarter?: string;
+  fy?: string;
+  week_count?: number;
+  month_count?: number;
+  quarter_count?: number;
+  ytd_count?: number;
   all_time: number;
-  last_year: number;
-  last_month: number;
-  last_week: number;
-  today: number;
 };
 
 export type TradeCycleAllocationSummaryResponse = {
