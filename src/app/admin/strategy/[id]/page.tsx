@@ -10,12 +10,17 @@ import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { CheckCircle, ChevronLeft, Plus, Layers, Table2, RotateCcw, RotateCw } from "lucide-react";
+import { CheckCircle, ChevronLeft, Plus, Layers, Table2, Activity, RotateCcw, RotateCw } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
 import StrategyTradeCyclesSkeleton from "@/components/skeletons/StrategyTradeCyclesSkeleton";
 import ManualAdjustmentModal, {
   type ManualAdjustmentInitialValues,
 } from "@/components/admin/strategy/ManualAdjustmentModal";
+
+const StrategyMetricSnapshotsModal = dynamic(
+  () => import("@/components/admin/strategy/StrategyMetricSnapshots"),
+  { ssr: false, loading: () => null }
+);
 
 const StrategyOptionChainModal = dynamic(
   () => import("@/components/admin/strategy/StrategyOptionChainModal"),
@@ -125,6 +130,7 @@ export default function StrategyDetailPage() {
   const [manualAdjustmentInitial, setManualAdjustmentInitial] =
     useState<ManualAdjustmentInitialValues | null>(null);
   const [showOptionChainModal, setShowOptionChainModal] = useState(false);
+  const [showMetricSnapshotsModal, setShowMetricSnapshotsModal] = useState(false);
   const [strategyRefreshing, setStrategyRefreshing] = useState(false);
   const [adjustmentsRefreshVersion, setAdjustmentsRefreshVersion] = useState(0);
   const alert = useAlert();
@@ -364,6 +370,15 @@ export default function StrategyDetailPage() {
                 <Table2 className="size-4" />
                 Option chains
               </button>
+              <button
+                type="button"
+                onClick={() => setShowMetricSnapshotsModal(true)}
+                title="5-minute ACTIVE builder metric snapshots"
+                className="btn btn-outline btn-sm gap-1.5 border-base-content/20"
+              >
+                <Activity className="size-4" />
+                Metric snapshots
+              </button>
               {strategy?.completed ? (
                 <button
                   type="button"
@@ -570,6 +585,14 @@ export default function StrategyDetailPage() {
             underlyingNames={strategy.underlying_names ?? []}
             underlyingInstrumentTokens={strategy.underlying_instrument_tokens ?? {}}
             onClose={() => setShowOptionChainModal(false)}
+          />
+        )}
+
+        {showMetricSnapshotsModal && strategy && (
+          <StrategyMetricSnapshotsModal
+            strategyId={strategyId}
+            strategyName={strategy.name}
+            onClose={() => setShowMetricSnapshotsModal(false)}
           />
         )}
       </div>
