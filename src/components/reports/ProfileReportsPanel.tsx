@@ -265,20 +265,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
       <div className="relative mx-auto max-w-7xl space-y-10 px-4 py-8 md:px-8 md:py-10">
         {header}
 
-        {isAdmin ? (
-          <div className="flex justify-end">
-            <button
-              type="button"
-              className="btn btn-outline btn-sm gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              onClick={() => void handleRefreshPnl()}
-              disabled={refreshingPnl}
-              aria-busy={refreshingPnl}
-            >
-              <RotateCw className={`h-4 w-4 ${refreshingPnl ? "animate-spin" : ""}`} aria-hidden />
-              Refresh PnL
-            </button>
-          </div>
-        ) : null}
+       
 
         {loading ? (
           <ReportsSummarySkeleton />

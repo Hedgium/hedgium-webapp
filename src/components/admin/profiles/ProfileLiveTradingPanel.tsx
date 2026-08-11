@@ -509,7 +509,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
               className="btn btn-outline btn-sm gap-2"
             >
               <BarChart3 size={16} />
-              E2 Reports
+              Reports
             </Link>
             {placeOrderButton}
           </div>
