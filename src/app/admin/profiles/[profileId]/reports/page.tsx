@@ -25,7 +25,7 @@ function AdminProfileReportsHeader({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary shrink-0" aria-hidden />
-            <h1 className="text-2xl font-semibold tracking-tight">E2 Reports</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
           </div>
           {profile ? (
             <p className="text-sm text-base-content/60">

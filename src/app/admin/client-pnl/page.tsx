@@ -523,7 +523,7 @@ export default function AdminClientPnlPage() {
                           title="E2 reports"
                         >
                           <BarChart3 className="h-3.5 w-3.5" aria-hidden />
-                          <span className="hidden sm:inline">E2 Reports</span>
+                          <span className="hidden sm:inline">Reports</span>
                         </Link>
                         {!row.brokerLoggedIn ? (
                           <span className="badge badge-warning badge-xs">offline</span>
