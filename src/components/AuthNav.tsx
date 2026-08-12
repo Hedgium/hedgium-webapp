@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { LineChart, Settings, Moon, Sun, LogOut, FlaskConical } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
-import { useSandboxStore } from "@/store/sandboxStore";
+import { useSimulationStore } from "@/store/simulationStore";
 import KycStatusIndicator from "@/components/KycStatusIndicator";
 import { useHasAssignedTradeCycles } from "@/hooks/useHasAssignedTradeCycles";
 
@@ -17,12 +17,12 @@ export default function AuthNav() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { logout, user } = useAuthStore();
-  const { clearSandboxPlan } = useSandboxStore();
-  const isSandbox = pathname?.startsWith("/sandbox");
+  const { clearSimulationPlan } = useSimulationStore();
+  const isSimulation = pathname?.startsWith("/simulation");
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { hasAssigned, loading: tradeCyclesLoading } = useHasAssignedTradeCycles();
-  const showSandbox = user?.is_demo || (!tradeCyclesLoading && hasAssigned === false);
+  const showSimulation = user?.is_demo || (!tradeCyclesLoading && hasAssigned === false);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -108,22 +108,22 @@ export default function AuthNav() {
                 <Settings className="w-4 h-4" aria-hidden="true" /> Settings
               </Link>
             </li>
-            {showSandbox ? (
+            {showSimulation ? (
               <li>
-                {isSandbox ? (
+                {isSimulation ? (
                   <button
                     type="button"
                     onClick={() => {
-                      clearSandboxPlan();
+                      clearSimulationPlan();
                       setMenuOpen(false);
-                      router.push("/sandbox");
+                      router.push("/simulation");
                     }}
                   >
                     <FlaskConical className="w-4 h-4" aria-hidden="true" /> Change plan
                   </button>
                 ) : (
-                  <Link href="/sandbox" onClick={() => setMenuOpen(false)}>
-                    <FlaskConical className="w-4 h-4" aria-hidden="true" /> Switch to Sandbox
+                  <Link href="/simulation" onClick={() => setMenuOpen(false)}>
+                    <FlaskConical className="w-4 h-4" aria-hidden="true" /> Switch to Simulation
                   </Link>
                 )}
               </li>

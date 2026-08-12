@@ -7,7 +7,7 @@ type MaxWidth = "3xl" | "6xl" | "7xl";
 /**
  * Visual shell aligned with main app pages: ambient gradient, grid texture, constrained content width.
  */
-export default function SandboxPageShell({
+export default function SimulationPageShell({
   children,
   maxWidth = "7xl",
   className = "",

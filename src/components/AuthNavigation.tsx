@@ -38,7 +38,7 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
 
   const { unreadCount } = useNotificationStore();
   const { hasAssigned, loading: tradeCyclesLoading } = useHasAssignedTradeCycles();
-  const showSandbox = user?.is_demo || (!tradeCyclesLoading && hasAssigned === false);
+  const showSimulation = user?.is_demo || (!tradeCyclesLoading && hasAssigned === false);
 
   const sendToPage = (url: string) => {
     router.push(url);
@@ -68,14 +68,14 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
         {/* Navigation items */}
         <nav className="flex-1 overflow-y-auto px-4 mt-4" aria-label="Primary">
           <ul className="gap-2 space-y-1">
-            {showSandbox ? (
+            {showSimulation ? (
               <li>
                 <Link
-                  href="/sandbox"
+                  href="/simulation"
                   className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg transition-all hover:bg-base-300/70 text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <FlaskConical className="h-5 w-5" aria-hidden="true" />
-                  <span className="font-medium">Sandbox</span>
+                  <span className="font-medium">Simulation</span>
                 </Link>
               </li>
             ) : null}

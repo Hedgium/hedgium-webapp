@@ -4,7 +4,10 @@ export interface LegPresetConfig {
     legs: Array<{
         option_type: 'CE' | 'PE';
         action: 'BUY' | 'SELL';
-        strike_distance: number;
+        /** Integer ATM offset in strike steps. Mutually exclusive with strike_pct. */
+        strike_distance?: number;
+        /** Percent of ATM (signed: + above, - below). Resolved to strike_distance at create. */
+        strike_pct?: number;
         expiry_ref: string;
         when?: Record<string, string[]>;
     }>;

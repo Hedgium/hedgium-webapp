@@ -1,16 +1,16 @@
 # WCAG 2.1 Level AA Audit Report — `hedgium_webapp`
 
 **Date:** 2026-07-03  
-**Scope:** `hedgium_webapp/src` (authenticated trader shell, auth/onboarding, sandbox, admin, in-app marketing sections)  
+**Scope:** `hedgium_webapp/src` (authenticated trader shell, auth/onboarding, simulation, admin, in-app marketing sections)  
 **Method:** Static code audit against WCAG 2.1 Level AA success criteria; automated fixes applied where safe without changing product behaviour.
 
 ---
 
 ## Executive summary
 
-The webapp already had strong accessibility foundations: `lang="en"` on `<html>`, skip links on the main app and auth shells, DaisyUI theme tokens tuned for contrast, labelled auth forms, toast live regions, and sandbox tab semantics.
+The webapp already had strong accessibility foundations: `lang="en"` on `<html>`, skip links on the main app and auth shells, DaisyUI theme tokens tuned for contrast, labelled auth forms, toast live regions, and simulation tab semantics.
 
-This pass added **global `prefers-reduced-motion` support**, **skip links on sandbox and admin layouts**, **table semantics** on shared position tables, **dialog ARIA** on key modals, **page-level heading hierarchy** on Home/Positions/Reports, **aria-live** regions for dynamic lists, **accessible names** on icon-only controls, **form labels** on admin search fields, and **contrast / touch-target** improvements on trader-facing UI.
+This pass added **global `prefers-reduced-motion` support**, **skip links on simulation and admin layouts**, **table semantics** on shared position tables, **dialog ARIA** on key modals, **page-level heading hierarchy** on Home/Positions/Reports, **aria-live** regions for dynamic lists, **accessible names** on icon-only controls, **form labels** on admin search fields, and **contrast / touch-target** improvements on trader-facing UI.
 
 **Remaining manual review** is concentrated in admin modals (focus trap, native `<dialog>` migration), Recharts accessibility, live video contrast on the marketing hero, and spot-checking contrast ratios in the browser with a checker (e.g. axe, WAVE, Lighthouse).
 
@@ -28,13 +28,13 @@ This pass added **global `prefers-reduced-motion` support**, **skip links on san
 | Toast announcements | 4.1.3 | `AlertsContainer.tsx:43-47` | Persistent `aria-live="polite"` |
 | Demo banner | 4.1.3 | `DemoModeBanner.tsx:17-19` | `role="status"` + labelled dismiss |
 | Primary navigation | 2.4.4, 4.1.2 | `AuthNavigation.tsx` | `aria-label="Primary"`, `aria-current`, sr-only unread counts |
-| Sandbox tabs | 4.1.2 | `SandboxPositionsContent.tsx` | `tablist` / `tab` / `tabpanel` |
+| Simulation tabs | 4.1.2 | `SimulationPositionsContent.tsx` | `tablist` / `tab` / `tabpanel` |
 | Native dialogs (broker) | 2.4.3, 4.1.2 | `BrokerCredentialHelpModal.tsx`, `BrokerConnect.tsx` login `<dialog>` | `showModal()` focus trap |
 | Reference modals | 2.4.3 | `TradeCycleDetailsModal.tsx`, `ProfileLiveModal.tsx` | `role="dialog"`, `aria-modal`, `aria-labelledby` |
 | Onboarding forms | 1.3.1, 4.1.3 | `onboarding/page.tsx`, forgot/reset password | Labelled inputs, `role="alert"` |
 | Settings page title | 2.4.6 | `settings/page.tsx:41` | Single `<h1>Settings</h1>` |
 | Alerts page title | 2.4.6 | `alerts/page.tsx:82` | Single `<h1>Alerts</h1>` |
-| Sandbox page title | 2.4.6 | `sandbox/page.tsx:27` | Single `<h1>Sandbox</h1>` |
+| Simulation page title | 2.4.6 | `simulation/page.tsx:27` | Single `<h1>Simulation</h1>` |
 | FAQ disclosures | 2.1.1 | `FAQSection.tsx` | Native `<details>` / `<summary>` |
 
 ---
@@ -46,12 +46,12 @@ This pass added **global `prefers-reduced-motion` support**, **skip links on san
 | # | Criterion | File:Line | Issue | Fix |
 |---|-----------|-----------|-------|-----|
 | G1 | 2.3.3 | `global.css` | No `prefers-reduced-motion` handling for animations/transitions/AOS | Added `@media (prefers-reduced-motion: reduce)` block; disables animations and AOS transforms |
-| G2 | 2.4.1 | `sandbox/layout.tsx:23-35` | No skip link; `<main>` lacked `id="main-content"` | Added skip link, `id="main-content"`, `tabIndex={-1}`; banner wrapped in `role="status"` |
+| G2 | 2.4.1 | `simulation/layout.tsx:23-35` | No skip link; `<main>` lacked `id="main-content"` | Added skip link, `id="main-content"`, `tabIndex={-1}`; banner wrapped in `role="status"` |
 | G3 | 2.4.1 | `admin/AdminLayoutClient.tsx:51-58` | No skip link on admin shell | Added skip link + `#main-content` on `<main>` |
 | G4 | 1.3.1 | `admin/AdminLayoutClient.tsx:53` | `<aside>` without accessible name | `aria-label="Admin sidebar"` |
 | G5 | 1.3.1 | `admin/Sidebar.tsx:69` | `<nav>` without accessible name | `aria-label="Admin navigation"` |
 
-### Trader shell — Home, Positions, Reports, Alerts, Sandbox
+### Trader shell — Home, Positions, Reports, Alerts, Simulation
 
 | # | Criterion | File:Line | Issue | Fix |
 |---|-----------|-----------|-------|-----|
@@ -70,9 +70,9 @@ This pass added **global `prefers-reduced-motion` support**, **skip links on san
 | T13 | 4.1.3 | `BrokerConnect.tsx:491` | Broker status error not announced | `role="alert"` on `statusError` |
 | T14 | 2.5.5 | `DemoModeBanner.tsx:32` | Dismiss button `btn-xs` (~24px) | `btn-sm` + `min-h-11 min-w-11` |
 | T15 | 2.5.5 | `AuthNav.tsx:84` | Account menu 32×32px | `min-h-11 min-w-11` |
-| T16 | 1.4.3 | `sandbox/page.tsx:31` | `text-base-content/55` subtitle | Raised to `/70` |
-| T17 | 2.5.5 | `SandboxPositionsContent.tsx:208` | Refresh 36×36px | `min-h-11 min-w-11` |
-| T18 | 4.1.3 | `SandboxPositionsContent.tsx:338` | Load-more / phase content not announced | `aria-live="polite"` + `aria-busy` on tabpanel |
+| T16 | 1.4.3 | `simulation/page.tsx:31` | `text-base-content/55` subtitle | Raised to `/70` |
+| T17 | 2.5.5 | `SimulationPositionsContent.tsx:208` | Refresh 36×36px | `min-h-11 min-w-11` |
+| T18 | 4.1.3 | `SimulationPositionsContent.tsx:338` | Load-more / phase content not announced | `aria-live="polite"` + `aria-busy` on tabpanel |
 | T19 | 2.4.3 | `settings/page.tsx:76` | Extra tab stop on tabpanel (`tabIndex={0}`) | Removed redundant `tabIndex` |
 
 ### Shared components & modals
@@ -158,7 +158,7 @@ These were identified in the audit but **not** fully remediated (require design 
 
 | Criterion | Files | Issue | Recommended action |
 |-----------|-------|-------|-------------------|
-| 1.3.1 | `sandbox/layout.tsx` | Disclaimer banner inside flex column, not in landmark | Acceptable; optional `role="region" aria-label="Sandbox notice"` |
+| 1.3.1 | `simulation/layout.tsx` | Disclaimer banner inside flex column, not in landmark | Acceptable; optional `role="region" aria-label="Simulation notice"` |
 | 2.4.6 | Admin sub-pages | Some admin routes use `<h2>` without checking parent context | Verify one `<h1>` per route when admin is in scope for external audit |
 
 ### Language
@@ -174,11 +174,11 @@ These were identified in the audit but **not** fully remediated (require design 
 Per `docs/WCAG_DEMO.md`, manually verify with keyboard + screen reader (NVDA/VoiceOver):
 
 1. Tab from page load — skip link appears and moves focus to `#main-content`.
-2. Home → Positions → Reports → Alerts → Settings → Sandbox — one `<h1>` per page; logical heading order.
+2. Home → Positions → Reports → Alerts → Settings → Simulation — one `<h1>` per page; logical heading order.
 3. Positions table — screen reader reads column headers with positions data.
 4. Reports — expand/collapse cycle announces state; chart section reachable by keyboard.
 5. Alerts — filter buttons toggle; list updates polite (no excessive chatter).
-6. Sandbox — phase tabs roving tabindex; refresh and load-more reachable at 44px.
+6. Simulation — phase tabs roving tabindex; refresh and load-more reachable at 44px.
 7. Enable **Reduce motion** in OS — animations and carousel auto-advance stop.
 8. Light and dark themes — spot-check Market header, muted subtitles, error/success text at 4.5:1.
 9. Broker connect error (non-demo) — status error announced.
@@ -187,7 +187,7 @@ Per `docs/WCAG_DEMO.md`, manually verify with keyboard + screen reader (NVDA/Voi
 
 ## Files changed in this remediation pass
 
-`global.css`, `sandbox/layout.tsx`, `admin/AdminLayoutClient.tsx`, `admin/Sidebar.tsx`, `admin/settings/page.tsx`, `admin/proxy-pool/page.tsx`, `admin/profiles/page.tsx`, `admin/market/page.tsx`, `admin/leads/page.tsx`, `admin/client-pnl/page.tsx`, `home/page.tsx`, `positions/page.tsx`, `settings/page.tsx`, `sandbox/page.tsx`, `alerts/page.tsx`, `not-found.tsx`, `DemoModeBanner.tsx`, `AuthNav.tsx`, `BrokerConnect.tsx`, `MarketHeader.tsx`, `PositionsTable.tsx`, `LivePositionsModal.tsx`, `ProfileReportsPanel.tsx`, `SandboxPositionsContent.tsx`, `BrokerCredentialHelpModal.tsx`, `market/MarketDepthModal.tsx`, `admin/TradeCycles.tsx`, `home/ComparisonTable.tsx`, `home/WhatWeDoSection.tsx`
+`global.css`, `simulation/layout.tsx`, `admin/AdminLayoutClient.tsx`, `admin/Sidebar.tsx`, `admin/settings/page.tsx`, `admin/proxy-pool/page.tsx`, `admin/profiles/page.tsx`, `admin/market/page.tsx`, `admin/leads/page.tsx`, `admin/client-pnl/page.tsx`, `home/page.tsx`, `positions/page.tsx`, `settings/page.tsx`, `simulation/page.tsx`, `alerts/page.tsx`, `not-found.tsx`, `DemoModeBanner.tsx`, `AuthNav.tsx`, `BrokerConnect.tsx`, `MarketHeader.tsx`, `PositionsTable.tsx`, `LivePositionsModal.tsx`, `ProfileReportsPanel.tsx`, `SimulationPositionsContent.tsx`, `BrokerCredentialHelpModal.tsx`, `market/MarketDepthModal.tsx`, `admin/TradeCycles.tsx`, `home/ComparisonTable.tsx`, `home/WhatWeDoSection.tsx`
 
 ---
 

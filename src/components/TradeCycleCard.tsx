@@ -48,7 +48,7 @@ function pnlClass(value: number): string {
 interface Props {
   tradeCycle: TradeCycleInput;
   isActive: boolean;
-  isSandbox?: boolean;
+  isSimulation?: boolean;
 }
 
 function stateStyles(state: string): { pill: string; icon: JSX.Element } {
@@ -83,7 +83,7 @@ function stateStyles(state: string): { pill: string; icon: JSX.Element } {
   }
 }
 
-const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) => {
+const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSimulation }) => {
   const [expanded, setExpanded] = useState(false);
   const alert = useAlert();
 
@@ -268,7 +268,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
             <div className="flex flex-wrap justify-end gap-2">
               {cycle.state !== "NEW" && (
                 <Link
-                  href={isSandbox ? "/sandbox" : "/positions"}
+                  href={isSimulation ? "/simulation" : "/positions"}
                   className="btn btn-primary btn-sm gap-1.5 rounded-full px-5 shadow-sm shadow-primary/15"
                 >
                   View positions
@@ -276,7 +276,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSandbox }) =>
                 </Link>
               )}
 
-              {cycle.state === "NEW" && !isSandbox && (
+              {cycle.state === "NEW" && !isSimulation && (
                 <button
                   type="button"
                   onClick={activateTradeCycle}

@@ -16,7 +16,7 @@ export type PnlSnapshotRow = { snapshot_date: string; pnl_total: number };
 const ISO_DATE_PREFIX = /^\d{4}-\d{2}-\d{2}/;
 
 /**
- * Parse `profiles/pnl-snapshots/` (or sandbox) JSON. Returns [] if shape is wrong.
+ * Parse `profiles/pnl-snapshots/` (or simulation) JSON. Returns [] if shape is wrong.
  */
 export function parsePnlSnapshotsResponse(json: unknown): PnlSnapshotRow[] {
   if (!json || typeof json !== "object" || !("results" in json)) return [];
