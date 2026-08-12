@@ -22,6 +22,7 @@ export interface MetricSnapshotRow {
   strategy_builder_id: number;
   strategy_id?: number | null;
   spot?: Record<string, number> | null;
+  future?: Record<string, number> | null;
   pnl?: number | string | null;
   mid_pnl?: number | string | null;
   spread?: number | string | null;
@@ -265,6 +266,9 @@ function buildMetricSnapshotsCsv(rows: MetricSnapshotRow[]): string {
     for (const sym of Object.keys(row.spot || {})) {
       if (sym) symbolSet.add(sym);
     }
+    for (const sym of Object.keys(row.future || {})) {
+      if (sym) symbolSet.add(sym);
+    }
     for (const exp of row.by_expiry ?? []) {
       const key = expiryCsvKey(exp.expiry);
       if (key) expirySet.add(key);
@@ -285,6 +289,7 @@ function buildMetricSnapshotsCsv(rows: MetricSnapshotRow[]): string {
     "trade_count",
     ...symbols.map((s) => `abs_delta_${s}`),
     ...symbols.map((s) => `spot_${s}`),
+    ...symbols.map((s) => `future_${s}`),
     ...expiries.map((e) => `ce_prem_${e}`),
     ...expiries.map((e) => `pe_prem_${e}`),
   ];
@@ -311,6 +316,7 @@ function buildMetricSnapshotsCsv(rows: MetricSnapshotRow[]): string {
         csvCell(absDeltaForSymbol(row.delta_by_underlying, row.spot, s))
       ),
       ...symbols.map((s) => csvCell(toNum(row.spot?.[s] ?? null))),
+      ...symbols.map((s) => csvCell(toNum(row.future?.[s] ?? null))),
       ...expiries.map((e) => csvCell(toNum(expiryMap.get(e)?.ce_premium ?? null))),
       ...expiries.map((e) => csvCell(toNum(expiryMap.get(e)?.pe_premium ?? null))),
     ];
@@ -490,6 +496,7 @@ export default function StrategyMetricSnapshotsModal({
                   <th className="text-right">CE Notional</th>
                   <th className="text-right">PE Notional</th>
                   <th>Spot</th>
+                  <th title="Near-month futures LTP">Future</th>
                 </tr>
               </thead>
               <tbody>
@@ -539,6 +546,12 @@ export default function StrategyMetricSnapshotsModal({
                       title={formatSpot(row.spot)}
                     >
                       {formatSpot(row.spot)}
+                    </td>
+                    <td
+                      className="text-xs whitespace-nowrap max-w-[12rem] truncate"
+                      title={formatSpot(row.future)}
+                    >
+                      {formatSpot(row.future)}
                     </td>
                   </tr>
                 ))}
