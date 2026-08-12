@@ -30,6 +30,8 @@ const StrategyOptionChainModal = dynamic(
 interface SpotSnapshot {
   underlying: string;
   spot_price: number | string;
+  future_price?: number | string | null;
+  future_expiry?: string | null;
   captured_at: string;
 }
 
@@ -471,6 +473,19 @@ export default function StrategyDetailPage() {
                     <span className="tabular-nums font-medium">
                       {toNum(s.spot_price) != null ? toNum(s.spot_price)!.toFixed(2) : "—"}
                     </span>
+                    <span
+                      className="tabular-nums text-base-content/70"
+                      title={
+                        s.future_expiry
+                          ? `Near-month future (${s.future_expiry})`
+                          : "Near-month future"
+                      }
+                    >
+                      F{" "}
+                      {toNum(s.future_price) != null
+                        ? toNum(s.future_price)!.toFixed(2)
+                        : "—"}
+                    </span>
                     <span className="text-base-content/45 tabular-nums">
                       {formatSnapshotAt(s.captured_at)}
                     </span>
@@ -532,6 +547,10 @@ export default function StrategyDetailPage() {
                       <th>Captured At</th>
                       <th>Underlying</th>
                       <th className="text-right">Spot Price</th>
+                      <th className="text-right" title="Near-month futures LTP">
+                        Future Price
+                      </th>
+                      <th title="Near-month futures expiry">Future Expiry</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -542,7 +561,17 @@ export default function StrategyDetailPage() {
                         </td>
                         <td className="font-medium">{row.underlying}</td>
                         <td className="text-right tabular-nums">
-                          {toNum(row.spot_price) != null ? toNum(row.spot_price)!.toFixed(2) : "—"}
+                          {toNum(row.spot_price) != null
+                            ? toNum(row.spot_price)!.toFixed(2)
+                            : "—"}
+                        </td>
+                        <td className="text-right tabular-nums">
+                          {toNum(row.future_price) != null
+                            ? toNum(row.future_price)!.toFixed(2)
+                            : "—"}
+                        </td>
+                        <td className="text-xs text-base-content/70 tabular-nums">
+                          {row.future_expiry || "—"}
                         </td>
                       </tr>
                     ))}
