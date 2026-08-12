@@ -3,20 +3,20 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import TradeCycleWithPositionsCard from "@/components/TradeCyclePositions";
 import TradeCyclePositionsSkeleton from "@/components/skeletons/TradeCyclePositionsSkeleton";
-import { sandboxFetch } from "@/utils/sandboxApi";
+import { simulationFetch } from "@/utils/simulationApi";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { RotateCw, Briefcase } from "lucide-react";
-import { useSandboxStore } from "@/store/sandboxStore";
+import { useSimulationStore } from "@/store/simulationStore";
 import type {
-  SandboxDashboard,
-  SandboxE1Risk,
-  SandboxPhase,
-  SandboxTradeCycleListResponse,
-  SandboxTradeCycle,
-} from "@/types/sandbox";
+  SimulationDashboard,
+  SimulationE1Risk,
+  SimulationPhase,
+  SimulationTradeCycleListResponse,
+  SimulationTradeCycle,
+} from "@/types/simulation";
 
-const E1_ANNUAL_RATE: Record<SandboxE1Risk, number> = {
+const E1_ANNUAL_RATE: Record<SimulationE1Risk, number> = {
   LOW: 0.07,
   MEDIUM: 0.09,
   HIGH: 0.12,
@@ -39,14 +39,14 @@ function formatDate(iso: string | undefined): string {
   });
 }
 
-export default function SandboxPositionsContent() {
-  const { sandboxPlan, sandboxE1Risk } = useSandboxStore();
+export default function SimulationPositionsContent() {
+  const { simulationPlan, simulationE1Risk } = useSimulationStore();
   const alert = useAlert();
   const tabsId = useId();
-  const [phase, setPhase] = useState<SandboxPhase>("before");
-  const [dashboard, setDashboard] = useState<SandboxDashboard | null>(null);
+  const [phase, setPhase] = useState<SimulationPhase>("before");
+  const [dashboard, setDashboard] = useState<SimulationDashboard | null>(null);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
-  const [tradeCycles, setTradeCycles] = useState<SandboxTradeCycle[]>([]);
+  const [tradeCycles, setTradeCycles] = useState<SimulationTradeCycle[]>([]);
   const [loadingCycles, setLoadingCycles] = useState(true);
   const [loadingMoreCycles, setLoadingMoreCycles] = useState(false);
   const [cyclePage, setCyclePage] = useState(1);
@@ -54,36 +54,36 @@ export default function SandboxPositionsContent() {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
-    if (!sandboxPlan) return;
+    if (!simulationPlan) return;
     setLoadingDashboard(true);
     try {
-      const res = await sandboxFetch("dashboard/", sandboxPlan);
-      if (!res.ok) throw new Error("Failed to load sandbox dashboard");
-      const data = (await res.json()) as SandboxDashboard;
+      const res = await simulationFetch("dashboard/", simulationPlan);
+      if (!res.ok) throw new Error("Failed to load simulation dashboard");
+      const data = (await res.json()) as SimulationDashboard;
       setDashboard(data);
     } catch (error) {
       console.error(error);
-      setDashboard({ configured: false, detail: "Failed to load sandbox data." });
+      setDashboard({ configured: false, detail: "Failed to load simulation data." });
     } finally {
       setLoadingDashboard(false);
     }
-  }, [sandboxPlan]);
+  }, [simulationPlan]);
 
   const fetchTradeCycles = useCallback(async (page = 1, append = false) => {
-    if (!sandboxPlan) return;
+    if (!simulationPlan) return;
     if (append) {
       setLoadingMoreCycles(true);
     } else {
       setLoadingCycles(true);
     }
     try {
-      const res = await sandboxFetch("trade-cycles/", sandboxPlan, undefined, {
+      const res = await simulationFetch("trade-cycles/", simulationPlan, undefined, {
         phase,
         page,
         page_size: 10,
       });
       if (!res.ok) throw new Error("Failed to fetch trade cycles");
-      const data = (await res.json()) as SandboxTradeCycleListResponse;
+      const data = (await res.json()) as SimulationTradeCycleListResponse;
       const nextResults = data.results || [];
       setTradeCycles((prev) => (append ? [...prev, ...nextResults] : nextResults));
       setCyclePage(data.page || page);
@@ -102,14 +102,14 @@ export default function SandboxPositionsContent() {
         setLoadingCycles(false);
       }
     }
-  }, [sandboxPlan, phase]);
+  }, [simulationPlan, phase]);
 
   const refreshAll = async () => {
-    if (!sandboxPlan) return;
+    if (!simulationPlan) return;
     setRefreshing(true);
     try {
       await Promise.all([fetchDashboard(), fetchTradeCycles()]);
-      alert.success("Sandbox data refreshed");
+      alert.success("Simulation data refreshed");
     } catch {
       alert.error("Failed to refresh");
     } finally {
@@ -160,7 +160,7 @@ export default function SandboxPositionsContent() {
       return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
     };
 
-    const rate = E1_ANNUAL_RATE[sandboxE1Risk];
+    const rate = E1_ANNUAL_RATE[simulationE1Risk];
     const beforeDays = dayDiff(before.from, before.to);
     const afterDays = dayDiff(after.from, after.to);
 
@@ -184,14 +184,14 @@ export default function SandboxPositionsContent() {
       afterRoiValue,
       afterRoiPercent,
     };
-  }, [dashboard, sandboxE1Risk, notional]);
+  }, [dashboard, simulationE1Risk, notional]);
   const handleLoadMoreCycles = () => {
     if (!hasMoreCycles || loadingMoreCycles) return;
     void fetchTradeCycles(cyclePage + 1, true);
   };
-  if (!sandboxPlan) return null;
+  if (!simulationPlan) return null;
 
-  const fetchFn = (path: string) => sandboxFetch(path, sandboxPlan);
+  const fetchFn = (path: string) => simulationFetch(path, simulationPlan);
 
   return (
     <>
@@ -206,7 +206,7 @@ export default function SandboxPositionsContent() {
             disabled={refreshing || loadingDashboard}
             aria-busy={refreshing}
             className="btn btn-circle btn-ghost btn-sm min-h-11 min-w-11 shrink-0 self-start border border-base-300 bg-base-100/80 hover:border-primary/35 hover:bg-base-200/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:self-auto"
-            aria-label="Refresh sandbox data"
+            aria-label="Refresh simulation data"
           >
             <RotateCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} aria-hidden />
           </button>
@@ -229,7 +229,7 @@ export default function SandboxPositionsContent() {
         ) : !dashboard?.configured ? (
           <div className="rounded-2xl border border-dashed border-warning/50 bg-warning/5 px-6 py-8 text-center">
             <p className="text-sm font-medium text-base-content">
-              {dashboard?.detail ?? "Sandbox not configured for this plan."}
+              {dashboard?.detail ?? "Simulation not configured for this plan."}
             </p>
             <p className="mt-2 text-xs text-base-content/70">
               Ask your administrator to assign a reference account for this plan tier.

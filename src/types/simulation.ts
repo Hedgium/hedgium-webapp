@@ -1,10 +1,10 @@
-export type SandboxPlan = "BASIC" | "MASTERS" | "LEGENDS";
+export type SimulationPlan = "BASIC" | "MASTERS" | "LEGENDS";
 
-export type SandboxE1Risk = "LOW" | "MEDIUM" | "HIGH";
+export type SimulationE1Risk = "LOW" | "MEDIUM" | "HIGH";
 
-export type SandboxPhase = "before" | "after";
+export type SimulationPhase = "before" | "after";
 
-export type SandboxPeriodMetrics = {
+export type SimulationPeriodMetrics = {
   e2_pnl: number;
   e2_realised: number;
   e2_m2m: number;
@@ -16,16 +16,16 @@ export type SandboxPeriodMetrics = {
   has_cycles?: boolean;
 };
 
-export type SandboxDashboard = {
+export type SimulationDashboard = {
   configured: boolean;
-  plan?: SandboxPlan;
+  plan?: SimulationPlan;
   detail?: string;
   notional_capital?: number;
   showcase_start?: string;
   doj?: string;
-  e1_risk?: SandboxE1Risk;
-  before_joining?: SandboxPeriodMetrics;
-  after_joining?: SandboxPeriodMetrics;
+  e1_risk?: SimulationE1Risk;
+  before_joining?: SimulationPeriodMetrics;
+  after_joining?: SimulationPeriodMetrics;
   combined?: {
     e2_pnl: number;
     e2_realised: number;
@@ -36,7 +36,7 @@ export type SandboxDashboard = {
   };
 };
 
-export type SandboxTradeCycle = {
+export type SimulationTradeCycle = {
   id: number;
   name: string;
   description: string;
@@ -46,7 +46,7 @@ export type SandboxTradeCycle = {
   updated_at?: string;
 };
 
-export type SandboxTradeCycleListResponse = {
+export type SimulationTradeCycleListResponse = {
   count: number;
   configured: boolean;
   page: number;
@@ -55,5 +55,5 @@ export type SandboxTradeCycleListResponse = {
   has_previous: boolean;
   next: string | null;
   previous: string | null;
-  results: SandboxTradeCycle[];
+  results: SimulationTradeCycle[];
 };

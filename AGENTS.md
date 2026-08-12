@@ -52,7 +52,7 @@ The backend API lives in `hedgium_backend` (Django + Ninja Extra).
 /about              → About page (within app shell)
 /(app)/             → Authenticated app shell
 /admin/             → Admin panel (role-gated)
-/sandbox/           → Sandbox / paper trading
+/simulation/        → Simulation / paper trading
 ```
 
 Canonical legal disclosures live on the marketing site (`HEDGIUM_MARKETING_SITE_URL` in `src/lib/marketingSite.ts` → `/legal-complaints-investor-charter`).
@@ -71,7 +71,7 @@ hedgium_webapp/
 │   ├── app/                # App Router — pages, layouts, API routes
 │   │   ├── (app)/          # Authenticated app shell (dashboard, positions, reports, etc.)
 │   │   ├── admin/          # Admin panel pages (role-gated)
-│   │   ├── sandbox/        # Sandbox / paper trading
+│   │   ├── simulation/     # Simulation / paper trading
 │   │   ├── login/          # Auth flow pages
 │   │   └── api/            # Next.js API routes (thin proxies or server actions)
 │   ├── components/         # Shared UI components
@@ -79,7 +79,7 @@ hedgium_webapp/
 │   │   ├── admin/          # Admin-specific components
 │   │   ├── positions/      # Position display components
 │   │   ├── reports/        # Reports and charts
-│   │   ├── sandbox/        # Sandbox UI
+│   │   ├── simulation/     # Simulation UI
 │   │   ├── settings/       # Settings pages
 │   │   ├── skeletons/      # Loading skeleton components
 │   │   └── *.tsx           # Shared: AuthFlowShell, Navbar, BrokerConnect, etc.
@@ -93,7 +93,7 @@ hedgium_webapp/
 │   │   ├── authStore.ts
 │   │   ├── alertStore.ts
 │   │   ├── notificationStore.ts
-│   │   └── sandboxStore.ts
+│   │   └── simulationStore.ts
 │   ├── types/              # Shared TypeScript types — API contracts
 │   │   ├── positions.ts
 │   │   ├── builder.ts
@@ -126,7 +126,7 @@ hedgium_webapp/
 - Handle API errors at the service layer; throw structured errors for UI to catch.
 
 ### State (`src/store/`)
-- One Zustand store per domain — auth, alerts, notifications, sandbox.
+- One Zustand store per domain — auth, alerts, notifications, simulation.
 - Keep stores focused; don't dump unrelated state into one store.
 - No prop drilling more than 2 levels — lift to store instead.
 

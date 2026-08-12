@@ -43,7 +43,7 @@ export default function BuilderPage() {
     const [editingLeg, setEditingLeg] = useState<BuilderLeg | undefined>(undefined);
     const [selectedBuilderId, setSelectedBuilderId] = useState<number | null>(null);
     const [selectedStrategyBuilder, setSelectedStrategyBuilder] = useState<StrategyBuilder | undefined>(undefined);
-    const [statusFilter, setStatusFilter] = useState<string>("");
+    const [statusFilter, setStatusFilter] = useState<string>("ACTIVE");
 
     const alert = useAlert();
 

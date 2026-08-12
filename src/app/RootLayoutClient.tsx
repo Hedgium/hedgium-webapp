@@ -55,9 +55,9 @@ export default function RootLayoutClient({
         );
         if (!legalPending) {
           const inAppShell = isAppShellPath(pathname);
-          const isSandbox = pathname?.startsWith('/sandbox');
+          const isSimulation = pathname?.startsWith('/simulation');
           const isAdmin = pathname?.startsWith('/admin') || pathname?.startsWith('/myadmin');
-          if (!inAppShell && !isSandbox && !isAdmin) {
+          if (!inAppShell && !isSimulation && !isAdmin) {
             router.push('/home');
           }
           return;

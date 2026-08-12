@@ -35,13 +35,13 @@ Auditors should cover the main authenticated shell:
 - `/reports` — charts and trade-cycle reports
 - `/alerts` — notification list (HTTP; no live WebSocket on demo)
 - `/settings` — profile (read-only), theme (local), password tab (read-only notice)
-- `/sandbox` — illustrative E1/E2 dashboard and reference strategies (demo fixtures)
+- `/simulation` — illustrative E1/E2 dashboard and reference strategies (demo fixtures)
 
 Skip `/admin` and `/add-broker` — not part of the demo experience.
 
-## Sandbox (demo users)
+## Simulation (demo users)
 
-Demo accounts use **`/api/demo/sandbox/*`** (not real `/api/sandbox/` DB profiles). The webapp **Sandbox** nav link is shown for `is_demo` users; `sandboxFetch` rewrites to `demo/sandbox/…` via `authFetch`.
+Demo accounts use **`/api/demo/sandbox/*`** (not real `/api/sandbox/` DB profiles). The webapp **Simulation** nav link is shown for `is_demo` users; `simulationFetch` still requests `sandbox/…` (rewritten to `demo/sandbox/…` via `authFetch`). Backend paths remain `/api/sandbox/*` and `/api/demo/sandbox/*`.
 
 Fixture data lives in `hedgium_backend/demo/sandbox_fixtures.py` — dashboard E1/E2 summary, before/after joining trade cycles, and position details per plan tier (BASIC / MASTERS / LEGENDS notional scaling).
 
@@ -53,7 +53,7 @@ When `user.is_demo` is true, [`src/utils/api.ts`](../src/utils/api.ts) `authFetc
 
 1. Log in as the demo user on the webapp.
 2. Confirm the **Preview mode** banner appears and is dismissible.
-3. Walk Home → Positions → Reports → Alerts → Settings → Sandbox — no 403 errors on data calls.
+3. Walk Home → Positions → Reports → Alerts → Settings → Simulation — no 403 errors on data calls.
 4. Confirm broker bar shows **DEMO** with full metrics dropdown (E1 total, E1 PnL, avl cash, total AC) from demo fixtures.
 5. Log in as a normal client — confirm APIs do **not** use `demo/` prefix.
 6. Optional: leave session open 30+ minutes — cookie token refresh should succeed.

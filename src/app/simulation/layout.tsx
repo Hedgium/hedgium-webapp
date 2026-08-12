@@ -4,17 +4,17 @@ import { useEffect } from "react";
 import AuthNav from "@/components/AuthNav";
 import AuthFooter from "@/components/AuthFooter";
 import NotificationProvider from "@/providers/NotificationProvider";
-import { useSandboxStore } from "@/store/sandboxStore";
+import { useSimulationStore } from "@/store/simulationStore";
 
 const BANNER =
-  "Sandbox — illustrative performance from a reference account on the selected plan tier. E1 is simulated; E2 is from that reference account, for demonstration only. Past performance does not guarantee future results.";
+  "Simulation — illustrative performance from a reference account on the selected plan tier. E1 is simulated; E2 is from that reference account, for demonstration only. Past performance does not guarantee future results.";
 
-export default function SandboxLayout({
+export default function SimulationLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const hydrate = useSandboxStore((s) => s.hydrate);
+  const hydrate = useSimulationStore((s) => s.hydrate);
 
   useEffect(() => {
     hydrate();

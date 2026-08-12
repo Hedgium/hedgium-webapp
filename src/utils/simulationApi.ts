@@ -1,5 +1,6 @@
 /**
- * Sandbox API — reference account for the selected plan tier.
+ * Simulation API — reference account for the selected plan tier.
+ * Backend routes remain `/api/sandbox/*` (and demo `/api/demo/sandbox/*`).
  */
 import { authFetch } from "./api";
 
@@ -11,7 +12,7 @@ function appendPlan(path: string, plan: string): string {
 /**
  * Fetch from `/api/sandbox/*`. Appends `plan` and optional query params.
  */
-export async function sandboxFetch(
+export async function simulationFetch(
   path: string,
   plan: string,
   options?: RequestInit,

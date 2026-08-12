@@ -8,7 +8,7 @@
 
 ## Executive summary
 
-The **demo audit path** (Home → Positions → Reports → Alerts → Settings → Sandbox, plus auth/onboarding) is **largely WCAG 2.1 AA compliant** after the earlier remediation pass. Core infrastructure is in place: document language, skip links on main shells, reduced-motion CSS, labelled auth forms, live regions for toasts/alerts, table semantics on `PositionsTable`, dialog patterns on broker modals, page-level headings, and corrected internal links.
+The **demo audit path** (Home → Positions → Reports → Alerts → Settings → Simulation, plus auth/onboarding) is **largely WCAG 2.1 AA compliant** after the earlier remediation pass. Core infrastructure is in place: document language, skip links on main shells, reduced-motion CSS, labelled auth forms, live regions for toasts/alerts, table semantics on `PositionsTable`, dialog patterns on broker modals, page-level headings, and corrected internal links.
 
 **No additional code changes were made in this re-audit.** Remaining gaps are documented below for manual verification or a future focused pass. Highest-risk items for an external auditor: **Recharts data alternatives**, **muted text contrast on trade cards**, and **focus trapping** on `LivePositionsModal` (currently unused).
 
@@ -28,10 +28,10 @@ The **demo audit path** (Home → Positions → Reports → Alerts → Settings 
 | `/alerts` | `app/(app)/alerts/page.tsx` |
 | `/settings` | `app/(app)/settings/page.tsx` |
 | `/add-broker` | `app/(app)/add-broker/page.tsx` |
-| `/sandbox` | `app/sandbox/page.tsx` + layout |
+| `/simulation` | `app/simulation/page.tsx` + layout |
 | 404 | `app/not-found.tsx` |
 
-**Shared shells:** `HedgiumLayoutClient`, `sandbox/layout.tsx`, `AuthFlowShell` / `AuthFlowChrome`, `AuthNav`, `AuthNavigation`, `AuthFooter`, `AuthFlowFooter`, `DemoModeBanner`, `BrokerConnect`, `AlertsContainer`.
+**Shared shells:** `HedgiumLayoutClient`, `simulation/layout.tsx`, `AuthFlowShell` / `AuthFlowChrome`, `AuthNav`, `AuthNavigation`, `AuthFooter`, `AuthFlowFooter`, `DemoModeBanner`, `BrokerConnect`, `AlertsContainer`.
 
 ---
 
@@ -40,24 +40,24 @@ The **demo audit path** (Home → Positions → Reports → Alerts → Settings 
 | Area | Criterion | Location | Status |
 |------|-----------|----------|--------|
 | Document language | 3.1.1 | `app/layout.tsx:59` — `<html lang="en">` | ✓ |
-| Skip links | 2.4.1 | `HedgiumLayoutClient.tsx:17`, `AuthFlowChrome.tsx:9`, `sandbox/layout.tsx:25` | ✓ |
-| Main landmark | 1.3.1 | `#main-content` + `tabIndex={-1}` on app/sandbox shells | ✓ |
+| Skip links | 2.4.1 | `HedgiumLayoutClient.tsx:17`, `AuthFlowChrome.tsx:9`, `simulation/layout.tsx:25` | ✓ |
+| Main landmark | 1.3.1 | `#main-content` + `tabIndex={-1}` on app/simulation shells | ✓ |
 | Reduced motion | 2.3.3 | `global.css:30-44` — `prefers-reduced-motion` | ✓ |
 | Theme contrast tokens | 1.4.3 | `global.css` DaisyUI light/dark palette tuning | ✓ |
 | Login / auth forms | 1.3.1, 3.3.2, 4.1.3 | `LoginPageClient.tsx` — labels, `aria-invalid`, `role="alert"`, `aria-live` | ✓ |
 | Forgot / reset password | 1.3.1, 4.1.3 | Labelled inputs, `role="alert"`, links to `/` | ✓ |
 | Onboarding signup/terms/profile | 2.4.6, 4.1.3 | `SignupStep`, `TermsStep`, `CompleteProfileStep`, `VerificationStep` — each has `<h1>` + form errors | ✓ |
 | Signup stepper shell | — | `OnboardingFlow.tsx` — single `/onboarding` route | ✓ |
-| Page headings | 2.4.6 | Home/Positions sr-only `<h1>`; Reports/Alerts/Settings/Sandbox visible `<h1>` | ✓ |
+| Page headings | 2.4.6 | Home/Positions sr-only `<h1>`; Reports/Alerts/Settings/Simulation visible `<h1>` | ✓ |
 | Primary navigation | 2.4.4, 4.1.2 | `AuthNavigation.tsx` — `aria-label="Primary"`, `aria-current`, sr-only unread counts | ✓ |
 | Mobile account menu | 2.1.1, 4.1.2 | `AuthNav.tsx` — `aria-expanded`, labelled button, Escape closes | ✓ |
-| Touch targets (key controls) | 2.5.5* | Demo dismiss, account menu, sandbox/positions refresh — `min-h-11 min-w-11` | ✓ |
+| Touch targets (key controls) | 2.5.5* | Demo dismiss, account menu, simulation/positions refresh — `min-h-11 min-w-11` | ✓ |
 | Positions table | 1.3.1 | `PositionsTable.tsx` — `<caption>`, `scope="col"`, semantic colours | ✓ |
 | Toast / status | 4.1.3 | `AlertsContainer.tsx`, `DemoModeBanner.tsx` | ✓ |
 | Alerts list updates | 4.1.3 | `alerts/page.tsx` — `aria-live="polite"` on notification `<ul>` | ✓ |
 | Broker status errors | 4.1.3 | `BrokerConnect.tsx` — `role="alert"` on `statusError` | ✓ |
 | Native dialogs | 2.4.3, 4.1.2 | `BrokerCredentialHelpModal.tsx`, `BrokerConnect` login `<dialog>` | ✓ |
-| Sandbox tabs | 4.1.2 | `SandboxPositionsContent.tsx` — `tablist` / `tab` / `tabpanel` | ✓ |
+| Simulation tabs | 4.1.2 | `SimulationPositionsContent.tsx` — `tablist` / `tab` / `tabpanel` | ✓ |
 | Internal links | 2.4.4 | Broken `/welcome`, `/get-started`, `/upgrade` removed; `AuthFlowBrand` → `/` | ✓ |
 | Settings tabs | 4.1.2 | `settings/page.tsx` — `role="tablist"`, `aria-selected`, roving `tabIndex` | ✓ |
 | Reports expand controls | 4.1.2 | `ProfileReportsPanel.tsx` — `aria-expanded` + `aria-label` on cycle buttons | ✓ |
@@ -77,7 +77,7 @@ The **demo audit path** (Home → Positions → Reports → Alerts → Settings 
 | H1 | **1.1.1** | `ReportsMarginChart.tsx:45-106` | Recharts margin line chart — SVG with no text alternative or labelled summary | No | Add sr-only data table or `aria-labelledby` + visible “View as table” toggle |
 | H2 | **1.1.1** | `ReportsPnlMonthlyBarChart.tsx:58-104` | PnL bar chart — same gap | No | Same as H1 |
 | H3 | **1.4.3** | `TradeCycleCard.tsx:60,129,145-147,175-179` | Secondary text at `text-base-content/40`–`/55` at 11–12px on home cards | No | Raise to `text-base-content/70` minimum on readable copy |
-| H4 | **1.4.3** | `PositionsSummary.tsx:48,63,72,78,84` | `text-gray-500` labels on positions/sandbox summary tiles | No | Use `text-base-content/70` |
+| H4 | **1.4.3** | `PositionsSummary.tsx:48,63,72,78,84` | `text-gray-500` labels on positions/simulation summary tiles | No | Use `text-base-content/70` |
 | H5 | **1.4.3** | `UnmappedOrdersTable.tsx:56,80,122-124` | `text-gray-500` labels; raw `text-green-500`/`text-red-500` | No | Theme tokens `text-base-content/70`, `text-success`/`text-error` |
 | H6 | **2.4.6** | `OnboardingFlow.tsx` + `VerifyEmail.tsx:227` | Verify-email step uses `<h2>` only when stepper visible — no page `<h1>` | No | Add sr-only `<h1>Verify email</h1>` on that step |
 | H7 | **2.4.3** | `LivePositionsModal.tsx:27-68` | Dialog ARIA present but **no focus trap**; Tab can escape | Partial | Use `<dialog showModal()>` or focus trap (**component not imported anywhere yet**) |
@@ -128,11 +128,11 @@ Not required for **AA** certification; list for manual QA if targeting AAA or in
 
 Use the demo account per `docs/WCAG_DEMO.md`.
 
-1. **Keyboard:** Tab from load — skip link appears on app/sandbox/auth shells; Enter jumps to `#main-content`.
+1. **Keyboard:** Tab from load — skip link appears on app/simulation/auth shells; Enter jumps to `#main-content`.
 2. **Headings:** One logical `<h1>` per page (Home/Positions use sr-only; others visible).
 3. **Forms:** Login, signup, forgot/reset — Tab order logical; errors announced (`role="alert"`).
 4. **Home:** Trade cycle cards readable; locked strategy links go to Settings / mailto.
-5. **Positions / Sandbox:** Summary tiles and position tables scannable; table headers announced.
+5. **Positions / Simulation:** Summary tiles and position tables scannable; table headers announced.
 6. **Reports:** Charts visible — confirm auditor accepts Recharts or provide data table alternative (H1/H2).
 7. **Alerts:** Filter buttons toggle; list uses live region.
 8. **Settings:** Profile/password/theme tabs switch with visible focus ring.

@@ -4,9 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { authFetch } from "@/utils/api";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
-import { ChevronLeft, ChevronRight, RotateCw, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RotateCw, X } from "lucide-react";
 
 const PAGE_SIZE = 50;
+const CSV_EXPORT_PAGE_SIZE = 100;
 
 export interface MetricSnapshotByExpiry {
   expiry?: string;
@@ -190,6 +191,150 @@ function ExpiryMetricColumn({
   );
 }
 
+/** Compact expiry token for CSV headers, e.g. 12Aug26 */
+function expiryCsvKey(iso: string | undefined): string | null {
+  if (!iso) return null;
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso.replace(/[^a-zA-Z0-9]/g, "_");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    const month = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+    const year = String(d.getUTCFullYear()).slice(-2);
+    return `${day}${month}${year}`;
+  } catch {
+    return iso.replace(/[^a-zA-Z0-9]/g, "_");
+  }
+}
+
+function csvEscape(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function csvCell(v: number | string | null | undefined): string {
+  if (v == null || v === "") return "";
+  if (typeof v === "number") {
+    return Number.isFinite(v) ? String(v) : "";
+  }
+  const n = Number(v);
+  if (v.trim() !== "" && Number.isFinite(n) && String(n) === v.trim()) {
+    return String(n);
+  }
+  return csvEscape(String(v));
+}
+
+function absDeltaForSymbol(
+  deltas: Record<string, number> | null | undefined,
+  spots: Record<string, number> | null | undefined,
+  sym: string
+): number | null {
+  const delta = toNum(deltas?.[sym] ?? null);
+  const spot = toNum(spots?.[sym] ?? null);
+  if (delta == null || spot == null || spot <= 0) return null;
+  return delta * spot;
+}
+
+async function collectAllSnapshots(strategyId: number): Promise<MetricSnapshotRow[]> {
+  const all: MetricSnapshotRow[] = [];
+  let pageNum = 1;
+  for (;;) {
+    const res = await authFetch(
+      `myadmin/strategies/${strategyId}/metric-snapshots/?page=${pageNum}&page_size=${CSV_EXPORT_PAGE_SIZE}`
+    );
+    if (!res.ok) {
+      throw new Error("Failed to fetch metric snapshots for export.");
+    }
+    const data: PaginatedSnapshots = await res.json();
+    all.push(...(data.results ?? []));
+    if (!data.next) break;
+    pageNum += 1;
+  }
+  return all;
+}
+
+function buildMetricSnapshotsCsv(rows: MetricSnapshotRow[]): string {
+  const symbolSet = new Set<string>();
+  const expirySet = new Set<string>();
+
+  for (const row of rows) {
+    for (const sym of Object.keys(row.delta_by_underlying || {})) {
+      if (sym) symbolSet.add(sym);
+    }
+    for (const sym of Object.keys(row.spot || {})) {
+      if (sym) symbolSet.add(sym);
+    }
+    for (const exp of row.by_expiry ?? []) {
+      const key = expiryCsvKey(exp.expiry);
+      if (key) expirySet.add(key);
+    }
+  }
+
+  const symbols = Array.from(symbolSet).sort((a, b) => a.localeCompare(b));
+  const expiries = Array.from(expirySet).sort((a, b) => a.localeCompare(b));
+
+  const headers = [
+    "created_at",
+    "pnl",
+    "mid_pnl",
+    "spread",
+    "straddle",
+    "delta_band_min",
+    "delta_band_max",
+    "trade_count",
+    ...symbols.map((s) => `abs_delta_${s}`),
+    ...symbols.map((s) => `spot_${s}`),
+    ...expiries.map((e) => `ce_prem_${e}`),
+    ...expiries.map((e) => `pe_prem_${e}`),
+  ];
+
+  const lines = [headers.map(csvEscape).join(",")];
+
+  for (const row of rows) {
+    const expiryMap = new Map<string, MetricSnapshotByExpiry>();
+    for (const exp of row.by_expiry ?? []) {
+      const key = expiryCsvKey(exp.expiry);
+      if (key) expiryMap.set(key, exp);
+    }
+
+    const cells: string[] = [
+      csvCell(row.created_at),
+      csvCell(toNum(row.pnl)),
+      csvCell(toNum(row.mid_pnl)),
+      csvCell(toNum(row.spread)),
+      csvCell(toNum(row.straddle)),
+      csvCell(toNum(row.delta_band_min)),
+      csvCell(toNum(row.delta_band_max)),
+      csvCell(row.trade_count),
+      ...symbols.map((s) =>
+        csvCell(absDeltaForSymbol(row.delta_by_underlying, row.spot, s))
+      ),
+      ...symbols.map((s) => csvCell(toNum(row.spot?.[s] ?? null))),
+      ...expiries.map((e) => csvCell(toNum(expiryMap.get(e)?.ce_premium ?? null))),
+      ...expiries.map((e) => csvCell(toNum(expiryMap.get(e)?.pe_premium ?? null))),
+    ];
+    lines.push(cells.join(","));
+  }
+
+  return lines.join("\n");
+}
+
+function sanitizeFilename(name: string): string {
+  const cleaned = name.replace(/[^a-zA-Z0-9._-]+/g, "_").replace(/^_|_$/g, "");
+  return cleaned || "strategy";
+}
+
+function triggerCsvDownload(filename: string, csv: string): void {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 interface Props {
   strategyId: number;
   strategyName: string;
@@ -205,6 +350,7 @@ export default function StrategyMetricSnapshotsModal({
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPage = useCallback(
@@ -236,6 +382,23 @@ export default function StrategyMetricSnapshotsModal({
     [strategyId]
   );
 
+  const handleDownload = useCallback(async () => {
+    setDownloading(true);
+    setError(null);
+    try {
+      const allRows = await collectAllSnapshots(strategyId);
+      const csv = buildMetricSnapshotsCsv(allRows);
+      triggerCsvDownload(
+        `${sanitizeFilename(strategyName)}-metric-snapshots.csv`,
+        csv
+      );
+    } catch {
+      setError("Failed to download metric snapshots CSV.");
+    } finally {
+      setDownloading(false);
+    }
+  }, [strategyId, strategyName]);
+
   useEffect(() => {
     fetchPage(1);
   }, [fetchPage]);
@@ -265,10 +428,20 @@ export default function StrategyMetricSnapshotsModal({
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
+            onClick={handleDownload}
+            className="btn btn-ghost btn-sm gap-1.5"
+            title="Download all snapshots as CSV"
+            disabled={downloading || loading || count === 0}
+          >
+            <Download className={`size-4 ${downloading ? "animate-pulse" : ""}`} />
+            {downloading ? "Downloading…" : "Download"}
+          </button>
+          <button
+            type="button"
             onClick={() => fetchPage(page, true)}
             className={`btn btn-ghost btn-sm btn-square ${loading ? "animate-spin" : ""}`}
             title="Refresh metric snapshots"
-            disabled={loading}
+            disabled={loading || downloading}
           >
             <RotateCw className="size-4" />
           </button>

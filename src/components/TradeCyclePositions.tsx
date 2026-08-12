@@ -30,7 +30,7 @@ interface Props {
 
 const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) => {
   const alert = useAlert();
-  const isSandbox = Boolean(fetchFn);
+  const isSimulation = Boolean(fetchFn);
   const doFetch = fetchFn ?? authFetch;
   const [cycle, setCycle] = useState<TradeCycle>(tradeCycle);
   const [positions, setPositions] = useState<Position[]>([]);
@@ -141,7 +141,7 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) =
               <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-base-300/70 bg-base-200/50 px-2.5 py-0.5 text-xs font-medium text-base-content/85">
                 {statusMap[cycle.state]} {cycle.state}
               </span>
-              {cycle.state === "NEW" && !isSandbox && (
+              {cycle.state === "NEW" && !isSimulation && (
                 <button
                   type="button"
                   onClick={activateTradeCycle}
