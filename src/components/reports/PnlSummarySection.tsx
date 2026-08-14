@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { TrendingUp } from "lucide-react";
+import { Info, TrendingUp } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import type { E2PnlSummary } from "@/types/reports";
 
@@ -30,11 +30,19 @@ function formatPnlAmount(value: number | null | undefined): string {
   return formatMoneyIN(value);
 }
 
+function e1InfoTip(selfManaged: boolean, realised: number | null): string {
+  const parts: string[] = [];
+  if (selfManaged) parts.push("Self-managed.");
+  if (realised != null) parts.push(`Realised: ₹${formatPnlAmount(realised)}`);
+  return parts.join(" ");
+}
+
 type PnlLine = {
   label: string;
   value: number | null;
   pct: number | null;
   emphasis?: boolean;
+  infoTip?: string;
 };
 
 type E2PnlTile = {
@@ -55,7 +63,7 @@ export default function PnlSummarySection({
   accountCreatedAt = null,
 }: PnlSummarySectionProps) {
   const e2PnlTiles = useMemo((): E2PnlTile[] => {
-    const showE1 = pnlSummary.e1_hedgium_managed !== false;
+    const selfManaged = pnlSummary.e1_hedgium_managed === false;
     const allTimeDetail = pnlSummary.pnl_inception_date
       ? `(${formatDate(pnlSummary.pnl_inception_date)} → Till date)`
       : accountCreatedAt
@@ -68,12 +76,19 @@ export default function PnlSummarySection({
       e1: number | null | undefined,
       e1Pct: number | null | undefined,
       combined: number | null | undefined,
-      combinedPct: number | null | undefined
+      combinedPct: number | null | undefined,
+      e1Realised: number | null | undefined
     ): PnlLine[] => {
       const lines: PnlLine[] = [{ label: "E2", value: e2, pct: e2Pct ?? null }];
-      if (showE1) {
+      if (e1 != null) {
+        const infoTip = e1InfoTip(selfManaged, e1Realised ?? null);
         lines.push(
-          { label: "E1", value: e1 ?? null, pct: e1Pct ?? null },
+          {
+            label: "E1",
+            value: e1,
+            pct: e1Pct ?? null,
+            infoTip: infoTip || undefined,
+          },
           {
             label: "Total",
             value: combined ?? null,
@@ -87,19 +102,6 @@ export default function PnlSummarySection({
 
     return [
       {
-        key: "week",
-        label: "Weekly (Current)",
-        detail: `(${pnlSummary.week} · Mon–Sun)`,
-        lines: buildLines(
-          pnlSummary.week_pnl ?? 0,
-          pnlSummary.week_pnl_pct,
-          pnlSummary.e1_week_pnl,
-          pnlSummary.e1_week_pnl_pct,
-          pnlSummary.combined_week_pnl,
-          pnlSummary.combined_week_pnl_pct
-        ),
-      },
-      {
         key: "month",
         label: "Monthly (Current)",
         detail: `(${pnlSummary.month})`,
@@ -109,7 +111,8 @@ export default function PnlSummarySection({
           pnlSummary.e1_month_pnl,
           pnlSummary.e1_month_pnl_pct,
           pnlSummary.combined_month_pnl,
-          pnlSummary.combined_month_pnl_pct
+          pnlSummary.combined_month_pnl_pct,
+          pnlSummary.e1_month_realised
         ),
       },
       {
@@ -122,7 +125,8 @@ export default function PnlSummarySection({
           pnlSummary.e1_quarter_pnl,
           pnlSummary.e1_quarter_pnl_pct,
           pnlSummary.combined_quarter_pnl,
-          pnlSummary.combined_quarter_pnl_pct
+          pnlSummary.combined_quarter_pnl_pct,
+          pnlSummary.e1_quarter_realised
         ),
       },
       {
@@ -135,7 +139,8 @@ export default function PnlSummarySection({
           pnlSummary.e1_ytd_pnl,
           pnlSummary.e1_ytd_pnl_pct,
           pnlSummary.combined_ytd_pnl,
-          pnlSummary.combined_ytd_pnl_pct
+          pnlSummary.combined_ytd_pnl_pct,
+          pnlSummary.e1_ytd_realised
         ),
         highlight: true,
       },
@@ -149,7 +154,8 @@ export default function PnlSummarySection({
           pnlSummary.e1_all_time_pnl,
           pnlSummary.e1_all_time_pnl_pct,
           pnlSummary.combined_all_time_pnl,
-          pnlSummary.combined_all_time_pnl_pct
+          pnlSummary.combined_all_time_pnl_pct,
+          pnlSummary.e1_all_time_realised
         ),
       },
     ];
@@ -164,20 +170,15 @@ export default function PnlSummarySection({
             PnL
           </h2>
         </div>
-        <p className="max-w-2xl text-sm text-base-content/70">
-          {pnlSummary.e1_hedgium_managed !== false
-            ? "E2 strategy, E1 CNC, and combined PnL for the current week (Mon–Sun), month, quarter, financial year, and all time."
-            : "Engine 2 strategy PnL for the current week (Mon–Sun), month, quarter, financial year, and all time."}
-        </p>
       </div>
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {e2PnlTiles.map((tile) => (
           <div
             key={tile.key}
             className={
               tile.highlight
-                ? "relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4"
-                : "rounded-2xl border border-base-300/60 bg-base-200/35 p-4"
+                ? "relative z-0 hover:z-20 focus-within:z-20 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4"
+                : "relative z-0 hover:z-20 focus-within:z-20 rounded-2xl border border-base-300/60 bg-base-200/35 p-4"
             }
           >
             <dt className="mb-2 text-xs font-medium uppercase tracking-wider text-base-content">
@@ -192,11 +193,25 @@ export default function PnlSummarySection({
                   }`}
                 >
                   <span
-                    className={`shrink-0 text-[11px] font-medium uppercase tracking-wide ${
+                    className={`inline-flex items-center gap-0.5 shrink-0 text-[11px] font-medium uppercase tracking-wide ${
                       line.emphasis ? "text-base-content/80" : "text-base-content/55"
                     }`}
                   >
                     {line.label}
+                    {line.infoTip ? (
+                      <button
+                        type="button"
+                        className={`tooltip z-30 cursor-pointer inline-flex text-base-content/45 hover:text-base-content/70 before:z-30 before:max-w-[14rem] before:text-left before:whitespace-normal before:px-3 before:py-2 before:normal-case before:tracking-normal after:z-30 ${
+                          tile.key === "month" || tile.key === "ytd"
+                            ? "tooltip-right"
+                            : "tooltip-left"
+                        }`}
+                        data-tip={line.infoTip}
+                        aria-label={line.infoTip}
+                      >
+                        <Info className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                      </button>
+                    ) : null}
                   </span>
                   <div className="min-w-0 text-right">
                     <div
@@ -225,6 +240,16 @@ export default function PnlSummarySection({
           </div>
         ))}
       </dl>
+      <p className="max-w-4xl text-xs leading-relaxed text-base-content/70">
+        E2 is PnL from Hedgium trading strategies. E1 is CNC equity holdings
+        {pnlSummary.e1_hedgium_managed === false ? (
+          <span className="text-warning">
+            {" "}
+            (self-managed — not managed by Hedgium)
+          </span>
+        ) : null}
+        . Total is both combined, for the current month, quarter, financial year, and all time.
+      </p>
     </div>
   );
 }

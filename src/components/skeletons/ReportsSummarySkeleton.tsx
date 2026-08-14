@@ -1,6 +1,7 @@
 import React from "react";
 
-const TILE_KEYS = ["a", "b", "c", "d", "e"] as const;
+const PNL_TILE_KEYS = ["a", "b", "c", "d"] as const;
+const ALLOC_TILE_KEYS = ["a", "b", "c", "d", "e"] as const;
 
 export default function ReportsSummarySkeleton() {
   return (
@@ -17,8 +18,8 @@ export default function ReportsSummarySkeleton() {
           </div>
           <div className="h-4 max-w-xl rounded-md bg-base-300/45" aria-hidden />
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {TILE_KEYS.map((key) => (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {PNL_TILE_KEYS.map((key) => (
             <div
               key={key}
               className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4"
@@ -53,7 +54,7 @@ export default function ReportsSummarySkeleton() {
           <div className="h-4 max-w-xl rounded-md bg-base-300/45" aria-hidden />
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {TILE_KEYS.map((key) => (
+          {ALLOC_TILE_KEYS.map((key) => (
             <div
               key={`alloc-${key}`}
               className="rounded-2xl border border-base-300/60 bg-base-200/35 p-4"
