@@ -292,6 +292,8 @@ function buildMetricSnapshotsCsv(rows: MetricSnapshotRow[]): string {
     ...symbols.map((s) => `future_${s}`),
     ...expiries.map((e) => `ce_prem_${e}`),
     ...expiries.map((e) => `pe_prem_${e}`),
+    ...expiries.map((e) => `ce_notional_${e}`),
+    ...expiries.map((e) => `pe_notional_${e}`),
   ];
 
   const lines = [headers.map(csvEscape).join(",")];
@@ -319,6 +321,8 @@ function buildMetricSnapshotsCsv(rows: MetricSnapshotRow[]): string {
       ...symbols.map((s) => csvCell(toNum(row.future?.[s] ?? null))),
       ...expiries.map((e) => csvCell(toNum(expiryMap.get(e)?.ce_premium ?? null))),
       ...expiries.map((e) => csvCell(toNum(expiryMap.get(e)?.pe_premium ?? null))),
+      ...expiries.map((e) => csvCell(toNum(expiryMap.get(e)?.ce_notional ?? null))),
+      ...expiries.map((e) => csvCell(toNum(expiryMap.get(e)?.pe_notional ?? null))),
     ];
     lines.push(cells.join(","));
   }

@@ -40,12 +40,6 @@ export default function AllocationSummarySection({
 
     return [
       {
-        key: "week",
-        label: "Weekly (Current)",
-        detail: `(${allocationSummary.week} · Mon–Sun)`,
-        value: allocationSummary.week_count ?? 0,
-      },
-      {
         key: "month",
         label: "Monthly (Current)",
         detail: `(${allocationSummary.month})`,
@@ -78,11 +72,11 @@ export default function AllocationSummarySection({
         <div className="flex items-center gap-2">
           <Briefcase className="h-5 w-5 shrink-0 text-primary" aria-hidden />
           <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">
-            Allocated trade cycles
+            Allocated Strategies
           </h2>
         </div>
       </div>
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {allocationTiles.map((tile) => (
           <div
             key={tile.key}
