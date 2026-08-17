@@ -178,4 +178,54 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
       ],
     },
   ],
+  IIFLCAPITAL: [
+    {
+      field: "broker_user_id",
+      label: "Broker User ID",
+      steps: [
+        { text: "Log in to **IIFL Markets** (markets.iiflcapital.com) or the IIFL trading app." },
+        { text: "Your **Client ID** is your Broker User ID (also shown on the developer portal greeting)." },
+      ],
+    },
+    {
+      field: "api_key",
+      label: "App Key",
+      steps: [
+        { text: "Go to **developers.iiflcapital.com** and sign in as an Individual Trader." },
+        { text: "Open **My Apps** and click **Create App**." },
+        {
+          text: "IIFL asks for a **Redirect URL** when creating the app — any URL is fine. Hedgium does not send it on login; it reads `authCode` from the browser after you authenticate.",
+        },
+        { text: "Set the **Primary Static IP** to the Hedgium whitelist IP shown on the add-broker page." },
+        { text: "After the app is Active, open **View All Details** and copy the **App Key**." },
+      ],
+    },
+    {
+      field: "secret_key",
+      label: "App Secret",
+      steps: [
+        { text: "On the same **View All Details** modal, copy the **App Secret Key**." },
+        { text: "**Keep the secret key private** and never share it." },
+      ],
+    },
+    {
+      field: "broker_twofa",
+      label: "TOTP Secret",
+      steps: [
+        { text: "In the IIFL trading platform, open **Security** / **2FA** and enable **TOTP**." },
+        { text: "Scan the QR in Google Authenticator or Microsoft Authenticator." },
+        { text: "**Copy the TOTP secret** (not the 6-digit code) and paste it here so Hedgium can complete daily login." },
+      ],
+    },
+    {
+      field: "whitelist_ip",
+      label: "Whitelist static IP",
+      modalTitle: "How to whitelist static IP?",
+      steps: [
+        { text: "Log in to **developers.iiflcapital.com** and open **My Apps**." },
+        { text: "Edit your Hedgium app and set **Primary Static IP** to the IP shown on this page." },
+        { text: "IIFL rejects API calls from any other IP. Save the app after adding the IP." },
+      ],
+    },
+  ],
 };

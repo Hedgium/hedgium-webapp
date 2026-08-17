@@ -553,7 +553,8 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                             </button>
                             {(profile.broker_name === "SHOONYA" ||
                                 profile.broker_name === "ZERODHA" ||
-                                profile.broker_name === "KOTAKNEO") && (
+                                profile.broker_name === "KOTAKNEO" ||
+                                profile.broker_name === "IIFLCAPITAL") && (
                                 <button
                                     type="button"
                                     onClick={() => setIsBrokerLoginModalOpen(true)}
@@ -577,7 +578,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                     >
                         {sendingReminder ? "Sending…" : "Send login reminder"}
                     </button>
-                    {(profile.broker_name === "SHOONYA" || profile.broker_name === "ZERODHA" || profile.broker_name === "KOTAKNEO") && (
+                    {(profile.broker_name === "SHOONYA" || profile.broker_name === "ZERODHA" || profile.broker_name === "KOTAKNEO" || profile.broker_name === "IIFLCAPITAL") && (
                         <button
                             type="button"
                             onClick={() => setIsBrokerLoginModalOpen(true)}

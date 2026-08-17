@@ -12,6 +12,7 @@ export const BROKER_PROXY_POOL_BROKERS = [
   "SHOONYA",
   "GROWW",
   "KOTAKNEO",
+  "IIFLCAPITAL",
 ] as const;
 
 export type BrokerProxyPoolBroker = (typeof BROKER_PROXY_POOL_BROKERS)[number];
