@@ -45,6 +45,20 @@ function formatDateTimeCell(value: string | Date | null | undefined): string {
   });
 }
 
+function liveApiError(data: unknown, fallback: string): string {
+  if (!data || typeof data !== "object") return fallback;
+  const payload = data as Record<string, unknown>;
+  for (const key of ["message", "error_message", "detail"]) {
+    const value = payload[key];
+    if (typeof value !== "string") continue;
+    const text = value.trim();
+    if (text && text.toLowerCase() !== "success" && text.toLowerCase() !== "ok") {
+      return text;
+    }
+  }
+  return fallback;
+}
+
 interface LiveOrder {
   order_id: string;
   exchange_order_id?: string;
@@ -191,11 +205,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         setPositions(data.data?.net || []);
         setPositionsFetchedAt(new Date().toISOString());
       } else {
-        alert.error("Failed to fetch live positions");
+        alert.error(liveApiError(data, "Failed to fetch live positions"));
       }
     } catch (error) {
       console.error("Error fetching live positions:", error);
-      alert.error("Error fetching live positions");
+      alert.error(liveApiError(error, "Error fetching live positions"));
     } finally {
       setLoadingPositions(false);
     }
@@ -211,11 +225,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         setOrders(data.data || []);
         setOrdersFetchedAt(new Date().toISOString());
       } else {
-        alert.error("Failed to fetch live orders");
+        alert.error(liveApiError(data, "Failed to fetch live orders"));
       }
     } catch (error) {
       console.error("Error fetching live orders:", error);
-      alert.error("Error fetching live orders");
+      alert.error(liveApiError(error, "Error fetching live orders"));
     } finally {
       setLoadingOrders(false);
     }
@@ -231,11 +245,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         setHoldings(Array.isArray(data.data) ? data.data : []);
         setHoldingsFetchedAt(new Date().toISOString());
       } else {
-        alert.error("Failed to fetch live holdings");
+        alert.error(liveApiError(data, "Failed to fetch live holdings"));
       }
     } catch (error) {
       console.error("Error fetching live holdings:", error);
-      alert.error("Error fetching live holdings");
+      alert.error(liveApiError(error, "Error fetching live holdings"));
     } finally {
       setLoadingHoldings(false);
     }
@@ -247,7 +261,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
       const response = await authFetch(`profiles/refresh-margin/${profileId}/`);
       const data = await response.json();
       if (!response.ok) {
-        alert.error(data?.detail || "Failed to refresh margin");
+        alert.error(liveApiError(data, "Failed to refresh margin"));
         return;
       }
       setProfile((prev) => (prev ? { ...prev, ...data } : data));
@@ -269,11 +283,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         setTrades(Array.isArray(data.data) ? data.data : []);
         setTradesFetchedAt(new Date().toISOString());
       } else {
-        alert.error(data.message || "Failed to fetch live trades");
+        alert.error(liveApiError(data, "Failed to fetch live trades"));
       }
     } catch (error) {
       console.error("Error fetching live trades:", error);
-      alert.error("Error fetching live trades");
+      alert.error(liveApiError(error, "Error fetching live trades"));
     } finally {
       setLoadingTrades(false);
     }
@@ -309,7 +323,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     try {
       const payload = {
         exchange: orderForm.exchange,
-        tradingsymbol: orderForm.tradingsymbol,
+        tradingsymbol: orderForm.tradingsymbol.trim(),
         transaction_type: orderForm.transaction_type,
         quantity: parsedQuantity,
         order_type: orderForm.order_type,
@@ -334,11 +348,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         fetchOrders();
         fetchTrades();
       } else {
-        alert.error(data.message || "Failed to place order");
+        alert.error(liveApiError(data, "Failed to place order"));
       }
     } catch (error) {
       console.error("Error placing order:", error);
-      alert.error("Error placing order");
+      alert.error(liveApiError(error, "Error placing order"));
     } finally {
       setPlacingOrder(false);
     }
@@ -378,11 +392,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         fetchOrders();
         fetchTrades();
       } else {
-        alert.error(data.message || "Failed to modify order");
+        alert.error(liveApiError(data, "Failed to modify order"));
       }
     } catch (error) {
       console.error("Error modifying order:", error);
-      alert.error("Error modifying order");
+      alert.error(liveApiError(error, "Error modifying order"));
     } finally {
       setModifyingOrder(false);
     }
@@ -399,11 +413,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         fetchOrders();
         fetchTrades();
       } else {
-        alert.error(data.message || "Failed to cancel order");
+        alert.error(liveApiError(data, "Failed to cancel order"));
       }
     } catch (error) {
       console.log("Error cancelling order:", error);
-      alert.error("Error cancelling order");
+      alert.error(liveApiError(error, "Error cancelling order"));
     }
   };
 
@@ -465,11 +479,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         fetchOrders();
         fetchTrades();
       } else {
-        alert.error(data.message || "Failed to exit position");
+        alert.error(liveApiError(data, "Failed to exit position"));
       }
     } catch (error) {
       console.error("Error exiting position:", error);
-      alert.error("Error exiting position");
+      alert.error(liveApiError(error, "Error exiting position"));
     } finally {
       setExitingPosition(false);
     }

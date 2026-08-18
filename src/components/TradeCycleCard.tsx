@@ -1,53 +1,69 @@
 "use client";
 
 import React, { JSX, useState, useEffect } from "react";
-import {
-  Clock,
-  CheckCircle,
-  XCircle,
-  ChevronUp,
-  ChevronDown,
-  Lock,
-  ExternalLink,
-  ArrowRight,
-} from "lucide-react";
+import { Clock, CheckCircle, XCircle, Lock, ExternalLink, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { authFetch } from "@/utils/api";
-import { formatMoneyIN } from "@/utils/formatNumber";
+import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
+import { activateTradeCycle } from "@/services/tradeCycles";
+import type { SpotByUnderlying, TradeCycleListItem, TradeCycleStrategyMetrics } from "@/types/tradeCycles";
 
-interface Leg {
-  id: number;
-  action: "BUY" | "SELL";
-  instrument: string;
-  quantity: number;
-  price: number;
-  order_type: string;
-  status: string;
-  leg_index: number;
-}
-
-interface TradeCycleInput {
-  id: number;
-  name: string;
-  description: string;
-  state: string;
-  sub_state: string;
-  created_at: string;
-  pnl_total?: number | string | null;
-  pnl_updated_at?: string | null;
-  adjustments?: unknown[];
-}
-
-function pnlClass(value: number): string {
+function pnlClass(value: number | null): string {
+  if (value == null) return "text-base-content/75";
   if (value > 0) return "text-success";
   if (value < 0) return "text-error";
   return "text-base-content/75";
 }
 
+function toNum(v: number | string | null | undefined): number | null {
+  if (v == null || v === "") return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function formatSnapshotAt(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function pickMetric<T>(
+  cycle: TradeCycleListItem,
+  key: keyof TradeCycleStrategyMetrics
+): T | null | undefined {
+  const nested = cycle.strategy?.[key];
+  if (nested != null && nested !== "") return nested as T;
+  return cycle[key] as T | null | undefined;
+}
+
+function combinedAbsDelta(
+  deltas: SpotByUnderlying | null | undefined,
+  spots: SpotByUnderlying | null | undefined
+): number | null {
+  if (!deltas && !spots) return null;
+  const symbols = new Set([...Object.keys(deltas || {}), ...Object.keys(spots || {})]);
+  let sum = 0;
+  let any = false;
+  for (const sym of symbols) {
+    if (!sym) continue;
+    const delta = toNum(deltas?.[sym] ?? null);
+    const spot = toNum(spots?.[sym] ?? null);
+    if (delta == null || spot == null || spot <= 0) continue;
+    sum += delta * spot;
+    any = true;
+  }
+  return any ? sum : null;
+}
+
 interface Props {
-  tradeCycle: TradeCycleInput;
-  isActive: boolean;
+  tradeCycle: TradeCycleListItem;
+  isActive?: boolean;
   isSimulation?: boolean;
 }
 
@@ -83,65 +99,88 @@ function stateStyles(state: string): { pill: string; icon: JSX.Element } {
   }
 }
 
-const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSimulation }) => {
-  const [expanded, setExpanded] = useState(false);
-  const alert = useAlert();
+function MetricCell({
+  label,
+  value,
+  sub,
+  valueClassName = "text-base-content",
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-base-300/60 bg-base-200/35 px-3 py-2.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-base-content/70">
+        {label}
+      </p>
+      <p className={`mt-0.5 text-base font-semibold tabular-nums leading-tight md:text-lg ${valueClassName}`}>
+        {value}
+      </p>
+      {sub != null && sub !== false ? (
+        <p className="mt-1 text-[10px] tabular-nums leading-snug text-base-content/70">{sub}</p>
+      ) : null}
+    </div>
+  );
+}
 
-  const [cycle, setCycle] = useState<TradeCycleInput>(tradeCycle);
+const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive = true, isSimulation }) => {
+  const alert = useAlert();
+  const [cycle, setCycle] = useState<TradeCycleListItem>(tradeCycle);
+  const [activating, setActivating] = useState(false);
 
   useEffect(() => {
     setCycle(tradeCycle);
   }, [tradeCycle]);
 
-  const latestAdjustment = (cycle.adjustments ?? [])[0] as { legs?: Leg[] } | undefined;
-  const legs: Leg[] = latestAdjustment?.legs ?? [];
   const isLocked = cycle.state === "LOCKED";
   const { pill: statePillClass, icon: stateIcon } = stateStyles(cycle.state);
-  const pnlTotal =
-    cycle.pnl_total == null || cycle.pnl_total === ""
-      ? null
-      : Number(cycle.pnl_total);
-  const hasPnl = pnlTotal != null && !Number.isNaN(pnlTotal);
+  const pnlTotal = toNum(cycle.pnl_total);
+  const absDelta = combinedAbsDelta(
+    pickMetric<SpotByUnderlying>(cycle, "greek_delta_by_underlying"),
+    pickMetric<SpotByUnderlying>(cycle, "greek_spot_by_underlying")
+  );
+  const wpnl = toNum(pickMetric(cycle, "wpnl_total"));
+  const midWpnl = toNum(pickMetric(cycle, "mid_wpnl_total"));
+  const spread = toNum(pickMetric(cycle, "atm_spread"));
+  const greekUpdatedAt = pickMetric<string>(cycle, "greek_updated_at");
+  const wpnlUpdatedAt = pickMetric<string>(cycle, "wpnl_updated_at");
+  const spreadUpdatedAt = pickMetric<string>(cycle, "spread_updated_at");
 
-  async function activateTradeCycle() {
-    const url = `trade-cycles/activate-trade/${cycle.id}/`;
-
-    alert("Trade Cycle Activated", {
-      duration: 2000,
-    });
-
-    setCycle((prev) => ({
-      ...prev,
-      state: "ACTIVATED",
-    }));
+  async function handleActivate() {
+    if (activating) return;
+    setActivating(true);
     try {
-      const res = await authFetch(url, { method: "POST" });
-      const data = await res.json();
-      console.log("Activated:", data);
+      await activateTradeCycle(cycle.id);
+      setCycle((prev) => ({ ...prev, state: "ACTIVATED" }));
+      alert.success("Trade cycle activated", { duration: 2000 });
     } catch (err) {
       console.error("Activation failed:", err);
+      alert.error("Could not activate this trade cycle");
+    } finally {
+      setActivating(false);
     }
   }
 
   return (
     <article
-      className={`group relative flex flex-col overflow-hidden rounded-2xl bg-base-100/80  transition-all duration-200 ${
-        isActive ? " hover:border-primary/25" : ""
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/80 backdrop-blur-sm transition-all duration-200 ${
+        isActive ? "hover:border-primary/25" : ""
       } hover:-translate-y-0.5 ${isLocked ? "opacity-[0.92]" : ""}`}
     >
-
-
-      <div className="flex flex-1 flex-col p-4 md:p-4">
-        {/* Header */}
+      <div className="flex flex-1 flex-col p-4 md:p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 flex-1 ">
+          <div className="min-w-0 flex-1">
             <h3 className="text-lg font-semibold leading-snug tracking-tight text-base-content md:text-xl">
               {cycle.name}
             </h3>
             {cycle.description ? (
-              <p className="line-clamp-2 text-sm leading-relaxed text-base-content/55">{cycle.description}</p>
+              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-base-content/70">
+                {cycle.description}
+              </p>
             ) : null}
-            <div className="flex flex-wrap items-center gap-2 mt-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statePillClass}`}
               >
@@ -155,7 +194,7 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSimulation })
               ) : null}
             </div>
           </div>
-          <div className="shrink-0 text-right text-[11px] tabular-nums text-base-content/45 sm:pt-0.5">
+          <div className="shrink-0 text-right text-[11px] tabular-nums text-base-content/70 sm:pt-0.5">
             <div>#{cycle.id}</div>
             <div className="mt-0.5">{new Date(cycle.created_at).toLocaleDateString()}</div>
           </div>
@@ -163,11 +202,11 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSimulation })
 
         {isLocked && (
           <div className="rounded-xl border border-dashed border-base-300/80 bg-base-200/35 px-4 py-8 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-base-300/60 bg-base-100/60 shadow-inner">
-              <Lock className="h-6 w-6 text-base-content/35" aria-hidden />
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-base-300/60 bg-base-100/60">
+              <Lock className="h-6 w-6 text-base-content/50" aria-hidden />
             </div>
             <h4 className="text-base font-semibold text-base-content">Strategy locked</h4>
-            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-base-content/65">
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-base-content/70">
               This strategy is not available in your current plan.
             </p>
             <div className="mx-auto mt-5 flex max-w-xs flex-col gap-2">
@@ -183,109 +222,61 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive, isSimulation })
         )}
 
         {!isLocked && (
-          <>
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[11px] font-semibold tracking-[0.18em] text-base-content/45">
-                INITIAL LEGS
-              </span>
-              {legs.length > 0 ? (
-                <span className="text-xs tabular-nums text-base-content/40">{legs.length} total</span>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              {legs.slice(0, expanded ? legs.length : 4).map((leg) => (
-                <div
-                  key={leg.id}
-                  className="flex flex-col gap-2 rounded-xl border border-base-300/50 bg-base-200/35 px-3 py-2.5 transition-colors group-hover:border-base-300/70 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <span
-                      className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-bold tracking-wide ${
-                        leg.action === "BUY"
-                          ? "bg-success/15 text-success"
-                          : "bg-error/15 text-error"
-                      }`}
-                    >
-                      {leg.action}
-                    </span>
-                    <span className="truncate text-sm font-medium text-base-content/85">{leg.instrument}</span>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs tabular-nums text-base-content/60 sm:justify-end">
-                    <span>Qty {leg.quantity}</span>
-                    <span className="font-medium text-base-content/80">{formatMoneyIN(leg.price)}</span>
-                    {leg.status === "PENDING" ? (
-                      <Clock className="h-3.5 w-3.5 text-warning" aria-label="Pending" />
-                    ) : (
-                      <CheckCircle className="h-3.5 w-3.5 text-success" aria-label="Done" />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {legs.length > 4 && (
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs mt-3 gap-1 self-start rounded-full px-2 font-medium normal-case text-base-content/70 hover:bg-base-200/80 hover:text-base-content"
-                onClick={() => setExpanded(!expanded)}
-              >
-                {expanded ? (
-                  <>
-                    <ChevronUp className="h-3.5 w-3.5" aria-hidden />
-                    Show less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-3.5 w-3.5" aria-hidden />
-                    Show all {legs.length} legs
-                  </>
-                )}
-              </button>
-            )}
-          </>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <MetricCell
+              label="PnL"
+              value={pnlTotal == null ? "—" : formatMoneyIN(pnlTotal)}
+              sub={formatSnapshotAt(cycle.pnl_updated_at) ?? "Cycle total"}
+              valueClassName={pnlClass(pnlTotal)}
+            />
+            <MetricCell
+              label="Net Δ"
+              value={absDelta != null ? formatLakhsIN(absDelta) : "—"}
+              sub={formatSnapshotAt(greekUpdatedAt) ?? "Net delta"}
+              valueClassName={pnlClass(absDelta)}
+            />
+            <MetricCell
+              label="ATM spread"
+              value={spread == null ? "—" : `${spread.toFixed(2)}%`}
+              sub={formatSnapshotAt(spreadUpdatedAt) ?? "Not updated"}
+            />
+            <MetricCell
+              label="WPNL / Mid"
+              value={
+                <>
+                  <span className={pnlClass(wpnl)}>{wpnl == null ? "—" : formatMoneyIN(wpnl)}</span>
+                  {" / "}
+                  <span className={pnlClass(midWpnl)}>{midWpnl == null ? "—" : formatMoneyIN(midWpnl)}</span>
+                </>
+              }
+              sub={formatSnapshotAt(wpnlUpdatedAt) ?? "Not updated"}
+            />
+          </div>
         )}
 
-        <div className="flex-1 min-h-2" />
-
         {!isLocked && (
-          <div className="mt-5 flex flex-wrap items-end justify-between gap-3 border-t border-base-300/50 pt-4">
-            {hasPnl ? (
-              <div className="flex items-baseline gap-2">
-                <span className="text-[11px] font-semibold tracking-[0.14em] text-base-content/45">
-                  PnL
-                </span>
-                <span
-                  className={`text-base font-semibold tabular-nums md:text-lg ${pnlClass(pnlTotal)}`}
-                >
-                  {formatMoneyIN(pnlTotal)}
-                </span>
-              </div>
-            ) : (
-              <div />
+          <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-base-300/50 pt-4">
+            {cycle.state !== "NEW" && (
+              <Link
+                href={isSimulation ? "/simulation" : "/positions"}
+                className="btn btn-primary btn-sm gap-1.5 rounded-full px-5"
+              >
+                View positions
+                <ArrowRight className="h-3.5 w-3.5 opacity-90" aria-hidden />
+              </Link>
             )}
 
-            <div className="flex flex-wrap justify-end gap-2">
-              {cycle.state !== "NEW" && (
-                <Link
-                  href={isSimulation ? "/simulation" : "/positions"}
-                  className="btn btn-primary btn-sm gap-1.5 rounded-full px-5 shadow-sm shadow-primary/15"
-                >
-                  View positions
-                  <ArrowRight className="h-3.5 w-3.5 opacity-90" aria-hidden />
-                </Link>
-              )}
-
-              {cycle.state === "NEW" && !isSimulation && (
-                <button
-                  type="button"
-                  onClick={activateTradeCycle}
-                  className="btn btn-outline btn-primary btn-sm rounded-full border-primary/40 px-5"
-                >
-                  Activate
-                </button>
-              )}
-            </div>
+            {cycle.state === "NEW" && !isSimulation && (
+              <button
+                type="button"
+                onClick={() => void handleActivate()}
+                disabled={activating}
+                aria-busy={activating}
+                className="btn btn-outline btn-primary btn-sm rounded-full border-primary/40 px-5"
+              >
+                {activating ? "Activating…" : "Activate"}
+              </button>
+            )}
           </div>
         )}
       </div>

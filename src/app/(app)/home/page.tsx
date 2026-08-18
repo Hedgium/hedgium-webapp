@@ -2,50 +2,70 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Briefcase } from 'lucide-react';
+import { ArrowRight, Briefcase, Layers } from 'lucide-react';
 import MarketHeader from '@/components/MarketHeader';
 import PnlSummarySection from '@/components/reports/PnlSummarySection';
 import AllocationSummarySection from '@/components/reports/AllocationSummarySection';
 import ReportsSummarySkeleton from '@/components/skeletons/ReportsSummarySkeleton';
+import TradeCycleCard from '@/components/TradeCycleCard';
+import TradeCycleCardSkeleton from '@/components/skeletons/TradeCycleCardSkeleton';
 import {
   fetchAccountCreatedAt,
   fetchAllocationSummary,
   fetchE2PnlSummary,
 } from '@/services/reports';
+import { fetchTradeCycles } from '@/services/tradeCycles';
 import type { AllocationSummary, E2PnlSummary } from '@/types/reports';
+import type { TradeCycleListItem } from '@/types/tradeCycles';
 
 export default function HomePage() {
   const [pnlSummary, setPnlSummary] = useState<E2PnlSummary | null>(null);
   const [allocationSummary, setAllocationSummary] = useState<AllocationSummary | null>(null);
   const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
+  const [tradeCycles, setTradeCycles] = useState<TradeCycleListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cyclesLoading, setCyclesLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setLoading(true);
-      try {
-        const scope = { mode: "client" as const };
-        const [pnl, alloc, createdAt] = await Promise.all([
+      setCyclesLoading(true);
+      const scope = { mode: "client" as const };
+
+      const [summaryResult, cyclesResult] = await Promise.allSettled([
+        Promise.all([
           fetchE2PnlSummary(scope),
           fetchAllocationSummary(scope),
           fetchAccountCreatedAt(scope),
-        ]);
-        if (cancelled) return;
+        ]),
+        fetchTradeCycles(),
+      ]);
+
+      if (cancelled) return;
+
+      if (summaryResult.status === "fulfilled") {
+        const [pnl, alloc, createdAt] = summaryResult.value;
         setPnlSummary(pnl);
         setAllocationSummary(alloc);
         setAccountCreatedAt(createdAt);
-      } catch (e) {
-        console.error("Error fetching home summaries:", e);
-        if (!cancelled) {
-          setPnlSummary(null);
-          setAllocationSummary(null);
-          setAccountCreatedAt(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+      } else {
+        console.error("Error fetching home summaries:", summaryResult.reason);
+        setPnlSummary(null);
+        setAllocationSummary(null);
+        setAccountCreatedAt(null);
       }
+
+      if (cyclesResult.status === "fulfilled") {
+        setTradeCycles(cyclesResult.value.results);
+      } else {
+        console.error("Error fetching home trade cycles:", cyclesResult.reason);
+        setTradeCycles([]);
+      }
+
+      setLoading(false);
+      setCyclesLoading(false);
     }
 
     void load();
@@ -106,6 +126,50 @@ export default function HomePage() {
             </div>
           </div>
         )}
+
+        <section className="space-y-4" aria-labelledby="home-trade-cycles-heading">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" aria-hidden />
+              <h2
+                id="home-trade-cycles-heading"
+                className="text-xl font-semibold tracking-tight text-base-content md:text-2xl"
+              >
+                Current month strategies
+              </h2>
+            </div>
+            <p className="text-sm text-base-content/70">
+              PnL, greeks, and spread for this month
+              {!cyclesLoading && tradeCycles.length > 0 ? (
+                <span>
+                  {" "}
+                  · {tradeCycles.length} cycle{tradeCycles.length === 1 ? "" : "s"}
+                </span>
+              ) : null}
+            </p>
+          </div>
+
+          {cyclesLoading ? (
+            <div className="grid grid-cols-1 gap-4">
+              {[0, 1].map((i) => (
+                <TradeCycleCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : tradeCycles.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4">
+              {tradeCycles.map((cycle) => (
+                <TradeCycleCard key={cycle.id} tradeCycle={cycle} isActive />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-base-300/70 bg-base-100/40 px-6 py-10 text-center backdrop-blur-sm">
+              <h3 className="text-base font-semibold text-base-content">No trade cycles this month</h3>
+              <p className="mt-1 text-sm text-base-content/70">
+                When a cycle is assigned, it will show here with PnL, greeks, and spread.
+              </p>
+            </div>
+          )}
+        </section>
 
         <div className="flex flex-wrap gap-2">
           <Link

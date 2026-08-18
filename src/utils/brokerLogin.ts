@@ -6,6 +6,7 @@ const BROKER_LOGIN_ENDPOINTS: Record<string, string> = {
   SHOONYA: "users/shoonya-login/",
   ZERODHA: "users/zerodha-login/",
   KOTAKNEO: "users/kotakneo-login/",
+  IIFLCAPITAL: "users/iiflcapital-login/",
 };
 
 // Shoonya's OAuth/Selenium login can take 60-90s; give the poll a generous window.

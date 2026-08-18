@@ -284,6 +284,7 @@ export default function TradeCycleDetailsModal({
                                     showOrdersCount={true}
                                     showAdminTradesAction={true}
                                     showGreeks={true}
+                                    showNote={true}
                                     onAdminViewTrades={openTradesForPosition}
                                 />
                             </div>
