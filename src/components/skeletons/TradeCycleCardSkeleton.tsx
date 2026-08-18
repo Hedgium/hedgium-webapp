@@ -2,9 +2,11 @@ import React from "react";
 
 export default function TradeCycleCardSkeleton() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/90 shadow-sm animate-pulse">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
-      <div className="flex flex-col p-5 md:p-6">
+    <div
+      className="relative overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/80 animate-pulse"
+      aria-hidden
+    >
+      <div className="flex flex-col p-4 md:p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:justify-between">
           <div className="flex-1 space-y-2">
             <div className="h-6 w-3/4 max-w-[240px] rounded-lg bg-base-300/90" />
@@ -20,12 +22,17 @@ export default function TradeCycleCardSkeleton() {
           </div>
         </div>
 
-        <div className="mb-2 h-3 w-16 rounded bg-base-300/50" />
-
-        <div className="space-y-2">
-          <div className="h-14 rounded-xl border border-base-300/40 bg-base-200/50" />
-          <div className="h-14 rounded-xl border border-base-300/40 bg-base-200/50" />
-          <div className="h-14 rounded-xl border border-base-300/40 bg-base-200/40" />
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-base-300/40 bg-base-200/50 px-3 py-2.5"
+            >
+              <div className="h-3 w-12 rounded bg-base-300/50" />
+              <div className="mt-2 h-5 w-20 rounded bg-base-300/70" />
+              <div className="mt-2 h-2.5 w-16 rounded bg-base-300/40" />
+            </div>
+          ))}
         </div>
 
         <div className="mt-5 flex justify-end border-t border-base-300/40 pt-4">

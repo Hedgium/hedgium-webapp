@@ -29,6 +29,8 @@ interface PositionsTableProps {
   showAdminTradesAction?: boolean;
   onAdminViewTrades?: (position: Position) => void;
   showGreeks?: boolean;
+  /** Staff-only: operator/system note (e.g. broker vs trades reconciliation). */
+  showNote?: boolean;
   className?: string;
 }
 
@@ -38,6 +40,7 @@ export default function PositionsTable({
   showAdminTradesAction = false,
   onAdminViewTrades,
   showGreeks = false,
+  showNote = false,
   className = "",
 }: PositionsTableProps) {
   const getPnLColor = (pnl: number) => {
@@ -64,7 +67,7 @@ export default function PositionsTable({
             <th scope="col">Realised</th>
             <th scope="col">PnL</th>
             {showGreeks && <th scope="col">Greeks</th>}
-            <th scope="col" className="min-w-[8rem] max-w-[14rem]">Note</th>
+            {showNote && <th scope="col" className="min-w-[8rem] max-w-[14rem]">Note</th>}
             {showOrdersCount && <th scope="col">Orders</th>}
             {showAdminTradesAction && <th scope="col" className="w-28">Actions</th>}
           </tr>
@@ -108,11 +111,13 @@ export default function PositionsTable({
                     <PositionGreeksCell greeks={pos} compact />
                   </td>
                 )}
-                <td
-                  className="max-w-[14rem] truncate text-xs text-base-content/80"
-                >
-                  {pos.note?.trim() ? pos.note.trim() : "—"}
-                </td>
+                {showNote && (
+                  <td
+                    className="max-w-[14rem] truncate text-xs text-base-content/80"
+                  >
+                    {pos.note?.trim() ? pos.note.trim() : "—"}
+                  </td>
+                )}
                 {showOrdersCount && (
                   <td className="text-right">
                     {pos.orders?.length ?? 0}

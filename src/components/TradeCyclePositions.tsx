@@ -5,7 +5,6 @@
 import React, { JSX, useState, useEffect, useCallback } from "react";
 import { Clock, CheckCircle, XCircle } from "lucide-react";
 import { authFetch } from "@/utils/api";
-import useAlert from "@/hooks/useAlert";
 import TradeCyclePositionsSkeleton from "./skeletons/TradeCyclePositionsSkeleton";
 import PositionsTable, { Position } from "./positions/PositionsTable";
 import UnmappedOrdersTable, { UnmappedOrder } from "./positions/UnmappedOrdersTable";
@@ -29,8 +28,6 @@ interface Props {
 }
 
 const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) => {
-  const alert = useAlert();
-  const isSimulation = Boolean(fetchFn);
   const doFetch = fetchFn ?? authFetch;
   const [cycle, setCycle] = useState<TradeCycle>(tradeCycle);
   const [positions, setPositions] = useState<Position[]>([]);
@@ -86,25 +83,6 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) =
     await getTradeCyclePositions(cycle.id, true);
   }
 
-  async function activateTradeCycle() {
-    alert("Trade Cycle Activated", {
-      duration: 2000,
-    });
-
-    setCycle((prev) => ({
-      ...prev,
-      state: "ACTIVATED",
-    }));
-    try {
-      const res = await authFetch(`trade-cycles/activate-trade/${cycle.id}/`, {
-        method: "POST",
-      });
-      await res.json();
-    } catch (err) {
-      console.error("Activation failed:", err);
-    }
-  }
-
   useEffect(() => {
     if (cycle) getTradeCyclePositions(cycle.id);
   }, [cycle.id, getTradeCyclePositions]);
@@ -141,15 +119,6 @@ const TradeCycleWithPositionsCard: React.FC<Props> = ({ tradeCycle, fetchFn }) =
               <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-base-300/70 bg-base-200/50 px-2.5 py-0.5 text-xs font-medium text-base-content/85">
                 {statusMap[cycle.state]} {cycle.state}
               </span>
-              {cycle.state === "NEW" && !isSimulation && (
-                <button
-                  type="button"
-                  onClick={activateTradeCycle}
-                  className="btn btn-outline btn-primary btn-xs rounded-full border-primary/40 px-4"
-                >
-                  Activate
-                </button>
-              )}
             </div>
           </div>
           <div className="shrink-0 text-right text-[11px] tabular-nums text-base-content/45">

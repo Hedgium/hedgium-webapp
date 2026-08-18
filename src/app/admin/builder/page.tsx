@@ -277,6 +277,7 @@ export default function BuilderPage() {
                                 <option value="CHECKING">Checking</option>
                                 <option value="ACTIVE">Active</option>
                                 <option value="EXIT_CHECKING">Exit Checking</option>
+                                <option value="EXIT_STARTED">Exit Started</option>
                                 <option value="EXITED">Exited</option>
                                 <option value="INACTIVE">Inactive</option>
                             </select>

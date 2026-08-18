@@ -2,6 +2,7 @@ import { authFetch } from "@/utils/api";
 import type {
   TradeCycleAllocationSummary,
   TradeCycleAllocationSummaryResponse,
+  TradeCycleListResponse,
 } from "@/types/tradeCycles";
 
 let inflight: Promise<TradeCycleAllocationSummary> | null = null;
@@ -26,4 +27,24 @@ export async function fetchAllocationSummary(): Promise<TradeCycleAllocationSumm
 export async function hasAssignedTradeCycles(): Promise<boolean> {
   const summary = await fetchAllocationSummary();
   return summary.all_time > 0;
+}
+
+export async function fetchTradeCycles(
+  page = 1,
+  pageSize = 50
+): Promise<TradeCycleListResponse> {
+  const res = await authFetch(`trade-cycles/?page=${page}&page_size=${pageSize}`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch trade cycles");
+  }
+  return res.json() as Promise<TradeCycleListResponse>;
+}
+
+export async function activateTradeCycle(cycleId: number): Promise<void> {
+  const res = await authFetch(`trade-cycles/activate-trade/${cycleId}/`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    throw new Error("Failed to activate trade cycle");
+  }
 }
