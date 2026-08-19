@@ -29,6 +29,11 @@ const ResearchReportHtmlModal = dynamic(
   { ssr: false }
 );
 
+const StrategyDailyReportModal = dynamic(
+  () => import("@/components/admin/StrategyDailyReportModal"),
+  { ssr: false }
+);
+
 const REFRESH_ACTIVE_STRATEGY_TASKS = [
   "refresh-pnl-active-strategies",
   "refresh-wpnl-active-strategies",
@@ -178,6 +183,7 @@ export default function Page() {
   const [reportModalSymbols, setReportModalSymbols] = React.useState<
     string[] | null
   >(null);
+  const [strategyReportOpen, setStrategyReportOpen] = React.useState(false);
 
   const STRATEGIES_POLL_MS = 25_000;
   const METRICS_REFRESH_INTERVAL_MS = 120_000;
@@ -871,6 +877,15 @@ export default function Page() {
           <div className="flex items-center justify-end gap-1 shrink-0">
             <button
               type="button"
+              onClick={() => setStrategyReportOpen(true)}
+              className="btn btn-ghost btn-sm"
+              title="View today's strategy report"
+              aria-label="View today's strategy report"
+            >
+              📊 Report
+            </button>
+            <button
+              type="button"
               onClick={() => void fetchStrategies()}
               disabled={loading}
               className="btn btn-ghost btn-sm btn-square"
@@ -1191,10 +1206,19 @@ export default function Page() {
         )}
       </div>
 
+      <br />
+      <br />
+
       {reportModalSymbols && reportModalSymbols.length > 0 && (
         <ResearchReportHtmlModal
           symbols={reportModalSymbols}
           onClose={() => setReportModalSymbols(null)}
+        />
+      )}
+
+      {strategyReportOpen && (
+        <StrategyDailyReportModal
+          onClose={() => setStrategyReportOpen(false)}
         />
       )}
     </div>

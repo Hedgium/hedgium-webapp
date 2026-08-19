@@ -7,7 +7,7 @@ import { brokerLoginWithPolling } from "@/utils/brokerLogin";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import { useAuthStore } from "@/store/authStore";
 import { isDemoUser } from "@/lib/demo";
-import { RotateCw, Plus, AlertCircle, Loader2, ChevronDown } from "lucide-react";
+import { RotateCw, Plus, AlertCircle, Loader2, ChevronDown, Info } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import { LiveHolding } from "@/types/positions";
 
@@ -25,6 +25,7 @@ type AccountMetrics = {
   loading: boolean;
   engine1Total: number | null;
   engine1Pnl: number | null;
+  engine1Realised: number | null;
   availableCash: number | null;
   totalAcValue: number | null;
 };
@@ -47,6 +48,17 @@ function parseAvailableCash(marginData: Record<string, unknown>): number | null 
   return typeof cash === "number" && !Number.isNaN(cash) ? cash : null;
 }
 
+function parseTotalAccountCash(
+  marginData: Record<string, unknown>,
+  availableCash: number | null
+): number | null {
+  if (marginData.status === "success" && marginData.total_account_cash != null) {
+    const cash = Number(marginData.total_account_cash);
+    if (!Number.isNaN(cash)) return cash;
+  }
+  return availableCash;
+}
+
 function sumHoldingsMetrics(holdings: LiveHolding[]): {
   engine1Total: number;
   engine1Pnl: number;
@@ -63,6 +75,25 @@ function totalAcValue(
 ): number | null {
   if (engine1Total == null || availableCash == null) return null;
   return engine1Total + availableCash;
+}
+
+function e1PnlSum(
+  mtm: number | null | undefined,
+  realised: number | null | undefined
+): number | null {
+  const hasMtm = mtm != null && !Number.isNaN(mtm);
+  const hasRealised = realised != null && !Number.isNaN(realised);
+  if (hasMtm && hasRealised) return mtm + realised;
+  if (hasMtm) return mtm;
+  if (hasRealised) return realised;
+  return null;
+}
+
+function parseE1Realised(pnlData: Record<string, unknown>): number | null {
+  const raw = pnlData.e1_all_time_realised;
+  if (raw == null) return null;
+  const value = Number(raw);
+  return Number.isNaN(value) ? null : value;
 }
 
 export default function BrokerLoginStatus() {
@@ -85,6 +116,7 @@ export default function BrokerLoginStatus() {
     loading: false,
     engine1Total: null,
     engine1Pnl: null,
+    engine1Realised: null,
     availableCash: null,
     totalAcValue: null,
   });
@@ -118,16 +150,19 @@ export default function BrokerLoginStatus() {
     setAccountMetrics((m) => ({ ...m, loading: true }));
 
     try {
-      const [holdingsRes, marginRes] = await Promise.all([
+      const [holdingsRes, marginRes, pnlRes] = await Promise.all([
         authFetch("positions/live/holdings/"),
         authFetch("profiles/live/margin/"),
+        authFetch("positions/pnl/summary/"),
       ]);
 
       if (gen !== metricsFetchGen.current) return;
 
       let engine1Total: number | null = null;
       let engine1Pnl: number | null = null;
+      let engine1Realised: number | null = null;
       let availableCash: number | null = null;
+      let totalAccountCash: number | null = null;
 
       if (holdingsRes.ok) {
         const holdingsData = await holdingsRes.json();
@@ -144,14 +179,20 @@ export default function BrokerLoginStatus() {
       if (marginRes.ok) {
         const marginData = await marginRes.json();
         availableCash = parseAvailableCash(marginData);
+        totalAccountCash = parseTotalAccountCash(marginData, availableCash);
+      }
+
+      if (pnlRes.ok) {
+        engine1Realised = parseE1Realised(await pnlRes.json());
       }
 
       setAccountMetrics({
         loading: false,
         engine1Total,
         engine1Pnl,
+        engine1Realised,
         availableCash,
-        totalAcValue: totalAcValue(engine1Total, availableCash),
+        totalAcValue: totalAcValue(engine1Total, totalAccountCash),
       });
     } catch (err) {
       console.error("Account metrics fetch failed:", err);
@@ -160,6 +201,7 @@ export default function BrokerLoginStatus() {
         loading: false,
         engine1Total: null,
         engine1Pnl: null,
+        engine1Realised: null,
         availableCash: null,
         totalAcValue: null,
       });
@@ -235,7 +277,7 @@ export default function BrokerLoginStatus() {
         }
         await fetchAccountMetrics();
         if (!silent) {
-          alert.success("Account values updated");
+          // alert.success("Account values updated");
         }
       } catch {
         setStatusError("Failed to refresh account values.");
@@ -285,6 +327,7 @@ export default function BrokerLoginStatus() {
           loading: false,
           engine1Total: null,
           engine1Pnl: null,
+          engine1Realised: null,
           availableCash: null,
           totalAcValue: null,
         });
@@ -328,6 +371,11 @@ export default function BrokerLoginStatus() {
       setLoggingIn(false);
     }
   };
+
+  const e1PnlDisplay = e1PnlSum(
+    accountMetrics.engine1Pnl,
+    accountMetrics.engine1Realised
+  );
 
   return (
     <>
@@ -427,17 +475,67 @@ export default function BrokerLoginStatus() {
                         </span>
                       </div>
                     </li>
-                    <li className="pointer-events-none px-2 py-1">
+                    <li className="px-2 py-1">
                       <div className="flex justify-between gap-3 text-sm">
                         <span className="text-base-content/70">E1 PnL</span>
-                        <span
-                          className={`tabular-nums font-medium ${signedClass(accountMetrics.engine1Pnl)}`}
-                        >
-                          {accountMetrics.loading
-                            ? "…"
-                            : accountMetrics.engine1Pnl != null
-                              ? formatMoneyIN(accountMetrics.engine1Pnl, { decimals: 0 })
-                              : "—"}
+                        <span className="inline-flex items-center justify-end gap-0.5">
+                          {accountMetrics.loading ? (
+                            "…"
+                          ) : (
+                            <>
+                              <span
+                                className={`tabular-nums font-medium ${signedClass(e1PnlDisplay)}`}
+                              >
+                                {e1PnlDisplay != null
+                                  ? formatMoneyIN(e1PnlDisplay, { decimals: 0 })
+                                  : "—"}
+                              </span>
+                              {(accountMetrics.engine1Pnl != null ||
+                                accountMetrics.engine1Realised != null) && (
+                                <div className="dropdown dropdown-hover dropdown-end">
+                                  <button
+                                    type="button"
+                                    tabIndex={0}
+                                    className="inline-flex cursor-pointer text-base-content/45 hover:text-base-content/70"
+                                    aria-label="E1 PnL breakdown"
+                                  >
+                                    <Info className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                                  </button>
+                                  <div
+                                    tabIndex={0}
+                                    className="dropdown-content z-[210] w-40 rounded-lg border border-base-300 bg-base-100 p-2 text-left text-xs"
+                                  >
+                                    <div className="flex items-baseline justify-between gap-3">
+                                      <span className="text-base-content/55">MTM</span>
+                                      <span
+                                        className={`tabular-nums ${signedClass(accountMetrics.engine1Pnl)}`}
+                                      >
+                                        {accountMetrics.engine1Pnl != null
+                                          ? formatMoneyIN(accountMetrics.engine1Pnl, {
+                                              decimals: 0,
+                                            })
+                                          : "—"}
+                                      </span>
+                                    </div>
+                                    <div className="mt-1 flex items-baseline justify-between gap-3">
+                                      <span className="text-base-content/55">Realised</span>
+                                      <span
+                                        className={`tabular-nums ${signedClass(
+                                          accountMetrics.engine1Realised
+                                        )}`}
+                                      >
+                                        {accountMetrics.engine1Realised != null
+                                          ? formatMoneyIN(accountMetrics.engine1Realised, {
+                                              decimals: 0,
+                                            })
+                                          : "—"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
                         </span>
                       </div>
                     </li>
@@ -470,7 +568,6 @@ export default function BrokerLoginStatus() {
                         type="button"
                         className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         onClick={() => {
-                          setMetricsOpen(false);
                           void refreshAccountValues();
                         }}
                         disabled={refreshing || accountMetrics.loading}
