@@ -54,6 +54,7 @@ function Adjustment({
   const [adjustment, setAdjustment] = useState(adj);
   const [deleting, setDeleting] = useState(false);
   const [togglingCompleted, setTogglingCompleted] = useState(false);
+  const [approving, setApproving] = useState(false);
 
   const alert = useAlert();
 
@@ -83,6 +84,7 @@ function Adjustment({
   }
 
   async function approveAdjustment(adjId: number) {
+    setApproving(true);
     try {
       const res = await authFetch(`myadmin/approve-adjustment/${adjId}/`, {
         method: "POST",
@@ -97,6 +99,8 @@ function Adjustment({
     } catch (error) {
       console.error("Error approving adjustment:", error);
       alert.error("Error approving adjustment.");
+    } finally {
+      setApproving(false);
     }
   }
 
@@ -164,9 +168,16 @@ function Adjustment({
               e.stopPropagation();
               approveAdjustment(adjustment.id);
             }}
+            disabled={approving || adjustment.approved}
             className={`btn btn-sm ${adjustment.approved ? "btn-disabled" : "btn-success"}`}
           >
-            {adjustment.approved ? "Approved" : "Approve"}
+            {approving ? (
+              <span className="loading loading-spinner loading-xs"></span>
+            ) : adjustment.approved ? (
+              "Approved"
+            ) : (
+              "Approve"
+            )}
           </button>
 
           {canDuplicate && (

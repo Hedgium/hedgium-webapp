@@ -7,7 +7,7 @@ import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { Profile } from "@/types/profile";
 import { LiveHolding } from "@/types/positions";
-import { IndianRupee, RefreshCw, Search, BarChart3 } from "lucide-react";
+import { IndianRupee, RefreshCw, Search, BarChart3, Info } from "lucide-react";
 import { USER_ROLE_FILTER_OPTIONS, userRoleLabel } from "@/constants/userRoles";
 
 type PnlSummary = {
@@ -20,6 +20,7 @@ type PnlSummary = {
   quarter_pnl: number;
   ytd_pnl: number;
   all_time_pnl?: number;
+  e1_all_time_realised?: number | null;
 };
 
 type LiveMargin = {
@@ -27,6 +28,7 @@ type LiveMargin = {
   available_cash: number;
   utilised_total: number;
   net: number;
+  total_account_cash?: number | null;
 };
 
 type ClientPnlRow = {
@@ -68,12 +70,79 @@ function formatTotalCell(value: number | null | undefined): string {
   return formatMoneyIN(value, { decimals: 0, minDecimals: 0 });
 }
 
+function e1PnlSum(
+  mtm: number | null | undefined,
+  realised: number | null | undefined
+): number | null {
+  const hasMtm = mtm != null && !Number.isNaN(mtm);
+  const hasRealised = realised != null && !Number.isNaN(realised);
+  if (hasMtm && hasRealised) return mtm + realised;
+  if (hasMtm) return mtm;
+  if (hasRealised) return realised;
+  return null;
+}
+
+function E1PnlCell({
+  pnl,
+  realised,
+  compact,
+}: {
+  pnl: number | null | undefined;
+  realised: number | null | undefined;
+  compact?: boolean;
+}) {
+  const format = compact ? formatTotalCell : formatCell;
+  const sum = e1PnlSum(pnl, realised);
+  const hasBreakdown =
+    (pnl != null && !Number.isNaN(pnl)) || (realised != null && !Number.isNaN(realised));
+
+  return (
+    <span className={`inline-flex items-center justify-end gap-0.5 ${signedClass(sum)}`}>
+      {format(sum)}
+      {hasBreakdown ? (
+        <div className="dropdown dropdown-hover dropdown-start dropdown-right">
+          <button
+            type="button"
+            tabIndex={0}
+            className="inline-flex cursor-pointer text-base-content/45 hover:text-base-content/70"
+            aria-label="E1 PnL breakdown"
+          >
+            <Info className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+          </button>
+          <div
+            tabIndex={0}
+            className="dropdown-content z-50 w-44 rounded-lg border border-base-300 bg-base-100 p-2 text-left text-xs"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-base-content/55">MTM</span>
+              <span className={`tabular-nums ${signedClass(pnl ?? null)}`}>{formatCell(pnl)}</span>
+            </div>
+            <div className="mt-1 flex items-baseline justify-between gap-3">
+              <span className="text-base-content/55">Realised</span>
+              <span className={`tabular-nums ${signedClass(realised ?? null)}`}>
+                {formatCell(realised)}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </span>
+  );
+}
+
 function totalAcValue(
   engine1Total: number | null,
-  availableCash: number | null | undefined
+  cashAddend: number | null | undefined
 ): number | null {
-  if (engine1Total == null || availableCash == null || Number.isNaN(availableCash)) return null;
-  return engine1Total + availableCash;
+  if (engine1Total == null || cashAddend == null || Number.isNaN(cashAddend)) return null;
+  return engine1Total + cashAddend;
+}
+
+function totalAcCashAddend(margin: LiveMargin | null | undefined): number | null {
+  if (!margin) return null;
+  const addend = margin.total_account_cash ?? margin.available_cash;
+  if (addend == null || Number.isNaN(Number(addend))) return null;
+  return Number(addend);
 }
 
 async function mapWithConcurrency<T, R>(
@@ -155,6 +224,8 @@ async function fetchRowMetrics(
         available_cash: marginData.available_cash,
         utilised_total: marginData.utilised_total,
         net: marginData.net,
+        total_account_cash:
+          marginData.total_account_cash != null ? Number(marginData.total_account_cash) : null,
       };
     } else {
       errors.push("margin");
@@ -177,6 +248,8 @@ type ClientPnlTotals = {
   availableCash: number;
   totalAcValue: number;
   engine1Pnl: number;
+  engine1Realised: number;
+  engine1RealisedCount: number;
   e2Ytd: number;
   e2Quarter: number;
   e2Month: number;
@@ -191,6 +264,8 @@ function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
     availableCash: 0,
     totalAcValue: 0,
     engine1Pnl: 0,
+    engine1Realised: 0,
+    engine1RealisedCount: 0,
     e2Ytd: 0,
     e2Quarter: 0,
     e2Month: 0,
@@ -211,13 +286,19 @@ function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
       totals.availableCash += row.margin.available_cash;
       included = true;
     }
-    const rowTotalAc = totalAcValue(row.engine1Total, row.margin?.available_cash);
+    const rowTotalAc = totalAcValue(row.engine1Total, totalAcCashAddend(row.margin));
     if (rowTotalAc != null) {
       totals.totalAcValue += rowTotalAc;
       included = true;
     }
     if (row.engine1Pnl != null) {
       totals.engine1Pnl += row.engine1Pnl;
+      included = true;
+    }
+    const e1Realised = row.engine2?.e1_all_time_realised;
+    if (e1Realised != null && !Number.isNaN(e1Realised)) {
+      totals.engine1Realised += e1Realised;
+      totals.engine1RealisedCount += 1;
       included = true;
     }
     if (row.engine2?.ytd_pnl != null) {
@@ -455,8 +536,18 @@ export default function AdminClientPnlPage() {
                 <th className="text-right align-middle tabular-nums font-semibold text-base-content">
                   {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.totalAcValue)}
                 </th>
-                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.engine1Pnl)}`}>
-                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.engine1Pnl)}
+                <th className="relative z-0 text-right align-middle hover:z-20 focus-within:z-20">
+                  {anyLoading && totals.clientsIncluded === 0 ? (
+                    "…"
+                  ) : (
+                    <E1PnlCell
+                      compact
+                      pnl={totals.engine1Pnl}
+                      realised={
+                        totals.engine1RealisedCount > 0 ? totals.engine1Realised : null
+                      }
+                    />
+                  )}
                 </th>
                 <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.e2Ytd)}`}>
                   {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Ytd)}
@@ -554,10 +645,17 @@ export default function AdminClientPnlPage() {
                   <td className="text-right tabular-nums">
                     {row.status === "loading"
                       ? "…"
-                      : formatCell(totalAcValue(row.engine1Total, row.margin?.available_cash))}
+                      : formatCell(totalAcValue(row.engine1Total, totalAcCashAddend(row.margin)))}
                   </td>
-                  <td className={`text-right ${signedClass(row.engine1Pnl)}`}>
-                    {row.status === "loading" ? "…" : formatCell(row.engine1Pnl)}
+                  <td className="relative z-0 text-right hover:z-20 focus-within:z-20">
+                    {row.status === "loading" ? (
+                      "…"
+                    ) : (
+                      <E1PnlCell
+                        pnl={row.engine1Pnl}
+                        realised={row.engine2?.e1_all_time_realised}
+                      />
+                    )}
                   </td>
                   <td className={`text-right ${signedClass(row.engine2?.ytd_pnl)}`}>
                     {row.status === "loading" ? "…" : formatCell(row.engine2?.ytd_pnl ?? null)}

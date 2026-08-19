@@ -346,7 +346,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
               <div className="mb-4 space-y-1">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
-                  <h3 className="text-lg font-semibold">PnL (monthly)</h3>
+                  <h3 className="text-lg font-semibold">E2 PnL (monthly)</h3>
                 </div>
                 {/* <p
                   id="pnl-monthly-chart-desc"
