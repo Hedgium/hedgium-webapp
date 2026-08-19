@@ -191,7 +191,7 @@ export default function BrokerLoginStatus() {
         engine1Total,
         engine1Pnl,
         engine1Realised,
-        availableCash,
+        availableCash: totalAccountCash,
         totalAcValue: totalAcValue(engine1Total, totalAccountCash),
       });
     } catch (err) {

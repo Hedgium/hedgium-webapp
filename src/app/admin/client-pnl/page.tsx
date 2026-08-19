@@ -282,11 +282,12 @@ function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
       totals.engine1Total += row.engine1Total;
       included = true;
     }
-    if (row.margin?.available_cash != null) {
-      totals.availableCash += row.margin.available_cash;
+    const avlCash = totalAcCashAddend(row.margin);
+    if (avlCash != null) {
+      totals.availableCash += avlCash;
       included = true;
     }
-    const rowTotalAc = totalAcValue(row.engine1Total, totalAcCashAddend(row.margin));
+    const rowTotalAc = totalAcValue(row.engine1Total, avlCash);
     if (rowTotalAc != null) {
       totals.totalAcValue += rowTotalAc;
       included = true;
@@ -640,7 +641,7 @@ export default function AdminClientPnlPage() {
                   <td className="text-right tabular-nums">
                     {row.status === "loading"
                       ? "…"
-                      : formatCell(row.margin?.available_cash ?? null)}
+                      : formatCell(totalAcCashAddend(row.margin))}
                   </td>
                   <td className="text-right tabular-nums">
                     {row.status === "loading"
