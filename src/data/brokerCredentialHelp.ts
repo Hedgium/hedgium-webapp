@@ -228,4 +228,32 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
       ],
     },
   ],
+  NAVIA: [
+    {
+      field: "broker_user_id",
+      label: "Broker User ID",
+      steps: [
+        { text: "Log in to **Navia** (web.navia.co.in or the Navia app)." },
+        { text: "Your **client code / UCC** is the Broker User ID Hedgium needs." },
+      ],
+    },
+    {
+      field: "api_key",
+      label: "API Key",
+      steps: [
+        { text: "In your Navia account, open the **API** / developer section and generate an **API key**." },
+        { text: "Copy the key into Hedgium. Subsequent API calls send it as the `APIKey` header." },
+        { text: "Full request shapes are in the official docs at **api.navia.co.in**." },
+      ],
+    },
+    {
+      field: "broker_twofa",
+      label: "TOTP Secret",
+      steps: [
+        { text: "In the Navia app, enable **TOTP** (Google Authenticator or Microsoft Authenticator)." },
+        { text: "Scan the QR, then **copy the TOTP secret** (not the 6-digit code) into Hedgium." },
+        { text: "Hedgium sends that TOTP as `otp` on daily **Login** along with your password." },
+      ],
+    },
+  ],
 };
