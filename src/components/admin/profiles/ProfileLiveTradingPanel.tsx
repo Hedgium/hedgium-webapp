@@ -22,6 +22,7 @@ import {
   ClipboardList,
   ArrowRightLeft,
   BarChart3,
+  PieChart,
 } from "lucide-react";
 import Link from "next/link";
 import { Profile } from "@/types/profile";
@@ -30,6 +31,10 @@ import { LiveHolding, LivePosition } from "@/types/positions";
 const MarketDepthModal = dynamic(() => import("@/components/market/MarketDepthModal"), {
   ssr: false,
 });
+const Engine1ExecuteModal = dynamic(
+  () => import("@/components/admin/engine1/Engine1ExecuteModal"),
+  { ssr: false }
+);
 
 function formatDateTimeCell(value: string | Date | null | undefined): string {
   if (value == null || value === "") return "—";
@@ -158,6 +163,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [showPlaceOrderForm, setShowPlaceOrderForm] = useState(false);
+  const [showEngine1Modal, setShowEngine1Modal] = useState(false);
   const [showDepthModal, setShowDepthModal] = useState(false);
   const [showModifyOrderForm, setShowModifyOrderForm] = useState(false);
   const [showExitPositionForm, setShowExitPositionForm] = useState(false);
@@ -490,14 +496,24 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   };
 
   const placeOrderButton = (
-    <button
-      type="button"
-      onClick={() => setShowPlaceOrderForm(true)}
-      className="btn btn-primary btn-sm shrink-0"
-    >
-      <Plus size={16} />
-      Place Order
-    </button>
+    <div className="flex shrink-0 gap-2">
+      <button
+        type="button"
+        onClick={() => setShowEngine1Modal(true)}
+        className="btn btn-outline btn-sm"
+      >
+        <PieChart size={16} />
+        Engine 1
+      </button>
+      <button
+        type="button"
+        onClick={() => setShowPlaceOrderForm(true)}
+        className="btn btn-primary btn-sm"
+      >
+        <Plus size={16} />
+        Place Order
+      </button>
+    </div>
   );
 
   return (
@@ -1409,6 +1425,21 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
           open={showDepthModal}
           onClose={() => setShowDepthModal(false)}
           initialSymbol={orderForm.tradingsymbol}
+        />
+      )}
+
+      {showEngine1Modal && (
+        <Engine1ExecuteModal
+          profileId={profileId}
+          riskProfile={profile?.risk_profile}
+          open={showEngine1Modal}
+          onClose={() => setShowEngine1Modal(false)}
+          onExecuted={() => {
+            fetchOrders();
+            fetchTrades();
+            fetchHoldings();
+            fetchPositions();
+          }}
         />
       )}
     </>

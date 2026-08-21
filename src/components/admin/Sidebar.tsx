@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Bell, Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Phone, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network, CandlestickChart, IndianRupee, FlaskConical, Settings2 } from "lucide-react";
+import { Bell, Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Phone, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network, CandlestickChart, IndianRupee, FlaskConical, Settings2, PieChart } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
@@ -16,6 +16,7 @@ const tabs = [
   { name: "Profiles", href: "/admin/profiles", icon: <Users className="h-5 w-5" /> },
   { name: "Client PnL", href: "/admin/client-pnl", icon: <IndianRupee className="h-5 w-5" /> },
   { name: "Market", href: "/admin/market", icon: <CandlestickChart className="h-5 w-5" /> },
+  { name: "Engine 1", href: "/admin/engine1", icon: <PieChart className="h-5 w-5" /> },
   // { name: "Research", href: "/admin/research", icon: <FlaskConical className="h-5 w-5" /> },
   { name: "Proxy pool", href: "/admin/proxy-pool", icon: <Network className="h-5 w-5" /> },
   { name: "Leads", href: "/admin/leads", icon: <MessageCircle className="h-5 w-5" /> },

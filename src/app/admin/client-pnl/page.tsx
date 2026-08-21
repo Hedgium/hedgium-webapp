@@ -38,6 +38,7 @@ type ClientPnlRow = {
   userRole?: string | null;
   brokerName: string;
   brokerLoggedIn: boolean;
+  pnlInceptionDate: string | null;
   status: "idle" | "loading" | "done" | "error";
   error?: string;
   engine1Total: number | null;
@@ -68,6 +69,17 @@ function formatCell(value: number | null | undefined): string {
 function formatTotalCell(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
   return formatMoneyIN(value, { decimals: 0, minDecimals: 0 });
+}
+
+function formatInceptionDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const [y, m, d] = value.slice(0, 10).split("-").map(Number);
+  if (!y || !m || !d) return "—";
+  return new Date(y, m - 1, d).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function e1PnlSum(
@@ -336,6 +348,7 @@ function profileToRow(profile: Profile, partial?: Partial<ClientPnlRow>): Client
     userRole: profile.user?.role ?? null,
     brokerName: profile.broker_name,
     brokerLoggedIn: profile.broker_logged_in,
+    pnlInceptionDate: profile.pnl_inception_date ?? null,
     status: "idle",
     engine1Total: null,
     engine1Pnl: null,
@@ -625,10 +638,14 @@ export default function AdminClientPnlPage() {
                         {row.userEmail}
                       </p>
                       {row.userRole ? (
-                        <span className="badge badge-outline badge-xs w-fit">
-                          {userRoleLabel(row.userRole)}
+                        <span className="text-xs">
+                          {formatInceptionDate(row.pnlInceptionDate)}
+                        <span className="badge badge-outline badge-xs ml-2 w-fit">
+                         {userRoleLabel(row.userRole)}
+                        </span>
                         </span>
                       ) : null}
+                      
                     </div>
                   </td>
                   <td className="text-right tabular-nums">
