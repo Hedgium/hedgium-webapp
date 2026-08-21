@@ -5,7 +5,7 @@ import Link from "next/link";
 import React from "react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
-import { CheckCircle, Info, LayoutList, ListRestart, RefreshCw } from "lucide-react";
+import { CheckCircle, Edit2, Info, LayoutList, ListRestart, RefreshCw } from "lucide-react";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 
 import useAlert from "@/hooks/useAlert";
@@ -31,6 +31,11 @@ const ResearchReportHtmlModal = dynamic(
 
 const StrategyDailyReportModal = dynamic(
   () => import("@/components/admin/StrategyDailyReportModal"),
+  { ssr: false }
+);
+
+const StrategyBuilderEditModal = dynamic(
+  () => import("@/components/admin/StrategyBuilderEditModal"),
   { ssr: false }
 );
 
@@ -93,6 +98,7 @@ interface Strategy {
   wpnl_spot_by_underlying: SpotByUnderlying | null;
   spread_spot_by_underlying: SpotByUnderlying | null;
   underlying_names?: string[];
+  builder_id: number | null;
   completed: boolean;
   completed_at: string | null;
   auto_match_count: number;
@@ -184,6 +190,9 @@ export default function Page() {
     string[] | null
   >(null);
   const [strategyReportOpen, setStrategyReportOpen] = React.useState(false);
+  const [editingBuilderId, setEditingBuilderId] = React.useState<number | null>(
+    null
+  );
 
   const STRATEGIES_POLL_MS = 25_000;
   const METRICS_REFRESH_INTERVAL_MS = 120_000;
@@ -978,12 +987,36 @@ export default function Page() {
                       </td>
                       <td className="align-top max-w-[10rem]">
                         <div className="flex flex-col items-start gap-0.5 min-w-0">
-                          <Link
-                            href={`/admin/strategy/${strategy.id}`}
-                            className="link link-hover link-primary font-medium break-words whitespace-normal leading-snug"
-                          >
-                            {strategy.name}
-                          </Link>
+                          <div className="flex items-start gap-1 min-w-0">
+                            <Link
+                              href={`/admin/strategy/${strategy.id}`}
+                              className="link link-hover link-primary font-medium break-words whitespace-normal leading-snug min-w-0"
+                            >
+                              {strategy.name}
+                            </Link>
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-xs btn-square shrink-0"
+                              disabled={!strategy.builder_id}
+                              title={
+                                strategy.builder_id
+                                  ? "Edit builder"
+                                  : "No linked builder"
+                              }
+                              aria-label={
+                                strategy.builder_id
+                                  ? `Edit builder for ${strategy.name}`
+                                  : "No linked builder"
+                              }
+                              onClick={() => {
+                                if (strategy.builder_id) {
+                                  setEditingBuilderId(strategy.builder_id);
+                                }
+                              }}
+                            >
+                              <Edit2 className="size-3.5" />
+                            </button>
+                          </div>
                           <ResearchReportNameAffordance
                             symbols={matchingReportSymbols}
                             onOpen={setReportModalSymbols}
@@ -1219,6 +1252,14 @@ export default function Page() {
       {strategyReportOpen && (
         <StrategyDailyReportModal
           onClose={() => setStrategyReportOpen(false)}
+        />
+      )}
+
+      {editingBuilderId != null && (
+        <StrategyBuilderEditModal
+          builderId={editingBuilderId}
+          onClose={() => setEditingBuilderId(null)}
+          onSaved={() => void fetchStrategies({ background: true })}
         />
       )}
     </div>
