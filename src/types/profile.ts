@@ -52,6 +52,10 @@ export interface Profile {
     margin_equity: number;
     /** ISO datetime when margin_equity last changed (broker refresh, admin, bulk task). */
     margin_updated_at?: string | null;
+    /** YYYY-MM-DD capital deployed / Hedgium reporting start. Not account join date. */
+    pnl_inception_date?: string | null;
+    /** Capital / account value at pnl_inception_date for PnL % only. */
+    pnl_inception_value?: number | null;
     order_value_factor: number;
     quantity_multiplier: number;
     verified: boolean;

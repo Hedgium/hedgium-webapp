@@ -305,14 +305,24 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
     const aadharDocumentKind = getDocumentKind(u.aadhar_document_url);
     const kycDocumentKind = getDocumentKind(kycDocumentUrl);
     const proxyAddress = (profile.broker_proxy_pool?.ip_address || profile.proxy_host || "").trim();
-    const proxyPort = profile.broker_proxy_pool?.port ?? profile.proxy_port ?? 443;
-    const proxyUsername = (profile.broker_proxy_pool?.username || profile.proxy_username || "").trim();
     const proxyOn = Boolean(proxyAddress);
     const daysLeft = profile.subscription
         ? Math.ceil(
               (new Date(profile.subscription.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
           )
         : null;
+
+    const formatCardDate = (value: string | null | undefined): string => {
+        if (!value) return "—";
+        const dayOnly = value.slice(0, 10);
+        const [y, m, d] = dayOnly.split("-").map(Number);
+        if (!y || !m || !d) return "—";
+        return new Date(y, m - 1, d).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
+    };
 
     return (
         <div className="bg-base-100 rounded-xl p-4 mb-4 border border-base-300">
@@ -392,7 +402,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                         </div>
                         <div className="min-w-0 border-t border-base-300/50 pt-3 sm:border-l sm:border-t-0 sm:border-base-300/50 sm:pl-6 sm:pt-0">
                             <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">
-                                IDs
+                                IDs · plan
                             </p>
                             <p className="font-mono text-xs text-base-content/85 leading-snug">
                                 HID {profile.id}
@@ -403,32 +413,48 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                             >
                                 Broker {profile.broker_user_id || "—"}
                             </p>
-                        </div>
-                        <div className="min-w-0 border-t border-base-300/50 pt-3 sm:col-span-1 sm:border-l sm:border-t-0 sm:border-base-300/50 sm:pl-6 sm:pt-0">
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">
-                                Proxy · plan
-                            </p>
-                            <p className="text-xs text-base-content/80 leading-snug">
-                                {proxyOn ? (
-                                    <span className="text-success break-all">
-                                        {proxyAddress}:{proxyPort}
-                                        {proxyUsername ? " · auth" : ""}
-                                    </span>
-                                ) : (
-                                    <span className="text-base-content/50">Orders direct</span>
-                                )}
-                            </p>
                             {profile.subscription ? (
-                                <p className="text-xs text-base-content/70 mt-0.5" title={profile.subscription.plan.name}>
-                                    <span className="font-medium text-base-content/90">{profile.subscription.plan.name}</span>
-                                    <span className={profile.subscription.is_valid ? " text-success" : " text-warning"}>
+                                <p
+                                    className="text-xs text-base-content/70 mt-0.5"
+                                    title={profile.subscription.plan.name}
+                                >
+                                    <span className="font-medium text-base-content/90">
+                                        {profile.subscription.plan.name}
+                                    </span>
+                                    <span
+                                        className={
+                                            profile.subscription.is_valid
+                                                ? " text-success"
+                                                : " text-warning"
+                                        }
+                                    >
                                         {" "}
-                                        · {daysLeft !== null && daysLeft >= 0 ? `${daysLeft}d` : "ended"}
+                                        ·{" "}
+                                        {daysLeft !== null && daysLeft >= 0
+                                            ? `${daysLeft}d`
+                                            : "ended"}
                                     </span>
                                 </p>
                             ) : (
                                 <p className="text-xs text-base-content/45 mt-0.5">No plan</p>
                             )}
+                        </div>
+                        <div className="min-w-0 border-t border-base-300/50 pt-3 sm:col-span-1 sm:border-l sm:border-t-0 sm:border-base-300/50 sm:pl-6 sm:pt-0">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">
+                                Dates · inception
+                            </p>
+                            <p className="text-xs text-base-content/80 leading-snug">
+                                Created {formatCardDate(profile.created_at)}
+                            </p>
+                            <p className="text-xs text-base-content/70 mt-0.5">
+                                Inception {formatCardDate(profile.pnl_inception_date)}
+                                <span className="text-base-content/40"> · </span>
+                                <span className="tabular-nums">
+                                    {profile.pnl_inception_value != null
+                                        ? formatMoneyIN(profile.pnl_inception_value, { decimals: 0 })
+                                        : "—"}
+                                </span>
+                            </p>
                         </div>
                     </div>
                 </div>

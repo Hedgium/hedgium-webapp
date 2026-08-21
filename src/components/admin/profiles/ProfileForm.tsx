@@ -64,6 +64,8 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         broker_name: '',
         broker_user_id: '',
         margin_equity: 0,
+        pnl_inception_date: '',
+        pnl_inception_value: '',
         order_value_factor: 1,
         quantity_multiplier: 1,
         is_active: false,
@@ -160,6 +162,11 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             broker_name: initialData.broker_name,
             broker_user_id: initialData.broker_user_id ?? '',
             margin_equity: initialData.margin_equity,
+            pnl_inception_date: (initialData.pnl_inception_date ?? '').slice(0, 10),
+            pnl_inception_value:
+                initialData.pnl_inception_value != null
+                    ? String(initialData.pnl_inception_value)
+                    : '',
             order_value_factor: initialData.order_value_factor ?? 1,
             quantity_multiplier: initialData.quantity_multiplier ?? 1,
             is_active: initialData.is_active,
@@ -220,6 +227,10 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             broker_name: formData.broker_name,
             broker_user_id: formData.broker_user_id || undefined,
             margin_equity: formData.margin_equity,
+            pnl_inception_date: formData.pnl_inception_date.trim() || null,
+            pnl_inception_value: formData.pnl_inception_value.trim()
+                ? parseFloat(formData.pnl_inception_value)
+                : null,
             order_value_factor: formData.order_value_factor,
             quantity_multiplier: formData.quantity_multiplier,
             is_active: formData.is_active,
@@ -430,6 +441,34 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                             onChange={handleChange}
                             className="input input-bordered w-full"
                         />
+                    </div>
+                    <div className="form-control">
+                        <label className="label"><span className="label-text">PnL inception date</span></label>
+                        <input
+                            type="date"
+                            name="pnl_inception_date"
+                            value={formData.pnl_inception_date}
+                            onChange={handleChange}
+                            className="input input-bordered w-full"
+                        />
+                        <p className="mt-1 text-xs text-base-content/50">
+                            Capital deployed / Hedgium reporting start (not account join date).
+                        </p>
+                    </div>
+                    <div className="form-control">
+                        <label className="label"><span className="label-text">PnL inception value</span></label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            name="pnl_inception_value"
+                            value={formData.pnl_inception_value}
+                            onChange={handleChange}
+                            className="input input-bordered w-full"
+                            placeholder="Capital at inception date"
+                        />
+                        <p className="mt-1 text-xs text-base-content/50">
+                            Account value at inception date — used for PnL % only.
+                        </p>
                     </div>
                     <div className="form-control">
                         <label className="label cursor-pointer justify-start gap-4">
