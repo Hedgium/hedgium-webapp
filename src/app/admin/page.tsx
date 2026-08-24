@@ -105,7 +105,6 @@ interface Strategy {
   auto_match_max: number | null;
   auto_approve_count: number;
   auto_approve_max: number | null;
-  master_role?: string | null;
   versions: Version[];
 }
 
@@ -196,6 +195,7 @@ export default function Page() {
   );
 
   const STRATEGIES_POLL_MS = 25_000;
+  const METRICS_REFRESH_INTERVAL_MS = 120_000;
 
   const refreshMetricsInFlightRef = React.useRef(false);
 
@@ -383,6 +383,12 @@ export default function Page() {
       }
     },
     [fetchStrategies]
+  );
+
+  useVisibilityAwareInterval(
+    () => runRefreshActiveStrategyTasks({ silent: true }),
+    METRICS_REFRESH_INTERVAL_MS,
+    { runImmediately: false }
   );
 
   async function loadMoreStrategies() {
@@ -971,28 +977,13 @@ export default function Page() {
                       key={strategy.id}
                       className="hover:bg-base-200/50 transition-colors border-b border-base-300/30 last:border-0"
                     >
-                      <td className="align-top font-mono text-sm text-base-content/70">
-                        <div className="flex flex-col items-start gap-0.5">
-                          <Link
-                            href={`/admin/strategy/${strategy.id}`}
-                            className="link link-hover link-primary font-medium"
-                          >
-                            {strategy.id}
-                          </Link>
-                          {strategy.master_role ? (
-                            <span
-                              className={`badge badge-xs badge-soft w-fit ${
-                                strategy.master_role === "client"
-                                  ? "badge-success"
-                                  : "badge-info"
-                              }`}
-                            >
-                              {strategy.master_role === "client"
-                                ? "Client"
-                                : "Internal"}
-                            </span>
-                          ) : null}
-                        </div>
+                      <td className="font-mono text-sm text-base-content/70">
+                        <Link
+                          href={`/admin/strategy/${strategy.id}`}
+                          className="link link-hover link-primary font-medium"
+                        >
+                        {strategy.id}
+                        </Link>
                       </td>
                       <td className="align-top max-w-[10rem]">
                         <div className="flex flex-col items-start gap-0.5 min-w-0">
