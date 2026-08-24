@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncSelect from "react-select/async";
 import type { StylesConfig } from "react-select";
-import { PieChart, Plus, Save, Trash2 } from "lucide-react";
+import { Pencil, PieChart, Plus, Save, Trash2, X } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import { authFetch } from "@/utils/api";
 import {
@@ -69,6 +69,7 @@ const reactSelectStyles: StylesConfig<SearchOption, false> = {
     ...base,
     color: "color-mix(in oklch, var(--color-base-content) 45%, transparent)",
   }),
+  menuPortal: (base) => ({ ...base, zIndex: 60 }),
 };
 
 function cellKey(risk: string, period: string, classId: number): string {
@@ -98,6 +99,7 @@ export default function AdminEngine1Page() {
   const [drafts, setDrafts] = useState<Engine1InstrumentDraft[]>([]);
   const [addSymbol, setAddSymbol] = useState<SearchOption | null>(null);
   const [addWeight, setAddWeight] = useState("0");
+  const [editingSymbolIndex, setEditingSymbolIndex] = useState<number | null>(null);
 
   const loadGrid = useCallback(async () => {
     setLoading(true);
@@ -114,6 +116,7 @@ export default function AdminEngine1Page() {
         if (prev && grid.asset_classes.some((c) => c.id === prev)) return prev;
         return grid.asset_classes[0]?.id ?? null;
       });
+      setEditingSymbolIndex(null);
     } catch (e) {
       alertRef.current.error(e instanceof Error ? e.message : "Failed to load Engine 1 config");
     } finally {
@@ -134,6 +137,7 @@ export default function AdminEngine1Page() {
           sort_order: row.sort_order,
         }))
       );
+      setEditingSymbolIndex(null);
     } catch (e) {
       alertRef.current.error(e instanceof Error ? e.message : "Failed to load instruments");
     }
@@ -297,6 +301,24 @@ export default function AdminEngine1Page() {
     setAddWeight("0");
   };
 
+  const applySymbolToDraft = (index: number, opt: SearchOption) => {
+    if (
+      drafts.some(
+        (d, i) =>
+          i !== index && d.tradingsymbol === opt.value && d.exchange === opt.exchange
+      )
+    ) {
+      alert.error("Instrument already in this class");
+      return;
+    }
+    setDrafts((prev) =>
+      prev.map((d, i) =>
+        i === index ? { ...d, tradingsymbol: opt.value, exchange: opt.exchange } : d
+      )
+    );
+    setEditingSymbolIndex(null);
+  };
+
   const handleSaveInstruments = async () => {
     if (instrumentClassId == null) return;
     setSavingInstruments(true);
@@ -312,6 +334,7 @@ export default function AdminEngine1Page() {
           sort_order: row.sort_order,
         }))
       );
+      setEditingSymbolIndex(null);
       alert.success("Instruments saved");
     } catch (e) {
       alert.error(e instanceof Error ? e.message : "Failed to save instruments");
@@ -466,7 +489,10 @@ export default function AdminEngine1Page() {
                 <select
                   className="select select-bordered select-sm h-9 w-48"
                   value={instrumentClassId ?? ""}
-                  onChange={(e) => setInstrumentClassId(Number(e.target.value) || null)}
+                  onChange={(e) => {
+                    setEditingSymbolIndex(null);
+                    setInstrumentClassId(Number(e.target.value) || null);
+                  }}
                   aria-label="Filter instruments by asset class"
                 >
                   {assetClasses.map((ac) => (
@@ -525,7 +551,57 @@ export default function AdminEngine1Page() {
                   ) : (
                     drafts.map((row, index) => (
                       <tr key={`${row.id ?? "new"}-${row.tradingsymbol}-${index}`}>
-                        <td className="font-medium">{row.tradingsymbol}</td>
+                        <td className="min-w-56">
+                          {editingSymbolIndex === index ? (
+                            <div className="flex items-center gap-1">
+                              <div className="min-w-0 flex-1">
+                                <AsyncSelect<SearchOption, false>
+                                  autoFocus
+                                  cacheOptions
+                                  defaultOptions={false}
+                                  loadOptions={loadSymbolOptions}
+                                  value={{
+                                    label: `${row.tradingsymbol} (${row.exchange})`,
+                                    value: row.tradingsymbol,
+                                    exchange: row.exchange,
+                                  }}
+                                  onChange={(opt) => {
+                                    if (opt) applySymbolToDraft(index, opt);
+                                  }}
+                                  placeholder="Search NSE symbol..."
+                                  styles={reactSelectStyles}
+                                  classNamePrefix="engine1-symbol-edit"
+                                  menuPortalTarget={
+                                    typeof document !== "undefined" ? document.body : undefined
+                                  }
+                                  menuPosition="fixed"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-xs"
+                                onClick={() => setEditingSymbolIndex(null)}
+                                title="Cancel symbol edit"
+                                aria-label={`Cancel edit ${row.tradingsymbol}`}
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">{row.tradingsymbol}</span>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-xs"
+                                onClick={() => setEditingSymbolIndex(index)}
+                                title="Edit symbol"
+                                aria-label={`Edit symbol ${row.tradingsymbol}`}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            </div>
+                          )}
+                        </td>
                         <td>{row.exchange}</td>
                         <td>
                           <input
@@ -567,9 +643,13 @@ export default function AdminEngine1Page() {
                           <button
                             type="button"
                             className="btn btn-ghost btn-xs text-error"
-                            onClick={() =>
-                              setDrafts((prev) => prev.filter((_, i) => i !== index))
-                            }
+                            onClick={() => {
+                              setDrafts((prev) => prev.filter((_, i) => i !== index));
+                              setEditingSymbolIndex((current) => {
+                                if (current == null || current === index) return null;
+                                return current > index ? current - 1 : current;
+                              });
+                            }}
                             title="Remove from class"
                           >
                             <Trash2 size={14} />
