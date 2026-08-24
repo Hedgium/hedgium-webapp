@@ -113,3 +113,14 @@ export interface Engine1PreviewPayload {
   holding_period: Engine1HoldingPeriod;
   allocation_amount: number;
 }
+
+export interface Engine1ExecuteOverride {
+  instrument_id: number;
+  quantity?: number;
+  price?: number;
+}
+
+export interface Engine1ExecutePayload extends Engine1PreviewPayload {
+  instrument_ids?: number[];
+  overrides?: Engine1ExecuteOverride[];
+}

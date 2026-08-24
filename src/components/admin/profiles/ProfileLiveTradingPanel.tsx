@@ -1432,6 +1432,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         <Engine1ExecuteModal
           profileId={profileId}
           riskProfile={profile?.risk_profile}
+          marginEquity={profile?.margin_equity}
           open={showEngine1Modal}
           onClose={() => setShowEngine1Modal(false)}
           onExecuted={() => {
