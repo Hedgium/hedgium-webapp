@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncSelect from "react-select/async";
 import type { StylesConfig } from "react-select";
-import { Pencil, PieChart, Plus, Save, Trash2, X } from "lucide-react";
+import { Check, Pencil, PieChart, Plus, Save, Trash2, X } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import { authFetch } from "@/utils/api";
 import {
@@ -100,6 +100,7 @@ export default function AdminEngine1Page() {
   const [addSymbol, setAddSymbol] = useState<SearchOption | null>(null);
   const [addWeight, setAddWeight] = useState("0");
   const [editingSymbolIndex, setEditingSymbolIndex] = useState<number | null>(null);
+  const [editSymbol, setEditSymbol] = useState("");
 
   const loadGrid = useCallback(async () => {
     setLoading(true);
@@ -301,22 +302,35 @@ export default function AdminEngine1Page() {
     setAddWeight("0");
   };
 
-  const applySymbolToDraft = (index: number, opt: SearchOption) => {
+  const startSymbolEdit = (index: number, symbol: string) => {
+    setEditingSymbolIndex(index);
+    setEditSymbol(symbol);
+  };
+
+  const cancelSymbolEdit = () => {
+    setEditingSymbolIndex(null);
+    setEditSymbol("");
+  };
+
+  const applySymbolToDraft = (index: number) => {
+    const symbol = editSymbol.trim().toUpperCase();
+    if (!symbol) {
+      alert.error("Symbol is required");
+      return;
+    }
+    const exchange = drafts[index]?.exchange;
     if (
       drafts.some(
-        (d, i) =>
-          i !== index && d.tradingsymbol === opt.value && d.exchange === opt.exchange
+        (d, i) => i !== index && d.tradingsymbol === symbol && d.exchange === exchange
       )
     ) {
       alert.error("Instrument already in this class");
       return;
     }
     setDrafts((prev) =>
-      prev.map((d, i) =>
-        i === index ? { ...d, tradingsymbol: opt.value, exchange: opt.exchange } : d
-      )
+      prev.map((d, i) => (i === index ? { ...d, tradingsymbol: symbol } : d))
     );
-    setEditingSymbolIndex(null);
+    cancelSymbolEdit();
   };
 
   const handleSaveInstruments = async () => {
@@ -554,33 +568,34 @@ export default function AdminEngine1Page() {
                         <td className="min-w-56">
                           {editingSymbolIndex === index ? (
                             <div className="flex items-center gap-1">
-                              <div className="min-w-0 flex-1">
-                                <AsyncSelect<SearchOption, false>
-                                  autoFocus
-                                  cacheOptions
-                                  defaultOptions={false}
-                                  loadOptions={loadSymbolOptions}
-                                  value={{
-                                    label: `${row.tradingsymbol} (${row.exchange})`,
-                                    value: row.tradingsymbol,
-                                    exchange: row.exchange,
-                                  }}
-                                  onChange={(opt) => {
-                                    if (opt) applySymbolToDraft(index, opt);
-                                  }}
-                                  placeholder="Search NSE symbol..."
-                                  styles={reactSelectStyles}
-                                  classNamePrefix="engine1-symbol-edit"
-                                  menuPortalTarget={
-                                    typeof document !== "undefined" ? document.body : undefined
+                              <input
+                                type="text"
+                                autoFocus
+                                className="input input-bordered input-sm h-8 w-36 font-medium uppercase"
+                                value={editSymbol}
+                                onChange={(e) => setEditSymbol(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    applySymbolToDraft(index);
                                   }
-                                  menuPosition="fixed"
-                                />
-                              </div>
+                                  if (e.key === "Escape") cancelSymbolEdit();
+                                }}
+                                aria-label={`Edit symbol ${row.tradingsymbol}`}
+                              />
                               <button
                                 type="button"
                                 className="btn btn-ghost btn-xs"
-                                onClick={() => setEditingSymbolIndex(null)}
+                                onClick={() => applySymbolToDraft(index)}
+                                title="Save symbol"
+                                aria-label={`Save symbol ${row.tradingsymbol}`}
+                              >
+                                <Check size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-xs"
+                                onClick={cancelSymbolEdit}
                                 title="Cancel symbol edit"
                                 aria-label={`Cancel edit ${row.tradingsymbol}`}
                               >
@@ -593,7 +608,7 @@ export default function AdminEngine1Page() {
                               <button
                                 type="button"
                                 className="btn btn-ghost btn-xs"
-                                onClick={() => setEditingSymbolIndex(index)}
+                                onClick={() => startSymbolEdit(index, row.tradingsymbol)}
                                 title="Edit symbol"
                                 aria-label={`Edit symbol ${row.tradingsymbol}`}
                               >
