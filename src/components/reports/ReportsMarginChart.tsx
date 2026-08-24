@@ -77,7 +77,7 @@ export function ReportsMarginChart({
             }
             formatter={(value: number | string, name: string) => [
               formatIndianShort(Number(value)),
-              name === "net" ? "Net" : "Utilised",
+              name,
             ]}
           />
           <Legend />
