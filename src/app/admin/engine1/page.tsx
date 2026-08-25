@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncSelect from "react-select/async";
 import type { StylesConfig } from "react-select";
-import { PieChart, Plus, Save, Trash2 } from "lucide-react";
+import { Check, Pencil, PieChart, Plus, Save, Trash2, X } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import { authFetch } from "@/utils/api";
 import {
@@ -69,6 +69,7 @@ const reactSelectStyles: StylesConfig<SearchOption, false> = {
     ...base,
     color: "color-mix(in oklch, var(--color-base-content) 45%, transparent)",
   }),
+  menuPortal: (base) => ({ ...base, zIndex: 60 }),
 };
 
 function cellKey(risk: string, period: string, classId: number): string {
@@ -98,6 +99,8 @@ export default function AdminEngine1Page() {
   const [drafts, setDrafts] = useState<Engine1InstrumentDraft[]>([]);
   const [addSymbol, setAddSymbol] = useState<SearchOption | null>(null);
   const [addWeight, setAddWeight] = useState("0");
+  const [editingSymbolIndex, setEditingSymbolIndex] = useState<number | null>(null);
+  const [editSymbol, setEditSymbol] = useState("");
 
   const loadGrid = useCallback(async () => {
     setLoading(true);
@@ -114,6 +117,7 @@ export default function AdminEngine1Page() {
         if (prev && grid.asset_classes.some((c) => c.id === prev)) return prev;
         return grid.asset_classes[0]?.id ?? null;
       });
+      setEditingSymbolIndex(null);
     } catch (e) {
       alertRef.current.error(e instanceof Error ? e.message : "Failed to load Engine 1 config");
     } finally {
@@ -134,6 +138,7 @@ export default function AdminEngine1Page() {
           sort_order: row.sort_order,
         }))
       );
+      setEditingSymbolIndex(null);
     } catch (e) {
       alertRef.current.error(e instanceof Error ? e.message : "Failed to load instruments");
     }
@@ -297,6 +302,37 @@ export default function AdminEngine1Page() {
     setAddWeight("0");
   };
 
+  const startSymbolEdit = (index: number, symbol: string) => {
+    setEditingSymbolIndex(index);
+    setEditSymbol(symbol);
+  };
+
+  const cancelSymbolEdit = () => {
+    setEditingSymbolIndex(null);
+    setEditSymbol("");
+  };
+
+  const applySymbolToDraft = (index: number) => {
+    const symbol = editSymbol.trim().toUpperCase();
+    if (!symbol) {
+      alert.error("Symbol is required");
+      return;
+    }
+    const exchange = drafts[index]?.exchange;
+    if (
+      drafts.some(
+        (d, i) => i !== index && d.tradingsymbol === symbol && d.exchange === exchange
+      )
+    ) {
+      alert.error("Instrument already in this class");
+      return;
+    }
+    setDrafts((prev) =>
+      prev.map((d, i) => (i === index ? { ...d, tradingsymbol: symbol } : d))
+    );
+    cancelSymbolEdit();
+  };
+
   const handleSaveInstruments = async () => {
     if (instrumentClassId == null) return;
     setSavingInstruments(true);
@@ -312,6 +348,7 @@ export default function AdminEngine1Page() {
           sort_order: row.sort_order,
         }))
       );
+      setEditingSymbolIndex(null);
       alert.success("Instruments saved");
     } catch (e) {
       alert.error(e instanceof Error ? e.message : "Failed to save instruments");
@@ -466,7 +503,10 @@ export default function AdminEngine1Page() {
                 <select
                   className="select select-bordered select-sm h-9 w-48"
                   value={instrumentClassId ?? ""}
-                  onChange={(e) => setInstrumentClassId(Number(e.target.value) || null)}
+                  onChange={(e) => {
+                    setEditingSymbolIndex(null);
+                    setInstrumentClassId(Number(e.target.value) || null);
+                  }}
                   aria-label="Filter instruments by asset class"
                 >
                   {assetClasses.map((ac) => (
@@ -525,7 +565,58 @@ export default function AdminEngine1Page() {
                   ) : (
                     drafts.map((row, index) => (
                       <tr key={`${row.id ?? "new"}-${row.tradingsymbol}-${index}`}>
-                        <td className="font-medium">{row.tradingsymbol}</td>
+                        <td className="min-w-56">
+                          {editingSymbolIndex === index ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                autoFocus
+                                className="input input-bordered input-sm h-8 w-36 font-medium uppercase"
+                                value={editSymbol}
+                                onChange={(e) => setEditSymbol(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    applySymbolToDraft(index);
+                                  }
+                                  if (e.key === "Escape") cancelSymbolEdit();
+                                }}
+                                aria-label={`Edit symbol ${row.tradingsymbol}`}
+                              />
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-xs"
+                                onClick={() => applySymbolToDraft(index)}
+                                title="Save symbol"
+                                aria-label={`Save symbol ${row.tradingsymbol}`}
+                              >
+                                <Check size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-xs"
+                                onClick={cancelSymbolEdit}
+                                title="Cancel symbol edit"
+                                aria-label={`Cancel edit ${row.tradingsymbol}`}
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">{row.tradingsymbol}</span>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-xs"
+                                onClick={() => startSymbolEdit(index, row.tradingsymbol)}
+                                title="Edit symbol"
+                                aria-label={`Edit symbol ${row.tradingsymbol}`}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            </div>
+                          )}
+                        </td>
                         <td>{row.exchange}</td>
                         <td>
                           <input
@@ -567,9 +658,13 @@ export default function AdminEngine1Page() {
                           <button
                             type="button"
                             className="btn btn-ghost btn-xs text-error"
-                            onClick={() =>
-                              setDrafts((prev) => prev.filter((_, i) => i !== index))
-                            }
+                            onClick={() => {
+                              setDrafts((prev) => prev.filter((_, i) => i !== index));
+                              setEditingSymbolIndex((current) => {
+                                if (current == null || current === index) return null;
+                                return current > index ? current - 1 : current;
+                              });
+                            }}
                             title="Remove from class"
                           >
                             <Trash2 size={14} />

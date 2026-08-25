@@ -8,6 +8,7 @@ import type {
   Engine1InstrumentDraft,
   Engine1Preview,
   Engine1PreviewPayload,
+  Engine1ExecutePayload,
 } from "@/types/engine1";
 
 async function readError(res: Response, fallback: string): Promise<string> {
@@ -85,7 +86,7 @@ export async function previewEngine1(
 
 export async function executeEngine1(
   profileId: string | number,
-  payload: Engine1PreviewPayload
+  payload: Engine1ExecutePayload
 ): Promise<Engine1Execute> {
   const res = await authFetch(`engine1/execute/${profileId}/`, {
     method: "POST",
