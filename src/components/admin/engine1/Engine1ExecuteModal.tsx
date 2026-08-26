@@ -46,6 +46,23 @@ function isReady(row: Engine1PreviewInstrumentRow): boolean {
   return row.quantity > 0 && row.price != null && !row.skip_reason;
 }
 
+function roundMoney(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function roundPct(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function weightsFromNotional(notional: number, allocatable: number) {
+  const money = roundMoney(Math.max(notional, 0));
+  return {
+    amount: money,
+    notional: money,
+    portfolio_weight_pct: allocatable > 0 ? roundPct((money / allocatable) * 100) : 0,
+  };
+}
+
 function mergeResults(prev: Engine1Execute | null, next: Engine1Execute): Engine1Execute {
   const byKey = new Map<string, Engine1ExecuteResultRow>();
   for (const row of prev?.results ?? []) {
@@ -109,6 +126,11 @@ export default function Engine1ExecuteModal({
     const result = resultBySymbol.get(rowKey(row));
     return isReady(row) && result?.status !== "success";
   });
+  const allocatable = preview?.allocatable ?? 0;
+  const weightSum = rows.reduce((acc, row) => acc + row.portfolio_weight_pct, 0);
+  const amountSum = rows.reduce((acc, row) => acc + row.amount, 0);
+  const notionalSum = rows.reduce((acc, row) => acc + row.notional, 0);
+  const liveUnallocated = roundMoney(allocatable - notionalSum);
 
   const resetBasket = () => {
     setPreview(null);
@@ -261,6 +283,7 @@ export default function Engine1ExecuteModal({
       alert.error("Price must be greater than 0");
       return;
     }
+    const derived = weightsFromNotional(price * qty, allocatable);
     setRows((prev) =>
       prev.map((item) =>
         item.instrument_id === row.instrument_id
@@ -269,7 +292,7 @@ export default function Engine1ExecuteModal({
               quantity: qty,
               price,
               skip_reason: null,
-              notional: Math.round(price * qty * 100) / 100,
+              ...derived,
             }
           : item
       )
@@ -363,7 +386,7 @@ export default function Engine1ExecuteModal({
               </div>
               <div>
                 <div className="text-xs uppercase text-base-content/50">Unallocated</div>
-                <div className="font-semibold tabular-nums">{formatMoneyIN(preview.unallocated_cash)}</div>
+                <div className="font-semibold tabular-nums">{formatMoneyIN(liveUnallocated)}</div>
               </div>
               <div>
                 <div className="text-xs uppercase text-base-content/50">Risk / period</div>
@@ -528,6 +551,16 @@ export default function Engine1ExecuteModal({
                     })
                   )}
                 </tbody>
+                {rows.length > 0 ? (
+                  <tfoot>
+                    <tr className="font-semibold">
+                      <td colSpan={2}>Total</td>
+                      <td className="text-right tabular-nums">{roundPct(weightSum).toFixed(2)}%</td>
+                      <td className="text-right tabular-nums">{formatMoneyIN(amountSum)}</td>
+                      <td colSpan={4} />
+                    </tr>
+                  </tfoot>
+                ) : null}
               </table>
             </div>
 

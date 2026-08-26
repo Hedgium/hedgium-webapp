@@ -62,6 +62,8 @@ export interface Profile {
     is_active: boolean;
     kite_login_device: string;
     auto_trade_allowed?: boolean;
+    /** If true, client is skipped when auto-assigning new strategies. */
+    strategies_paused?: boolean;
     /** LOW | MEDIUM | HIGH — used by Engine 1 allocation. */
     risk_profile?: string;
     created_at: string;

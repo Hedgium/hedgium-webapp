@@ -6,6 +6,12 @@ import { isDemoUser } from "@/lib/demo";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import VerifyEmail from "@/components/VerifyEmail";
+import ActionOtpModal from "@/components/settings/ActionOtpModal";
+import {
+  confirmAutoTrade,
+  confirmStrategiesPaused,
+  type ProfileActionOtpPurpose,
+} from "@/services/profileActions";
 
 /** Shown if API omits relationship_manager (should be set on the server). */
 const DEFAULT_RELATIONSHIP_MANAGER = {
@@ -28,11 +34,16 @@ const ProfileTab: React.FC = () => {
   const alert = useAlert();
   const [loading, setLoading] = useState(false);
   const [autoTradeAllowed, setAutoTradeAllowed] = useState(false);
+  const [strategiesPaused, setStrategiesPaused] = useState(false);
   const [profileId, setProfileId] = useState<number | null>(null);
   const [relationshipManager, setRelationshipManager] =
     useState<RelationshipManagerInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [verifyEmailModalOpen, setVerifyEmailModalOpen] = useState(false);
+  const [otpAction, setOtpAction] = useState<
+    | { purpose: ProfileActionOtpPurpose; nextValue: boolean }
+    | null
+  >(null);
   const verifyEmailDialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -45,7 +56,7 @@ const ProfileTab: React.FC = () => {
     }
   }, [verifyEmailModalOpen]);
 
-  /** Load active profile (auto trade + relationship manager) from /profiles/me/ */
+  /** Load active profile (auto trade + pause + relationship manager) from /profiles/me/ */
   const fetchProfile = async () => {
     if (!user) return;
 
@@ -58,6 +69,7 @@ const ProfileTab: React.FC = () => {
 
       if (res.status === 404) {
         setAutoTradeAllowed(false);
+        setStrategiesPaused(false);
         setProfileId(null);
         setRelationshipManager(null);
         return;
@@ -65,6 +77,7 @@ const ProfileTab: React.FC = () => {
 
       if (res.ok) {
         setAutoTradeAllowed(data.auto_trade_allowed ?? false);
+        setStrategiesPaused(data.strategies_paused ?? false);
         setProfileId(data.id ?? null);
         setRelationshipManager(data.relationship_manager ?? null);
       }
@@ -76,41 +89,36 @@ const ProfileTab: React.FC = () => {
     }
   };
 
-  /** 🔄 Toggle auto trade allowed */
-  const toggleAutoTrade = async () => {
+  const requestAutoTradeChange = () => {
     if (!user || profileId == null || isDemoUser(user)) return;
     setError(null);
+    setOtpAction({ purpose: "auto_trade", nextValue: !autoTradeAllowed });
+  };
 
-    const newValue = !autoTradeAllowed;
+  const requestPauseChange = () => {
+    if (!user || profileId == null || isDemoUser(user)) return;
+    setError(null);
+    setOtpAction({ purpose: "strategies_paused", nextValue: !strategiesPaused });
+  };
 
-    try {
-      const res = await authFetch("profiles/me/", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ auto_trade_allowed: newValue }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || "Failed to update auto trade setting");
-      }
-
-      setAutoTradeAllowed(newValue);
+  const handleOtpConfirm = async (otp: string) => {
+    if (!otpAction) return;
+    if (otpAction.purpose === "auto_trade") {
+      const profile = await confirmAutoTrade(otpAction.nextValue, otp);
+      setAutoTradeAllowed(profile.auto_trade_allowed ?? otpAction.nextValue);
       alert.success(
-        newValue 
-          ? "Auto trading enabled" 
-          : "Auto trading disabled"
+        otpAction.nextValue ? "Auto trading enabled" : "Auto trading disabled"
       );
-    } catch (err: unknown) {
-      console.error("Auto trade toggle failed:", err);
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : "Failed to update auto trade setting.";
-      setError(errorMessage);
-      alert.error(errorMessage);
+    } else {
+      const profile = await confirmStrategiesPaused(otpAction.nextValue, otp);
+      setStrategiesPaused(profile.strategies_paused ?? otpAction.nextValue);
+      alert.success(
+        otpAction.nextValue
+          ? "Strategies paused. You will not be assigned new strategies."
+          : "Strategies resumed. You can receive new strategies again."
+      );
     }
+    setOtpAction(null);
   };
 
   useEffect(() => {
@@ -199,23 +207,52 @@ const ProfileTab: React.FC = () => {
             </div>
 
             {profileId ? (
-              <div className="form-control">
-                <label className="label cursor-pointer justify-start gap-4">
-                  <span className="label-text font-medium">Auto Trade Allowed</span>
-                  <input
-                    type="checkbox"
-                    className="toggle toggle-primary"
-                    checked={autoTradeAllowed}
-                    onChange={toggleAutoTrade}
-                    disabled={isDemoUser(user)}
-                    aria-disabled={isDemoUser(user)}
-                  />
-                </label>
-                <p className="text-xs text-base-content/70 mt-1">
-                  {isDemoUser(user)
-                    ? "Preview account — settings are read-only."
-                    : "Enable automatic trading for your strategies"}
-                </p>
+              <div className="space-y-4">
+                <div className="form-control">
+                  <label className="label cursor-pointer justify-start gap-4">
+                    <span className="label-text font-medium">Auto Trade Allowed</span>
+                    <input
+                      type="checkbox"
+                      className="toggle toggle-primary"
+                      checked={autoTradeAllowed}
+                      onChange={requestAutoTradeChange}
+                      disabled={isDemoUser(user)}
+                      aria-disabled={isDemoUser(user)}
+                    />
+                  </label>
+                  <p className="text-xs text-base-content/70 mt-1">
+                    {isDemoUser(user)
+                      ? "Preview account — settings are read-only."
+                      : "Enable automatic trading for your strategies. Changing this requires a verification code."}
+                  </p>
+                </div>
+
+                <div className="form-control">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="label-text font-medium">Strategy assignment</span>
+                    <button
+                      type="button"
+                      className={`btn btn-sm normal-case ${
+                        strategiesPaused ? "btn-primary" : "btn-outline"
+                      }`}
+                      onClick={requestPauseChange}
+                      disabled={isDemoUser(user)}
+                      aria-disabled={isDemoUser(user)}
+                    >
+                      {strategiesPaused ? "Resume strategies" : "Pause strategies"}
+                    </button>
+                    {strategiesPaused ? (
+                      <span className="badge badge-warning badge-sm">Paused</span>
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-base-content/70 mt-1">
+                    {isDemoUser(user)
+                      ? "Preview account — settings are read-only."
+                      : strategiesPaused
+                        ? "You will not be assigned new strategies. Strategies you already have keep running."
+                        : "Pause to stop receiving new strategies. Current live strategies keep running."}
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="text-sm text-base-content/70">
@@ -265,6 +302,32 @@ const ProfileTab: React.FC = () => {
             <button aria-label="Close">close</button>
           </form>
         </dialog>
+
+        {otpAction ? (
+          <ActionOtpModal
+            open={otpAction != null}
+            purpose={otpAction.purpose}
+            title={
+              otpAction.purpose === "auto_trade"
+                ? otpAction.nextValue
+                  ? "Enable auto trade"
+                  : "Disable auto trade"
+                : otpAction.nextValue
+                  ? "Pause strategies"
+                  : "Resume strategies"
+            }
+            description={
+              otpAction.purpose === "auto_trade"
+                ? "Enter the verification code to confirm this auto-trade change."
+                : otpAction.nextValue
+                  ? "Enter the verification code to pause new strategy assignment. Live strategies keep running."
+                  : "Enter the verification code to start receiving new strategies again."
+            }
+            confirmLabel="Confirm"
+            onConfirm={handleOtpConfirm}
+            onClose={() => setOtpAction(null)}
+          />
+        ) : null}
       </div>
     </div>
   );
