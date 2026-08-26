@@ -380,6 +380,11 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                         <span className={`px-2 py-0.5 rounded text-xs ${profile.auto_trade_allowed ? "bg-secondary/20 text-secondary" : "bg-base-300 text-base-content/60"}`}>
                             {profile.auto_trade_allowed ? "Auto ON" : "Auto OFF"}
                         </span>
+                        {profile.strategies_paused ? (
+                            <span className="px-2 py-0.5 rounded text-xs bg-warning/20 text-warning">
+                                Paused
+                            </span>
+                        ) : null}
                         <span className={`px-2 py-0.5 rounded text-xs ${profile.verified ? "bg-success/20 text-success" : "bg-error/15 text-error"}`} title="Profile verified">
                             P {profile.verified ? "✓" : "✗"}
                         </span>
