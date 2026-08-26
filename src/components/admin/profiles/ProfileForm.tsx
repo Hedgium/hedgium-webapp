@@ -71,6 +71,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         is_active: false,
         verified: false,
         auto_trade_allowed: false,
+        strategies_paused: false,
         mobile: '',
         signup_step: 'initiated',
         user_verified: false,
@@ -172,6 +173,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             is_active: initialData.is_active,
             verified: initialData.verified,
             auto_trade_allowed: initialData.auto_trade_allowed ?? false,
+            strategies_paused: initialData.strategies_paused ?? false,
             mobile: u?.mobile ?? '',
             signup_step: u?.signup_step ?? 'initiated',
             user_verified: u?.verified ?? false,
@@ -236,6 +238,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             is_active: formData.is_active,
             verified: formData.verified,
             auto_trade_allowed: formData.auto_trade_allowed,
+            strategies_paused: formData.strategies_paused,
             mobile: formData.mobile || null,
             signup_step: formData.signup_step || null,
             user_verified: formData.user_verified,
@@ -505,6 +508,21 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                                 className="checkbox checkbox-primary"
                             />
                         </label>
+                    </div>
+                    <div className="form-control md:col-span-2">
+                        <label className="label cursor-pointer justify-start gap-4">
+                            <span className="label-text">Strategies paused</span>
+                            <input
+                                type="checkbox"
+                                name="strategies_paused"
+                                checked={formData.strategies_paused}
+                                onChange={handleChange}
+                                className="checkbox checkbox-warning"
+                            />
+                        </label>
+                        <p className="text-xs text-base-content/60 mt-1">
+                            When paused, this client is skipped for new automatic strategy assignment. Existing live cycles keep running.
+                        </p>
                     </div>
                 </div>
             </FormCollapse>
