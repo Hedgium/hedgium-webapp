@@ -10,12 +10,13 @@ import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { CheckCircle, ChevronLeft, Plus, Layers, Table2, Activity, RotateCcw, RotateCw } from "lucide-react";
+import { CheckCircle, ChevronLeft, Layers, Table2, Activity, RotateCcw, RotateCw } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
 import StrategyTradeCyclesSkeleton from "@/components/skeletons/StrategyTradeCyclesSkeleton";
 import ManualAdjustmentModal, {
   type ManualAdjustmentInitialValues,
 } from "@/components/admin/strategy/ManualAdjustmentModal";
+import AdjustmentTriggerMenu from "@/components/admin/strategy/AdjustmentTriggerMenu";
 
 const StrategyMetricSnapshotsModal = dynamic(
   () => import("@/components/admin/strategy/StrategyMetricSnapshots"),
@@ -104,6 +105,7 @@ function StatCell({
 
 function mapAdjustmentToInitial(adj: AdjustmentData): ManualAdjustmentInitialValues {
   return {
+    heading: "Duplicate Adjustment",
     title: adj.title ? `Copy of ${adj.title}` : `Copy of v${adj.version}`,
     notes: adj.notes ?? "",
     autoTrade: adj.auto_trade ?? false,
@@ -505,14 +507,11 @@ export default function StrategyDetailPage() {
             </h2>
             <div className="flex flex-wrap items-center gap-1 shrink-0">
               {!strategy?.completed && (
-                <button
-                  type="button"
-                  onClick={() => setManualAdjustmentInitial({})}
-                  className="btn btn-ghost btn-sm gap-1.5 text-primary hover:bg-primary/10"
-                >
-                  <Plus className="size-4" />
-                  Manual adjustment
-                </button>
+                <AdjustmentTriggerMenu
+                  strategyId={strategyId}
+                  onManual={() => setManualAdjustmentInitial({})}
+                  onProposed={(values) => setManualAdjustmentInitial(values)}
+                />
               )}
               <button
                 type="button"

@@ -25,6 +25,7 @@ export interface ManualAdjustmentInitialValues {
     autoTrade?: boolean;
     exchange?: string;
     legs?: AdjustmentLeg[];
+    heading?: string;
 }
 
 interface Props {
@@ -49,7 +50,9 @@ export default function ManualAdjustmentModal({
     onClose,
     onSuccess,
 }: Props) {
-    const isDuplicate = (initialValues?.legs?.length ?? 0) > 0;
+    const heading =
+        initialValues?.heading ??
+        ((initialValues?.legs?.length ?? 0) > 0 ? "Duplicate Adjustment" : "Add Manual Adjustment");
     const [title, setTitle] = useState(initialValues?.title ?? "");
     const [notes, setNotes] = useState(initialValues?.notes ?? "");
     const [autoTrade, setAutoTrade] = useState(initialValues?.autoTrade ?? false);
@@ -140,7 +143,7 @@ export default function ManualAdjustmentModal({
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                     <h3 className="font-bold text-xl">
-                        {isDuplicate ? "Duplicate Adjustment" : "Add Manual Adjustment"}
+                        {heading}
                     </h3>
                     <button onClick={onClose} className="btn btn-ghost btn-sm btn-circle">
                         <X size={18} />
