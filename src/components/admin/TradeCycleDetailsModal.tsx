@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type FormEvent } from "react";
 import { authFetch } from "@/utils/api";
 import { X, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
@@ -9,6 +9,21 @@ import UnmappedOrdersTable, { UnmappedOrder } from "../positions/UnmappedOrdersT
 import PositionsSummary from "../positions/PositionsSummary";
 import TradeCycleDetailsModalSkeleton from "@/components/skeletons/TradeCycleDetailsModalSkeleton";
 import { formatMoneyIN } from "@/utils/formatNumber";
+import { placeOrder } from "@/services/liveTradingActions";
+
+function liveApiError(data: unknown, fallback: string): string {
+    if (!data || typeof data !== "object") return fallback;
+    const payload = data as Record<string, unknown>;
+    for (const key of ["message", "error_message", "detail"]) {
+        const value = payload[key];
+        if (typeof value !== "string") continue;
+        const text = value.trim();
+        if (text && text.toLowerCase() !== "success" && text.toLowerCase() !== "ok") {
+            return text;
+        }
+    }
+    return fallback;
+}
 
 interface TradeCycleDetails {
     trade_cycle: {
@@ -80,6 +95,9 @@ export default function TradeCycleDetailsModal({
     const [tradesCount, setTradesCount] = useState(0);
     const [tradesResults, setTradesResults] = useState<PositionTradeRow[]>([]);
     const tradesPageSize = 100;
+    const [exitPosition, setExitPosition] = useState<Position | null>(null);
+    const [exitQuantity, setExitQuantity] = useState("");
+    const [exitingPosition, setExitingPosition] = useState(false);
 
     const alert = useAlert();
 
@@ -141,6 +159,71 @@ export default function TradeCycleDetailsModal({
         setTradesError(null);
         setTradesResults([]);
         setTradesCount(0);
+    }
+
+    function openExitForPosition(pos: Position) {
+        setExitPosition(pos);
+        setExitQuantity(String(Math.abs(pos.quantity)));
+    }
+
+    function closeExitForm() {
+        setExitPosition(null);
+        setExitQuantity("");
+    }
+
+    async function handleExitPosition(e: FormEvent) {
+        e.preventDefault();
+        if (!exitPosition) return;
+
+        if (exitPosition.quantity === 0) {
+            alert.error("Cannot exit position with zero quantity");
+            return;
+        }
+
+        const profileId = tradeCycle?.profile_id ?? data?.trade_cycle?.profile_id;
+        if (!profileId) {
+            alert.error("Missing profile id for this trade cycle");
+            return;
+        }
+
+        const maxQty = Math.abs(exitPosition.quantity);
+        const parsedExit = parseInt(exitQuantity, 10);
+        if (!Number.isFinite(parsedExit) || parsedExit < 1) {
+            alert.error("Exit quantity must be at least 1");
+            return;
+        }
+        const exitQty = Math.min(parsedExit, maxQty);
+
+        setExitingPosition(true);
+        try {
+            const exchange = exitPosition.exchange || "NFO";
+            const { data: result } = await placeOrder(profileId, {
+                exchange,
+                tradingsymbol: exitPosition.instrument,
+                transaction_type: exitPosition.quantity > 0 ? "SELL" : "BUY",
+                quantity: exitQty,
+                order_type: "MARKET",
+                product: exchange === "NSE" || exchange === "BSE" ? "CNC" : "NRML",
+                price: 0,
+            });
+
+            if (result.status === "success") {
+                alert.success(
+                    exitQty === maxQty
+                        ? "Position exited successfully"
+                        : `Partial exit of ${exitQty} units completed`
+                );
+                closeExitForm();
+                await fetchDetails();
+            } else {
+                alert.error(liveApiError(result, "Failed to exit position"));
+            }
+        } catch (error) {
+            console.error("Error exiting position:", error);
+            alert.error(liveApiError(error, "Error exiting position"));
+        } finally {
+            setExitingPosition(false);
+        }
     }
 
     async function refreshPositions() {
@@ -207,7 +290,9 @@ export default function TradeCycleDetailsModal({
     useEffect(() => {
         function onKeyDown(e: KeyboardEvent) {
             if (e.key !== "Escape") return;
-            if (tradesPanel) {
+            if (exitPosition) {
+                closeExitForm();
+            } else if (tradesPanel) {
                 closeTradesPanel();
             } else {
                 onClose();
@@ -215,7 +300,7 @@ export default function TradeCycleDetailsModal({
         }
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [tradesPanel, onClose]);
+    }, [exitPosition, tradesPanel, onClose]);
 
     const tradesTotalPages = Math.max(1, Math.ceil(tradesCount / tradesPageSize));
 
@@ -283,9 +368,11 @@ export default function TradeCycleDetailsModal({
                                     positions={data.positions}
                                     showOrdersCount={true}
                                     showAdminTradesAction={true}
+                                    showAdminExitAction={true}
                                     showGreeks={true}
                                     showNote={true}
                                     onAdminViewTrades={openTradesForPosition}
+                                    onAdminExit={openExitForPosition}
                                 />
                             </div>
                         </div>
@@ -401,6 +488,75 @@ export default function TradeCycleDetailsModal({
                     ) : null}
                 </div>
             ) : null}
+
+            {exitPosition && exitPosition.quantity !== 0 && (
+                <div className="modal modal-open z-[1100]" role="dialog" aria-modal="true" aria-labelledby="exit-position-title">
+                    <div className="modal-box">
+                        <h3 id="exit-position-title" className="mb-4 text-lg font-bold">Exit Position</h3>
+                        <form onSubmit={handleExitPosition}>
+                            <div className="mb-4 space-y-1 text-sm text-base-content/70">
+                                <p>Instrument: {exitPosition.instrument}</p>
+                                <p>Current Quantity: {exitPosition.quantity}</p>
+                                <p>Exit Action: {exitPosition.quantity > 0 ? "SELL" : "BUY"}</p>
+                            </div>
+
+                            <div className="form-control mb-4">
+                                <label className="label" htmlFor="exit-quantity">
+                                    <span className="label-text">Exit Quantity</span>
+                                </label>
+                                <input
+                                    id="exit-quantity"
+                                    type="number"
+                                    inputMode="numeric"
+                                    className="input input-bordered w-full"
+                                    value={exitQuantity}
+                                    onChange={(e) => setExitQuantity(e.target.value)}
+                                    min="1"
+                                    max={Math.abs(exitPosition.quantity)}
+                                    required
+                                />
+                                <label className="label">
+                                    <span className="text-xs text-base-content/60">
+                                        Max: {Math.abs(exitPosition.quantity)} units
+                                    </span>
+                                </label>
+                            </div>
+
+                            <p className="mb-4 text-xs text-base-content/60">
+                                Exit orders are placed as MARKET orders
+                            </p>
+
+                            <div className="modal-action">
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={closeExitForm}
+                                    disabled={exitingPosition}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={
+                                        exitingPosition ||
+                                        !Number.isFinite(parseInt(exitQuantity, 10)) ||
+                                        parseInt(exitQuantity, 10) <= 0
+                                    }
+                                >
+                                    {exitingPosition ? (
+                                        <span className="loading loading-spinner"></span>
+                                    ) : parseInt(exitQuantity, 10) === Math.abs(exitPosition.quantity) ? (
+                                        "Exit Full Position"
+                                    ) : (
+                                        "Exit Partial Position"
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

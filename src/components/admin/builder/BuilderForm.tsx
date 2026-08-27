@@ -85,7 +85,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         entry_ws: 0,
         exit_ws: 0,
         entry_condition: 'LESS',
-        exit_pnl: 0,
+        exit_pnl: 50000,
         strategy_template_id: null, // Default or fetch from API
         margin_required: 0,
         multiplier_allowed: false,
@@ -159,7 +159,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 entry_ws: initialData.entry_ws,
                 exit_ws: initialData.exit_ws,
                 entry_condition: initialData.entry_condition,
-                exit_pnl: initialData.exit_pnl,
+                exit_pnl: initialData.exit_pnl ?? 50000,
                 strategy_template_id: initialData.strategy_template?.id || 1,
                 margin_required: initialData.margin_required || 0,
                 multiplier_allowed: initialData.multiplier_allowed ?? false,

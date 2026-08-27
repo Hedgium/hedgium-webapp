@@ -9,6 +9,7 @@ import type { PositionGreeksSnapshot } from "@/types/positions";
 export interface Position extends PositionGreeksSnapshot {
   id: number;
   instrument: string;
+  exchange?: string | null;
   buy_quantity: number;
   average_buy_price: number;
   sell_quantity: number;
@@ -28,6 +29,9 @@ interface PositionsTableProps {
   /** Staff-only: show a control to inspect stored trades for this position (admin UI). */
   showAdminTradesAction?: boolean;
   onAdminViewTrades?: (position: Position) => void;
+  /** Staff-only: show a control to exit an open position (admin UI). */
+  showAdminExitAction?: boolean;
+  onAdminExit?: (position: Position) => void;
   showGreeks?: boolean;
   /** Staff-only: operator/system note (e.g. broker vs trades reconciliation). */
   showNote?: boolean;
@@ -39,10 +43,13 @@ export default function PositionsTable({
   showOrdersCount = false,
   showAdminTradesAction = false,
   onAdminViewTrades,
+  showAdminExitAction = false,
+  onAdminExit,
   showGreeks = false,
   showNote = false,
   className = "",
 }: PositionsTableProps) {
+  const showActions = showAdminTradesAction || showAdminExitAction;
   const getPnLColor = (pnl: number) => {
     return pnl >= 0 ? "text-success" : "text-error";
   };
@@ -69,7 +76,7 @@ export default function PositionsTable({
             {showGreeks && <th scope="col">Greeks</th>}
             {showNote && <th scope="col" className="min-w-[8rem] max-w-[14rem]">Note</th>}
             {showOrdersCount && <th scope="col">Orders</th>}
-            {showAdminTradesAction && <th scope="col" className="w-28">Actions</th>}
+            {showActions && <th scope="col" className="w-36">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -123,17 +130,28 @@ export default function PositionsTable({
                     {pos.orders?.length ?? 0}
                   </td>
                 )}
-                {showAdminTradesAction && (
+                {showActions && (
                   <td>
-                    {onAdminViewTrades ? (
-                      <button
-                        type="button"
-                        className="btn btn-xs btn-outline"
-                        onClick={() => onAdminViewTrades(pos)}
-                      >
-                        Trades
-                      </button>
-                    ) : null}
+                    <div className="flex flex-wrap gap-1">
+                      {showAdminTradesAction && onAdminViewTrades ? (
+                        <button
+                          type="button"
+                          className="btn btn-xs btn-outline"
+                          onClick={() => onAdminViewTrades(pos)}
+                        >
+                          Trades
+                        </button>
+                      ) : null}
+                      {showAdminExitAction && onAdminExit && pos.quantity !== 0 ? (
+                        <button
+                          type="button"
+                          className="btn btn-xs btn-outline btn-error"
+                          onClick={() => onAdminExit(pos)}
+                        >
+                          Exit
+                        </button>
+                      ) : null}
+                    </div>
                   </td>
                 )}
               </tr>
