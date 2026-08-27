@@ -47,7 +47,7 @@ export default function AdjustmentTriggerMenu({
     setPendingAction(action);
     try {
       const result = await proposeStrategyAdjustment(strategyId, action);
-      if (!result.ok) {
+      if (result.ok === false) {
         alert.error(result.message);
         return;
       }

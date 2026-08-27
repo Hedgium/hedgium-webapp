@@ -49,12 +49,14 @@ export interface ProposeAdjustmentResponse {
   meta: ProposeAdjustmentMeta;
 }
 
+export type ProposeAdjustmentResult =
+  | { ok: true; data: ProposeAdjustmentResponse }
+  | { ok: false; message: string };
+
 export async function proposeStrategyAdjustment(
   strategyId: number,
   action: ProposeAdjustmentAction
-): Promise<
-  { ok: true; data: ProposeAdjustmentResponse } | { ok: false; message: string }
-> {
+): Promise<ProposeAdjustmentResult> {
   const res = await authFetch(`myadmin/strategies/${strategyId}/adjustments/propose/`, {
     method: "POST",
     body: JSON.stringify({ action }),
