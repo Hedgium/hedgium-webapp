@@ -9,21 +9,10 @@ import UnmappedOrdersTable, { UnmappedOrder } from "../positions/UnmappedOrdersT
 import PositionsSummary from "../positions/PositionsSummary";
 import TradeCycleDetailsModalSkeleton from "@/components/skeletons/TradeCycleDetailsModalSkeleton";
 import { formatMoneyIN } from "@/utils/formatNumber";
-import { placeOrder } from "@/services/liveTradingActions";
-
-function liveApiError(data: unknown, fallback: string): string {
-    if (!data || typeof data !== "object") return fallback;
-    const payload = data as Record<string, unknown>;
-    for (const key of ["message", "error_message", "detail"]) {
-        const value = payload[key];
-        if (typeof value !== "string") continue;
-        const text = value.trim();
-        if (text && text.toLowerCase() !== "success" && text.toLowerCase() !== "ok") {
-            return text;
-        }
-    }
-    return fallback;
-}
+import {
+    placePositionOrder,
+    type PositionOrderIntent,
+} from "@/services/tradeCycles";
 
 interface TradeCycleDetails {
     trade_cycle: {
@@ -66,6 +55,27 @@ interface TradeCycleDetailsModalProps {
     onClose: () => void;
 }
 
+function positionOrderTitle(intent: PositionOrderIntent): string {
+    if (intent === "increase") return "Increase position";
+    if (intent === "decrease") return "Decrease position";
+    return "Exit position";
+}
+
+function defaultPositionOrderQty(pos: Position, intent: PositionOrderIntent): number {
+    const absQty = Math.abs(pos.quantity);
+    const lot = pos.lot_size && pos.lot_size > 0 ? pos.lot_size : 1;
+    if (intent === "exit") return absQty;
+    if (intent === "decrease") return Math.min(lot, absQty);
+    return lot;
+}
+
+function positionOrderAction(pos: Position, intent: PositionOrderIntent): "BUY" | "SELL" {
+    if (pos.quantity > 0) {
+        return intent === "increase" ? "BUY" : "SELL";
+    }
+    return intent === "increase" ? "SELL" : "BUY";
+}
+
 function formatTradeTime(iso: string | null): string {
     if (!iso) return "—";
     try {
@@ -96,6 +106,7 @@ export default function TradeCycleDetailsModal({
     const [tradesResults, setTradesResults] = useState<PositionTradeRow[]>([]);
     const tradesPageSize = 100;
     const [exitPosition, setExitPosition] = useState<Position | null>(null);
+    const [exitIntent, setExitIntent] = useState<PositionOrderIntent>("exit");
     const [exitQuantity, setExitQuantity] = useState("");
     const [exitingPosition, setExitingPosition] = useState(false);
 
@@ -161,14 +172,16 @@ export default function TradeCycleDetailsModal({
         setTradesCount(0);
     }
 
-    function openExitForPosition(pos: Position) {
+    function openExitForPosition(pos: Position, intent: PositionOrderIntent = "exit") {
         setExitPosition(pos);
-        setExitQuantity(String(Math.abs(pos.quantity)));
+        setExitIntent(intent);
+        setExitQuantity(String(defaultPositionOrderQty(pos, intent)));
     }
 
     function closeExitForm() {
         setExitPosition(null);
         setExitQuantity("");
+        setExitIntent("exit");
     }
 
     async function handleExitPosition(e: FormEvent) {
@@ -176,51 +189,46 @@ export default function TradeCycleDetailsModal({
         if (!exitPosition) return;
 
         if (exitPosition.quantity === 0) {
-            alert.error("Cannot exit position with zero quantity");
+            alert.error("Cannot adjust a flat position");
             return;
         }
 
-        const profileId = tradeCycle?.profile_id ?? data?.trade_cycle?.profile_id;
-        if (!profileId) {
-            alert.error("Missing profile id for this trade cycle");
+        const absNet = Math.abs(exitPosition.quantity);
+        const parsedQty = parseInt(exitQuantity, 10);
+        if (!Number.isFinite(parsedQty) || parsedQty < 1) {
+            alert.error("Quantity must be at least 1");
+            return;
+        }
+        if (exitIntent !== "increase" && parsedQty > absNet) {
+            alert.error(`Quantity cannot exceed open size ${absNet}`);
             return;
         }
 
-        const maxQty = Math.abs(exitPosition.quantity);
-        const parsedExit = parseInt(exitQuantity, 10);
-        if (!Number.isFinite(parsedExit) || parsedExit < 1) {
-            alert.error("Exit quantity must be at least 1");
+        const lot = exitPosition.lot_size && exitPosition.lot_size > 0 ? exitPosition.lot_size : 1;
+        if (lot > 1 && parsedQty % lot !== 0) {
+            alert.error(`Quantity must be a multiple of lot size ${lot}`);
             return;
         }
-        const exitQty = Math.min(parsedExit, maxQty);
 
         setExitingPosition(true);
         try {
-            const exchange = exitPosition.exchange || "NFO";
-            const { data: result } = await placeOrder(profileId, {
-                exchange,
-                tradingsymbol: exitPosition.instrument,
-                transaction_type: exitPosition.quantity > 0 ? "SELL" : "BUY",
-                quantity: exitQty,
-                order_type: "MARKET",
-                product: exchange === "NSE" || exchange === "BSE" ? "CNC" : "NRML",
-                price: 0,
+            const { ok, data } = await placePositionOrder(tradeCycleId, {
+                position_id: exitPosition.id,
+                intent: exitIntent,
+                quantity: parsedQty,
             });
-
-            if (result.status === "success") {
-                alert.success(
-                    exitQty === maxQty
-                        ? "Position exited successfully"
-                        : `Partial exit of ${exitQty} units completed`
-                );
+            const detail =
+                typeof data.detail === "string" ? data.detail : "Failed to place position order";
+            if (ok && data.status === "success") {
+                alert.success(detail);
                 closeExitForm();
                 await fetchDetails();
             } else {
-                alert.error(liveApiError(result, "Failed to exit position"));
+                alert.error(detail);
             }
         } catch (error) {
-            console.error("Error exiting position:", error);
-            alert.error(liveApiError(error, "Error exiting position"));
+            console.error("Error placing position order:", error);
+            alert.error(error instanceof Error ? error.message : "Error placing position order");
         } finally {
             setExitingPosition(false);
         }
@@ -372,7 +380,7 @@ export default function TradeCycleDetailsModal({
                                     showGreeks={true}
                                     showNote={true}
                                     onAdminViewTrades={openTradesForPosition}
-                                    onAdminExit={openExitForPosition}
+                                    onAdminPositionOrder={openExitForPosition}
                                 />
                             </div>
                         </div>
@@ -492,17 +500,19 @@ export default function TradeCycleDetailsModal({
             {exitPosition && exitPosition.quantity !== 0 && (
                 <div className="modal modal-open z-[1100]" role="dialog" aria-modal="true" aria-labelledby="exit-position-title">
                     <div className="modal-box">
-                        <h3 id="exit-position-title" className="mb-4 text-lg font-bold">Exit Position</h3>
+                        <h3 id="exit-position-title" className="mb-4 text-lg font-bold">
+                            {positionOrderTitle(exitIntent)}
+                        </h3>
                         <form onSubmit={handleExitPosition}>
                             <div className="mb-4 space-y-1 text-sm text-base-content/70">
                                 <p>Instrument: {exitPosition.instrument}</p>
                                 <p>Current Quantity: {exitPosition.quantity}</p>
-                                <p>Exit Action: {exitPosition.quantity > 0 ? "SELL" : "BUY"}</p>
+                                <p>Action: {positionOrderAction(exitPosition, exitIntent)}</p>
                             </div>
 
                             <div className="form-control mb-4">
                                 <label className="label" htmlFor="exit-quantity">
-                                    <span className="label-text">Exit Quantity</span>
+                                    <span className="label-text">Quantity</span>
                                 </label>
                                 <input
                                     id="exit-quantity"
@@ -511,19 +521,24 @@ export default function TradeCycleDetailsModal({
                                     className="input input-bordered w-full"
                                     value={exitQuantity}
                                     onChange={(e) => setExitQuantity(e.target.value)}
-                                    min="1"
-                                    max={Math.abs(exitPosition.quantity)}
+                                    min={exitPosition.lot_size && exitPosition.lot_size > 1 ? exitPosition.lot_size : 1}
+                                    step={exitPosition.lot_size && exitPosition.lot_size > 1 ? exitPosition.lot_size : 1}
+                                    max={exitIntent === "increase" ? undefined : Math.abs(exitPosition.quantity)}
                                     required
                                 />
                                 <label className="label">
                                     <span className="text-xs text-base-content/60">
-                                        Max: {Math.abs(exitPosition.quantity)} units
+                                        {exitIntent === "increase"
+                                            ? exitPosition.lot_size && exitPosition.lot_size > 1
+                                                ? `Lot size ${exitPosition.lot_size}`
+                                                : "Units to add"
+                                            : `Max: ${Math.abs(exitPosition.quantity)} units`}
                                     </span>
                                 </label>
                             </div>
 
                             <p className="mb-4 text-xs text-base-content/60">
-                                Exit orders are placed as MARKET orders
+                                LIMIT at best bid/offer. Open orders follow the standard modify-price loop until filled.
                             </p>
 
                             <div className="modal-action">
@@ -546,10 +561,14 @@ export default function TradeCycleDetailsModal({
                                 >
                                     {exitingPosition ? (
                                         <span className="loading loading-spinner"></span>
+                                    ) : exitIntent === "increase" ? (
+                                        "Place increase order"
+                                    ) : exitIntent === "decrease" ? (
+                                        "Place decrease order"
                                     ) : parseInt(exitQuantity, 10) === Math.abs(exitPosition.quantity) ? (
-                                        "Exit Full Position"
+                                        "Exit full position"
                                     ) : (
-                                        "Exit Partial Position"
+                                        "Exit partial position"
                                     )}
                                 </button>
                             </div>

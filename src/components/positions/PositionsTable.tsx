@@ -10,6 +10,7 @@ export interface Position extends PositionGreeksSnapshot {
   id: number;
   instrument: string;
   exchange?: string | null;
+  lot_size?: number | null;
   buy_quantity: number;
   average_buy_price: number;
   sell_quantity: number;
@@ -23,15 +24,17 @@ export interface Position extends PositionGreeksSnapshot {
   orders?: Array<{ id: number }>;
 }
 
+export type PositionOrderIntent = "exit" | "increase" | "decrease";
+
 interface PositionsTableProps {
   positions: Position[];
   showOrdersCount?: boolean;
   /** Staff-only: show a control to inspect stored trades for this position (admin UI). */
   showAdminTradesAction?: boolean;
   onAdminViewTrades?: (position: Position) => void;
-  /** Staff-only: show a control to exit an open position (admin UI). */
+  /** Staff-only: increase / decrease / exit via LIMIT + modify loop (admin UI). */
   showAdminExitAction?: boolean;
-  onAdminExit?: (position: Position) => void;
+  onAdminPositionOrder?: (position: Position, intent: PositionOrderIntent) => void;
   showGreeks?: boolean;
   /** Staff-only: operator/system note (e.g. broker vs trades reconciliation). */
   showNote?: boolean;
@@ -44,7 +47,7 @@ export default function PositionsTable({
   showAdminTradesAction = false,
   onAdminViewTrades,
   showAdminExitAction = false,
-  onAdminExit,
+  onAdminPositionOrder,
   showGreeks = false,
   showNote = false,
   className = "",
@@ -76,7 +79,7 @@ export default function PositionsTable({
             {showGreeks && <th scope="col">Greeks</th>}
             {showNote && <th scope="col" className="min-w-[8rem] max-w-[14rem]">Note</th>}
             {showOrdersCount && <th scope="col">Orders</th>}
-            {showActions && <th scope="col" className="w-36">Actions</th>}
+            {showActions && <th scope="col" className="w-56">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -142,14 +145,30 @@ export default function PositionsTable({
                           Trades
                         </button>
                       ) : null}
-                      {showAdminExitAction && onAdminExit && pos.quantity !== 0 ? (
-                        <button
-                          type="button"
-                          className="btn btn-xs btn-outline btn-error"
-                          onClick={() => onAdminExit(pos)}
-                        >
-                          Exit
-                        </button>
+                      {showAdminExitAction && onAdminPositionOrder && pos.quantity !== 0 ? (
+                        <>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-outline"
+                            onClick={() => onAdminPositionOrder(pos, "increase")}
+                          >
+                            Increase
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-outline"
+                            onClick={() => onAdminPositionOrder(pos, "decrease")}
+                          >
+                            Decrease
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-outline btn-error"
+                            onClick={() => onAdminPositionOrder(pos, "exit")}
+                          >
+                            Exit
+                          </button>
+                        </>
                       ) : null}
                     </div>
                   </td>
