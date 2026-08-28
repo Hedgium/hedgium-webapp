@@ -165,6 +165,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   const [showPlaceOrderForm, setShowPlaceOrderForm] = useState(false);
   const [showEngine1Modal, setShowEngine1Modal] = useState(false);
   const [showDepthModal, setShowDepthModal] = useState(false);
+  const [depthSymbol, setDepthSymbol] = useState("");
   const [showModifyOrderForm, setShowModifyOrderForm] = useState(false);
   const [showExitPositionForm, setShowExitPositionForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<LiveOrder | null>(null);
@@ -425,6 +426,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
       console.log("Error cancelling order:", error);
       alert.error(liveApiError(error, "Error cancelling order"));
     }
+  };
+
+  const openDepth = (symbol: string) => {
+    setDepthSymbol(symbol.trim());
+    setShowDepthModal(true);
   };
 
   const openModifyForm = (order: LiveOrder) => {
@@ -863,6 +869,15 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                           <>
                             <button
                               type="button"
+                              onClick={() => openDepth(order.tradingsymbol)}
+                              className="btn btn-ghost btn-xs"
+                              title="See depth"
+                              aria-label={`See depth for ${order.tradingsymbol}`}
+                            >
+                              <BarChart3 size={14} />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => openModifyForm(order)}
                               className="btn btn-ghost btn-xs"
                               title="Modify Order"
@@ -1150,7 +1165,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                   <button
                     type="button"
                     className="btn btn-ghost btn-xs mt-1.5 gap-1 self-start"
-                    onClick={() => setShowDepthModal(true)}
+                    onClick={() => openDepth(orderForm.tradingsymbol)}
                   >
                     <BarChart3 size={14} />
                     See depth
@@ -1356,6 +1371,14 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
               <div className="mb-4">
                 <p className="text-sm text-gray-400">Order ID: {selectedOrder.order_id}</p>
                 <p className="text-sm text-gray-400">Instrument: {selectedOrder.tradingsymbol}</p>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs mt-1.5 gap-1"
+                  onClick={() => openDepth(selectedOrder.tradingsymbol)}
+                >
+                  <BarChart3 size={14} />
+                  See depth
+                </button>
               </div>
 
               <div className="form-control mb-4">
@@ -1424,7 +1447,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         <MarketDepthModal
           open={showDepthModal}
           onClose={() => setShowDepthModal(false)}
-          initialSymbol={orderForm.tradingsymbol}
+          initialSymbol={depthSymbol}
         />
       )}
 

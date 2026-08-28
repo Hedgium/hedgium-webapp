@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Pencil, PieChart, Play, Trash2, X } from "lucide-react";
+import dynamic from "next/dynamic";
+import { BarChart3, Check, Pencil, PieChart, Play, Trash2, X } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import { executeEngine1, previewEngine1 } from "@/services/engine1";
@@ -9,6 +10,7 @@ import {
   ENGINE1_HOLDING_PERIOD_LABELS,
   ENGINE1_HOLDING_PERIODS,
   ENGINE1_RISK_LABELS,
+  ENGINE1_RISKS,
   type Engine1Execute,
   type Engine1ExecuteOverride,
   type Engine1ExecutePayload,
@@ -18,6 +20,10 @@ import {
   type Engine1PreviewInstrumentRow,
   type Engine1Risk,
 } from "@/types/engine1";
+
+const MarketDepthModal = dynamic(() => import("@/components/market/MarketDepthModal"), {
+  ssr: false,
+});
 
 function asRisk(value: string | undefined): Engine1Risk {
   const upper = (value || "").toUpperCase();
@@ -92,7 +98,7 @@ export default function Engine1ExecuteModal({
   onExecuted,
 }: Engine1ExecuteModalProps) {
   const alert = useAlert();
-  const risk = asRisk(riskProfile ?? undefined);
+  const [risk, setRisk] = useState<Engine1Risk>(() => asRisk(riskProfile ?? undefined));
   const marginDefault = defaultAllocation(marginEquity);
   const [holdingPeriod, setHoldingPeriod] = useState<Engine1HoldingPeriod>("Y3_PLUS");
   const [allocationAmount, setAllocationAmount] = useState(marginDefault);
@@ -104,7 +110,13 @@ export default function Engine1ExecuteModal({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editQty, setEditQty] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [depthSymbol, setDepthSymbol] = useState<string | null>(null);
   const originalByIdRef = useRef<Map<number, Engine1PreviewInstrumentRow>>(new Map());
+
+  useEffect(() => {
+    if (!riskProfile) return;
+    setRisk(asRisk(riskProfile));
+  }, [riskProfile]);
 
   useEffect(() => {
     const next = defaultAllocation(marginEquity);
@@ -175,6 +187,7 @@ export default function Engine1ExecuteModal({
       const data = await previewEngine1(profileId, {
         holding_period: holdingPeriod,
         allocation_amount: amount,
+        risk_profile: risk,
       });
       originalByIdRef.current = new Map(data.instruments.map((row) => [row.instrument_id, { ...row }]));
       setPreview(data);
@@ -200,6 +213,7 @@ export default function Engine1ExecuteModal({
     const payload: Engine1ExecutePayload = {
       holding_period: holdingPeriod,
       allocation_amount: amount,
+      risk_profile: risk,
       instrument_ids: instrumentIds,
     };
     const overrides = overridesFor(instrumentIds);
@@ -307,6 +321,7 @@ export default function Engine1ExecuteModal({
   };
 
   return (
+    <>
     <div className="modal modal-open">
       <div className="modal-box w-11/12 max-w-6xl max-h-[90vh] overflow-y-auto rounded-xl">
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -316,8 +331,7 @@ export default function Engine1ExecuteModal({
               Engine 1
             </h3>
             <p className="text-sm text-base-content/70">
-              Risk from profile: {ENGINE1_RISK_LABELS[risk]}
-              {riskProfile ? "" : " (default Medium)"}
+              Risk defaults from the profile. Changing it here does not update the profile.
             </p>
           </div>
           <button type="button" className="btn btn-ghost btn-sm" onClick={onClose} disabled={executing !== null}>
@@ -325,7 +339,25 @@ export default function Engine1ExecuteModal({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="form-control">
+            <span className="label-text mb-1 text-sm">Risk</span>
+            <select
+              className="select select-bordered select-sm h-9 w-full"
+              value={risk}
+              onChange={(e) => {
+                setRisk(e.target.value as Engine1Risk);
+                resetBasket();
+              }}
+            >
+              {ENGINE1_RISKS.map((value) => (
+                <option key={value} value={value}>
+                  {ENGINE1_RISK_LABELS[value]}
+                  {asRisk(riskProfile ?? undefined) === value ? " (profile)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="form-control">
             <span className="label-text mb-1 text-sm">Holding period</span>
             <select
@@ -490,6 +522,17 @@ export default function Engine1ExecuteModal({
                               <div className="flex justify-end gap-1">
                                 <button
                                   type="button"
+                                  className="btn btn-ghost btn-xs gap-1"
+                                  onClick={() => setDepthSymbol(row.tradingsymbol)}
+                                  disabled={busy}
+                                  title="See depth"
+                                  aria-label={`See depth for ${row.tradingsymbol}`}
+                                >
+                                  <BarChart3 size={14} />
+                                  Depth
+                                </button>
+                                <button
+                                  type="button"
                                   className="btn btn-ghost btn-xs"
                                   onClick={() => saveEdit(row)}
                                   disabled={busy}
@@ -588,5 +631,14 @@ export default function Engine1ExecuteModal({
       </div>
       <div className="modal-backdrop" onClick={() => executing === null && onClose()} />
     </div>
+    {depthSymbol ? (
+      <MarketDepthModal
+        open
+        onClose={() => setDepthSymbol(null)}
+        initialSymbol={depthSymbol}
+        defaultInstrumentType="EQ"
+      />
+    ) : null}
+    </>
   );
 }
