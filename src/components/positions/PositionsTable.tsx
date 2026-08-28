@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Plus, Minus, LogOut } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionGreeksCell from "@/components/admin/PositionGreeksCell";
 import type { PositionGreeksSnapshot } from "@/types/positions";
@@ -79,7 +79,7 @@ export default function PositionsTable({
             {showGreeks && <th scope="col">Greeks</th>}
             {showNote && <th scope="col" className="min-w-[8rem] max-w-[14rem]">Note</th>}
             {showOrdersCount && <th scope="col">Orders</th>}
-            {showActions && <th scope="col" className="w-56">Actions</th>}
+            {showActions && <th scope="col" className="whitespace-nowrap">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -134,8 +134,8 @@ export default function PositionsTable({
                   </td>
                 )}
                 {showActions && (
-                  <td>
-                    <div className="flex flex-wrap gap-1">
+                  <td className="whitespace-nowrap">
+                    <div className="flex flex-nowrap items-center gap-1">
                       {showAdminTradesAction && onAdminViewTrades ? (
                         <button
                           type="button"
@@ -149,24 +149,30 @@ export default function PositionsTable({
                         <>
                           <button
                             type="button"
-                            className="btn btn-xs btn-outline"
+                            className="btn btn-xs btn-square btn-outline"
+                            title="Increase position"
+                            aria-label="Increase position"
                             onClick={() => onAdminPositionOrder(pos, "increase")}
                           >
-                            Increase
+                            <Plus size={14} aria-hidden="true" />
                           </button>
                           <button
                             type="button"
-                            className="btn btn-xs btn-outline"
+                            className="btn btn-xs btn-square btn-outline"
+                            title="Decrease position"
+                            aria-label="Decrease position"
                             onClick={() => onAdminPositionOrder(pos, "decrease")}
                           >
-                            Decrease
+                            <Minus size={14} aria-hidden="true" />
                           </button>
                           <button
                             type="button"
-                            className="btn btn-xs btn-outline btn-error"
+                            className="btn btn-xs btn-square btn-outline btn-error"
+                            title="Exit position"
+                            aria-label="Exit position"
                             onClick={() => onAdminPositionOrder(pos, "exit")}
                           >
-                            Exit
+                            <LogOut size={14} aria-hidden="true" />
                           </button>
                         </>
                       ) : null}
