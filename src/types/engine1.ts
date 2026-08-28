@@ -112,6 +112,7 @@ export interface Engine1Execute extends Engine1Preview {
 export interface Engine1PreviewPayload {
   holding_period: Engine1HoldingPeriod;
   allocation_amount: number;
+  risk_profile?: Engine1Risk;
 }
 
 export interface Engine1ExecuteOverride {
