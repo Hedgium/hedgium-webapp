@@ -39,6 +39,7 @@ export interface ProposeAdjustmentMeta {
   expiry: string | null;
   mode: string;
   spot: number;
+  warnings?: string[];
 }
 
 export interface ProposeAdjustmentResponse {

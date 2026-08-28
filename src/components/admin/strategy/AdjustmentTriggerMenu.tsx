@@ -55,6 +55,9 @@ export default function AdjustmentTriggerMenu({
         alert.error("No legs proposed for this trigger");
         return;
       }
+      for (const warning of result.data.meta?.warnings ?? []) {
+        alert.warning(warning);
+      }
       const legs = mapProposedLegs(result.data.legs);
       onProposed({
         heading: "Add adjustment",
