@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { X, Plus, Trash2, Pencil, Check } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import LegForm from "@/components/admin/builder/LegForm";
 import { BuilderLegCreate, BuilderLegUpdate } from "@/types/builder";
@@ -25,6 +25,7 @@ export interface ManualAdjustmentInitialValues {
     autoTrade?: boolean;
     exchange?: string;
     legs?: AdjustmentLeg[];
+    heading?: string;
 }
 
 interface Props {
@@ -49,15 +50,20 @@ export default function ManualAdjustmentModal({
     onClose,
     onSuccess,
 }: Props) {
-    const isDuplicate = (initialValues?.legs?.length ?? 0) > 0;
+    const heading =
+        initialValues?.heading ??
+        ((initialValues?.legs?.length ?? 0) > 0 ? "Duplicate Adjustment" : "Add Manual Adjustment");
     const [title, setTitle] = useState(initialValues?.title ?? "");
     const [notes, setNotes] = useState(initialValues?.notes ?? "");
     const [autoTrade, setAutoTrade] = useState(initialValues?.autoTrade ?? false);
     const [exchange, setExchange] = useState(initialValues?.exchange ?? "NFO");
     const [legs, setLegs] = useState<AdjustmentLeg[]>(initialValues?.legs ?? []);
     const [addingLeg, setAddingLeg] = useState(false);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [draft, setDraft] = useState<AdjustmentLeg | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const alert = useAlert();
+    const formOpen = addingLeg || editingIndex !== null;
 
     function handleLegAdd(data: BuilderLegCreate | BuilderLegUpdate) {
         const d = data as BuilderLegCreate;
@@ -82,10 +88,65 @@ export default function ManualAdjustmentModal({
         setAddingLeg(false);
     }
 
+    function startEdit(index: number) {
+        setAddingLeg(false);
+        setEditingIndex(index);
+        setDraft({ ...legs[index] });
+    }
+
+    function cancelEdit() {
+        setEditingIndex(null);
+        setDraft(null);
+    }
+
+    function saveEdit() {
+        if (editingIndex === null || !draft) return;
+        const qty = Number(draft.quantity);
+        if (!Number.isFinite(qty) || qty <= 0) {
+            alert.error("Quantity must be a positive number.");
+            return;
+        }
+        const hasPrice = draft.price !== null && draft.price !== undefined && draft.price !== 0;
+        const price = hasPrice ? Number(draft.price) : null;
+        if (hasPrice && (!Number.isFinite(price) || (price ?? 0) <= 0)) {
+            alert.error("Price must be empty (MARKET) or a positive number.");
+            return;
+        }
+        const instrument = draft.instrument.trim();
+        if (!instrument) {
+            alert.error("Instrument is required.");
+            return;
+        }
+        setLegs((prev) =>
+            prev.map((leg, i) =>
+                i === editingIndex
+                    ? {
+                          ...draft,
+                          instrument,
+                          quantity: qty,
+                          price,
+                          order_type: hasPrice ? "LIMIT" : "MARKET",
+                          action: draft.action === "SELL" ? "SELL" : "BUY",
+                          leg_index: leg.leg_index,
+                      }
+                    : leg
+            )
+        );
+        cancelEdit();
+    }
+
     function removeLeg(index: number) {
         setLegs((prev) => {
             const updated = prev.filter((_, i) => i !== index);
             return updated.map((l, i) => ({ ...l, leg_index: i + 1 }));
+        });
+        setEditingIndex((current) => {
+            if (current === null) return null;
+            if (current === index) {
+                setDraft(null);
+                return null;
+            }
+            return current > index ? current - 1 : current;
         });
     }
 
@@ -140,7 +201,7 @@ export default function ManualAdjustmentModal({
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                     <h3 className="font-bold text-xl">
-                        {isDuplicate ? "Duplicate Adjustment" : "Add Manual Adjustment"}
+                        {heading}
                     </h3>
                     <button onClick={onClose} className="btn btn-ghost btn-sm btn-circle">
                         <X size={18} />
@@ -166,7 +227,7 @@ export default function ManualAdjustmentModal({
                             value={exchange}
                             onChange={(e) => { setExchange(e.target.value); setAddingLeg(false); }}
                             className="select select-bordered w-full"
-                            disabled={addingLeg}
+                            disabled={formOpen}
                         >
                             <option value="NFO">NFO</option>
                             <option value="BFO">BFO</option>
@@ -199,7 +260,7 @@ export default function ManualAdjustmentModal({
                                 <span className="ml-2 badge badge-neutral badge-sm">{legs.length}</span>
                             )}
                         </h4>
-                        {!addingLeg && (
+                        {!formOpen && (
                             <button
                                 className="btn btn-sm btn-outline gap-1"
                                 onClick={() => setAddingLeg(true)}
@@ -226,32 +287,139 @@ export default function ManualAdjustmentModal({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {legs.map((leg, i) => (
-                                        <tr key={i}>
+                                    {legs.map((leg, i) => {
+                                        const isEditing = editingIndex === i && draft !== null;
+                                        return (
+                                        <tr key={i} className={isEditing ? "bg-primary/5" : undefined}>
                                             <td className="font-mono">{leg.leg_index}</td>
                                             <td>
-                                                <span className={`badge badge-sm ${leg.action === "BUY" ? "badge-success" : "badge-error"}`}>
-                                                    {leg.action}
-                                                </span>
+                                                {isEditing ? (
+                                                    <select
+                                                        className="select select-bordered select-xs w-[5.5rem]"
+                                                        value={draft.action}
+                                                        onChange={(e) =>
+                                                            setDraft({ ...draft, action: e.target.value })
+                                                        }
+                                                    >
+                                                        <option value="BUY">BUY</option>
+                                                        <option value="SELL">SELL</option>
+                                                    </select>
+                                                ) : (
+                                                    <span className={`badge badge-sm ${leg.action === "BUY" ? "badge-success" : "badge-error"}`}>
+                                                        {leg.action}
+                                                    </span>
+                                                )}
                                             </td>
-                                            <td className="font-mono text-xs">{leg.instrument}</td>
-                                            <td>{leg.quantity}</td>
-                                            <td>{leg.price ?? "—"}</td>
+                                            <td className="font-mono text-xs">
+                                                {isEditing ? (
+                                                    <input
+                                                        className="input input-bordered input-xs w-56 font-mono"
+                                                        value={draft.instrument}
+                                                        onChange={(e) =>
+                                                            setDraft({ ...draft, instrument: e.target.value })
+                                                        }
+                                                    />
+                                                ) : (
+                                                    leg.instrument
+                                                )}
+                                            </td>
                                             <td>
-                                                <span className="badge badge-outline badge-xs">{leg.order_type}</span>
+                                                {isEditing ? (
+                                                    <input
+                                                        type="number"
+                                                        min={1}
+                                                        className="input input-bordered input-xs w-20"
+                                                        value={draft.quantity}
+                                                        onChange={(e) =>
+                                                            setDraft({
+                                                                ...draft,
+                                                                quantity: Number(e.target.value),
+                                                            })
+                                                        }
+                                                    />
+                                                ) : (
+                                                    leg.quantity
+                                                )}
+                                            </td>
+                                            <td>
+                                                {isEditing ? (
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        step="0.05"
+                                                        className="input input-bordered input-xs w-24"
+                                                        placeholder="MKT"
+                                                        value={draft.price ?? ""}
+                                                        onChange={(e) =>
+                                                            setDraft({
+                                                                ...draft,
+                                                                price:
+                                                                    e.target.value === ""
+                                                                        ? null
+                                                                        : Number(e.target.value),
+                                                            })
+                                                        }
+                                                    />
+                                                ) : (
+                                                    leg.price ?? "—"
+                                                )}
+                                            </td>
+                                            <td>
+                                                <span className="badge badge-outline badge-xs">
+                                                    {isEditing
+                                                        ? draft.price
+                                                            ? "LIMIT"
+                                                            : "MARKET"
+                                                        : leg.order_type}
+                                                </span>
                                             </td>
                                             <td className="text-xs">{leg.exchange}</td>
                                             <td>
-                                                <button
-                                                    onClick={() => removeLeg(i)}
-                                                    className="btn btn-ghost btn-xs text-error"
-                                                    title="Remove leg"
-                                                >
-                                                    <Trash2 size={12} />
-                                                </button>
+                                                <div className="flex items-center gap-0.5">
+                                                    {isEditing ? (
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                onClick={saveEdit}
+                                                                className="btn btn-ghost btn-xs text-success"
+                                                                title="Save leg"
+                                                            >
+                                                                <Check size={12} />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={cancelEdit}
+                                                                className="btn btn-ghost btn-xs"
+                                                                title="Cancel edit"
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => startEdit(i)}
+                                                            className="btn btn-ghost btn-xs"
+                                                            title="Edit leg"
+                                                            disabled={formOpen}
+                                                        >
+                                                            <Pencil size={12} />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeLeg(i)}
+                                                        className="btn btn-ghost btn-xs text-error"
+                                                        title="Remove leg"
+                                                        disabled={isEditing}
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -286,7 +454,7 @@ export default function ManualAdjustmentModal({
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={submitting || legs.length === 0 || addingLeg}
+                        disabled={submitting || legs.length === 0 || formOpen}
                         className="btn btn-primary"
                     >
                         {submitting

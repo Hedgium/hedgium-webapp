@@ -48,3 +48,24 @@ export async function activateTradeCycle(cycleId: number): Promise<void> {
     throw new Error("Failed to activate trade cycle");
   }
 }
+
+export type PositionOrderIntent = "exit" | "increase" | "decrease";
+
+export type PlacePositionOrderPayload = {
+  position_id: number;
+  intent: PositionOrderIntent;
+  quantity: number;
+};
+
+export async function placePositionOrder(
+  tradeCycleId: number,
+  payload: PlacePositionOrderPayload
+): Promise<{ ok: boolean; data: Record<string, unknown> }> {
+  const res = await authFetch(`trade-cycles/${tradeCycleId}/place-position-order/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = (await res.json()) as Record<string, unknown>;
+  return { ok: res.ok, data };
+}

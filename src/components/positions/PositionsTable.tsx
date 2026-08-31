@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Plus, Minus, LogOut } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionGreeksCell from "@/components/admin/PositionGreeksCell";
 import type { PositionGreeksSnapshot } from "@/types/positions";
@@ -9,6 +9,8 @@ import type { PositionGreeksSnapshot } from "@/types/positions";
 export interface Position extends PositionGreeksSnapshot {
   id: number;
   instrument: string;
+  exchange?: string | null;
+  lot_size?: number | null;
   buy_quantity: number;
   average_buy_price: number;
   sell_quantity: number;
@@ -22,12 +24,17 @@ export interface Position extends PositionGreeksSnapshot {
   orders?: Array<{ id: number }>;
 }
 
+export type PositionOrderIntent = "exit" | "increase" | "decrease";
+
 interface PositionsTableProps {
   positions: Position[];
   showOrdersCount?: boolean;
   /** Staff-only: show a control to inspect stored trades for this position (admin UI). */
   showAdminTradesAction?: boolean;
   onAdminViewTrades?: (position: Position) => void;
+  /** Staff-only: increase / decrease / exit via LIMIT + modify loop (admin UI). */
+  showAdminExitAction?: boolean;
+  onAdminPositionOrder?: (position: Position, intent: PositionOrderIntent) => void;
   showGreeks?: boolean;
   /** Staff-only: operator/system note (e.g. broker vs trades reconciliation). */
   showNote?: boolean;
@@ -39,10 +46,13 @@ export default function PositionsTable({
   showOrdersCount = false,
   showAdminTradesAction = false,
   onAdminViewTrades,
+  showAdminExitAction = false,
+  onAdminPositionOrder,
   showGreeks = false,
   showNote = false,
   className = "",
 }: PositionsTableProps) {
+  const showActions = showAdminTradesAction || showAdminExitAction;
   const getPnLColor = (pnl: number) => {
     return pnl >= 0 ? "text-success" : "text-error";
   };
@@ -69,7 +79,7 @@ export default function PositionsTable({
             {showGreeks && <th scope="col">Greeks</th>}
             {showNote && <th scope="col" className="min-w-[8rem] max-w-[14rem]">Note</th>}
             {showOrdersCount && <th scope="col">Orders</th>}
-            {showAdminTradesAction && <th scope="col" className="w-28">Actions</th>}
+            {showActions && <th scope="col" className="whitespace-nowrap">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -123,17 +133,50 @@ export default function PositionsTable({
                     {pos.orders?.length ?? 0}
                   </td>
                 )}
-                {showAdminTradesAction && (
-                  <td>
-                    {onAdminViewTrades ? (
-                      <button
-                        type="button"
-                        className="btn btn-xs btn-outline"
-                        onClick={() => onAdminViewTrades(pos)}
-                      >
-                        Trades
-                      </button>
-                    ) : null}
+                {showActions && (
+                  <td className="whitespace-nowrap">
+                    <div className="flex flex-nowrap items-center gap-1">
+                      {showAdminTradesAction && onAdminViewTrades ? (
+                        <button
+                          type="button"
+                          className="btn btn-xs btn-outline"
+                          onClick={() => onAdminViewTrades(pos)}
+                        >
+                          Trades
+                        </button>
+                      ) : null}
+                      {showAdminExitAction && onAdminPositionOrder && pos.quantity !== 0 ? (
+                        <>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-square btn-outline"
+                            title="Increase position"
+                            aria-label="Increase position"
+                            onClick={() => onAdminPositionOrder(pos, "increase")}
+                          >
+                            <Plus size={14} aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-square btn-outline"
+                            title="Decrease position"
+                            aria-label="Decrease position"
+                            onClick={() => onAdminPositionOrder(pos, "decrease")}
+                          >
+                            <Minus size={14} aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-square btn-outline btn-error"
+                            title="Exit position"
+                            aria-label="Exit position"
+                            onClick={() => onAdminPositionOrder(pos, "exit")}
+                          >
+                            <LogOut size={14} aria-hidden="true" />
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
                   </td>
                 )}
               </tr>
