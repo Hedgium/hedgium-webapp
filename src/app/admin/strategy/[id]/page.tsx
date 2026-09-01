@@ -96,9 +96,9 @@ function StatCell({
       <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">
         {label}
       </p>
-      <p className={`text-lg font-semibold tabular-nums leading-tight mt-0.5 ${valueClassName}`}>
+      <div className={`text-lg font-semibold tabular-nums leading-tight mt-0.5 ${valueClassName}`}>
         {value}
-      </p>
+      </div>
       {sub != null && sub !== false && (
         <p className="text-[10px] text-base-content/50 mt-1 tabular-nums leading-snug">{sub}</p>
       )}
@@ -451,41 +451,43 @@ export default function StrategyDetailPage() {
               valueClassName={pnlColor(toNum(strategy?.mid_wpnl_total)) || "text-base-content"}
             />
             <StatCell
-              label="Spread"
+              label="Spread (Builder/ATM/Famous/Straddle)"
               value={
-                toNum(strategy?.atm_spread) != null
-                  ? `${toNum(strategy!.atm_spread)!.toFixed(2)}%`
-                  : "—"
-              }
-              sub={formatSnapshotAt(strategy?.spread_updated_at ?? null) ?? "Not updated"}
-              valueClassName="text-base-content"
-            />
-            <StatCell
-              label="ATM"
-              value={
-                toNum(strategy?.atm_strike_spread) != null
-                  ? `${toNum(strategy!.atm_strike_spread)!.toFixed(2)}%`
-                  : "—"
-              }
-              sub={formatSnapshotAt(strategy?.spread_updated_at ?? null) ?? "Not updated"}
-              valueClassName="text-base-content"
-            />
-            <StatCell
-              label="Famous"
-              value={
-                toNum(strategy?.famous_strike_spread) != null
-                  ? `${toNum(strategy!.famous_strike_spread)!.toFixed(2)}%`
-                  : "—"
-              }
-              sub={formatSnapshotAt(strategy?.spread_updated_at ?? null) ?? "Not updated"}
-              valueClassName="text-base-content"
-            />
-            <StatCell
-              label="Straddle"
-              value={
-                toNum(strategy?.straddle_level) != null
-                  ? `${toNum(strategy!.straddle_level)!.toFixed(2)}%`
-                  : "—"
+                <span className="flex flex-col items-start gap-0.5 text-sm font-semibold">
+                  {(
+                    [
+                      [
+                        ["Builder", strategy?.atm_spread],
+                        ["ATM", strategy?.atm_strike_spread],
+                      ],
+                      [
+                        ["Famous", strategy?.famous_strike_spread],
+                        ["Straddle", strategy?.straddle_level],
+                      ],
+                    ] as const
+                  ).map((pair, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-baseline gap-2.5 whitespace-nowrap"
+                    >
+                      {pair.map(([rowLabel, value]) => (
+                        <span
+                          key={rowLabel}
+                          className="inline-flex items-baseline gap-1"
+                        >
+                          <span className="text-[10px] font-medium uppercase tracking-wide text-base-content/45">
+                            {rowLabel}
+                          </span>
+                          <span className="tabular-nums text-base-content">
+                            {toNum(value) != null
+                              ? `${toNum(value)!.toFixed(2)}%`
+                              : "—"}
+                          </span>
+                        </span>
+                      ))}
+                    </span>
+                  ))}
+                </span>
               }
               sub={formatSnapshotAt(strategy?.spread_updated_at ?? null) ?? "Not updated"}
               valueClassName="text-base-content"

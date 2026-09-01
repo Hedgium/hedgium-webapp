@@ -938,17 +938,11 @@ export default function Page() {
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
                     Total PnL
                   </th>
-                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
-                    Spread
-                  </th>
-                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
-                    ATM
-                  </th>
-                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
-                    Famous
-                  </th>
-                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
-                    Straddle
+                  <th className="font-medium text-base-content/70 text-right min-w-[9.5rem]">
+                    <span className="block whitespace-nowrap">Spread</span>
+                    <span className="block text-[10px] font-normal leading-tight text-base-content/50">
+                      Builder/ATM/Famous/Straddle
+                    </span>
                   </th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
                     WPNL &amp; Mid WPNL
@@ -963,7 +957,7 @@ export default function Page() {
               <tbody>
                 {strategies.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={14} className="text-center py-16">
+                    <td colSpan={11} className="text-center py-16">
                       <p className="text-base-content/60">No strategies found.</p>
                       <p className="text-sm text-base-content/50 mt-1">
                         Try changing filters or create a new strategy.
@@ -1160,13 +1154,41 @@ export default function Page() {
                           </span>
                         </div>
                       </td>
-                      <td className="text-right align-top min-w-[7rem]">
-                        <div className="flex flex-col items-end gap-1 min-w-[7rem]">
-                          <span className="font-semibold tabular-nums text-sm whitespace-nowrap">
-                            {toNum(strategy.atm_spread) != null
-                              ? `${toNum(strategy.atm_spread)!.toFixed(2)}%`
-                              : "—"}
-                          </span>
+                      <td className="text-right align-top min-w-[9.5rem]">
+                        <div className="flex flex-col items-end gap-0.5 min-w-[9.5rem]">
+                          {(
+                            [
+                              [
+                                ["Builder", strategy.atm_spread],
+                                ["ATM", strategy.atm_strike_spread],
+                              ],
+                              [
+                                ["Famous", strategy.famous_strike_spread],
+                                ["Straddle", strategy.straddle_level],
+                              ],
+                            ] as const
+                          ).map((pair, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-baseline justify-end gap-2.5 whitespace-nowrap"
+                            >
+                              {pair.map(([label, value]) => (
+                                <span
+                                  key={label}
+                                  className="inline-flex items-baseline gap-1"
+                                >
+                                  <span className="text-[10px] font-medium text-base-content/50">
+                                    {label}
+                                  </span>
+                                  <span className="font-semibold tabular-nums text-sm">
+                                    {toNum(value) != null
+                                      ? `${toNum(value)!.toFixed(2)}%`
+                                      : "—"}
+                                  </span>
+                                </span>
+                              ))}
+                            </span>
+                          ))}
                           <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
                             {formatSnapshotAt(strategy.spread_updated_at) ?? "—"}
                           </span>
@@ -1175,27 +1197,6 @@ export default function Page() {
                             title="Spot when spread was calculated"
                           />
                         </div>
-                      </td>
-                      <td className="text-right align-top min-w-[7rem]">
-                        <span className="font-semibold tabular-nums text-sm whitespace-nowrap">
-                          {toNum(strategy.atm_strike_spread) != null
-                            ? `${toNum(strategy.atm_strike_spread)!.toFixed(2)}%`
-                            : "—"}
-                        </span>
-                      </td>
-                      <td className="text-right align-top min-w-[7rem]">
-                        <span className="font-semibold tabular-nums text-sm whitespace-nowrap">
-                          {toNum(strategy.famous_strike_spread) != null
-                            ? `${toNum(strategy.famous_strike_spread)!.toFixed(2)}%`
-                            : "—"}
-                        </span>
-                      </td>
-                      <td className="text-right align-top min-w-[7rem]">
-                        <span className="font-semibold tabular-nums text-sm whitespace-nowrap">
-                          {toNum(strategy.straddle_level) != null
-                            ? `${toNum(strategy.straddle_level)!.toFixed(2)}%`
-                            : "—"}
-                        </span>
                       </td>
                       <td className="text-right">
                         <div className="flex flex-col items-end gap-1 text-sm">
