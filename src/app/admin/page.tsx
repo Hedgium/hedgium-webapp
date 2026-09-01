@@ -87,6 +87,9 @@ interface Strategy {
   wpnl_total: number | string | null;
   mid_wpnl_total: number | string | null;
   atm_spread: number | string | null;
+  atm_strike_spread: number | string | null;
+  famous_strike_spread: number | string | null;
+  straddle_level: number | string | null;
   wpnl_updated_at: string | null;
   spread_updated_at: string | null;
   pnl_total: number | string | null;
@@ -1052,8 +1055,11 @@ export default function Page() {
                   >
                     Margin
                   </th>
-                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
-                    Spread
+                  <th className="font-medium text-base-content/70 text-right min-w-[9.5rem]">
+                    <span className="block whitespace-nowrap">Spread</span>
+                    <span className="block text-[10px] font-normal leading-tight text-base-content/50">
+                      Builder/ATM/Famous/Straddle
+                    </span>
                   </th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
                     WPNL &amp; Mid WPNL
@@ -1284,19 +1290,47 @@ export default function Page() {
                           </span>
                         </div>
                       </td>
-                      <td className="text-right align-top min-w-[7rem]">
-                        <div className="flex flex-col items-end gap-1 min-w-[7rem]">
-                          <span className="font-semibold tabular-nums text-sm whitespace-nowrap">
-                            {toNum(strategy.atm_spread) != null
-                              ? `${toNum(strategy.atm_spread)!.toFixed(2)}%`
-                              : "—"}
-                          </span>
+                      <td className="text-right align-top min-w-[9.5rem]">
+                        <div className="flex flex-col items-end gap-0.5 min-w-[9.5rem]">
+                          {(
+                            [
+                              [
+                                ["Builder", strategy.atm_spread],
+                                ["ATM", strategy.atm_strike_spread],
+                              ],
+                              [
+                                ["Famous", strategy.famous_strike_spread],
+                                ["Straddle", strategy.straddle_level],
+                              ],
+                            ] as const
+                          ).map((pair, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-baseline justify-end gap-2.5 whitespace-nowrap"
+                            >
+                              {pair.map(([label, value]) => (
+                                <span
+                                  key={label}
+                                  className="inline-flex items-baseline gap-1"
+                                >
+                                  <span className="text-[10px] font-medium text-base-content/50">
+                                    {label}
+                                  </span>
+                                  <span className="font-semibold tabular-nums text-sm">
+                                    {toNum(value) != null
+                                      ? `${toNum(value)!.toFixed(2)}%`
+                                      : "—"}
+                                  </span>
+                                </span>
+                              ))}
+                            </span>
+                          ))}
                           <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
                             {formatSnapshotAt(strategy.spread_updated_at) ?? "—"}
                           </span>
                           <SpotAtCalcLines
                             spots={strategy.spread_spot_by_underlying}
-                            title="Spot when ATM spread was calculated"
+                            title="Spot when spread was calculated"
                           />
                         </div>
                       </td>
