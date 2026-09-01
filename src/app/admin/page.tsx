@@ -86,6 +86,9 @@ interface Strategy {
   wpnl_total: number | string | null;
   mid_wpnl_total: number | string | null;
   atm_spread: number | string | null;
+  atm_strike_spread: number | string | null;
+  famous_strike_spread: number | string | null;
+  straddle_level: number | string | null;
   wpnl_updated_at: string | null;
   spread_updated_at: string | null;
   pnl_total: number | string | null;
@@ -939,6 +942,15 @@ export default function Page() {
                     Spread
                   </th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
+                    ATM
+                  </th>
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
+                    Famous
+                  </th>
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
+                    Straddle
+                  </th>
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
                     WPNL &amp; Mid WPNL
                   </th>
                   <th className="font-medium text-base-content/70">Last adjustment</th>
@@ -951,7 +963,7 @@ export default function Page() {
               <tbody>
                 {strategies.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={11} className="text-center py-16">
+                    <td colSpan={14} className="text-center py-16">
                       <p className="text-base-content/60">No strategies found.</p>
                       <p className="text-sm text-base-content/50 mt-1">
                         Try changing filters or create a new strategy.
@@ -1160,9 +1172,30 @@ export default function Page() {
                           </span>
                           <SpotAtCalcLines
                             spots={strategy.spread_spot_by_underlying}
-                            title="Spot when ATM spread was calculated"
+                            title="Spot when spread was calculated"
                           />
                         </div>
+                      </td>
+                      <td className="text-right align-top min-w-[7rem]">
+                        <span className="font-semibold tabular-nums text-sm whitespace-nowrap">
+                          {toNum(strategy.atm_strike_spread) != null
+                            ? `${toNum(strategy.atm_strike_spread)!.toFixed(2)}%`
+                            : "—"}
+                        </span>
+                      </td>
+                      <td className="text-right align-top min-w-[7rem]">
+                        <span className="font-semibold tabular-nums text-sm whitespace-nowrap">
+                          {toNum(strategy.famous_strike_spread) != null
+                            ? `${toNum(strategy.famous_strike_spread)!.toFixed(2)}%`
+                            : "—"}
+                        </span>
+                      </td>
+                      <td className="text-right align-top min-w-[7rem]">
+                        <span className="font-semibold tabular-nums text-sm whitespace-nowrap">
+                          {toNum(strategy.straddle_level) != null
+                            ? `${toNum(strategy.straddle_level)!.toFixed(2)}%`
+                            : "—"}
+                        </span>
                       </td>
                       <td className="text-right">
                         <div className="flex flex-col items-end gap-1 text-sm">

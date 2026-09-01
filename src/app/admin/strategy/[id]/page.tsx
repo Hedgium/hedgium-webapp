@@ -52,6 +52,9 @@ interface StrategyDetail {
   wpnl_total?: number | string | null;
   mid_wpnl_total?: number | string | null;
   atm_spread?: number | string | null;
+  atm_strike_spread?: number | string | null;
+  famous_strike_spread?: number | string | null;
+  straddle_level?: number | string | null;
   wpnl_updated_at?: string | null;
   spread_updated_at?: string | null;
   pnl_total?: number | string | null;
@@ -448,10 +451,40 @@ export default function StrategyDetailPage() {
               valueClassName={pnlColor(toNum(strategy?.mid_wpnl_total)) || "text-base-content"}
             />
             <StatCell
-              label="ATM spread"
+              label="Spread"
               value={
                 toNum(strategy?.atm_spread) != null
                   ? `${toNum(strategy!.atm_spread)!.toFixed(2)}%`
+                  : "—"
+              }
+              sub={formatSnapshotAt(strategy?.spread_updated_at ?? null) ?? "Not updated"}
+              valueClassName="text-base-content"
+            />
+            <StatCell
+              label="ATM"
+              value={
+                toNum(strategy?.atm_strike_spread) != null
+                  ? `${toNum(strategy!.atm_strike_spread)!.toFixed(2)}%`
+                  : "—"
+              }
+              sub={formatSnapshotAt(strategy?.spread_updated_at ?? null) ?? "Not updated"}
+              valueClassName="text-base-content"
+            />
+            <StatCell
+              label="Famous"
+              value={
+                toNum(strategy?.famous_strike_spread) != null
+                  ? `${toNum(strategy!.famous_strike_spread)!.toFixed(2)}%`
+                  : "—"
+              }
+              sub={formatSnapshotAt(strategy?.spread_updated_at ?? null) ?? "Not updated"}
+              valueClassName="text-base-content"
+            />
+            <StatCell
+              label="Straddle"
+              value={
+                toNum(strategy?.straddle_level) != null
+                  ? `${toNum(strategy!.straddle_level)!.toFixed(2)}%`
                   : "—"
               }
               sub={formatSnapshotAt(strategy?.spread_updated_at ?? null) ?? "Not updated"}
