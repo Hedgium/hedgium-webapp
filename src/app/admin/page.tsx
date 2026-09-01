@@ -43,6 +43,7 @@ const REFRESH_ACTIVE_STRATEGY_TASKS = [
   "refresh-pnl-active-strategies",
   "refresh-wpnl-active-strategies",
   "refresh-worst-spread-active-strategies",
+  "refresh-margin-active-strategies",
 ] as const;
 
 interface Version {
@@ -93,6 +94,12 @@ interface Strategy {
   spread_updated_at: string | null;
   pnl_total: number | string | null;
   pnl_updated_at: string | null;
+  margin_span: number | string | null;
+  margin_exposure: number | string | null;
+  margin_premium: number | string | null;
+  margin_total: number | string | null;
+  margin_blocked: number | string | null;
+  margin_updated_at: string | null;
   greek_delta: number | string | null;
   greek_gamma: number | string | null;
   greek_updated_at: string | null;
@@ -308,7 +315,7 @@ export default function Page() {
       setRefreshingMetrics(true);
       const a = alertRef.current;
       if (!silent) {
-        a.info("Running PnL, WPNL, and spread refresh tasks…");
+        a.info("Running PnL, WPNL, spread, and margin refresh tasks…");
       }
 
       const listOpts = silent ? ({ background: true } as const) : undefined;
@@ -355,7 +362,7 @@ export default function Page() {
         const allOk = statuses.every((s) => s === "SUCCESS");
         if (allOk) {
           if (!silent) {
-            a.success("PnL, WPNL, and spread refresh finished");
+            a.success("PnL, WPNL, spread, and margin refresh finished");
           }
         } else if (!silent) {
           a.error(
@@ -810,6 +817,110 @@ export default function Page() {
     );
   };
 
+  const MarginUtilisedInfo = ({ strategy }: { strategy: Strategy }) => {
+    const span = toNum(strategy.margin_span);
+    const exposure = toNum(strategy.margin_exposure);
+    const premium = toNum(strategy.margin_premium);
+    const total = toNum(strategy.margin_total);
+    const blocked = toNum(strategy.margin_blocked);
+    const hasData = strategy.margin_updated_at != null;
+
+    const btnRef = React.useRef<HTMLButtonElement>(null);
+    const [open, setOpen] = React.useState(false);
+    const [pos, setPos] = React.useState<{ top: number; left: number } | null>(
+      null
+    );
+
+    const show = React.useCallback(() => {
+      if (!hasData) return;
+      const el = btnRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const width = 240;
+      const left = Math.min(
+        Math.max(8, r.right - width),
+        window.innerWidth - width - 8
+      );
+      setPos({ top: r.bottom + 4, left });
+      setOpen(true);
+    }, [hasData]);
+
+    const hide = React.useCallback(() => setOpen(false), []);
+
+    return (
+      <>
+        <button
+          ref={btnRef}
+          type="button"
+          className={`btn btn-ghost btn-xs btn-square ${
+            hasData ? "text-base-content/60" : "text-base-content/30"
+          }`}
+          aria-label="Margin breakdown"
+          title={
+            hasData
+              ? "SPAN, exposure, premium (Kite basket, master book)"
+              : "No basket margin yet — refresh metrics"
+          }
+          onMouseEnter={show}
+          onMouseLeave={hide}
+          onFocus={show}
+          onBlur={hide}
+        >
+          <Info className="size-3.5" />
+        </button>
+        {open &&
+          hasData &&
+          pos &&
+          createPortal(
+            <div
+              className="pointer-events-none fixed z-[100] w-[15rem] rounded-lg border border-base-300 bg-base-100 p-2 shadow-xl text-left"
+              style={{ top: pos.top, left: pos.left }}
+              role="tooltip"
+            >
+              <div className="text-[10px] font-medium text-base-content/60 mb-1.5">
+                Master book · Kite SPAN calculator
+              </div>
+              <table className="w-full text-[11px] tabular-nums leading-tight bg-base-100">
+                <tbody className="bg-base-100">
+                  <tr className="bg-base-100">
+                    <td className="pr-2 py-0.5 text-base-content/70">SPAN</td>
+                    <td className="text-right py-0.5">
+                      {span != null ? formatLakhsIN(span) : "—"}
+                    </td>
+                  </tr>
+                  <tr className="border-t border-base-300/40 bg-base-100">
+                    <td className="pr-2 py-0.5 text-base-content/70">Exposure</td>
+                    <td className="text-right py-0.5">
+                      {exposure != null ? formatLakhsIN(exposure) : "—"}
+                    </td>
+                  </tr>
+                  <tr className="border-t border-base-300/40 bg-base-100">
+                    <td className="pr-2 py-0.5 text-base-content/70">Premium</td>
+                    <td className={`text-right py-0.5 ${pnlColor(premium)}`}>
+                      {premium != null ? formatLakhsIN(premium) : "—"}
+                    </td>
+                  </tr>
+                  <tr className="border-t border-base-300 bg-base-100 font-medium">
+                    <td className="pr-2 py-0.5 text-base-content/70">Blocked</td>
+                    <td className="text-right py-0.5">
+                      {blocked != null ? formatLakhsIN(blocked) : "—"}
+                    </td>
+                  </tr>
+                  <tr className="border-t border-base-300/40 bg-base-100">
+                    <td className="pr-2 py-0.5 text-base-content/70">Kite total</td>
+                    <td className="text-right py-0.5">
+                      {total != null ? formatLakhsIN(total) : "—"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>,
+            document.body
+          )}
+      </>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-base-200">
       <div className="max-w-10xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -907,8 +1018,8 @@ export default function Page() {
               onClick={() => void runRefreshActiveStrategyTasks()}
               disabled={refreshingMetrics || loading}
               className="btn btn-ghost btn-sm btn-square"
-              title="Queue PnL, WPNL, and spread refresh jobs"
-              aria-label="Queue PnL, WPNL, and spread refresh jobs"
+              title="Queue PnL, WPNL, spread, and margin refresh jobs"
+              aria-label="Queue PnL, WPNL, spread, and margin refresh jobs"
             >
               <RefreshCw
                 className={`size-4 ${refreshingMetrics ? "animate-spin" : ""}`}
@@ -938,6 +1049,12 @@ export default function Page() {
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
                     Total PnL
                   </th>
+                  <th
+                    className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]"
+                    title="SPAN + exposure locked by the master book"
+                  >
+                    Margin
+                  </th>
                   <th className="font-medium text-base-content/70 text-right min-w-[9.5rem]">
                     <span className="block whitespace-nowrap">Spread</span>
                     <span className="block text-[10px] font-normal leading-tight text-base-content/50">
@@ -957,7 +1074,7 @@ export default function Page() {
               <tbody>
                 {strategies.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={11} className="text-center py-16">
+                    <td colSpan={12} className="text-center py-16">
                       <p className="text-base-content/60">No strategies found.</p>
                       <p className="text-sm text-base-content/50 mt-1">
                         Try changing filters or create a new strategy.
@@ -1154,6 +1271,25 @@ export default function Page() {
                           </span>
                         </div>
                       </td>
+                      <td className="text-right align-top min-w-[7rem]">
+                        <div className="flex flex-col items-end gap-1 min-w-[7rem]">
+                          <span className="inline-flex items-center justify-end gap-0.5">
+                            <span
+                              className="font-semibold tabular-nums text-sm whitespace-nowrap"
+                              title="Blocked margin (SPAN + exposure)"
+                            >
+                              {strategy.margin_updated_at != null &&
+                              toNum(strategy.margin_blocked) != null
+                                ? formatLakhsIN(toNum(strategy.margin_blocked))
+                                : "—"}
+                            </span>
+                            <MarginUtilisedInfo strategy={strategy} />
+                          </span>
+                          <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
+                            {formatSnapshotAt(strategy.margin_updated_at) ?? "—"}
+                          </span>
+                        </div>
+                      </td>
                       <td className="text-right align-top min-w-[9.5rem]">
                         <div className="flex flex-col items-end gap-0.5 min-w-[9.5rem]">
                           {(
@@ -1258,7 +1394,7 @@ export default function Page() {
                 {loading && strategies.length === 0 &&
                   Array.from({ length: 3 }).map((_, i) => (
                     <tr key={`skeleton-${i}`} className="border-b border-base-300/30">
-                      {Array.from({ length: 11 }).map((_, j) => (
+                      {Array.from({ length: 12 }).map((_, j) => (
                         <td key={j}>
                           <div className="h-5 bg-base-300/40 rounded animate-pulse" />
                         </td>
