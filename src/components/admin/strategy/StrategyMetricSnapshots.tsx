@@ -27,9 +27,6 @@ export interface MetricSnapshotRow {
   mid_pnl?: number | string | null;
   spread?: number | string | null;
   straddle?: number | string | null;
-  atm_strike_spread?: number | string | null;
-  famous_strike_spread?: number | string | null;
-  straddle_level?: number | string | null;
   delta_by_underlying?: Record<string, number> | null;
   delta_band_min?: number | string | null;
   delta_band_max?: number | string | null;
@@ -287,9 +284,6 @@ function buildMetricSnapshotsCsv(rows: MetricSnapshotRow[]): string {
     "mid_pnl",
     "spread",
     "straddle",
-    "atm_strike_spread",
-    "famous_strike_spread",
-    "straddle_level",
     "delta_band_min",
     "delta_band_max",
     "trade_count",
@@ -317,9 +311,6 @@ function buildMetricSnapshotsCsv(rows: MetricSnapshotRow[]): string {
       csvCell(toNum(row.mid_pnl)),
       csvCell(toNum(row.spread)),
       csvCell(toNum(row.straddle)),
-      csvCell(toNum(row.atm_strike_spread)),
-      csvCell(toNum(row.famous_strike_spread)),
-      csvCell(toNum(row.straddle_level)),
       csvCell(toNum(row.delta_band_min)),
       csvCell(toNum(row.delta_band_max)),
       csvCell(row.trade_count),
@@ -497,11 +488,6 @@ export default function StrategyMetricSnapshotsModal({
                   <th className="text-right">Mid PnL</th>
                   <th className="text-right">Spread</th>
                   <th className="text-right">Straddle</th>
-                  <th className="text-right">ATM</th>
-                  <th className="text-right">Famous</th>
-                  <th className="text-right" title="Avg of near-expiry straddles below and above the future">
-                    Straddle lvl
-                  </th>
                   <th className="text-right" title="Absolute delta = net Δ × spot (lakhs)">
                     Abs Δ (L)
                   </th>
@@ -536,15 +522,6 @@ export default function StrategyMetricSnapshotsModal({
                     </td>
                     <td className="text-right tabular-nums whitespace-nowrap">
                       {formatPct(row.straddle)}
-                    </td>
-                    <td className="text-right tabular-nums whitespace-nowrap">
-                      {formatPct(row.atm_strike_spread)}
-                    </td>
-                    <td className="text-right tabular-nums whitespace-nowrap">
-                      {formatPct(row.famous_strike_spread)}
-                    </td>
-                    <td className="text-right tabular-nums whitespace-nowrap">
-                      {formatPct(row.straddle_level)}
                     </td>
                     <td className="text-right">
                       <AbsoluteDeltaCell
