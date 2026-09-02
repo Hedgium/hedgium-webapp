@@ -42,6 +42,26 @@ function e1InfoTip(
   return parts.join(" ");
 }
 
+function e2Net(gross: number, charges: number | null | undefined): number {
+  const cost = charges != null && !Number.isNaN(charges) ? charges : 0;
+  return gross - cost;
+}
+
+function e2InfoTip(gross: number, charges: number | null | undefined): string {
+  const cost = charges != null && !Number.isNaN(charges) ? charges : 0;
+  return `Gross: ₹${formatPnlAmount(gross)} Charges: ₹${formatPnlAmount(-Math.abs(cost))}`;
+}
+
+function scalePct(
+  pct: number | null | undefined,
+  gross: number,
+  net: number
+): number | null {
+  if (pct == null || Number.isNaN(pct)) return null;
+  if (gross === 0) return net === 0 ? 0 : null;
+  return (pct * net) / gross;
+}
+
 type PnlLine = {
   label: string;
   value: number | null;
@@ -76,7 +96,8 @@ export default function PnlSummarySection({
         : "(Inception → Till date)";
 
     const buildLines = (
-      e2: number,
+      e2Gross: number,
+      e2Charges: number | null | undefined,
       e2Pct: number | null | undefined,
       e1: number | null | undefined,
       e1Pct: number | null | undefined,
@@ -85,9 +106,20 @@ export default function PnlSummarySection({
       e1Realised: number | null | undefined,
       e1Mtm: number | null | undefined
     ): PnlLine[] => {
-      const lines: PnlLine[] = [{ label: "E2", value: e2, pct: e2Pct ?? null }];
+      const e2 = e2Net(e2Gross, e2Charges);
+      const cost = e2Charges != null && !Number.isNaN(e2Charges) ? e2Charges : 0;
+      const lines: PnlLine[] = [
+        {
+          label: "E2",
+          value: e2,
+          pct: scalePct(e2Pct, e2Gross, e2),
+          infoTip: e2InfoTip(e2Gross, e2Charges),
+        },
+      ];
       if (e1 != null) {
         const infoTip = e1InfoTip(selfManaged, e1Realised ?? null, e1Mtm ?? null);
+        const combinedNet =
+          combined != null && !Number.isNaN(combined) ? combined - cost : e1 + e2;
         lines.push(
           {
             label: "E1",
@@ -97,8 +129,8 @@ export default function PnlSummarySection({
           },
           {
             label: "Total",
-            value: combined ?? null,
-            pct: combinedPct ?? null,
+            value: combinedNet,
+            pct: scalePct(combinedPct, combined ?? e1 + e2Gross, combinedNet),
             emphasis: true,
           }
         );
@@ -113,6 +145,7 @@ export default function PnlSummarySection({
         detail: `(${pnlSummary.month})`,
         lines: buildLines(
           pnlSummary.pnl ?? 0,
+          pnlSummary.charges,
           pnlSummary.pnl_pct,
           pnlSummary.e1_month_pnl,
           pnlSummary.e1_month_pnl_pct,
@@ -128,6 +161,7 @@ export default function PnlSummarySection({
         detail: `(${pnlSummary.quarter})`,
         lines: buildLines(
           pnlSummary.quarter_pnl ?? 0,
+          pnlSummary.quarter_charges,
           pnlSummary.quarter_pnl_pct,
           pnlSummary.e1_quarter_pnl,
           pnlSummary.e1_quarter_pnl_pct,
@@ -143,6 +177,7 @@ export default function PnlSummarySection({
         detail: `(${pnlSummary.fy})`,
         lines: buildLines(
           pnlSummary.ytd_pnl ?? 0,
+          pnlSummary.ytd_charges,
           pnlSummary.ytd_pnl_pct,
           pnlSummary.e1_ytd_pnl,
           pnlSummary.e1_ytd_pnl_pct,
@@ -159,6 +194,7 @@ export default function PnlSummarySection({
         detail: allTimeDetail,
         lines: buildLines(
           pnlSummary.all_time_pnl ?? 0,
+          pnlSummary.all_time_charges,
           pnlSummary.all_time_pnl_pct,
           pnlSummary.e1_all_time_pnl,
           pnlSummary.e1_all_time_pnl_pct,
@@ -250,8 +286,9 @@ export default function PnlSummarySection({
           </div>
         ))}
       </dl>
-      <p className="max-w-4xl text-xs leading-relaxed text-base-content/70">
-        E2 is PnL from Hedgium trading strategies. E1 is CNC equity holdings
+      <p className="text-xs leading-relaxed text-base-content/70">
+        E2 is PnL from Hedgium trading strategies, net of statutory charges
+        (STT/CTT, exchange, stamp, GST). E1 is CNC equity holdings
         {pnlSummary.e1_hedgium_managed === false ? (
           <span className="text-warning">
             {" "}

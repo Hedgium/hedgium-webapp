@@ -5,6 +5,8 @@ import { TrendingUp, TrendingDown, Plus, Minus, LogOut } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionGreeksCell from "@/components/admin/PositionGreeksCell";
 import type { PositionGreeksSnapshot } from "@/types/positions";
+import NetPnlAmount from "@/components/pnl/NetPnlAmount";
+import { netPnl } from "@/utils/pnlNet";
 
 export interface Position extends PositionGreeksSnapshot {
   id: number;
@@ -19,6 +21,7 @@ export interface Position extends PositionGreeksSnapshot {
   realised_total: number;
   unrealised_total?: number;
   pnl: number;
+  charges_total?: number;
   /** Operator or system note (e.g. broker vs trades reconciliation) */
   note?: string | null;
   orders?: Array<{ id: number }>;
@@ -84,7 +87,8 @@ export default function PositionsTable({
         </thead>
         <tbody>
           {positions.map((pos) => {
-            const pnlColor = getPnLColor(pos.pnl);
+            const net = netPnl(pos.pnl, pos.charges_total) ?? pos.pnl;
+            const pnlColor = getPnLColor(net);
             const unrealisedValue = pos.unrealised_total ?? 0;
             const realisedValue = pos.realised_total ?? 0;
 
@@ -108,12 +112,12 @@ export default function PositionsTable({
                 <td>{formatMoneyIN(realisedValue)}</td>
                 <td className={pnlColor}>
                   <div className="flex items-center gap-1 font-semibold">
-                    {pos.pnl >= 0 ? (
+                    {net >= 0 ? (
                       <TrendingUp width={12} aria-hidden="true" />
                     ) : (
                       <TrendingDown width={12} aria-hidden="true" />
                     )}
-                    {formatMoneyIN(pos.pnl)}
+                    <NetPnlAmount gross={pos.pnl} charges={pos.charges_total} />
                   </div>
                 </td>
                 {showGreeks && (
