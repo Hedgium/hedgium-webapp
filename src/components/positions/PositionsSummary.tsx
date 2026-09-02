@@ -4,11 +4,14 @@ import React from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Position } from "./PositionsTable";
 import { formatMoneyIN } from "@/utils/formatNumber";
+import NetPnlAmount from "@/components/pnl/NetPnlAmount";
+import { netPnl } from "@/utils/pnlNet";
 
 interface PositionsSummaryProps {
   positions: Position[];
   totals?: {
     pnl_total?: number;
+    charges_total?: number;
     realised_total?: number;
     unrealised_total?: number;
     total_buy_qty?: number;
@@ -25,6 +28,10 @@ export default function PositionsSummary({
   // Use backend totals if available, otherwise calculate from displayed positions (fallback)
   const totalPnl =
     totals?.pnl_total ?? positions.reduce((acc, pos) => acc + pos.pnl, 0);
+  const totalCharges =
+    totals?.charges_total ??
+    positions.reduce((acc, pos) => acc + (pos.charges_total ?? 0), 0);
+  const netTotal = netPnl(totalPnl, totalCharges) ?? 0;
   const realisedPnl =
     totals?.realised_total ?? positions.reduce((acc, pos) => acc + pos.realised_total, 0);
   const unrealisedPnl =
@@ -34,7 +41,7 @@ export default function PositionsSummary({
   const totalSellQty =
     totals?.total_sell_qty ?? positions.reduce((acc, pos) => acc + pos.sell_quantity, 0);
 
-  const totalPnlColor = totalPnl >= 0 ? "text-success" : "text-error";
+  const totalPnlColor = netTotal >= 0 ? "text-success" : "text-error";
 
   if (positions.length === 0) {
     return null;
@@ -51,12 +58,12 @@ export default function PositionsSummary({
         <div
           className={`text-base font-bold flex items-center justify-center gap-1 ${totalPnlColor}`}
         >
-          {totalPnl >= 0 ? (
+          {netTotal >= 0 ? (
             <TrendingUp width={14} />
           ) : (
             <TrendingDown width={14} />
           )}
-          {formatMoneyIN(totalPnl)}
+          <NetPnlAmount gross={totalPnl} charges={totalCharges} />
         </div>
       </div>
       <div className="text-center">
