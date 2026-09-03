@@ -193,7 +193,6 @@ export default function ProfilesPage() {
               <option value="ZERODHA">Zerodha</option>
               <option value="KOTAKNEO">Kotak Neo</option>
               <option value="IIFLCAPITAL">IIFL Capital</option>
-              <option value="NAVIA">Navia</option>
             </select>
             <select
               value={subscriptionFilter}
