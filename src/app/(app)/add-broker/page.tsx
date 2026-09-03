@@ -169,6 +169,7 @@ export default function AddBrokerPage() {
     if (!brokerUserId) { setFormError(brokerName === "IIFLCAPITAL" ? "Enter Client ID" : "Enter Broker User ID"); return; }
     if (brokerName === "KOTAKNEO" && !apiKey) { setFormError("Enter API Key"); return; }
     if (brokerName === "IIFLCAPITAL" && !apiKey) { setFormError("Enter App Key"); return; }
+    if (brokerName === "PROSTOCKS" && !apiKey) { setFormError("Enter API Key"); return; }
     if ((brokerName === "ZERODHA" || brokerName === "SHOONYA") && !secretKey) {
       setFormError("Enter Secret Key");
       return;
@@ -192,7 +193,7 @@ export default function AddBrokerPage() {
         broker_name: brokerName,
         broker_user_id: brokerUserId,
       };
-      if (brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL") credPayload.broker_api_key = apiKey;
+      if (brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "PROSTOCKS") credPayload.broker_api_key = apiKey;
       if (brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL") {
         credPayload.broker_secret_key = secretKey;
       }
@@ -325,7 +326,7 @@ export default function AddBrokerPage() {
             <p className="font-medium text-base-content pr-1">
               Whitelist this IP at {broker}
             </p>
-            {broker === "KOTAKNEO" || broker === "IIFLCAPITAL" ? (
+            {broker === "KOTAKNEO" || broker === "IIFLCAPITAL" || broker === "PROSTOCKS" ? (
               <button
                 type="button"
                 onClick={() => {
@@ -333,8 +334,8 @@ export default function AddBrokerPage() {
                   setHelpOpen(true);
                 }}
                 className="text-primary hover:opacity-80 p-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                title={`How to add IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : "Kotak Neo"}`}
-                aria-label={`Help: whitelist IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : "Kotak Neo"}`}
+                title={`How to add IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : broker === "PROSTOCKS" ? "ProStocks" : "Kotak Neo"}`}
+                aria-label={`Help: whitelist IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : broker === "PROSTOCKS" ? "ProStocks" : "Kotak Neo"}`}
               >
                 <HelpCircle className="h-4 w-4 cursor-pointer" aria-hidden="true" />
               </button>
@@ -458,6 +459,7 @@ export default function AddBrokerPage() {
                     {/* <option value="ZERODHA">Zerodha</option> */}
                     <option value="SHOONYA">Shoonya</option>
                     <option value="IIFLCAPITAL">IIFL Capital</option>
+                    <option value="PROSTOCKS">ProStocks</option>
                   </select>
                 </div>
 
@@ -491,7 +493,7 @@ export default function AddBrokerPage() {
                   />
                 </div>
 
-                {(brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL") && (
+                {(brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "PROSTOCKS") && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label htmlFor={apiKeyId} className="text-xs font-medium text-base-content/80">

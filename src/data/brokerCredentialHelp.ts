@@ -228,4 +228,42 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
       ],
     },
   ],
+  PROSTOCKS: [
+    {
+      field: "broker_user_id",
+      label: "Broker User ID",
+      steps: [
+        { text: "Log in to **star.prostocks.com** (ProStocks Star)." },
+        { text: "Your **user ID** is your **client ID** / **login ID**." },
+      ],
+    },
+    {
+      field: "api_key",
+      label: "API Key",
+      steps: [
+        { text: "Email **support@prostocks.com** with your client code and **API** in the subject to enable Star API access." },
+        { text: "Log in to **star.prostocks.com**, then click **Generate API**." },
+        { text: "Copy the **API key** shown on screen (typically valid for one year) and paste it here." },
+      ],
+    },
+    {
+      field: "broker_twofa",
+      label: "TOTP Secret",
+      steps: [
+        { text: "Enable **two-factor authentication (TOTP)** on your ProStocks account." },
+        { text: "Scan the QR in Google Authenticator or Microsoft Authenticator." },
+        { text: "**Copy the TOTP secret** (not the 6-digit code) and paste it here so Hedgium can complete daily login." },
+      ],
+    },
+    {
+      field: "whitelist_ip",
+      label: "Whitelist static IP",
+      modalTitle: "How to whitelist static IP?",
+      steps: [
+        { text: "ProStocks only accepts API calls from **pre-disclosed static IPs**." },
+        { text: "Share the Hedgium whitelist IP shown on this page with **support@prostocks.com** (mention your client code and API)." },
+        { text: "Wait for ProStocks to map the IP before logging in from Hedgium." },
+      ],
+    },
+  ],
 };
