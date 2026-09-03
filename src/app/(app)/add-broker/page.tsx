@@ -168,7 +168,6 @@ export default function AddBrokerPage() {
     if (!brokerName) { setFormError("Select a broker"); return; }
     if (!brokerUserId) { setFormError(brokerName === "IIFLCAPITAL" ? "Enter Client ID" : "Enter Broker User ID"); return; }
     if (brokerName === "KOTAKNEO" && !apiKey) { setFormError("Enter API Key"); return; }
-    if (brokerName === "NAVIA" && !apiKey) { setFormError("Enter API Key"); return; }
     if (brokerName === "IIFLCAPITAL" && !apiKey) { setFormError("Enter App Key"); return; }
     if ((brokerName === "ZERODHA" || brokerName === "SHOONYA") && !secretKey) {
       setFormError("Enter Secret Key");
@@ -193,7 +192,7 @@ export default function AddBrokerPage() {
         broker_name: brokerName,
         broker_user_id: brokerUserId,
       };
-      if (brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "NAVIA") credPayload.broker_api_key = apiKey;
+      if (brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL") credPayload.broker_api_key = apiKey;
       if (brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL") {
         credPayload.broker_secret_key = secretKey;
       }
@@ -459,7 +458,6 @@ export default function AddBrokerPage() {
                     {/* <option value="ZERODHA">Zerodha</option> */}
                     <option value="SHOONYA">Shoonya</option>
                     <option value="IIFLCAPITAL">IIFL Capital</option>
-                    <option value="NAVIA">Navia</option>
                   </select>
                 </div>
 
@@ -493,7 +491,7 @@ export default function AddBrokerPage() {
                   />
                 </div>
 
-                {(brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "NAVIA") && (
+                {(brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL") && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label htmlFor={apiKeyId} className="text-xs font-medium text-base-content/80">
