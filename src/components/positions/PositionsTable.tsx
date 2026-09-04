@@ -345,7 +345,7 @@ export default function PositionsTable({
           {groupByExpiry ? "Open positions grouped by expiry" : "Open positions"}
         </caption>
         <thead>
-          <tr className="text-xs text-base-content/70 uppercase">
+          <tr className="text-xs text-base-content/80 uppercase">
             <th scope="col">Instrument</th>
             {groupByExpiry && (
               <th scope="col" aria-sort={strikeSort === "asc" ? "ascending" : "descending"}>
