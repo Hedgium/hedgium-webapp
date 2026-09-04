@@ -9,6 +9,7 @@ import { Profile } from "@/types/profile";
 import { LiveHolding } from "@/types/positions";
 import { IndianRupee, RefreshCw, Search, BarChart3, Info } from "lucide-react";
 import { USER_ROLE_FILTER_OPTIONS, userRoleLabel } from "@/constants/userRoles";
+import NetPnlWithCosts from "@/components/reports/NetPnlWithCosts";
 
 type PnlSummary = {
   month: string;
@@ -17,8 +18,11 @@ type PnlSummary = {
   week?: string;
   week_pnl?: number;
   pnl: number;
+  charges?: number;
   quarter_pnl: number;
+  quarter_charges?: number;
   ytd_pnl: number;
+  ytd_charges?: number;
   all_time_pnl?: number;
   e1_all_time_realised?: number | null;
 };
@@ -262,9 +266,12 @@ type ClientPnlTotals = {
   engine1Pnl: number;
   engine1Realised: number;
   engine1RealisedCount: number;
-  e2Ytd: number;
-  e2Quarter: number;
-  e2Month: number;
+  e2YtdGross: number;
+  e2YtdCharges: number;
+  e2QuarterGross: number;
+  e2QuarterCharges: number;
+  e2MonthGross: number;
+  e2MonthCharges: number;
   availableMargin: number;
   utilisedMargin: number;
   clientsIncluded: number;
@@ -278,9 +285,12 @@ function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
     engine1Pnl: 0,
     engine1Realised: 0,
     engine1RealisedCount: 0,
-    e2Ytd: 0,
-    e2Quarter: 0,
-    e2Month: 0,
+    e2YtdGross: 0,
+    e2YtdCharges: 0,
+    e2QuarterGross: 0,
+    e2QuarterCharges: 0,
+    e2MonthGross: 0,
+    e2MonthCharges: 0,
     availableMargin: 0,
     utilisedMargin: 0,
     clientsIncluded: 0,
@@ -315,15 +325,18 @@ function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
       included = true;
     }
     if (row.engine2?.ytd_pnl != null) {
-      totals.e2Ytd += row.engine2.ytd_pnl;
+      totals.e2YtdGross += row.engine2.ytd_pnl;
+      totals.e2YtdCharges += row.engine2.ytd_charges ?? 0;
       included = true;
     }
     if (row.engine2?.quarter_pnl != null) {
-      totals.e2Quarter += row.engine2.quarter_pnl;
+      totals.e2QuarterGross += row.engine2.quarter_pnl;
+      totals.e2QuarterCharges += row.engine2.quarter_charges ?? 0;
       included = true;
     }
     if (row.engine2?.pnl != null) {
-      totals.e2Month += row.engine2.pnl;
+      totals.e2MonthGross += row.engine2.pnl;
+      totals.e2MonthCharges += row.engine2.charges ?? 0;
       included = true;
     }
     if (row.margin?.available_total != null) {
@@ -563,14 +576,41 @@ export default function AdminClientPnlPage() {
                     />
                   )}
                 </th>
-                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.e2Ytd)}`}>
-                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Ytd)}
+                <th className="relative z-0 text-right align-middle font-semibold hover:z-20 focus-within:z-20">
+                  {anyLoading && totals.clientsIncluded === 0 ? (
+                    "…"
+                  ) : (
+                    <NetPnlWithCosts
+                      compact
+                      className="font-semibold"
+                      gross={totals.e2YtdGross}
+                      charges={totals.e2YtdCharges}
+                    />
+                  )}
                 </th>
-                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.e2Quarter)}`}>
-                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Quarter)}
+                <th className="relative z-0 text-right align-middle font-semibold hover:z-20 focus-within:z-20">
+                  {anyLoading && totals.clientsIncluded === 0 ? (
+                    "…"
+                  ) : (
+                    <NetPnlWithCosts
+                      compact
+                      className="font-semibold"
+                      gross={totals.e2QuarterGross}
+                      charges={totals.e2QuarterCharges}
+                    />
+                  )}
                 </th>
-                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.e2Month)}`}>
-                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Month)}
+                <th className="relative z-0 text-right align-middle font-semibold hover:z-20 focus-within:z-20">
+                  {anyLoading && totals.clientsIncluded === 0 ? (
+                    "…"
+                  ) : (
+                    <NetPnlWithCosts
+                      compact
+                      className="font-semibold"
+                      gross={totals.e2MonthGross}
+                      charges={totals.e2MonthCharges}
+                    />
+                  )}
                 </th>
                 <th className="text-right align-middle tabular-nums font-semibold text-base-content">
                   {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.availableMargin)}
@@ -675,14 +715,38 @@ export default function AdminClientPnlPage() {
                       />
                     )}
                   </td>
-                  <td className={`text-right ${signedClass(row.engine2?.ytd_pnl)}`}>
-                    {row.status === "loading" ? "…" : formatCell(row.engine2?.ytd_pnl ?? null)}
+                  <td className="relative z-0 text-right hover:z-20 focus-within:z-20">
+                    {row.status === "loading" ? (
+                      "…"
+                    ) : (
+                      <NetPnlWithCosts
+                        className="font-medium"
+                        gross={row.engine2?.ytd_pnl}
+                        charges={row.engine2?.ytd_charges}
+                      />
+                    )}
                   </td>
-                  <td className={`text-right ${signedClass(row.engine2?.quarter_pnl)}`}>
-                    {row.status === "loading" ? "…" : formatCell(row.engine2?.quarter_pnl ?? null)}
+                  <td className="relative z-0 text-right hover:z-20 focus-within:z-20">
+                    {row.status === "loading" ? (
+                      "…"
+                    ) : (
+                      <NetPnlWithCosts
+                        className="font-medium"
+                        gross={row.engine2?.quarter_pnl}
+                        charges={row.engine2?.quarter_charges}
+                      />
+                    )}
                   </td>
-                  <td className={`text-right ${signedClass(row.engine2?.pnl)}`}>
-                    {row.status === "loading" ? "…" : formatCell(row.engine2?.pnl ?? null)}
+                  <td className="relative z-0 text-right hover:z-20 focus-within:z-20">
+                    {row.status === "loading" ? (
+                      "…"
+                    ) : (
+                      <NetPnlWithCosts
+                        className="font-medium"
+                        gross={row.engine2?.pnl}
+                        charges={row.engine2?.charges}
+                      />
+                    )}
                   </td>
                   <td className="text-right tabular-nums">
                     {row.status === "loading" ? "…" : formatCell(row.margin?.available_total ?? null)}

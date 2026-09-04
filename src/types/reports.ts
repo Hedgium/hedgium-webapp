@@ -86,6 +86,7 @@ export type TradeCycleReport = {
   created_at: string;
   updated_at: string;
   pnl: number;
+  charges: number;
   strategy_id?: number | null;
   strategy_name?: string | null;
 };
@@ -95,7 +96,7 @@ export type TradeCycleReportsResponse = {
   next: string | null;
   previous: string | null;
   results: TradeCycleReport[];
-  summary: { total_count: number; pnl_total: number };
+  summary: { total_count: number; pnl_total: number; charges_total: number };
 };
 
 export type MarginSnapshotRow = {
