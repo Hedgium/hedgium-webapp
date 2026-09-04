@@ -1,7 +1,7 @@
 # AGENTS.md — Hedgium Webapp
 
 AI agent context for the `hedgium_webapp` Next.js project.
-Read this before touching any code.
+Read this before touching any code. 
 
 ---
 
