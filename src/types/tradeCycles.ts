@@ -39,7 +39,6 @@ export type TradeCycleListItem = {
   sub_state: string;
   created_at: string;
   pnl_total?: number | string | null;
-  charges_total?: number | string | null;
   pnl_updated_at?: string | null;
   greek_delta?: number | string | null;
   greek_gamma?: number | string | null;
