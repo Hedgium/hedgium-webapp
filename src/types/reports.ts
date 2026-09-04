@@ -27,14 +27,8 @@ export type E2PnlSummary = {
   quarter_pnl_pct?: number | null;
   ytd_pnl: number;
   ytd_pnl_pct?: number | null;
-  ytd_charges?: number;
   all_time_pnl: number;
   all_time_pnl_pct?: number | null;
-  all_time_charges?: number;
-  week_charges?: number;
-  /** Current calendar month E2 statutory charges */
-  charges?: number;
-  quarter_charges?: number;
   m2m?: number;
   realised?: number;
   ytd_m2m?: number;
@@ -92,7 +86,6 @@ export type TradeCycleReport = {
   created_at: string;
   updated_at: string;
   pnl: number;
-  charges?: number;
   strategy_id?: number | null;
   strategy_name?: string | null;
 };
@@ -102,7 +95,7 @@ export type TradeCycleReportsResponse = {
   next: string | null;
   previous: string | null;
   results: TradeCycleReport[];
-  summary: { total_count: number; pnl_total: number; charges_total?: number };
+  summary: { total_count: number; pnl_total: number };
 };
 
 export type MarginSnapshotRow = {
