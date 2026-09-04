@@ -5,6 +5,8 @@ import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Plus, Minus, LogOut } fro
 import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionGreeksCell from "@/components/admin/PositionGreeksCell";
 import type { PositionGreeksSnapshot } from "@/types/positions";
+import NetPnlAmount from "@/components/pnl/NetPnlAmount";
+import { netPnl } from "@/utils/pnlNet";
 
 export interface Position extends PositionGreeksSnapshot {
   id: number;
@@ -19,6 +21,7 @@ export interface Position extends PositionGreeksSnapshot {
   realised_total: number;
   unrealised_total?: number;
   pnl: number;
+  charges_total?: number;
   /** Operator or system note (e.g. broker vs trades reconciliation) */
   note?: string | null;
   orders?: Array<{ id: number }>;
@@ -382,6 +385,108 @@ export default function PositionsTable({
           </tr>
         </thead>
         <tbody>{rows}</tbody>
+        <tbody>
+          {positions.map((pos) => {
+            const net = netPnl(pos.pnl, pos.charges_total) ?? pos.pnl;
+            const pnlColor = getPnLColor(net);
+            const unrealisedValue = pos.unrealised_total ?? 0;
+            const realisedValue = pos.realised_total ?? 0;
+
+            return (
+              <tr key={pos.id} className="hover:bg-base-200">
+                <td className="font-semibold">{pos.instrument}</td>
+                <td>
+                  {pos.quantity} ({pos.buy_quantity}/{pos.sell_quantity})
+                </td>
+                <td>
+                  {pos.average_buy_price
+                    ? formatMoneyIN(pos.average_buy_price)
+                    : "-"}
+                </td>
+                <td>
+                  {pos.average_sell_price
+                    ? formatMoneyIN(pos.average_sell_price)
+                    : "-"}
+                </td>
+                <td>{formatMoneyIN(unrealisedValue)}</td>
+                <td>{formatMoneyIN(realisedValue)}</td>
+                <td className={pnlColor}>
+                  <div className="flex items-center gap-1 font-semibold">
+                    {net >= 0 ? (
+                      <TrendingUp width={12} aria-hidden="true" />
+                    ) : (
+                      <TrendingDown width={12} aria-hidden="true" />
+                    )}
+                    <NetPnlAmount gross={pos.pnl} charges={pos.charges_total} />
+                  </div>
+                </td>
+                {showGreeks && (
+                  <td>
+                    <PositionGreeksCell greeks={pos} compact />
+                  </td>
+                )}
+                {showNote && (
+                  <td
+                    className="max-w-[14rem] truncate text-xs text-base-content/80"
+                  >
+                    {pos.note?.trim() ? pos.note.trim() : "—"}
+                  </td>
+                )}
+                {showOrdersCount && (
+                  <td className="text-right">
+                    {pos.orders?.length ?? 0}
+                  </td>
+                )}
+                {showActions && (
+                  <td className="whitespace-nowrap">
+                    <div className="flex flex-nowrap items-center gap-1">
+                      {showAdminTradesAction && onAdminViewTrades ? (
+                        <button
+                          type="button"
+                          className="btn btn-xs btn-outline"
+                          onClick={() => onAdminViewTrades(pos)}
+                        >
+                          Trades
+                        </button>
+                      ) : null}
+                      {showAdminExitAction && onAdminPositionOrder && pos.quantity !== 0 ? (
+                        <>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-square btn-outline"
+                            title="Increase position"
+                            aria-label="Increase position"
+                            onClick={() => onAdminPositionOrder(pos, "increase")}
+                          >
+                            <Plus size={14} aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-square btn-outline"
+                            title="Decrease position"
+                            aria-label="Decrease position"
+                            onClick={() => onAdminPositionOrder(pos, "decrease")}
+                          >
+                            <Minus size={14} aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-square btn-outline btn-error"
+                            title="Exit position"
+                            aria-label="Exit position"
+                            onClick={() => onAdminPositionOrder(pos, "exit")}
+                          >
+                            <LogOut size={14} aria-hidden="true" />
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
       </table>
     </div>
   );

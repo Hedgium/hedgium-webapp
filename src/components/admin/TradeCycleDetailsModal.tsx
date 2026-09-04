@@ -29,6 +29,7 @@ interface TradeCycleDetails {
     unmapped_orders: UnmappedOrder[];
     totals?: {
         pnl_total: number;
+        charges_total?: number;
         realised_total: number;
         unrealised_total: number;
         total_buy_qty: number;
