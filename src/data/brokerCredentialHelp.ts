@@ -228,31 +228,41 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
       ],
     },
   ],
-  NAVIA: [
+  PROSTOCKS: [
     {
       field: "broker_user_id",
       label: "Broker User ID",
       steps: [
-        { text: "Log in to **Navia** (web.navia.co.in or the Navia app)." },
-        { text: "Your **client code / UCC** is the Broker User ID Hedgium needs." },
+        { text: "Log in to **star.prostocks.com** (ProStocks Star)." },
+        { text: "Your **user ID** is your **client ID** / **login ID**." },
       ],
     },
     {
       field: "api_key",
       label: "API Key",
       steps: [
-        { text: "In your Navia account, open the **API** / developer section and generate an **API key**." },
-        { text: "Copy the key into Hedgium. Subsequent API calls send it as the `APIKey` header." },
-        { text: "Full request shapes are in the official docs at **api.navia.co.in**." },
+        { text: "Email **support@prostocks.com** with your client code and **API** in the subject to enable Star API access." },
+        { text: "Log in to **star.prostocks.com**, then click **Generate API**." },
+        { text: "Copy the **API key** shown on screen (typically valid for one year) and paste it here." },
       ],
     },
     {
       field: "broker_twofa",
       label: "TOTP Secret",
       steps: [
-        { text: "In the Navia app, enable **TOTP** (Google Authenticator or Microsoft Authenticator)." },
-        { text: "Scan the QR, then **copy the TOTP secret** (not the 6-digit code) into Hedgium." },
-        { text: "Hedgium sends that TOTP as `otp` on daily **Login** along with your password." },
+        { text: "Enable **two-factor authentication (TOTP)** on your ProStocks account." },
+        { text: "Scan the QR in Google Authenticator or Microsoft Authenticator." },
+        { text: "**Copy the TOTP secret** (not the 6-digit code) and paste it here so Hedgium can complete daily login." },
+      ],
+    },
+    {
+      field: "whitelist_ip",
+      label: "Whitelist static IP",
+      modalTitle: "How to whitelist static IP?",
+      steps: [
+        { text: "ProStocks only accepts API calls from **pre-disclosed static IPs**." },
+        { text: "Share the Hedgium whitelist IP shown on this page with **support@prostocks.com** (mention your client code and API)." },
+        { text: "Wait for ProStocks to map the IP before logging in from Hedgium." },
       ],
     },
   ],

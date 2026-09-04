@@ -29,7 +29,6 @@ interface TradeCycleDetails {
     unmapped_orders: UnmappedOrder[];
     totals?: {
         pnl_total: number;
-        charges_total?: number;
         realised_total: number;
         unrealised_total: number;
         total_buy_qty: number;
@@ -354,7 +353,12 @@ export default function TradeCycleDetailsModal({
                     <>
                         <div className="mb-6">
                             <div className="mb-3 flex items-center justify-between">
-                                <h4 className="text-xl font-semibold">Positions</h4>
+                                <div>
+                                    <h4 className="text-xl font-semibold">Positions</h4>
+                                    <p className="text-xs text-base-content/50">
+                                        Grouped by expiry. Click an expiry to collapse. Click Strike to reverse sort.
+                                    </p>
+                                </div>
                                 <button
                                     onClick={refreshPositions}
                                     disabled={refreshing}
@@ -380,6 +384,7 @@ export default function TradeCycleDetailsModal({
                                     showAdminExitAction={true}
                                     showGreeks={true}
                                     showNote={true}
+                                    groupByExpiry={true}
                                     onAdminViewTrades={openTradesForPosition}
                                     onAdminPositionOrder={openExitForPosition}
                                 />

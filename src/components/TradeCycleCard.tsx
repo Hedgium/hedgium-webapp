@@ -7,7 +7,6 @@ import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { activateTradeCycle } from "@/services/tradeCycles";
 import type { SpotByUnderlying, TradeCycleListItem, TradeCycleStrategyMetrics } from "@/types/tradeCycles";
-import NetPnlAmount from "@/components/pnl/NetPnlAmount";
 
 function pnlClass(value: number | null): string {
   if (value == null) return "text-base-content/75";
@@ -138,7 +137,6 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive = true, isSimula
   const isLocked = cycle.state === "LOCKED";
   const { pill: statePillClass, icon: stateIcon } = stateStyles(cycle.state);
   const pnlTotal = toNum(cycle.pnl_total);
-  const chargesTotal = toNum(cycle.charges_total) ?? 0;
   const absDelta = combinedAbsDelta(
     pickMetric<SpotByUnderlying>(cycle, "greek_delta_by_underlying"),
     pickMetric<SpotByUnderlying>(cycle, "greek_spot_by_underlying")
@@ -227,9 +225,9 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive = true, isSimula
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <MetricCell
               label="PnL"
-              value={<NetPnlAmount gross={pnlTotal} charges={chargesTotal} tooltipClassName="tooltip-right" />}
-              sub={formatSnapshotAt(cycle.pnl_updated_at) ?? "Cycle total, net of charges"}
-              valueClassName={pnlClass(pnlTotal == null ? null : pnlTotal - chargesTotal)}
+              value={pnlTotal == null ? "—" : formatMoneyIN(pnlTotal)}
+              sub={formatSnapshotAt(cycle.pnl_updated_at) ?? "Cycle total"}
+              valueClassName={pnlClass(pnlTotal)}
             />
             <MetricCell
               label="Net Δ"

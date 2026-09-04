@@ -17,13 +17,9 @@ type PnlSummary = {
   week?: string;
   week_pnl?: number;
   pnl: number;
-  charges?: number;
   quarter_pnl: number;
-  quarter_charges?: number;
   ytd_pnl: number;
-  ytd_charges?: number;
   all_time_pnl?: number;
-  all_time_charges?: number;
   e1_all_time_realised?: number | null;
 };
 
@@ -137,66 +133,6 @@ function E1PnlCell({
               <span className="text-base-content/55">Realised</span>
               <span className={`tabular-nums ${signedClass(realised ?? null)}`}>
                 {formatCell(realised)}
-              </span>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </span>
-  );
-}
-
-function e2Net(
-  gross: number | null | undefined,
-  charges: number | null | undefined
-): number | null {
-  if (gross == null || Number.isNaN(gross)) return null;
-  const cost = charges != null && !Number.isNaN(charges) ? charges : 0;
-  return gross - cost;
-}
-
-function E2PnlCell({
-  gross,
-  charges,
-  compact,
-}: {
-  gross: number | null | undefined;
-  charges: number | null | undefined;
-  compact?: boolean;
-}) {
-  const format = compact ? formatTotalCell : formatCell;
-  const net = e2Net(gross, charges);
-  const hasBreakdown = gross != null && !Number.isNaN(gross);
-
-  return (
-    <span className={`inline-flex items-center justify-end gap-0.5 ${signedClass(net)}`}>
-      {format(net)}
-      {hasBreakdown ? (
-        <div className="dropdown dropdown-hover dropdown-start dropdown-right">
-          <button
-            type="button"
-            tabIndex={0}
-            className="inline-flex cursor-pointer text-base-content/45 hover:text-base-content/70"
-            aria-label="E2 PnL breakdown"
-          >
-            <Info className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-          </button>
-          <div
-            tabIndex={0}
-            className="dropdown-content z-50 w-44 rounded-lg border border-base-300 bg-base-100 p-2 text-left text-xs"
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-base-content/55">Gross</span>
-              <span className={`tabular-nums ${signedClass(gross ?? null)}`}>
-                {formatCell(gross)}
-              </span>
-            </div>
-            <div className="mt-1 flex items-baseline justify-between gap-3">
-              <span className="text-base-content/55">Charges</span>
-              <span className="tabular-nums text-error font-medium">
-                {formatCell(
-                  charges != null && !Number.isNaN(charges) ? -Math.abs(charges) : 0
-                )}
               </span>
             </div>
           </div>
@@ -326,12 +262,9 @@ type ClientPnlTotals = {
   engine1Pnl: number;
   engine1Realised: number;
   engine1RealisedCount: number;
-  e2YtdGross: number;
-  e2YtdCharges: number;
-  e2QuarterGross: number;
-  e2QuarterCharges: number;
-  e2MonthGross: number;
-  e2MonthCharges: number;
+  e2Ytd: number;
+  e2Quarter: number;
+  e2Month: number;
   availableMargin: number;
   utilisedMargin: number;
   clientsIncluded: number;
@@ -345,12 +278,9 @@ function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
     engine1Pnl: 0,
     engine1Realised: 0,
     engine1RealisedCount: 0,
-    e2YtdGross: 0,
-    e2YtdCharges: 0,
-    e2QuarterGross: 0,
-    e2QuarterCharges: 0,
-    e2MonthGross: 0,
-    e2MonthCharges: 0,
+    e2Ytd: 0,
+    e2Quarter: 0,
+    e2Month: 0,
     availableMargin: 0,
     utilisedMargin: 0,
     clientsIncluded: 0,
@@ -385,18 +315,15 @@ function computeTotals(rows: ClientPnlRow[]): ClientPnlTotals {
       included = true;
     }
     if (row.engine2?.ytd_pnl != null) {
-      totals.e2YtdGross += row.engine2.ytd_pnl;
-      totals.e2YtdCharges += row.engine2.ytd_charges ?? 0;
+      totals.e2Ytd += row.engine2.ytd_pnl;
       included = true;
     }
     if (row.engine2?.quarter_pnl != null) {
-      totals.e2QuarterGross += row.engine2.quarter_pnl;
-      totals.e2QuarterCharges += row.engine2.quarter_charges ?? 0;
+      totals.e2Quarter += row.engine2.quarter_pnl;
       included = true;
     }
     if (row.engine2?.pnl != null) {
-      totals.e2MonthGross += row.engine2.pnl;
-      totals.e2MonthCharges += row.engine2.charges ?? 0;
+      totals.e2Month += row.engine2.pnl;
       included = true;
     }
     if (row.margin?.available_total != null) {
@@ -636,38 +563,14 @@ export default function AdminClientPnlPage() {
                     />
                   )}
                 </th>
-                <th className="relative z-0 text-right align-middle hover:z-20 focus-within:z-20">
-                  {anyLoading && totals.clientsIncluded === 0 ? (
-                    "…"
-                  ) : (
-                    <E2PnlCell
-                      compact
-                      gross={totals.e2YtdGross}
-                      charges={totals.e2YtdCharges}
-                    />
-                  )}
+                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.e2Ytd)}`}>
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Ytd)}
                 </th>
-                <th className="relative z-0 text-right align-middle hover:z-20 focus-within:z-20">
-                  {anyLoading && totals.clientsIncluded === 0 ? (
-                    "…"
-                  ) : (
-                    <E2PnlCell
-                      compact
-                      gross={totals.e2QuarterGross}
-                      charges={totals.e2QuarterCharges}
-                    />
-                  )}
+                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.e2Quarter)}`}>
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Quarter)}
                 </th>
-                <th className="relative z-0 text-right align-middle hover:z-20 focus-within:z-20">
-                  {anyLoading && totals.clientsIncluded === 0 ? (
-                    "…"
-                  ) : (
-                    <E2PnlCell
-                      compact
-                      gross={totals.e2MonthGross}
-                      charges={totals.e2MonthCharges}
-                    />
-                  )}
+                <th className={`text-right align-middle tabular-nums font-semibold ${signedClass(totals.e2Month)}`}>
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.e2Month)}
                 </th>
                 <th className="text-right align-middle tabular-nums font-semibold text-base-content">
                   {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.availableMargin)}
@@ -772,35 +675,14 @@ export default function AdminClientPnlPage() {
                       />
                     )}
                   </td>
-                  <td className="relative z-0 text-right hover:z-20 focus-within:z-20">
-                    {row.status === "loading" ? (
-                      "…"
-                    ) : (
-                      <E2PnlCell
-                        gross={row.engine2?.ytd_pnl}
-                        charges={row.engine2?.ytd_charges}
-                      />
-                    )}
+                  <td className={`text-right ${signedClass(row.engine2?.ytd_pnl)}`}>
+                    {row.status === "loading" ? "…" : formatCell(row.engine2?.ytd_pnl ?? null)}
                   </td>
-                  <td className="relative z-0 text-right hover:z-20 focus-within:z-20">
-                    {row.status === "loading" ? (
-                      "…"
-                    ) : (
-                      <E2PnlCell
-                        gross={row.engine2?.quarter_pnl}
-                        charges={row.engine2?.quarter_charges}
-                      />
-                    )}
+                  <td className={`text-right ${signedClass(row.engine2?.quarter_pnl)}`}>
+                    {row.status === "loading" ? "…" : formatCell(row.engine2?.quarter_pnl ?? null)}
                   </td>
-                  <td className="relative z-0 text-right hover:z-20 focus-within:z-20">
-                    {row.status === "loading" ? (
-                      "…"
-                    ) : (
-                      <E2PnlCell
-                        gross={row.engine2?.pnl}
-                        charges={row.engine2?.charges}
-                      />
-                    )}
+                  <td className={`text-right ${signedClass(row.engine2?.pnl)}`}>
+                    {row.status === "loading" ? "…" : formatCell(row.engine2?.pnl ?? null)}
                   </td>
                   <td className="text-right tabular-nums">
                     {row.status === "loading" ? "…" : formatCell(row.margin?.available_total ?? null)}

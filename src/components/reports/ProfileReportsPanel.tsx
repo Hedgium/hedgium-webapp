@@ -28,12 +28,11 @@ import type { ChartPeriod, PnlSnapshotRow } from "@/components/reports/ReportCha
 import PnlSummarySection from "@/components/reports/PnlSummarySection";
 import AllocationSummarySection from "@/components/reports/AllocationSummarySection";
 import { authFetch } from "@/utils/api";
+import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionsTable, { type Position } from "@/components/positions/PositionsTable";
 import ReportsSummarySkeleton from "@/components/skeletons/ReportsSummarySkeleton";
 import ReportsListSkeleton from "@/components/skeletons/ReportsListSkeleton";
 import ReportsChartSkeleton from "@/components/skeletons/ReportsChartSkeleton";
-import NetPnlAmount from "@/components/pnl/NetPnlAmount";
-import { netPnl } from "@/utils/pnlNet";
 import useAlert from "@/hooks/useAlert";
 import {
   fetchAccountCreatedAt,
@@ -381,8 +380,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                 </h3>
               </div>
               <p className="max-w-xl text-sm text-base-content/70">
-                Expand a row to see stored positions for that cycle. PnL is net of
-                statutory charges; hover the info icon for gross and charges.
+                Expand a row to see stored positions for that cycle. PnL shown is from the report aggregate.
               </p>
             </div>
             <div className="flex flex-wrap items-center md:justify-end gap-3">
@@ -391,17 +389,13 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
               </span>
               {summary && (
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-semibold tabular-nums ${
-                    (netPnl(summary.pnl_total, summary.charges_total) ?? 0) >= 0
+                  className={`rounded-full border px-3 py-1 text-sm font-semibold tabular-nums ${
+                    summary.pnl_total >= 0
                       ? "border-success/30 bg-success/10 text-success"
                       : "border-error/30 bg-error/10 text-error"
                   }`}
                 >
-                  Report total PnL{" "}
-                  <NetPnlAmount
-                    gross={summary.pnl_total}
-                    charges={summary.charges_total}
-                  />
+                  Report total PnL {formatMoneyIN(summary?.pnl_total)}
                 </span>
               )}
             </div>
@@ -471,11 +465,12 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                           </div>
                         </div>
                         <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-t border-base-300/40 pt-3 md:flex-col md:items-end md:border-t-0 md:pt-0">
-                          <div className="text-right text-lg font-bold tabular-nums md:text-xl">
-                            <NetPnlAmount
-                              gross={cycle.pnl}
-                              charges={cycle.charges}
-                            />
+                          <div
+                            className={`text-right text-lg font-bold tabular-nums md:text-xl ${
+                              cycle.pnl >= 0 ? "text-success" : "text-error"
+                            }`}
+                          >
+                            {formatMoneyIN(cycle.pnl)}
                           </div>
                           <span className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-primary">
                             {expanded ? "Hide" : "Positions"}
