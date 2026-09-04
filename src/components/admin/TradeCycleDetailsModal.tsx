@@ -356,7 +356,7 @@ export default function TradeCycleDetailsModal({
                                 <div>
                                     <h4 className="text-xl font-semibold">Positions</h4>
                                     <p className="text-xs text-base-content/50">
-                                        Grouped by expiry. Click Strike to reverse sort.
+                                        Grouped by expiry. Click an expiry to collapse. Click Strike to reverse sort.
                                     </p>
                                 </div>
                                 <button

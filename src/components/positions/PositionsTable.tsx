@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Plus, Minus, LogOut } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, TrendingUp, TrendingDown, Plus, Minus, LogOut } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionGreeksCell from "@/components/admin/PositionGreeksCell";
 import type { PositionGreeksSnapshot } from "@/types/positions";
@@ -258,6 +258,9 @@ export default function PositionsTable({
 }: PositionsTableProps) {
   const showActions = showAdminTradesAction || showAdminExitAction;
   const [strikeSort, setStrikeSort] = useState<StrikeSort>("asc");
+  const [collapsedByExpiry, setCollapsedByExpiry] = useState<Record<string, boolean>>(
+    {}
+  );
 
   const grouped = useMemo(
     () => (groupByExpiry ? groupPositionsByExpiry(positions, strikeSort) : null),
@@ -292,20 +295,34 @@ export default function PositionsTable({
     setStrikeSort((prev) => (prev === "asc" ? "desc" : "asc"));
   };
 
+  const toggleExpiryGroup = (key: string) => {
+    setCollapsedByExpiry((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const rows = grouped
     ? grouped.flatMap((group) => {
+        const groupKey = group.key || "other";
+        const collapsed = Boolean(collapsedByExpiry[groupKey]);
         const groupPnl = group.positions.reduce((sum, p) => sum + p.pnl, 0);
         const headerLabel = group.expiry
           ? formatExpiryLabel(group.expiry)
           : "Other";
+        const Chevron = collapsed ? ChevronRight : ChevronDown;
         return [
-          <tr key={`exp-${group.key || "other"}`} className="bg-base-200/80">
+          <tr key={`exp-${groupKey}`} className="bg-base-200/80 hover:bg-base-300/50">
             <th
               scope="colgroup"
               colSpan={columnCount}
               className="py-1.5 text-xs font-semibold normal-case tracking-normal text-base-content/80"
             >
-              <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <button
+                type="button"
+                className="inline-flex w-full flex-wrap items-center gap-x-2 gap-y-0.5 text-left"
+                onClick={() => toggleExpiryGroup(groupKey)}
+                aria-expanded={!collapsed}
+                aria-label={`${collapsed ? "Expand" : "Collapse"} ${headerLabel} positions`}
+              >
+                <Chevron className="size-3.5 shrink-0 text-base-content/50" aria-hidden="true" />
                 <span>{headerLabel}</span>
                 <span className="font-normal text-base-content/50">
                   {group.positions.length}{" "}
@@ -314,18 +331,20 @@ export default function PositionsTable({
                 <span className={`tabular-nums font-medium ${getPnLColor(groupPnl)}`}>
                   {formatMoneyIN(groupPnl)}
                 </span>
-              </span>
+              </button>
             </th>
           </tr>,
-          ...group.positions.map((pos) => (
-            <PositionRow
-              key={pos.id}
-              pos={pos}
-              colSpanFlags={colSpanFlags}
-              onAdminViewTrades={onAdminViewTrades}
-              onAdminPositionOrder={onAdminPositionOrder}
-            />
-          )),
+          ...(collapsed
+            ? []
+            : group.positions.map((pos) => (
+                <PositionRow
+                  key={pos.id}
+                  pos={pos}
+                  colSpanFlags={colSpanFlags}
+                  onAdminViewTrades={onAdminViewTrades}
+                  onAdminPositionOrder={onAdminPositionOrder}
+                />
+              ))),
         ];
       })
     : positions.map((pos) => (
