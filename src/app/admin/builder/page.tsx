@@ -75,7 +75,11 @@ export default function BuilderPage() {
             const path = url.pathname.replace(/^\/api\//, "") || "builder/builders/";
             const response = await authFetch(`${path}${url.search}`);
             const data = await response.json();
-            setBuilders((prev) => [...prev, ...(data.results ?? [])]);
+            setBuilders((prev) => {
+                const incoming = data.results ?? [];
+                const seen = new Set(prev.map((b) => b.id));
+                return [...prev, ...incoming.filter((b) => b.id != null && !seen.has(b.id))];
+            });
             setNextPage(data.next ?? null);
         } catch (error) {
             console.error('Error fetching next page:', error);
@@ -310,9 +314,9 @@ export default function BuilderPage() {
             ) : (
                 <>
                     <div className="space-y-4">
-                        {builders.map(builder => (
+                        {builders.map((builder, index) => (
                             <BuilderItem
-                                key={builder.id}
+                                key={builder.id ?? `builder-${index}`}
                                 builder={builder}
                                 onEdit={handleEditBuilder}
                                 onDelete={handleDeleteBuilder}

@@ -61,6 +61,8 @@ export default function BuilderItem({
         }
     };
 
+    const legs = builder.builder_legs ?? [];
+
     return (
         <div className="bg-base-100/80 rounded-xl p-4 mb-6 border border-base-300">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 pb-4 border-b border-base-200">
@@ -151,11 +153,11 @@ export default function BuilderItem({
                     </button>
                 </div>
 
-                {builder.builder_legs.length > 0 ? (
+                {legs.length > 0 ? (
                     <div className="space-y-2">
-                        {builder.builder_legs.map(leg => (
+                        {legs.map((leg, index) => (
                             <BuilderLegItem
-                                key={leg.id}
+                                key={leg.id ?? `leg-${builder.id}-${index}`}
                                 leg={leg}
                                 onEdit={onEditLeg}
                                 onDelete={onDeleteLeg}
