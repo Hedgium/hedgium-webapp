@@ -301,10 +301,16 @@ export default function Page() {
     };
   }, []);
 
+  const filtersAreDefault =
+    orderBy === "-created_at" &&
+    completed === "false" &&
+    !startDate &&
+    !endDate;
+
   useVisibilityAwareInterval(
     () => fetchStrategies({ background: true }),
     STRATEGIES_POLL_MS,
-    { runImmediately: false }
+    { runImmediately: false, enabled: filtersAreDefault }
   );
 
   const runRefreshActiveStrategyTasks = React.useCallback(
