@@ -23,6 +23,7 @@ import {
   ArrowRightLeft,
   BarChart3,
   PieChart,
+  History,
 } from "lucide-react";
 import Link from "next/link";
 import { Profile } from "@/types/profile";
@@ -33,6 +34,10 @@ const MarketDepthModal = dynamic(() => import("@/components/market/MarketDepthMo
 });
 const Engine1ExecuteModal = dynamic(
   () => import("@/components/admin/engine1/Engine1ExecuteModal"),
+  { ssr: false }
+);
+const OrderHistoryModal = dynamic(
+  () => import("@/components/admin/profiles/OrderHistoryModal"),
   { ssr: false }
 );
 
@@ -166,9 +171,12 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   const [showEngine1Modal, setShowEngine1Modal] = useState(false);
   const [showDepthModal, setShowDepthModal] = useState(false);
   const [depthSymbol, setDepthSymbol] = useState("");
+  const [depthExchange, setDepthExchange] = useState("");
   const [showModifyOrderForm, setShowModifyOrderForm] = useState(false);
   const [showExitPositionForm, setShowExitPositionForm] = useState(false);
+  const [showOrderHistoryModal, setShowOrderHistoryModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<LiveOrder | null>(null);
+  const [historyOrder, setHistoryOrder] = useState<LiveOrder | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<LivePosition | null>(null);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [modifyingOrder, setModifyingOrder] = useState(false);
@@ -428,9 +436,15 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     }
   };
 
-  const openDepth = (symbol: string) => {
+  const openDepth = (symbol: string, exchange?: string) => {
     setDepthSymbol(symbol.trim());
+    setDepthExchange((exchange || "").trim());
     setShowDepthModal(true);
+  };
+
+  const openOrderHistory = (order: LiveOrder) => {
+    setHistoryOrder(order);
+    setShowOrderHistoryModal(true);
   };
 
   const openModifyForm = (order: LiveOrder) => {
@@ -863,13 +877,22 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                     </td>
                     <td>
                       <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openOrderHistory(order)}
+                          className="btn btn-ghost btn-xs"
+                          title="Order history"
+                          aria-label={`Order history for ${order.order_id}`}
+                        >
+                          <History size={14} />
+                        </button>
                         {!["COMPLETE", "FILLED", "CANCELED", "CANCELLED", "REJECTED"].includes(
                           (order.status || "").toUpperCase()
                         ) && (
                           <>
                             <button
                               type="button"
-                              onClick={() => openDepth(order.tradingsymbol)}
+                              onClick={() => openDepth(order.tradingsymbol, order.exchange)}
                               className="btn btn-ghost btn-xs"
                               title="See depth"
                               aria-label={`See depth for ${order.tradingsymbol}`}
@@ -1165,7 +1188,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                   <button
                     type="button"
                     className="btn btn-ghost btn-xs mt-1.5 gap-1 self-start"
-                    onClick={() => openDepth(orderForm.tradingsymbol)}
+                    onClick={() => openDepth(orderForm.tradingsymbol, orderForm.exchange)}
                   >
                     <BarChart3 size={14} />
                     See depth
@@ -1374,7 +1397,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 <button
                   type="button"
                   className="btn btn-ghost btn-xs mt-1.5 gap-1"
-                  onClick={() => openDepth(selectedOrder.tradingsymbol)}
+                  onClick={() => openDepth(selectedOrder.tradingsymbol, selectedOrder.exchange)}
                 >
                   <BarChart3 size={14} />
                   See depth
@@ -1448,6 +1471,20 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
           open={showDepthModal}
           onClose={() => setShowDepthModal(false)}
           initialSymbol={depthSymbol}
+          initialExchange={depthExchange}
+        />
+      )}
+
+      {showOrderHistoryModal && historyOrder && (
+        <OrderHistoryModal
+          profileId={profileId}
+          orderId={historyOrder.order_id}
+          tradingsymbol={historyOrder.tradingsymbol}
+          open={showOrderHistoryModal}
+          onClose={() => {
+            setShowOrderHistoryModal(false);
+            setHistoryOrder(null);
+          }}
         />
       )}
 
