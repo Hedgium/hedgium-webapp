@@ -27,8 +27,8 @@ import {
 import type { ChartPeriod, PnlSnapshotRow } from "@/components/reports/ReportCharts";
 import PnlSummarySection from "@/components/reports/PnlSummarySection";
 import AllocationSummarySection from "@/components/reports/AllocationSummarySection";
+import NetPnlWithCosts, { e2NetPnl } from "@/components/reports/NetPnlWithCosts";
 import { authFetch } from "@/utils/api";
-import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionsTable, { type Position } from "@/components/positions/PositionsTable";
 import ReportsSummarySkeleton from "@/components/skeletons/ReportsSummarySkeleton";
 import ReportsListSkeleton from "@/components/skeletons/ReportsListSkeleton";
@@ -209,6 +209,9 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
 
   const summary = reportsData?.summary;
   const results = reportsData?.results ?? [];
+  const reportNet = summary
+    ? e2NetPnl(summary.pnl_total, summary.charges_total ?? 0)
+    : null;
 
   async function handleRefreshPnl() {
     if (stableScope.mode !== "admin") return;
@@ -380,7 +383,8 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                 </h3>
               </div>
               <p className="max-w-xl text-sm text-base-content/70">
-                Expand a row to see stored positions for that cycle. PnL shown is from the report aggregate.
+                Expand a row to see stored positions for that cycle. Net PnL shown is from the report
+                aggregate.
               </p>
             </div>
             <div className="flex flex-wrap items-center md:justify-end gap-3">
@@ -389,13 +393,19 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
               </span>
               {summary && (
                 <span
-                  className={`rounded-full border px-3 py-1 text-sm font-semibold tabular-nums ${
-                    summary.pnl_total >= 0
-                      ? "border-success/30 bg-success/10 text-success"
-                      : "border-error/30 bg-error/10 text-error"
+                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-semibold tabular-nums ${
+                    (reportNet ?? 0) >= 0
+                      ? "border-success/30 bg-success/10"
+                      : "border-error/30 bg-error/10"
                   }`}
                 >
-                  Report total PnL {formatMoneyIN(summary?.pnl_total)}
+                  Report total PnL
+                  <NetPnlWithCosts
+                    className="font-semibold"
+                    dropdownLeft
+                    gross={summary.pnl_total}
+                    charges={summary.charges_total ?? 0}
+                  />
                 </span>
               )}
             </div>
@@ -417,16 +427,16 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                   return (
                     <div
                       key={cycle.id}
-                      className="group relative overflow-hidden rounded-2xl border border-base-300/70 bg-base-100/95 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25"
+                      className="group relative overflow-visible rounded-2xl border border-base-300/70 bg-base-100/95 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25"
                     >
-                      <button
-                        type="button"
-                        className="flex w-full flex-col gap-3 p-4 text-left md:flex-row md:items-center md:justify-between md:gap-4 md:p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
-                        onClick={() => void toggleCycleDetails(cycle.id)}
-                        aria-expanded={expanded}
-                        aria-label={`${expanded ? "Collapse" : "Expand"} positions for ${cycle.name}`}
-                      >
-                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <div className="flex w-full flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
+                        <button
+                          type="button"
+                          className="flex min-w-0 flex-1 items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                          onClick={() => void toggleCycleDetails(cycle.id)}
+                          aria-expanded={expanded}
+                          aria-label={`${expanded ? "Collapse" : "Expand"} positions for ${cycle.name}`}
+                        >
                           <span
                             className={`mt-0.5 cursor-pointer flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-base-300/60 bg-base-200/50 text-base-content/60 transition-colors group-hover:border-primary/30 group-hover:bg-base-200 ${expanded ? "text-primary" : ""}`}
                           >
@@ -463,24 +473,28 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                               ) : null}
                             </div>
                           </div>
-                        </div>
+                        </button>
                         <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-t border-base-300/40 pt-3 md:flex-col md:items-end md:border-t-0 md:pt-0">
-                          <div
-                            className={`text-right text-lg font-bold tabular-nums md:text-xl ${
-                              cycle.pnl >= 0 ? "text-success" : "text-error"
-                            }`}
+                          <NetPnlWithCosts
+                            className="text-lg font-bold md:text-xl"
+                            dropdownLeft
+                            gross={cycle.pnl}
+                            charges={cycle.charges ?? 0}
+                          />
+                          <button
+                            type="button"
+                            className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-primary"
+                            onClick={() => void toggleCycleDetails(cycle.id)}
+                            aria-expanded={expanded}
                           >
-                            {formatMoneyIN(cycle.pnl)}
-                          </div>
-                          <span className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-primary">
                             {expanded ? "Hide" : "Positions"}
                             <ArrowRight
                               className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-90" : ""}`}
                               aria-hidden
                             />
-                          </span>
+                          </button>
                         </div>
-                      </button>
+                      </div>
                       {expanded && (
                         <div className="border-t border-base-300/60 bg-gradient-to-b from-base-200/40 to-base-200/20 px-4 py-5 md:px-5">
                           {loadingDetails[cycle.id] ? (
