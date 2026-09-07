@@ -22,6 +22,7 @@ interface InstrumentSearchResult {
   instrument_token: number;
   exchange: string;
   lot_size: number;
+  instrument_type?: string;
   exists?: boolean;
 }
 
@@ -30,6 +31,7 @@ interface InstrumentOption {
   value: string;
   token: string;
   exchange: string;
+  instrumentType?: MarketDepthInstrumentType;
 }
 
 interface DepthLevel {
@@ -56,13 +58,15 @@ interface QuotePayload {
   timestamp?: string;
 }
 
-export type MarketDepthInstrumentType = "EQ" | "FUT";
+export type MarketDepthInstrumentType = "EQ" | "FUT" | "CE" | "PE";
 
 export interface MarketDepthModalProps {
   open: boolean;
   onClose: () => void;
   /** Optional starting tradingsymbol — modal auto-selects exact match if found. */
   initialSymbol?: string;
+  /** Optional exchange to disambiguate the same symbol on NSE vs BSE vs NFO. */
+  initialExchange?: string;
   /** Default instrument_type for the underlying search. */
   defaultInstrumentType?: MarketDepthInstrumentType;
   /** Poll interval for live depth refresh while open. Default 3000ms. */
@@ -72,7 +76,25 @@ export interface MarketDepthModalProps {
 const INSTRUMENT_TYPES: { id: MarketDepthInstrumentType; label: string }[] = [
   { id: "EQ", label: "Equity (EQ)" },
   { id: "FUT", label: "Futures (FUT)" },
+  { id: "CE", label: "Call (CE)" },
+  { id: "PE", label: "Put (PE)" },
 ];
+
+function asDepthInstrumentType(value: string | undefined): MarketDepthInstrumentType | undefined {
+  const upper = (value || "").toUpperCase();
+  if (upper === "EQ" || upper === "FUT" || upper === "CE" || upper === "PE") return upper;
+  return undefined;
+}
+
+function toInstrumentOption(item: InstrumentSearchResult): InstrumentOption {
+  return {
+    label: `${item.tradingsymbol} — ${item.name} · ${item.exchange}`,
+    value: item.tradingsymbol,
+    token: item.instrument_token.toString(),
+    exchange: item.exchange,
+    instrumentType: asDepthInstrumentType(item.instrument_type),
+  };
+}
 
 // Wires DaisyUI v5 CSS variables into react-select so it respects the active theme.
 const reactSelectStyles: StylesConfig<InstrumentOption> = {
@@ -144,6 +166,7 @@ export default function MarketDepthModal({
   open,
   onClose,
   initialSymbol,
+  initialExchange,
   defaultInstrumentType = "EQ",
   refreshIntervalMs = 3000,
 }: MarketDepthModalProps) {
@@ -151,6 +174,7 @@ export default function MarketDepthModal({
   const [selected, setSelected] = useState<InstrumentOption | null>(null);
   const [quote, setQuote] = useState<QuotePayload | null>(null);
   const [loadingQuote, setLoadingQuote] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const seedRanRef = useRef(false);
@@ -161,9 +185,11 @@ export default function MarketDepthModal({
       setQuote(null);
       setError(null);
       setLoadingQuote(false);
+      setSeeding(false);
+      setInstrumentType(defaultInstrumentType);
       seedRanRef.current = false;
     }
-  }, [open]);
+  }, [open, defaultInstrumentType]);
 
   const loadOptions = useCallback(
     async (inputValue: string): Promise<InstrumentOption[]> => {
@@ -174,12 +200,7 @@ export default function MarketDepthModal({
         );
         if (!response.ok) return [];
         const data = (await response.json()) as InstrumentSearchResult[];
-        return data.map((item) => ({
-          label: `${item.tradingsymbol} — ${item.name} · ${item.exchange}`,
-          value: item.tradingsymbol,
-          token: item.instrument_token.toString(),
-          exchange: item.exchange,
-        }));
+        return data.map(toInstrumentOption);
       } catch (err) {
         console.error("Instrument search failed:", err);
         return [];
@@ -211,15 +232,42 @@ export default function MarketDepthModal({
 
   useEffect(() => {
     if (!open || seedRanRef.current) return;
-    if (!initialSymbol || !initialSymbol.trim()) return;
+    const symbol = (initialSymbol || "").trim();
+    if (!symbol) return;
     seedRanRef.current = true;
+    const exchange = (initialExchange || "").trim().toUpperCase();
     (async () => {
-      const matches = await loadOptions(initialSymbol.trim());
-      const exact = matches.find((m) => m.value.toUpperCase() === initialSymbol.trim().toUpperCase());
-      const pick = exact || matches[0];
-      if (pick) setSelected(pick);
+      setSeeding(true);
+      setError(null);
+      try {
+        const response = await authFetch(
+          `market/instruments/search/?q=${encodeURIComponent(symbol)}`
+        );
+        if (!response.ok) {
+          setError("Failed to look up instrument");
+          return;
+        }
+        const data = (await response.json()) as InstrumentSearchResult[];
+        const matches = data.map(toInstrumentOption);
+        const needle = symbol.toUpperCase();
+        const exact = matches.filter((m) => m.value.toUpperCase() === needle);
+        const pick = exchange
+          ? exact.find((m) => m.exchange.toUpperCase() === exchange) || exact[0]
+          : exact[0];
+        if (!pick) {
+          setError(`No instrument found for ${symbol}`);
+          return;
+        }
+        if (pick.instrumentType) setInstrumentType(pick.instrumentType);
+        setSelected(pick);
+      } catch (err) {
+        console.error("Instrument seed failed:", err);
+        setError("Failed to look up instrument");
+      } finally {
+        setSeeding(false);
+      }
     })();
-  }, [open, initialSymbol, loadOptions]);
+  }, [open, initialSymbol, initialExchange]);
 
   const pollDepth = useCallback(() => {
     if (selected?.token) {
@@ -303,9 +351,15 @@ export default function MarketDepthModal({
           </label>
         </div>
 
-        {!selected && (
+        {!selected && seeding && (
+          <div className="py-8 text-center">
+            <span className="loading loading-spinner loading-md" />
+          </div>
+        )}
+
+        {!selected && !seeding && (
           <p className="py-6 text-center text-sm text-base-content/60">
-            Search and select an instrument to view its depth.
+            {error || "Search and select an instrument to view its depth."}
           </p>
         )}
 
