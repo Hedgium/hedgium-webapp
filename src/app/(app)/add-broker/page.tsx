@@ -166,19 +166,19 @@ export default function AddBrokerPage() {
     setFormError(null);
 
     if (!brokerName) { setFormError("Select a broker"); return; }
-    if (!brokerUserId) { setFormError(brokerName === "IIFLCAPITAL" ? "Enter Client ID" : "Enter Broker User ID"); return; }
+    if (!brokerUserId) { setFormError(brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "Enter Client ID" : "Enter Broker User ID"); return; }
     if (brokerName === "KOTAKNEO" && !apiKey) { setFormError("Enter API Key"); return; }
-    if (brokerName === "IIFLCAPITAL" && !apiKey) { setFormError("Enter App Key"); return; }
+    if ((brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA") && !apiKey) { setFormError("Enter App Key"); return; }
     if (brokerName === "PROSTOCKS" && !apiKey) { setFormError("Enter API Key"); return; }
     if ((brokerName === "ZERODHA" || brokerName === "SHOONYA") && !secretKey) {
       setFormError("Enter Secret Key");
       return;
     }
-    if (brokerName === "IIFLCAPITAL" && !secretKey) {
+    if ((brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA") && !secretKey) {
       setFormError("Enter App Secret");
       return;
     }
-    if (!brokerTwofa) { setFormError("Enter TOTP Secret"); return; }
+    if (brokerName !== "SHAREINDIA" && !brokerTwofa) { setFormError("Enter TOTP Secret"); return; }
 
     try {
       setSubmitting(true);
@@ -193,11 +193,11 @@ export default function AddBrokerPage() {
         broker_name: brokerName,
         broker_user_id: brokerUserId,
       };
-      if (brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "PROSTOCKS") credPayload.broker_api_key = apiKey;
-      if (brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL") {
+      if (brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "PROSTOCKS" || brokerName === "SHAREINDIA") credPayload.broker_api_key = apiKey;
+      if (brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA") {
         credPayload.broker_secret_key = secretKey;
       }
-      credPayload.broker_twofa = brokerTwofa;
+      if (brokerName !== "SHAREINDIA") credPayload.broker_twofa = brokerTwofa;
 
       // If a profile already exists (in-session or on server), update it via PUT
       // so the user can correct wrong credentials without creating a duplicate.
@@ -268,7 +268,8 @@ export default function AddBrokerPage() {
   // ── Step 2: Login to broker, then fetch margin ──
   const handleLogin = async () => {
     setLoginError(null);
-    if (!brokerPassword) { setLoginError("Please enter your password / MPIN"); return; }
+    const keysOnlyLogin = savedBrokerName === "SHAREINDIA";
+    if (!keysOnlyLogin && !brokerPassword) { setLoginError("Please enter your password / MPIN"); return; }
     if (!savedBrokerName) { setLoginError("Broker information missing"); return; }
 
     setLoggingIn(true);
@@ -292,9 +293,13 @@ export default function AddBrokerPage() {
       });
 
       if (result.status === "success") {
-        // Move to result step with loading state while margin is being fetched
         setStep("result");
         setResultStatus("loading");
+        if (keysOnlyLogin) {
+          setResultStatus("success");
+          setBrokerNeedsRefresh(true);
+          return;
+        }
         try {
           const marginRes = await authFetch("profiles/refresh-margin/");
           const marginData = await marginRes.json();
@@ -326,7 +331,7 @@ export default function AddBrokerPage() {
             <p className="font-medium text-base-content pr-1">
               Whitelist this IP at {broker}
             </p>
-            {broker === "KOTAKNEO" || broker === "IIFLCAPITAL" || broker === "PROSTOCKS" ? (
+            {broker === "KOTAKNEO" || broker === "IIFLCAPITAL" || broker === "PROSTOCKS" || broker === "SHAREINDIA" ? (
               <button
                 type="button"
                 onClick={() => {
@@ -334,8 +339,8 @@ export default function AddBrokerPage() {
                   setHelpOpen(true);
                 }}
                 className="text-primary hover:opacity-80 p-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                title={`How to add IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : broker === "PROSTOCKS" ? "ProStocks" : "Kotak Neo"}`}
-                aria-label={`Help: whitelist IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : broker === "PROSTOCKS" ? "ProStocks" : "Kotak Neo"}`}
+                title={`How to add IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : broker === "PROSTOCKS" ? "ProStocks" : broker === "SHAREINDIA" ? "Share India" : "Kotak Neo"}`}
+                aria-label={`Help: whitelist IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : broker === "PROSTOCKS" ? "ProStocks" : broker === "SHAREINDIA" ? "Share India" : "Kotak Neo"}`}
               >
                 <HelpCircle className="h-4 w-4 cursor-pointer" aria-hidden="true" />
               </button>
@@ -460,6 +465,7 @@ export default function AddBrokerPage() {
                     <option value="SHOONYA">Shoonya</option>
                     <option value="IIFLCAPITAL">IIFL Capital</option>
                     <option value="PROSTOCKS">ProStocks</option>
+                    <option value="SHAREINDIA">Share India</option>
                   </select>
                 </div>
 
@@ -467,7 +473,7 @@ export default function AddBrokerPage() {
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <label htmlFor={brokerUserIdId} className="text-xs font-medium text-base-content/80">
-                      {brokerName === "IIFLCAPITAL" ? "Client ID" : "Broker User ID"}
+                      {brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "Client ID" : "Broker User ID"}
                     </label>
                     {brokerName && (
                       <button
@@ -489,15 +495,15 @@ export default function AddBrokerPage() {
                     value={brokerUserId}
                     onChange={(e) => { setBrokerUserId(e.target.value); setFormError(null); }}
                     className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    placeholder={brokerName === "IIFLCAPITAL" ? "Client ID" : "Broker user ID"}
+                    placeholder={brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "Client ID" : "Broker user ID"}
                   />
                 </div>
 
-                {(brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "PROSTOCKS") && (
+                {(brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "PROSTOCKS" || brokerName === "SHAREINDIA") && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label htmlFor={apiKeyId} className="text-xs font-medium text-base-content/80">
-                        {brokerName === "IIFLCAPITAL" ? "App Key" : "API Key"}
+                        {brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "App Key" : "API Key"}
                       </label>
                       <button
                         type="button"
@@ -517,16 +523,16 @@ export default function AddBrokerPage() {
                       value={apiKey}
                       onChange={(e) => { setApiKey(e.target.value); setFormError(null); }}
                       className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      placeholder={brokerName === "IIFLCAPITAL" ? "App key" : "API key"}
+                      placeholder={brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "App key" : "API key"}
                     />
                   </div>
                 )}
 
-                {(brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL") && (
+                {(brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA") && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label htmlFor={secretKeyId} className="text-xs font-medium text-base-content/80">
-                        {brokerName === "IIFLCAPITAL" ? "App Secret" : "Secret Key"}
+                        {brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "App Secret" : "Secret Key"}
                       </label>
                       <button
                         type="button"
@@ -546,12 +552,12 @@ export default function AddBrokerPage() {
                       value={secretKey}
                       onChange={(e) => { setSecretKey(e.target.value); setFormError(null); }}
                       className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      placeholder={brokerName === "IIFLCAPITAL" ? "App secret" : "Secret key"}
+                      placeholder={brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "App secret" : "Secret key"}
                     />
                   </div>
                 )}
 
-                {brokerName && (
+                {brokerName && brokerName !== "SHAREINDIA" && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label htmlFor={brokerTwofaId} className="text-xs font-medium text-base-content/80">TOTP Secret</label>
@@ -614,11 +620,22 @@ export default function AddBrokerPage() {
             <div className="p-6 space-y-4">
               {whitelistIpBanner(savedBrokerName)}
               <p className="text-sm text-base-content/70">
-                Log in to your{" "}
-                <span className="font-medium text-base-content">{savedBrokerName}</span> account
-                to verify the connection and fetch your margin.
+                {savedBrokerName === "SHAREINDIA" ? (
+                  <>
+                    Connect your{" "}
+                    <span className="font-medium text-base-content">Share India</span> account
+                    using the app key and app secret you just saved.
+                  </>
+                ) : (
+                  <>
+                    Log in to your{" "}
+                    <span className="font-medium text-base-content">{savedBrokerName}</span> account
+                    to verify the connection and fetch your margin.
+                  </>
+                )}
               </p>
 
+              {savedBrokerName !== "SHAREINDIA" && (
               <div>
                 <label htmlFor={brokerPasswordId} className="block text-sm font-medium text-base-content/80 mb-1.5">
                   {savedBrokerName === "KOTAKNEO" ? "MPIN" : "Password"}
@@ -643,17 +660,18 @@ export default function AddBrokerPage() {
                   {savedBrokerName === "KOTAKNEO" ? "MPIN" : "password"} on our servers—it is only
                   used for this login.
                 </p>
-                {loginError && (
-                  <div id={`${brokerPasswordId}-error`} role="alert" className="flex items-center gap-1.5 text-error text-sm mt-2">
-                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>{loginError}</span>
-                  </div>
-                )}
               </div>
+              )}
+              {loginError && (
+                <div id={`${brokerPasswordId}-error`} role="alert" className="flex items-center gap-1.5 text-error text-sm mt-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{loginError}</span>
+                </div>
+              )}
 
               <button
                 onClick={handleLogin}
-                disabled={loggingIn || !brokerPassword}
+                disabled={loggingIn || (savedBrokerName !== "SHAREINDIA" && !brokerPassword)}
                 aria-busy={loggingIn}
                 className="btn btn-primary btn-sm w-full h-9 text-sm normal-case disabled:!bg-primary disabled:!text-primary-content disabled:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
               >
@@ -698,7 +716,9 @@ export default function AddBrokerPage() {
                   <div>
                     <h4 className="text-lg font-semibold text-base-content">Profile Added Successfully!</h4>
                     <p className="text-sm text-base-content/70 mt-1">
-                      Your broker account is connected and margin has been fetched.
+                      {savedBrokerName === "SHAREINDIA"
+                        ? "Your Share India account is connected. Trading (orders and positions) will be enabled in a follow-up."
+                        : "Your broker account is connected and margin has been fetched."}
                     </p>
                   </div>
                   <button
