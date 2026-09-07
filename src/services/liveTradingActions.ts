@@ -1,4 +1,5 @@
 import { authFetch } from "@/utils/api";
+import type { LiveOrderHistoryResponse } from "@/types/orders";
 
 export type PlaceOrderPayload = {
   exchange: string;
@@ -56,4 +57,13 @@ export async function cancelOrder(profileId: string | number, orderId: string) {
   });
   const data = await response.json();
   return { ok: response.ok, data } as ApiResult<typeof data>;
+}
+
+export async function getOrderHistory(profileId: string | number, orderId: string) {
+  const encodedOrderId = encodeURIComponent(orderId);
+  const response = await authFetch(
+    `orders/live/orders/${profileId}/history/${encodedOrderId}/`
+  );
+  const data = (await response.json()) as LiveOrderHistoryResponse;
+  return { ok: response.ok, data } as ApiResult<LiveOrderHistoryResponse>;
 }
