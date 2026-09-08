@@ -343,8 +343,7 @@ export default function BrokerLoginStatus() {
   // ── Login handler (for already-verified broker) ──
   const handleBrokerLogin = async () => {
     setLoginError(null);
-    const keysOnlyLogin = broker.name === "SHAREINDIA";
-    if (!keysOnlyLogin && !password) { setLoginError("Please enter your password / MPIN"); return; }
+    if (!password) { setLoginError("Please enter your password / MPIN"); return; }
     if (!broker.profileId || !broker.name) { setLoginError("Profile information missing"); return; }
 
     setLoggingIn(true);
@@ -607,13 +606,10 @@ export default function BrokerLoginStatus() {
             Login to {broker.name}
           </h3>
           <p className="text-sm text-base-content/70 mb-4">
-            {broker.name === "SHAREINDIA"
-              ? "Share India login uses the app key and app secret saved on your profile. No password is required."
-              : `Your ${broker.name === "KOTAKNEO" ? "MPIN" : "password"} is only used to sign in with your broker for this session. We do not store it.`}
+            {`Your ${broker.name === "KOTAKNEO" ? "MPIN" : "password"} is only used to sign in with your broker for this session. We do not store it.`}
           </p>
 
           <div className="space-y-3">
-            {broker.name !== "SHAREINDIA" && (
             <div>
               <label htmlFor={loginPasswordId} className="block text-sm font-medium mb-2">
                 {broker.name === "KOTAKNEO" ? "MPIN" : "Password"}
@@ -632,7 +628,6 @@ export default function BrokerLoginStatus() {
                 autoFocus
               />
             </div>
-            )}
               {loginError && (
                 <div id={`${loginPasswordId}-error`} role="alert" className="flex items-center gap-1.5 text-error text-sm mt-2">
                   <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -650,7 +645,7 @@ export default function BrokerLoginStatus() {
               </button>
               <button
                 onClick={handleBrokerLogin}
-                disabled={loggingIn || (broker.name !== "SHAREINDIA" && !password)}
+                disabled={loggingIn || !password}
                 aria-busy={loggingIn}
                 className="btn btn-primary disabled:!bg-primary disabled:!text-primary-content disabled:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
               >

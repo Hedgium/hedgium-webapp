@@ -178,7 +178,7 @@ export default function AddBrokerPage() {
       setFormError("Enter App Secret");
       return;
     }
-    if (brokerName !== "SHAREINDIA" && !brokerTwofa) { setFormError("Enter TOTP Secret"); return; }
+    if (!brokerTwofa) { setFormError("Enter TOTP Secret"); return; }
 
     try {
       setSubmitting(true);
@@ -197,7 +197,7 @@ export default function AddBrokerPage() {
       if (brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA") {
         credPayload.broker_secret_key = secretKey;
       }
-      if (brokerName !== "SHAREINDIA") credPayload.broker_twofa = brokerTwofa;
+      credPayload.broker_twofa = brokerTwofa;
 
       // If a profile already exists (in-session or on server), update it via PUT
       // so the user can correct wrong credentials without creating a duplicate.
@@ -268,8 +268,7 @@ export default function AddBrokerPage() {
   // ── Step 2: Login to broker, then fetch margin ──
   const handleLogin = async () => {
     setLoginError(null);
-    const keysOnlyLogin = savedBrokerName === "SHAREINDIA";
-    if (!keysOnlyLogin && !brokerPassword) { setLoginError("Please enter your password / MPIN"); return; }
+    if (!brokerPassword) { setLoginError("Please enter your password / MPIN"); return; }
     if (!savedBrokerName) { setLoginError("Broker information missing"); return; }
 
     setLoggingIn(true);
@@ -295,11 +294,6 @@ export default function AddBrokerPage() {
       if (result.status === "success") {
         setStep("result");
         setResultStatus("loading");
-        if (keysOnlyLogin) {
-          setResultStatus("success");
-          setBrokerNeedsRefresh(true);
-          return;
-        }
         try {
           const marginRes = await authFetch("profiles/refresh-margin/");
           const marginData = await marginRes.json();
@@ -557,7 +551,7 @@ export default function AddBrokerPage() {
                   </div>
                 )}
 
-                {brokerName && brokerName !== "SHAREINDIA" && (
+                {brokerName && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label htmlFor={brokerTwofaId} className="text-xs font-medium text-base-content/80">TOTP Secret</label>
@@ -620,22 +614,11 @@ export default function AddBrokerPage() {
             <div className="p-6 space-y-4">
               {whitelistIpBanner(savedBrokerName)}
               <p className="text-sm text-base-content/70">
-                {savedBrokerName === "SHAREINDIA" ? (
-                  <>
-                    Connect your{" "}
-                    <span className="font-medium text-base-content">Share India</span> account
-                    using the app key and app secret you just saved.
-                  </>
-                ) : (
-                  <>
-                    Log in to your{" "}
-                    <span className="font-medium text-base-content">{savedBrokerName}</span> account
-                    to verify the connection and fetch your margin.
-                  </>
-                )}
+                Log in to your{" "}
+                <span className="font-medium text-base-content">{savedBrokerName}</span> account
+                to verify the connection and fetch your margin.
               </p>
 
-              {savedBrokerName !== "SHAREINDIA" && (
               <div>
                 <label htmlFor={brokerPasswordId} className="block text-sm font-medium text-base-content/80 mb-1.5">
                   {savedBrokerName === "KOTAKNEO" ? "MPIN" : "Password"}
@@ -661,7 +644,6 @@ export default function AddBrokerPage() {
                   used for this login.
                 </p>
               </div>
-              )}
               {loginError && (
                 <div id={`${brokerPasswordId}-error`} role="alert" className="flex items-center gap-1.5 text-error text-sm mt-2">
                   <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -671,7 +653,7 @@ export default function AddBrokerPage() {
 
               <button
                 onClick={handleLogin}
-                disabled={loggingIn || (savedBrokerName !== "SHAREINDIA" && !brokerPassword)}
+                disabled={loggingIn || !brokerPassword}
                 aria-busy={loggingIn}
                 className="btn btn-primary btn-sm w-full h-9 text-sm normal-case disabled:!bg-primary disabled:!text-primary-content disabled:opacity-90 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
               >
@@ -716,9 +698,7 @@ export default function AddBrokerPage() {
                   <div>
                     <h4 className="text-lg font-semibold text-base-content">Profile Added Successfully!</h4>
                     <p className="text-sm text-base-content/70 mt-1">
-                      {savedBrokerName === "SHAREINDIA"
-                        ? "Your Share India account is connected. Trading (orders and positions) will be enabled in a follow-up."
-                        : "Your broker account is connected and margin has been fetched."}
+                      Your broker account is connected and margin has been fetched.
                     </p>
                   </div>
                   <button

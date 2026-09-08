@@ -293,6 +293,15 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
       ],
     },
     {
+      field: "broker_twofa",
+      label: "TOTP Secret",
+      steps: [
+        { text: "In the Share India app, open **Profile → Settings → Password & Security**." },
+        { text: "Enable **External Authenticator (TOTP)** and scan the QR (or copy the setup key) in Google Authenticator." },
+        { text: "**Paste the TOTP secret** (not the 6-digit code) here. If Share India still uses a PIN instead of TOTP, enter that PIN." },
+      ],
+    },
+    {
       field: "whitelist_ip",
       label: "Whitelist static IP",
       modalTitle: "How to whitelist static IP?",

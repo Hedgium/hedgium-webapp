@@ -150,8 +150,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
 
 
     const handleBrokerLogin = async () => {
-        const keysOnlyLogin = profile.broker_name === "SHAREINDIA";
-        if (!keysOnlyLogin && !brokerPassword) {
+        if (!brokerPassword) {
             alert.error("Please enter a password / mpin");
             return;
         }
@@ -726,11 +725,6 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                 <div className="modal modal-open">
                     <div className="modal-box">
                         <h3 className="font-bold text-lg mb-4">Login to {profile.broker_name}</h3>
-                        {profile.broker_name === "SHAREINDIA" ? (
-                            <p className="text-sm text-base-content/70 mb-4">
-                                Share India login uses the app key and app secret saved on this profile. No password is required.
-                            </p>
-                        ) : (
                         <div className="form-control w-full">
                             <label className="label">
                                 <span className="label-text">{profile.broker_name === "KOTAKNEO" ? "MPIN" : "Password"}</span>
@@ -750,7 +744,6 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                                 }}
                             />
                         </div>
-                        )}
                         <div className="modal-action">
                             <button
                                 className="btn"
