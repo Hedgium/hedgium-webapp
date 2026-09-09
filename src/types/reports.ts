@@ -29,6 +29,12 @@ export type E2PnlSummary = {
   ytd_pnl_pct?: number | null;
   all_time_pnl: number;
   all_time_pnl_pct?: number | null;
+  week_charges?: number;
+  /** Current calendar month E2 charges (other costs) */
+  charges?: number;
+  quarter_charges?: number;
+  ytd_charges?: number;
+  all_time_charges?: number;
   m2m?: number;
   realised?: number;
   ytd_m2m?: number;
@@ -85,6 +91,7 @@ export type TradeCycleReport = {
   sub_state: string;
   created_at: string;
   updated_at: string;
+  closed_at?: string | null;
   pnl: number;
   charges: number;
   strategy_id?: number | null;

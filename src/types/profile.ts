@@ -56,6 +56,8 @@ export interface Profile {
     pnl_inception_date?: string | null;
     /** Capital / account value at pnl_inception_date for PnL % only. */
     pnl_inception_value?: number | null;
+    /** Calendar days since last NFO/BFO/MCX Trade fill. */
+    last_trade_days?: number | null;
     order_value_factor: number;
     quantity_multiplier: number;
     verified: boolean;

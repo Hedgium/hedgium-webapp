@@ -13,6 +13,11 @@ import {
 } from "recharts";
 import { formatIndianShort } from "@/utils/formatNumber";
 import type { ChartPeriod, MarginSnapshot } from "./reportChartData";
+import {
+  ReportsChartTooltipFrame,
+  ReportsChartTooltipRow,
+  chartTooltipWrapperStyle,
+} from "./ReportsChartTooltip";
 
 type Row = { snapshot_date: string; net: number; utilised: number };
 
@@ -27,6 +32,49 @@ function formatXAxis(period: ChartPeriod, value: string) {
     return "W/c " + d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
   }
   return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+}
+
+function formatTooltipLabel(period: ChartPeriod, value: string) {
+  const d = new Date(value + "T12:00:00");
+  if (period === "weekly") {
+    return (
+      "W/c " +
+      d.toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    );
+  }
+  return d.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function MarginTooltip({
+  active,
+  payload,
+  period,
+}: {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: number; payload: Row }>;
+  period: ChartPeriod;
+}) {
+  if (!active || !payload?.length) return null;
+  const date = payload[0]?.payload?.snapshot_date;
+  return (
+    <ReportsChartTooltipFrame label={date ? formatTooltipLabel(period, date) : undefined}>
+      {payload.map((entry) => (
+        <ReportsChartTooltipRow
+          key={entry.name ?? "value"}
+          label={entry.name ?? ""}
+          value={formatIndianShort(Number(entry.value ?? 0))}
+        />
+      ))}
+    </ReportsChartTooltipFrame>
+  );
 }
 
 export function ReportsMarginChart({
@@ -63,22 +111,9 @@ export function ReportsMarginChart({
             width={48}
           />
           <Tooltip
-            contentStyle={{
-              background: "oklch(var(--b1) / 0.95)",
-              border: "1px solid oklch(var(--bc) / 0.2)",
-              borderRadius: "0.5rem",
-            }}
-            labelFormatter={(label) =>
-              new Date(String(label) + "T12:00:00").toLocaleDateString(undefined, {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })
-            }
-            formatter={(value: number | string, name: string) => [
-              formatIndianShort(Number(value)),
-              name,
-            ]}
+            cursor={{ stroke: "var(--color-base-content)", strokeOpacity: 0.25 }}
+            wrapperStyle={chartTooltipWrapperStyle}
+            content={<MarginTooltip period={period} />}
           />
           <Legend />
           <Line

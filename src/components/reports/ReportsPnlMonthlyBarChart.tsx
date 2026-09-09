@@ -12,12 +12,54 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatIndianShort } from "@/utils/formatNumber";
+import { formatIndianShort, formatMoneyIN } from "@/utils/formatNumber";
 import { monthLabelFromBarTime, type PnlMonthlyBarPoint } from "./reportChartData";
+import {
+  ReportsChartTooltipFrame,
+  ReportsChartTooltipRow,
+  chartTooltipWrapperStyle,
+} from "./ReportsChartTooltip";
 
 type Row = PnlMonthlyBarPoint & { label: string };
 
 const axisTick = { fontSize: 11, fill: "var(--color-base-content)" };
+
+function signedTone(value: number): "success" | "error" | undefined {
+  if (value > 0) return "success";
+  if (value < 0) return "error";
+  return undefined;
+}
+
+function PnlMonthlyTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: Row }>;
+}) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  if (!row) return null;
+  return (
+    <ReportsChartTooltipFrame label={row.label}>
+      <ReportsChartTooltipRow
+        label="Net"
+        value={formatMoneyIN(row.value)}
+        tone={signedTone(row.value)}
+      />
+      <ReportsChartTooltipRow
+        label="Gross"
+        value={formatMoneyIN(row.gross)}
+        tone={signedTone(row.gross)}
+      />
+      <ReportsChartTooltipRow
+        label="Other costs"
+        value={formatMoneyIN(row.charges)}
+        tone="muted"
+      />
+    </ReportsChartTooltipFrame>
+  );
+}
 
 /** Place value above positive bars and below negative bars */
 function PnlBarValueLabel(props: {
@@ -78,16 +120,9 @@ export function ReportsPnlMonthlyBarChart({ data }: { data: PnlMonthlyBarPoint[]
             width={48}
           />
           <Tooltip
-            contentStyle={{
-              background: "oklch(var(--b1) / 0.95)",
-              border: "1px solid oklch(var(--bc) / 0.2)",
-              borderRadius: "0.5rem",
-            }}
-            formatter={(value: number | string) => [formatIndianShort(Number(value)), "PnL change"]}
-            labelFormatter={(_, payload) => {
-              const row = payload?.[0]?.payload as Row | undefined;
-              return row?.label ?? "";
-            }}
+            cursor={{ fill: "var(--color-base-content)", fillOpacity: 0.06 }}
+            wrapperStyle={chartTooltipWrapperStyle}
+            content={<PnlMonthlyTooltip />}
           />
           <Bar dataKey="value" radius={[3, 3, 0, 0]} barSize={22} isAnimationActive={false}>
             <LabelList dataKey="value" content={PnlBarValueLabel} />
