@@ -9,9 +9,19 @@ export type MarginSnapshot = {
 
 export type PnlChartPoint = { time: string; value: number };
 
-export type PnlMonthlyBarPoint = { time: string; value: number };
+export type PnlMonthlyBarPoint = {
+  time: string;
+  /** Month-on-month net PnL change (gross − other costs) */
+  value: number;
+  gross: number;
+  charges: number;
+};
 
-export type PnlSnapshotRow = { snapshot_date: string; pnl_total: number };
+export type PnlSnapshotRow = {
+  snapshot_date: string;
+  pnl_total: number;
+  charges_total?: number;
+};
 
 const ISO_DATE_PREFIX = /^\d{4}-\d{2}-\d{2}/;
 
@@ -32,7 +42,13 @@ export function parsePnlSnapshotsResponse(json: unknown): PnlSnapshotRow[] {
     if (!ISO_DATE_PREFIX.test(sd)) continue;
     const n = typeof pt === "number" ? pt : Number(pt);
     if (!Number.isFinite(n)) continue;
-    out.push({ snapshot_date: sd.slice(0, 10), pnl_total: n });
+    const rawCharges = o.charges_total;
+    let charges = 0;
+    if (typeof rawCharges === "number" || typeof rawCharges === "string") {
+      const c = typeof rawCharges === "number" ? rawCharges : Number(rawCharges);
+      if (Number.isFinite(c)) charges = c;
+    }
+    out.push({ snapshot_date: sd.slice(0, 10), pnl_total: n, charges_total: charges });
   }
   return out;
 }
@@ -73,48 +89,79 @@ export function getPnlBarChartDateRange(): { from: string; to: string } {
   return { from: fromD.toISOString().slice(0, 10), to };
 }
 
+function snapshotGross(row: PnlSnapshotRow): number {
+  return Number(row.pnl_total);
+}
+
+function snapshotCharges(row: PnlSnapshotRow): number {
+  const c = Number(row.charges_total ?? 0);
+  return Number.isFinite(c) ? c : 0;
+}
+
+function snapshotNet(row: PnlSnapshotRow): number {
+  return snapshotGross(row) - snapshotCharges(row);
+}
+
+function snapshotLevels(row: PnlSnapshotRow | undefined): { gross: number; net: number; charges: number } {
+  if (!row) return { gross: 0, net: 0, charges: 0 };
+  return {
+    gross: snapshotGross(row),
+    net: snapshotNet(row),
+    charges: snapshotCharges(row),
+  };
+}
+
 /**
  * Monthly PnL **change** from daily snapshot **levels** (last point per calendar month vs prior).
- * Aligns with ``positions/pnl/`` **all-time total** only when DailyPnlSnapshot rows store
- * full profile Position sums (see backend ``_daily_pnl_snapshot_defaults_for_profile``).
+ * Bars are **net** (gross − other costs). Aligns with ``positions/pnl/`` **all-time total**
+ * only when DailyPnlSnapshot rows store full profile Position sums
+ * (see backend ``_daily_pnl_snapshot_defaults_for_profile``).
  * This will not match summary “last month” / “last week” cards, which use different filters.
  */
 export function buildPnlMonthlyBars(data: PnlSnapshotRow[], maxMonths = 12): PnlMonthlyBarPoint[] {
   const sorted = [...data].sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
   if (sorted.length === 0) return [];
 
-  const lastInMonth = new Map<string, number>();
+  const lastInMonth = new Map<string, PnlSnapshotRow>();
   for (const row of sorted) {
     const mk = row.snapshot_date.slice(0, 7);
-    lastInMonth.set(mk, Number(row.pnl_total));
+    lastInMonth.set(mk, row);
   }
 
   const monthKeys = Array.from(lastInMonth.keys()).sort();
-  let prevEndLevel: number | null = null;
-  const deltas: { ym: string; delta: number }[] = [];
+  let prevEnd: { gross: number; net: number; charges: number } | null = null;
+  const deltas: { ym: string; net: number; gross: number; charges: number }[] = [];
 
   for (const mk of monthKeys) {
     const startOfMonth = `${mk}-01`;
-    let base: number;
-    if (prevEndLevel === null) {
-      base = 0;
+    let base: { gross: number; net: number; charges: number };
+    if (prevEnd === null) {
+      let prior: PnlSnapshotRow | undefined;
       for (let i = sorted.length - 1; i >= 0; i--) {
         if (sorted[i].snapshot_date < startOfMonth) {
-          base = Number(sorted[i].pnl_total);
+          prior = sorted[i];
           break;
         }
       }
+      base = snapshotLevels(prior);
     } else {
-      base = prevEndLevel;
+      base = prevEnd;
     }
-    const endLevel = lastInMonth.get(mk)!;
-    deltas.push({ ym: mk, delta: endLevel - base });
-    prevEndLevel = endLevel;
+    const end = snapshotLevels(lastInMonth.get(mk));
+    deltas.push({
+      ym: mk,
+      net: end.net - base.net,
+      gross: end.gross - base.gross,
+      charges: end.charges - base.charges,
+    });
+    prevEnd = end;
   }
 
-  return deltas.slice(-maxMonths).map(({ ym, delta }) => ({
+  return deltas.slice(-maxMonths).map(({ ym, net, gross, charges }) => ({
     time: `${ym}-01`,
-    value: delta,
+    value: net,
+    gross,
+    charges,
   }));
 }
 

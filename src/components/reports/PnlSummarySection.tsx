@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { Info, TrendingUp } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import type { E2PnlSummary } from "@/types/reports";
+import NetPnlWithCosts, { e2NetPnl } from "@/components/reports/NetPnlWithCosts";
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-IN", {
@@ -42,12 +43,27 @@ function e1InfoTip(
   return parts.join(" ");
 }
 
+function netScaledPct(
+  gross: number | null | undefined,
+  charges: number | null | undefined,
+  pct: number | null | undefined
+): number | null {
+  if (pct == null || Number.isNaN(pct)) return null;
+  const net = e2NetPnl(gross, charges);
+  if (net == null) return pct;
+  const g = Number(gross);
+  if (!Number.isFinite(g) || g === 0) return pct;
+  return (pct * net) / g;
+}
+
 type PnlLine = {
   label: string;
   value: number | null;
   pct: number | null;
   emphasis?: boolean;
   infoTip?: string;
+  gross?: number | null;
+  charges?: number | null;
 };
 
 type E2PnlTile = {
@@ -78,6 +94,7 @@ export default function PnlSummarySection({
     const buildLines = (
       e2: number,
       e2Pct: number | null | undefined,
+      e2Charges: number | null | undefined,
       e1: number | null | undefined,
       e1Pct: number | null | undefined,
       combined: number | null | undefined,
@@ -85,7 +102,16 @@ export default function PnlSummarySection({
       e1Realised: number | null | undefined,
       e1Mtm: number | null | undefined
     ): PnlLine[] => {
-      const lines: PnlLine[] = [{ label: "E2", value: e2, pct: e2Pct ?? null }];
+      const charges = e2Charges ?? 0;
+      const lines: PnlLine[] = [
+        {
+          label: "E2",
+          value: e2NetPnl(e2, charges),
+          pct: netScaledPct(e2, charges, e2Pct),
+          gross: e2,
+          charges,
+        },
+      ];
       if (e1 != null) {
         const infoTip = e1InfoTip(selfManaged, e1Realised ?? null, e1Mtm ?? null);
         lines.push(
@@ -97,8 +123,10 @@ export default function PnlSummarySection({
           },
           {
             label: "Total",
-            value: combined ?? null,
-            pct: combinedPct ?? null,
+            value: combined != null ? e2NetPnl(combined, charges) : null,
+            pct: netScaledPct(combined, charges, combinedPct),
+            gross: combined ?? null,
+            charges,
             emphasis: true,
           }
         );
@@ -114,6 +142,7 @@ export default function PnlSummarySection({
         lines: buildLines(
           pnlSummary.pnl ?? 0,
           pnlSummary.pnl_pct,
+          pnlSummary.charges,
           pnlSummary.e1_month_pnl,
           pnlSummary.e1_month_pnl_pct,
           pnlSummary.combined_month_pnl,
@@ -129,6 +158,7 @@ export default function PnlSummarySection({
         lines: buildLines(
           pnlSummary.quarter_pnl ?? 0,
           pnlSummary.quarter_pnl_pct,
+          pnlSummary.quarter_charges,
           pnlSummary.e1_quarter_pnl,
           pnlSummary.e1_quarter_pnl_pct,
           pnlSummary.combined_quarter_pnl,
@@ -144,6 +174,7 @@ export default function PnlSummarySection({
         lines: buildLines(
           pnlSummary.ytd_pnl ?? 0,
           pnlSummary.ytd_pnl_pct,
+          pnlSummary.ytd_charges,
           pnlSummary.e1_ytd_pnl,
           pnlSummary.e1_ytd_pnl_pct,
           pnlSummary.combined_ytd_pnl,
@@ -160,6 +191,7 @@ export default function PnlSummarySection({
         lines: buildLines(
           pnlSummary.all_time_pnl ?? 0,
           pnlSummary.all_time_pnl_pct,
+          pnlSummary.all_time_charges,
           pnlSummary.e1_all_time_pnl,
           pnlSummary.e1_all_time_pnl_pct,
           pnlSummary.combined_all_time_pnl,
@@ -224,15 +256,28 @@ export default function PnlSummarySection({
                     ) : null}
                   </span>
                   <div className="min-w-0 text-right">
-                    <div
-                      className={`tabular-nums leading-tight ${
-                        line.emphasis ? "text-base font-bold md:text-lg" : "text-sm font-semibold"
-                      } ${
-                        line.value == null ? "text-base-content/45" : signedClass(line.value)
-                      }`}
-                    >
-                      {formatPnlAmount(line.value)}
-                    </div>
+                    {line.gross != null ? (
+                      <NetPnlWithCosts
+                        gross={line.gross}
+                        charges={line.charges ?? 0}
+                        dropdownLeft={tile.key !== "month" && tile.key !== "ytd"}
+                        className={
+                          line.emphasis
+                            ? "text-base font-bold leading-tight md:text-lg"
+                            : "text-sm font-semibold leading-tight"
+                        }
+                      />
+                    ) : (
+                      <div
+                        className={`tabular-nums leading-tight ${
+                          line.emphasis ? "text-base font-bold md:text-lg" : "text-sm font-semibold"
+                        } ${
+                          line.value == null ? "text-base-content/45" : signedClass(line.value)
+                        }`}
+                      >
+                        {formatPnlAmount(line.value)}
+                      </div>
+                    )}
                     <div
                       className={`text-[11px] font-semibold tabular-nums ${
                         line.pct == null ? "text-base-content/45" : signedClass(line.pct)
@@ -251,7 +296,8 @@ export default function PnlSummarySection({
         ))}
       </dl>
       <p className="max-w-4xl text-xs leading-relaxed text-base-content/70">
-        E2 is PnL from Hedgium trading strategies. E1 is CNC equity holdings
+        E2 is net PnL from Hedgium trading strategies (hover the info icon for gross
+        and other costs). E1 is CNC equity holdings
         {pnlSummary.e1_hedgium_managed === false ? (
           <span className="text-warning">
             {" "}

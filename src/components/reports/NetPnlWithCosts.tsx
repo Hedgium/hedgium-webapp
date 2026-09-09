@@ -61,7 +61,7 @@ export default function NetPnlWithCosts({
           </button>
           <div
             tabIndex={0}
-            className="dropdown-content z-50 w-44 rounded-lg border border-base-300 bg-base-100 p-2 text-left text-xs font-normal"
+            className="dropdown-content z-50 w-44 rounded-lg border border-base-300 bg-base-100 p-2 text-left text-xs font-normal text-base-content"
           >
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-base-content/55">Gross</span>

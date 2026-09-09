@@ -349,7 +349,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
               <div className="mb-4 space-y-1">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
-                  <h3 className="text-lg font-semibold">E2 PnL (monthly)</h3>
+                  <h3 className="text-lg font-semibold">E2 PnL (monthly, net)</h3>
                 </div>
                 {/* <p
                   id="pnl-monthly-chart-desc"
@@ -461,6 +461,11 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                                 </span>
                               ) : null}
                               <span className="text-xs text-base-content/70">{formatDate(cycle.created_at)}</span>
+                              {cycle.state.toUpperCase() === "CLOSED" && cycle.closed_at ? (
+                                <span className="text-xs text-base-content/70">
+                                  Closed {formatDate(cycle.closed_at)}
+                                </span>
+                              ) : null}
                               <span
                                 className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${stateChipClass(cycle.state)}`}
                               >
