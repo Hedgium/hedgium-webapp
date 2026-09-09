@@ -43,6 +43,7 @@ type ClientPnlRow = {
   brokerName: string;
   brokerLoggedIn: boolean;
   pnlInceptionDate: string | null;
+  lastTradeDays: number | null;
   status: "idle" | "loading" | "done" | "error";
   error?: string;
   engine1Total: number | null;
@@ -53,6 +54,7 @@ type ClientPnlRow = {
 
 const FETCH_CONCURRENCY = 4;
 const MAX_ROW_ATTEMPTS = 3;
+const LAST_TRADE_STALE_DAYS = 20;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -84,6 +86,12 @@ function formatInceptionDate(value: string | null | undefined): string {
     month: "short",
     year: "numeric",
   });
+}
+
+function lastTradeDaysClass(days: number | null | undefined): string {
+  if (days == null || Number.isNaN(days)) return "text-base-content/60";
+  if (days > LAST_TRADE_STALE_DAYS) return "text-error font-medium tabular-nums";
+  return "tabular-nums";
 }
 
 function e1PnlSum(
@@ -362,6 +370,7 @@ function profileToRow(profile: Profile, partial?: Partial<ClientPnlRow>): Client
     brokerName: profile.broker_name,
     brokerLoggedIn: profile.broker_logged_in,
     pnlInceptionDate: profile.pnl_inception_date ?? null,
+    lastTradeDays: profile.last_trade_days ?? null,
     status: "idle",
     engine1Total: null,
     engine1Pnl: null,
@@ -554,6 +563,7 @@ export default function AdminClientPnlPage() {
                       : null}
                   </span>
                 </th>
+                <th className="text-right align-middle" aria-label="Last trade days" />
                 <th className="text-right align-middle tabular-nums font-semibold text-base-content">
                   {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.engine1Total)}
                 </th>
@@ -623,6 +633,7 @@ export default function AdminClientPnlPage() {
             ) : null}
             <tr className="text-xs uppercase tracking-wide text-base-content/60">
               <th className="min-w-[12rem]">Client info</th>
+              <th className="text-right">Last trade (days)</th>
               <th className="text-right">E1 Total</th>
               <th className="text-right">Avl cash</th>
               <th className="text-right">Total AC</th>
@@ -639,14 +650,14 @@ export default function AdminClientPnlPage() {
             {loadingProfiles ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={11}>
+                  <td colSpan={12}>
                     <div className="h-8 animate-pulse rounded bg-base-300/40" />
                   </td>
                 </tr>
               ))
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={11} className="py-12 text-center text-base-content/55">
+                <td colSpan={12} className="py-12 text-center text-base-content/55">
                   No active profiles found.
                 </td>
               </tr>
@@ -687,6 +698,11 @@ export default function AdminClientPnlPage() {
                       ) : null}
                       
                     </div>
+                  </td>
+                  <td className={`text-right ${lastTradeDaysClass(row.lastTradeDays)}`}>
+                    {row.lastTradeDays == null || Number.isNaN(row.lastTradeDays)
+                      ? "—"
+                      : row.lastTradeDays}
                   </td>
                   <td className="text-right tabular-nums">
                     {row.status === "loading" ? (
