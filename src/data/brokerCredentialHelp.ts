@@ -266,4 +266,50 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
       ],
     },
   ],
+  SHAREINDIA: [
+    {
+      field: "broker_user_id",
+      label: "Client ID",
+      steps: [
+        { text: "Log in to **strade.shareindia.com** (Share India / Symphony)." },
+        { text: "Your **Client ID** is your trading login ID / UCC." },
+      ],
+    },
+    {
+      field: "api_key",
+      label: "App Key",
+      steps: [
+        { text: "Open the Share India API dashboard linked from **strade.shareindia.com**." },
+        { text: "Subscribe to **Interactive API** and wait for approval if prompted." },
+        { text: "Copy the **appKey** from the approval email or the API dashboard." },
+      ],
+    },
+    {
+      field: "secret_key",
+      label: "App Secret",
+      steps: [
+        { text: "On the same API dashboard (or approval email), copy the **secretKey**." },
+        { text: "**Keep the secret key private** and never share it." },
+      ],
+    },
+    {
+      field: "broker_twofa",
+      label: "TOTP Secret",
+      steps: [
+        { text: "In the Share India app, open **Profile → Settings → Password & Security**." },
+        { text: "Enable **External Authenticator (TOTP)** and scan the QR (or copy the setup key) in Google Authenticator." },
+        { text: "**Paste the TOTP secret** (not the 6-digit code) here. If Share India still uses a PIN instead of TOTP, enter that PIN." },
+      ],
+    },
+    {
+      field: "whitelist_ip",
+      label: "Whitelist static IP",
+      modalTitle: "How to whitelist static IP?",
+      steps: [
+        { text: "Share India / Symphony typically allows API calls only from **pre-disclosed static IPs**." },
+        { text: "Share the Hedgium whitelist IP shown on this page with **Share India API support** (mention your client code and appKey)." },
+        { text: "Wait for the IP to be mapped before logging in from Hedgium." },
+      ],
+    },
+  ],
 };

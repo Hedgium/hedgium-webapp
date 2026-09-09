@@ -50,6 +50,7 @@ const BROKER_DISPLAY_NAMES: Record<string, string> = {
   KOTAKNEO: "Kotak Neo",
   IIFLCAPITAL: "IIFL Capital",
   PROSTOCKS: "ProStocks",
+  SHAREINDIA: "Share India",
 };
 
 type BrokerCredentialHelpModalProps = {
