@@ -1042,7 +1042,7 @@ export default function Page() {
               <thead>
                 <tr className="border-b border-base-300/50">
                   <th className="font-medium text-base-content/70">ID</th>
-                  <th className="font-medium text-base-content/70 max-w-[10rem]">
+                  <th className="font-medium text-base-content/70 min-w-[10rem] w-[10rem] max-w-[10rem]">
                     Name
                   </th>
                   <th className="font-medium text-base-content/70">Status</th>
@@ -1123,18 +1123,18 @@ export default function Page() {
                           ) : null}
                         </div>
                       </td>
-                      <td className="align-top max-w-[10rem]">
-                        <div className="flex flex-col items-start gap-0.5 min-w-0">
-                          <div className="flex items-start gap-1 min-w-0">
+                      <td className="align-top min-w-[10rem] w-[10rem] max-w-[10rem] overflow-hidden">
+                        <div className="flex flex-col items-start gap-0.5 min-w-0 w-full">
+                          <div className="flex items-start gap-1 min-w-0 w-full">
                             <Link
                               href={`/admin/strategy/${strategy.id}`}
-                              className="link link-hover link-primary font-medium break-words whitespace-normal leading-snug min-w-0"
+                              className="link link-hover link-primary font-medium wrap-anywhere whitespace-normal leading-snug min-w-0 flex-1"
                             >
                               {strategy.name}
                             </Link>
                             <button
                               type="button"
-                              className="btn btn-ghost btn-xs btn-square shrink-0"
+                              className="btn btn-ghost btn-xs btn-square shrink-0 relative z-10"
                               disabled={!strategy.builder_id}
                               title={
                                 strategy.builder_id

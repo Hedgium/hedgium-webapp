@@ -30,6 +30,7 @@ export interface AdjustmentData {
   created_at: string;
   completed: boolean;
   approved: boolean;
+  require_entry_spread?: boolean;
   legs: AdjustmentLeg[];
 }
 
@@ -143,6 +144,9 @@ function Adjustment({
         <div className="flex items-center gap-4">
           <span className="font-bold">v{adjustment.version}</span>
           <span className="text-gray-700">{adjustment.title || "-"}</span>
+          {(adjustment.require_entry_spread || adjustment.version === 1) && (
+            <span className="badge badge-ghost badge-sm">entry spread</span>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -186,12 +190,19 @@ function Adjustment({
                 e.stopPropagation();
                 onDuplicate?.(adjustment);
               }}
-              disabled={adjustment.legs.length === 0}
+              disabled={
+                adjustment.legs.length === 0 ||
+                ((adjustment.require_entry_spread || adjustment.version === 1) &&
+                  !adjustment.completed)
+              }
               className="btn btn-sm btn-ghost"
               title={
                 adjustment.legs.length === 0
                   ? "No legs to duplicate"
-                  : "Duplicate this adjustment"
+                  : (adjustment.require_entry_spread || adjustment.version === 1) &&
+                      !adjustment.completed
+                    ? "Duplicate only after this entry adjustment has fully completed"
+                    : "Duplicate this adjustment"
               }
             >
               <Copy size={14} />
