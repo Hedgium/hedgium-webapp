@@ -26,6 +26,7 @@ export interface ManualAdjustmentInitialValues {
     exchange?: string;
     legs?: AdjustmentLeg[];
     heading?: string;
+    requireEntrySpread?: boolean;
 }
 
 interface Props {
@@ -56,6 +57,9 @@ export default function ManualAdjustmentModal({
     const [title, setTitle] = useState(initialValues?.title ?? "");
     const [notes, setNotes] = useState(initialValues?.notes ?? "");
     const [autoTrade, setAutoTrade] = useState(initialValues?.autoTrade ?? false);
+    const [requireEntrySpread, setRequireEntrySpread] = useState(
+        initialValues?.requireEntrySpread === true
+    );
     const [exchange, setExchange] = useState(initialValues?.exchange ?? "NFO");
     const [legs, setLegs] = useState<AdjustmentLeg[]>(initialValues?.legs ?? []);
     const [addingLeg, setAddingLeg] = useState(false);
@@ -163,6 +167,7 @@ export default function ManualAdjustmentModal({
                 notes: notes || null,
                 is_active: true,
                 auto_trade: autoTrade,
+                require_entry_spread: requireEntrySpread,
                 legs,
             };
 
@@ -243,6 +248,21 @@ export default function ManualAdjustmentModal({
                                 type="checkbox"
                                 checked={autoTrade}
                                 onChange={(e) => setAutoTrade(e.target.checked)}
+                                className="toggle toggle-primary"
+                            />
+                        </label>
+                    </div>
+
+                    <div className="form-control">
+                        <label
+                            className="label cursor-pointer gap-3 justify-start"
+                            title="Wait for the builder entry spread condition before placing each batch"
+                        >
+                            <span className="label-text">Require entry spread</span>
+                            <input
+                                type="checkbox"
+                                checked={requireEntrySpread}
+                                onChange={(e) => setRequireEntrySpread(e.target.checked)}
                                 className="toggle toggle-primary"
                             />
                         </label>

@@ -31,6 +31,7 @@ const StrategyOptionChainModal = dynamic(
 interface SpotSnapshot {
   underlying: string;
   spot_price: number | string;
+  quoted_spot?: number | string | null;
   future_price?: number | string | null;
   future_expiry?: string | null;
   captured_at: string;
@@ -112,6 +113,7 @@ function mapAdjustmentToInitial(adj: AdjustmentData): ManualAdjustmentInitialVal
     title: adj.title ? `Copy of ${adj.title}` : `Copy of v${adj.version}`,
     notes: adj.notes ?? "",
     autoTrade: adj.auto_trade ?? false,
+    requireEntrySpread: adj.require_entry_spread === true || adj.version === 1,
     exchange: adj.legs[0]?.exchange ?? "NFO",
     legs: adj.legs.map((leg) => ({
       leg_index: leg.leg_index,
@@ -504,7 +506,16 @@ export default function StrategyDetailPage() {
                   <span
                     key={`${s.underlying}-${s.captured_at}`}
                     className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border border-base-300/70 bg-base-100 text-xs"
-                    title={formatDateTimeMinutes(s.captured_at)}
+                    title={
+                      [
+                        formatDateTimeMinutes(s.captured_at),
+                        toNum(s.quoted_spot) != null
+                          ? `Quoted cash ${toNum(s.quoted_spot)!.toFixed(2)}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                    }
                   >
                     <span className="font-semibold text-base-content/90">{s.underlying}</span>
                     <span className="tabular-nums font-medium">
@@ -581,6 +592,9 @@ export default function StrategyDetailPage() {
                       <th>Captured At</th>
                       <th>Underlying</th>
                       <th className="text-right">Spot Price</th>
+                      <th className="text-right" title="Raw cash/index LTP from the broker">
+                        Quoted Spot
+                      </th>
                       <th className="text-right" title="Near-month futures LTP">
                         Future Price
                       </th>
@@ -597,6 +611,11 @@ export default function StrategyDetailPage() {
                         <td className="text-right tabular-nums">
                           {toNum(row.spot_price) != null
                             ? toNum(row.spot_price)!.toFixed(2)
+                            : "—"}
+                        </td>
+                        <td className="text-right tabular-nums">
+                          {toNum(row.quoted_spot) != null
+                            ? toNum(row.quoted_spot)!.toFixed(2)
                             : "—"}
                         </td>
                         <td className="text-right tabular-nums">
