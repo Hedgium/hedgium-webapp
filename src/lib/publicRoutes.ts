@@ -28,3 +28,11 @@ export function isPublicPath(pathname: string | null | undefined): boolean {
   }
   return false;
 }
+
+/** Same-origin relative path only. Rejects protocol-relative and open redirects. */
+export function getSafeNext(next: string | null): string | null {
+  if (!next || typeof next !== "string") return null;
+  const path = next.startsWith("/") ? next : `/${next}`;
+  if (path.includes("//")) return null;
+  return path;
+}

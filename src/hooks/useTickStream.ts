@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
+import { backendWsAuthority } from "@/lib/backendHost";
 
 export function useTickStream(
   initialTokens: { token: number; mode?: string }[] = []
@@ -28,7 +29,7 @@ export function useTickStream(
         .map((t) => `instrument_token=${t.token}&mode=${t.mode || "LTP"}`)
         .join("&");
 
-      const wsUrl = `${protocol}://${process.env.NEXT_PUBLIC_BACKEND_DOMAIN}/ws/ticks/?token=${accessToken}&${queryParams}`;
+      const wsUrl = `${protocol}://${backendWsAuthority()}/ws/ticks/?token=${accessToken}&${queryParams}`;
 
       console.log("🔌 Connecting to tick stream...");
 

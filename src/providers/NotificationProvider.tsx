@@ -3,6 +3,7 @@
 
 import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
+import { backendWsAuthority } from "@/lib/backendHost";
 import { useNotificationStore } from "@/store/notificationStore";
 import useAlertStore from "@/store/alertStore";
 import { isDemoUser } from "@/lib/demo";
@@ -48,7 +49,7 @@ export default function NotificationProvider({ children }: { children: React.Rea
       if (wsRef.current) return;
 
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-      const wsUrl = `${protocol}://${process.env.NEXT_PUBLIC_BACKEND_DOMAIN}/ws/notifications/?token=${accessToken}`;
+      const wsUrl = `${protocol}://${backendWsAuthority()}/ws/notifications/?token=${accessToken}`;
 
       console.log("🔌 Trying to connect WebSocket... Attempt", retryCountRef.current + 1);
       wsRef.current = new WebSocket(wsUrl);
