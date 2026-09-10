@@ -166,15 +166,15 @@ export default function AddBrokerPage() {
     setFormError(null);
 
     if (!brokerName) { setFormError("Select a broker"); return; }
-    if (!brokerUserId) { setFormError(brokerName === "IIFLCAPITAL" ? "Enter Client ID" : "Enter Broker User ID"); return; }
+    if (!brokerUserId) { setFormError(brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "Enter Client ID" : "Enter Broker User ID"); return; }
     if (brokerName === "KOTAKNEO" && !apiKey) { setFormError("Enter API Key"); return; }
-    if (brokerName === "IIFLCAPITAL" && !apiKey) { setFormError("Enter App Key"); return; }
+    if ((brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA") && !apiKey) { setFormError("Enter App Key"); return; }
     if (brokerName === "PROSTOCKS" && !apiKey) { setFormError("Enter API Key"); return; }
     if ((brokerName === "ZERODHA" || brokerName === "SHOONYA") && !secretKey) {
       setFormError("Enter Secret Key");
       return;
     }
-    if (brokerName === "IIFLCAPITAL" && !secretKey) {
+    if ((brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA") && !secretKey) {
       setFormError("Enter App Secret");
       return;
     }
@@ -193,8 +193,8 @@ export default function AddBrokerPage() {
         broker_name: brokerName,
         broker_user_id: brokerUserId,
       };
-      if (brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "PROSTOCKS") credPayload.broker_api_key = apiKey;
-      if (brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL") {
+      if (brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "PROSTOCKS" || brokerName === "SHAREINDIA") credPayload.broker_api_key = apiKey;
+      if (brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA") {
         credPayload.broker_secret_key = secretKey;
       }
       credPayload.broker_twofa = brokerTwofa;
@@ -292,7 +292,6 @@ export default function AddBrokerPage() {
       });
 
       if (result.status === "success") {
-        // Move to result step with loading state while margin is being fetched
         setStep("result");
         setResultStatus("loading");
         try {
@@ -326,7 +325,7 @@ export default function AddBrokerPage() {
             <p className="font-medium text-base-content pr-1">
               Whitelist this IP at {broker}
             </p>
-            {broker === "KOTAKNEO" || broker === "IIFLCAPITAL" || broker === "PROSTOCKS" ? (
+            {broker === "KOTAKNEO" || broker === "IIFLCAPITAL" || broker === "PROSTOCKS" || broker === "SHAREINDIA" ? (
               <button
                 type="button"
                 onClick={() => {
@@ -334,8 +333,8 @@ export default function AddBrokerPage() {
                   setHelpOpen(true);
                 }}
                 className="text-primary hover:opacity-80 p-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                title={`How to add IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : broker === "PROSTOCKS" ? "ProStocks" : "Kotak Neo"}`}
-                aria-label={`Help: whitelist IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : broker === "PROSTOCKS" ? "ProStocks" : "Kotak Neo"}`}
+                title={`How to add IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : broker === "PROSTOCKS" ? "ProStocks" : broker === "SHAREINDIA" ? "Share India" : "Kotak Neo"}`}
+                aria-label={`Help: whitelist IP in ${broker === "IIFLCAPITAL" ? "IIFL Capital" : broker === "PROSTOCKS" ? "ProStocks" : broker === "SHAREINDIA" ? "Share India" : "Kotak Neo"}`}
               >
                 <HelpCircle className="h-4 w-4 cursor-pointer" aria-hidden="true" />
               </button>
@@ -460,6 +459,7 @@ export default function AddBrokerPage() {
                     <option value="SHOONYA">Shoonya</option>
                     <option value="IIFLCAPITAL">IIFL Capital</option>
                     <option value="PROSTOCKS">ProStocks</option>
+                    <option value="SHAREINDIA">Share India</option>
                   </select>
                 </div>
 
@@ -467,7 +467,7 @@ export default function AddBrokerPage() {
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <label htmlFor={brokerUserIdId} className="text-xs font-medium text-base-content/80">
-                      {brokerName === "IIFLCAPITAL" ? "Client ID" : "Broker User ID"}
+                      {brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "Client ID" : "Broker User ID"}
                     </label>
                     {brokerName && (
                       <button
@@ -489,15 +489,15 @@ export default function AddBrokerPage() {
                     value={brokerUserId}
                     onChange={(e) => { setBrokerUserId(e.target.value); setFormError(null); }}
                     className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    placeholder={brokerName === "IIFLCAPITAL" ? "Client ID" : "Broker user ID"}
+                    placeholder={brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "Client ID" : "Broker user ID"}
                   />
                 </div>
 
-                {(brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "PROSTOCKS") && (
+                {(brokerName === "KOTAKNEO" || brokerName === "IIFLCAPITAL" || brokerName === "PROSTOCKS" || brokerName === "SHAREINDIA") && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label htmlFor={apiKeyId} className="text-xs font-medium text-base-content/80">
-                        {brokerName === "IIFLCAPITAL" ? "App Key" : "API Key"}
+                        {brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "App Key" : "API Key"}
                       </label>
                       <button
                         type="button"
@@ -517,16 +517,16 @@ export default function AddBrokerPage() {
                       value={apiKey}
                       onChange={(e) => { setApiKey(e.target.value); setFormError(null); }}
                       className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      placeholder={brokerName === "IIFLCAPITAL" ? "App key" : "API key"}
+                      placeholder={brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "App key" : "API key"}
                     />
                   </div>
                 )}
 
-                {(brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL") && (
+                {(brokerName === "ZERODHA" || brokerName === "SHOONYA" || brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA") && (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <label htmlFor={secretKeyId} className="text-xs font-medium text-base-content/80">
-                        {brokerName === "IIFLCAPITAL" ? "App Secret" : "Secret Key"}
+                        {brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "App Secret" : "Secret Key"}
                       </label>
                       <button
                         type="button"
@@ -546,7 +546,7 @@ export default function AddBrokerPage() {
                       value={secretKey}
                       onChange={(e) => { setSecretKey(e.target.value); setFormError(null); }}
                       className="input input-bordered input-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      placeholder={brokerName === "IIFLCAPITAL" ? "App secret" : "Secret key"}
+                      placeholder={brokerName === "IIFLCAPITAL" || brokerName === "SHAREINDIA" ? "App secret" : "Secret key"}
                     />
                   </div>
                 )}
@@ -643,13 +643,13 @@ export default function AddBrokerPage() {
                   {savedBrokerName === "KOTAKNEO" ? "MPIN" : "password"} on our servers—it is only
                   used for this login.
                 </p>
-                {loginError && (
-                  <div id={`${brokerPasswordId}-error`} role="alert" className="flex items-center gap-1.5 text-error text-sm mt-2">
-                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>{loginError}</span>
-                  </div>
-                )}
               </div>
+              {loginError && (
+                <div id={`${brokerPasswordId}-error`} role="alert" className="flex items-center gap-1.5 text-error text-sm mt-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{loginError}</span>
+                </div>
+              )}
 
               <button
                 onClick={handleLogin}

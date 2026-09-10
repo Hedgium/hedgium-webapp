@@ -606,8 +606,7 @@ export default function BrokerLoginStatus() {
             Login to {broker.name}
           </h3>
           <p className="text-sm text-base-content/70 mb-4">
-            Your {broker.name === "KOTAKNEO" ? "MPIN" : "password"} is only used to
-            sign in with your broker for this session. We do not store it.
+            {`Your ${broker.name === "KOTAKNEO" ? "MPIN" : "password"} is only used to sign in with your broker for this session. We do not store it.`}
           </p>
 
           <div className="space-y-3">
@@ -628,13 +627,13 @@ export default function BrokerLoginStatus() {
                 aria-describedby={loginError ? `${loginPasswordId}-error` : undefined}
                 autoFocus
               />
+            </div>
               {loginError && (
                 <div id={`${loginPasswordId}-error`} role="alert" className="flex items-center gap-1.5 text-error text-sm mt-2">
                   <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                   <span>{loginError}</span>
                 </div>
               )}
-            </div>
 
             <div className="flex gap-2 justify-end pt-1">
               <button

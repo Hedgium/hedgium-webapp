@@ -118,6 +118,7 @@ async function handleProxyRequest(request: Request) {
       headers,
       body,
       credentials: "include",
+      ...(body ? { duplex: "half" as const } : {}),
     });
 
     const contentType =

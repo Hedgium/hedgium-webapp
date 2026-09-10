@@ -7,13 +7,7 @@ import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import AuthFlowBrand from "@/components/AuthFlowBrand";
-
-export function getSafeNext(next: string | null): string | null {
-  if (!next || typeof next !== "string") return null;
-  const path = next.startsWith("/") ? next : `/${next}`;
-  if (path.includes("//")) return null;
-  return path;
-}
+import { getSafeNext } from "@/lib/publicRoutes";
 
 function LoginPageContent() {
   const [email, setEmail] = useState("");

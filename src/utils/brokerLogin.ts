@@ -8,6 +8,7 @@ const BROKER_LOGIN_ENDPOINTS: Record<string, string> = {
   KOTAKNEO: "users/kotakneo-login/",
   IIFLCAPITAL: "users/iiflcapital-login/",
   PROSTOCKS: "users/prostocks-login/",
+  SHAREINDIA: "users/shareindia-login/",
 };
 
 // Shoonya's OAuth/Selenium login can take 60-90s; give the poll a generous window.
@@ -45,7 +46,7 @@ async function pollBrokerLoginStatus(jobId: string): Promise<BrokerLoginResult> 
 export async function brokerLoginWithPolling(params: {
   brokerName: string;
   profileId: number | string;
-  secret: string;
+  secret?: string;
 }): Promise<BrokerLoginResult> {
   const endpoint = BROKER_LOGIN_ENDPOINTS[params.brokerName];
   if (!endpoint) {
@@ -56,8 +57,8 @@ export async function brokerLoginWithPolling(params: {
     profile_id: String(params.profileId),
     async_login: true,
   };
-  if (params.brokerName === "KOTAKNEO") body.mpin = params.secret;
-  else body.pwd = params.secret;
+  if (params.brokerName === "KOTAKNEO") body.mpin = params.secret ?? "";
+  else body.pwd = params.secret ?? "";
 
   const res = await authFetch(endpoint, {
     method: "POST",
