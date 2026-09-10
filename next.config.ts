@@ -63,6 +63,8 @@ const onboardingLegacyRedirects = [
 ]);
 
 module.exports = withBundleAnalyzer({
+  // Keep POST /api/proxy/.../ from 308ing to the no-slash URL (breaks LAN login).
+  skipTrailingSlashRedirect: true,
   async redirects() {
     return [
       { source: "/hedgium/dashboard", destination: "/home", permanent: true },

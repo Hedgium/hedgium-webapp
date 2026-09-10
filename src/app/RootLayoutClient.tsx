@@ -5,7 +5,7 @@ import NextTopLoader from 'nextjs-toploader';
 import AuthProvider from '@/providers/AuthProvider';
 import AlertsContainer from '@/components/AlertsContainer';
 import AuthInitializingProvider from '@/components/AuthInitializing';
-import { isLoginRootPath, isPublicPath } from '@/lib/publicRoutes';
+import { getSafeNext, isLoginRootPath, isPublicPath } from '@/lib/publicRoutes';
 import { isOnboardingIncomplete, ONBOARDING_PATH } from '@/lib/onboardingSteps';
 import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
@@ -72,7 +72,8 @@ export default function RootLayoutClient({
       }
 
       if (user && isLoginRootPath(pathname)) {
-        router.push('/home');
+        const next = new URLSearchParams(window.location.search).get('next');
+        router.push(getSafeNext(next) || '/home');
       }
     }
   }, [accessToken, isInitializing, router, pathname, user]);
