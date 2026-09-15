@@ -48,6 +48,7 @@ type TradeCycle = {
   locked_reason?: string | null;
   is_master?: boolean | null;
   no_of_orders?: number | null;
+  open_orders_count?: number | null;
   no_of_positions?: number | null;
   pnl_total?: number | null;
 };
@@ -938,7 +939,19 @@ export default function TradeCycles({
                         )}
                       </label>
                     </td>
-                    <td>{cycle.no_of_orders || 0}</td>
+                    <td>
+                      <div className="flex flex-col gap-0.5 tabular-nums text-sm whitespace-nowrap">
+                        <span title="Total orders">{cycle.no_of_orders || 0}</span>
+                        {(cycle.open_orders_count ?? 0) > 0 && (
+                          <span
+                            title="Open orders at broker"
+                            className="font-medium text-[13px] text-warning"
+                          >
+                            Open - {cycle.open_orders_count}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td>{cycle.no_of_positions || 0}</td>
                     <td className={cycle.pnl_total != null && cycle.pnl_total > 0 ? "text-emerald-600 dark:text-emerald-400" : cycle.pnl_total != null && cycle.pnl_total < 0 ? "text-red-600 dark:text-red-400" : ""}>
                       {cycle.pnl_total !== null && cycle.pnl_total !== undefined ? formatMoneyIN(cycle.pnl_total) : formatMoneyIN(0)}

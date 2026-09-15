@@ -54,13 +54,59 @@ export type ProposeAdjustmentResult =
   | { ok: true; data: ProposeAdjustmentResponse }
   | { ok: false; message: string };
 
+export type BookExpiryLabel = "near" | "far";
+
+export interface BookExpiry {
+  expiry: string;
+  label: BookExpiryLabel | null;
+  underlyings: string[];
+}
+
+export function formatBookExpiryDate(iso: string): string {
+  const date = iso.slice(0, 10);
+  const [year, month, day] = date.split("-");
+  if (!year || !month || !day) return iso;
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const monthName = months[Number(month) - 1] ?? month;
+  return `${day} ${monthName} ${year.slice(-2)}`;
+}
+
+export async function fetchStrategyBookExpiries(
+  strategyId: number
+): Promise<BookExpiry[]> {
+  const res = await authFetch(
+    `myadmin/strategies/${strategyId}/adjustments/book-expiries/`
+  );
+  const data = (await res.json().catch(() => ({}))) as {
+    expiries?: BookExpiry[];
+  };
+  if (!res.ok || !Array.isArray(data.expiries)) return [];
+  return data.expiries.filter((row) => typeof row?.expiry === "string" && row.expiry);
+}
+
 export async function proposeStrategyAdjustment(
   strategyId: number,
-  action: ProposeAdjustmentAction
+  action: ProposeAdjustmentAction,
+  expiry?: string | null
 ): Promise<ProposeAdjustmentResult> {
+  const payload: { action: ProposeAdjustmentAction; expiry?: string } = { action };
+  if (expiry) payload.expiry = expiry;
   const res = await authFetch(`myadmin/strategies/${strategyId}/adjustments/propose/`, {
     method: "POST",
-    body: JSON.stringify({ action }),
+    body: JSON.stringify(payload),
   });
   const data = (await res.json().catch(() => ({}))) as
     | ProposeAdjustmentResponse

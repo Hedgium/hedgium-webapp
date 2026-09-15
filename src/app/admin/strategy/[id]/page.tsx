@@ -555,7 +555,9 @@ export default function StrategyDetailPage() {
               {!strategy?.completed && (
                 <AdjustmentTriggerMenu
                   strategyId={strategyId}
-                  onManual={() => setManualAdjustmentInitial({})}
+                  onManual={(expiry) =>
+                    setManualAdjustmentInitial(expiry ? { expiry } : {})
+                  }
                   onProposed={(values) => setManualAdjustmentInitial(values)}
                 />
               )}

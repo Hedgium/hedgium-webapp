@@ -11,6 +11,7 @@ interface LegFormProps {
     onSubmit: (data: BuilderLegCreate | BuilderLegUpdate) => void | Promise<void>;
     onCancel: () => void;
     exchange: string;
+    defaultExpiry?: string | null;
 }
 
 interface Option {
@@ -95,7 +96,7 @@ const reactSelectStyles: StylesConfig<Option> = {
     }),
 };
 
-export default function LegForm({ initialData, builderId, onSubmit, onCancel, exchange }: LegFormProps) {
+export default function LegForm({ initialData, builderId, onSubmit, onCancel, exchange, defaultExpiry }: LegFormProps) {
 
     // Helper function to convert ISO datetime to YYYY-MM-DD format
     const formatDateForInput = (dateString: string | null | undefined): string => {
@@ -130,7 +131,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         strike: 0,
         token: '',
         symbol: '',
-        expiry: null,
+        expiry: formatDateForInput(defaultExpiry) || null,
         option_type: 'CE',
         action: 'BUY',
         // price: 0,
