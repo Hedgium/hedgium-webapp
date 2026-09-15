@@ -349,7 +349,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
       const { data } = await placeOrder(profileId, payload);
 
       if (data.status === "success") {
-        alert.success("Order placed successfully");
+        alert.success("Order submitted");
         setShowPlaceOrderForm(false);
         setOrderForm({
           exchange: "NSE",
@@ -495,8 +495,8 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
       if (data.status === "success") {
         alert.success(
           exitQty === maxQty
-            ? "Position exited successfully"
-            : `Partial exit of ${exitQty} units completed`
+            ? "Exit submitted"
+            : `Partial exit of ${exitQty} units submitted`
         );
         setShowExitPositionForm(false);
         setSelectedPosition(null);
