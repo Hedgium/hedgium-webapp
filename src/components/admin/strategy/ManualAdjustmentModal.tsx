@@ -25,6 +25,7 @@ export interface ManualAdjustmentInitialValues {
     autoTrade?: boolean;
     exchange?: string;
     legs?: AdjustmentLeg[];
+    expiry?: string;
     heading?: string;
     requireEntrySpread?: boolean;
 }
@@ -454,6 +455,7 @@ export default function ManualAdjustmentModal({
                             <LegForm
                                 builderId={0}
                                 exchange={exchange}
+                                defaultExpiry={initialValues?.expiry}
                                 onSubmit={handleLegAdd}
                                 onCancel={() => setAddingLeg(false)}
                             />
