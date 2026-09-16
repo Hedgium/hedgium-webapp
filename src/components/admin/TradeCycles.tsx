@@ -145,6 +145,7 @@ export default function TradeCycles({
   const [compareAllStatus, setCompareAllStatus] = useState<Record<number, "running" | "action_required" | "no_action" | "error">>({});
   const [placingCompareOrder, setPlacingCompareOrder] = useState<string | null>(null);
   const [placingMatchAllCycleId, setPlacingMatchAllCycleId] = useState<number | null>(null);
+  const placingMatchAllRef = useRef(false);
   const [completedOrders, setCompletedOrders] = useState<Set<string>>(new Set());
 
   // Modal state
@@ -667,11 +668,13 @@ export default function TradeCycles({
   }
 
   async function handlePlaceMatchAll(cycle: TradeCycle) {
+    if (placingMatchAllRef.current) return;
     const items = getMatchAllItems(cycle.id);
     if (items.length === 0) {
       alert.error("No orders to place for Match All");
       return;
     }
+    placingMatchAllRef.current = true;
     setPlacingMatchAllCycleId(cycle.id);
     try {
       const res = await authFetch(`trade-cycles/${cycle.id}/place-match-orders-batch/`, {
@@ -721,6 +724,7 @@ export default function TradeCycles({
       const errorMsg = error instanceof Error ? error.message : "Match All failed";
       alert.error(errorMsg);
     } finally {
+      placingMatchAllRef.current = false;
       setPlacingMatchAllCycleId(null);
     }
   }

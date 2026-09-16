@@ -139,7 +139,7 @@ export default function HomePage() {
               </h2>
             </div>
             <p className="text-sm text-base-content/70">
-              PnL, greeks, and spread for this month
+              PnL, greeks, spread, and utilised margin for this month
               {!cyclesLoading && tradeCycles.length > 0 ? (
                 <span>
                   {" "}
@@ -165,7 +165,7 @@ export default function HomePage() {
             <div className="rounded-2xl border border-dashed border-base-300/70 bg-base-100/40 px-6 py-10 text-center backdrop-blur-sm">
               <h3 className="text-base font-semibold text-base-content">No trade cycles this month</h3>
               <p className="mt-1 text-sm text-base-content/70">
-                When a cycle is assigned, it will show here with PnL, greeks, and spread.
+                When a cycle is assigned, it will show here with PnL, greeks, spread, and utilised margin.
               </p>
             </div>
           )}

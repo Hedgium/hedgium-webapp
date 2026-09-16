@@ -12,8 +12,10 @@ interface BuilderItemProps {
     onEditLeg: (leg: BuilderLeg) => void;
     onDeleteLeg: (legId: number) => void;
     onRefreshStatus: (builderId: number) => void;
-    onSendPnlEmails: (builderId: number) => Promise<void>;
-    onSendPnlWhatsapp: (builderId: number) => Promise<void>;
+    onSendPnlEmails?: (builderId: number) => Promise<void>;
+    onSendPnlWhatsapp?: (builderId: number) => Promise<void>;
+    /** Client variant hides PnL staff actions. */
+    variant?: "admin" | "client";
 }
 
 export default function BuilderItem({
@@ -26,7 +28,9 @@ export default function BuilderItem({
     onRefreshStatus,
     onSendPnlEmails,
     onSendPnlWhatsapp,
+    variant = "admin",
 }: BuilderItemProps) {
+    const isClient = variant === "client";
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isSendingPnlEmails, setIsSendingPnlEmails] = useState(false);
     const [isSendingPnlWhatsapp, setIsSendingPnlWhatsapp] = useState(false);
@@ -38,6 +42,7 @@ export default function BuilderItem({
     };
 
     const handleSendPnlEmails = async () => {
+        if (!onSendPnlEmails) return;
         if (!confirm(`Send PnL emails to all clients for "${builder.name}"?`)) {
             return;
         }
@@ -50,6 +55,7 @@ export default function BuilderItem({
     };
 
     const handleSendPnlWhatsapp = async () => {
+        if (!onSendPnlWhatsapp) return;
         if (!confirm(`Send PnL WhatsApp to all clients for "${builder.name}"?`)) {
             return;
         }
@@ -80,13 +86,23 @@ export default function BuilderItem({
                         <span>Entry WS: <span className="">{builder?.entry_ws}%</span></span>
                         <span>Exit WS: <span className="">{builder?.exit_ws}%</span></span>
                         <span>Calc WS: <span className="">{builder?.calculated_ws}%, at {formatDateTimeMinutes(builder?.updated_at)}</span></span>
-
-
+                        {!isClient && (
+                            <span>
+                                Created by:{" "}
+                                <span className="text-base-content/80">
+                                    {builder.created_by_username
+                                        ? builder.created_by_username
+                                        : builder.created_by_id
+                                          ? `User #${builder.created_by_id}`
+                                          : "Staff"}
+                                </span>
+                            </span>
+                        )}
                     </div>
                 </div>
 
                 <div className="flex items-center space-x-2 mt-4 md:mt-0">
-                    {builder.status === 'EXITED' && (
+                    {!isClient && builder.status === 'EXITED' && onSendPnlEmails && onSendPnlWhatsapp && (
                         <>
                             <button
                                 type="button"

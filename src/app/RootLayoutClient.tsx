@@ -17,6 +17,7 @@ const APP_SHELL_PATH_PREFIXES = [
   '/home',
   '/positions',
   '/reports',
+  '/builder',
   '/alerts',
   '/settings',
   '/add-broker',
