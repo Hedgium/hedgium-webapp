@@ -28,6 +28,8 @@ export type TradeCycleStrategyMetrics = {
   wpnl_total?: number | string | null;
   mid_wpnl_total?: number | string | null;
   wpnl_updated_at?: string | null;
+  margin_blocked?: number | string | null;
+  margin_updated_at?: string | null;
 };
 
 /** Current-month list row from `GET trade-cycles/`. */
@@ -50,6 +52,8 @@ export type TradeCycleListItem = {
   wpnl_total?: number | string | null;
   mid_wpnl_total?: number | string | null;
   wpnl_updated_at?: string | null;
+  margin_blocked?: number | string | null;
+  margin_updated_at?: string | null;
   strategy?: TradeCycleStrategyMetrics | null;
 };
 

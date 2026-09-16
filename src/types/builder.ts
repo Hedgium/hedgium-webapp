@@ -79,6 +79,8 @@ export interface StrategyBuilder {
     strategy_template: StrategyTemplate;
     builder_legs: BuilderLeg[];
     supergroup_ids: number[];
+    created_by_id?: number | null;
+    created_by_username?: string | null;
     /** Absolute-delta band lower bound in lakhs (combined sum(net_delta×spot); null with max = disabled) */
     delta_band_min?: number | null;
     /** Absolute-delta band upper bound in lakhs (2 = ₹2L) */
@@ -200,4 +202,19 @@ export interface StrategyBuilderResponse {
     next: string | null;
     previous: string | null;
     results: StrategyBuilder[];
+}
+
+export interface PendingValidationResponse {
+    status: "pending_validation";
+    message: string;
+}
+
+export function isPendingValidation(
+    data: unknown
+): data is PendingValidationResponse {
+    return (
+        typeof data === "object" &&
+        data !== null &&
+        (data as PendingValidationResponse).status === "pending_validation"
+    );
 }

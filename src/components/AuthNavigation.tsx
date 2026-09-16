@@ -4,18 +4,20 @@
 
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Home, Briefcase, Bell, Settings, Sun, Moon, LogOut, FileText, FlaskConical } from "lucide-react";
+import { Home, Briefcase, Bell, Settings, Sun, Moon, LogOut, FileText, FlaskConical, Wrench } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { useNotificationStore } from "@/store/notificationStore";
 import KycStatusIndicator from "@/components/KycStatusIndicator";
 import { useHasAssignedTradeCycles } from "@/hooks/useHasAssignedTradeCycles";
+import { useMemo } from "react";
 
-const tabs = [
+const baseTabs = [
   { name: "Home", href: "/home", icon: <Home className="h-5 w-5" /> },
   { name: "Positions", href: "/positions", icon: <Briefcase className="h-5 w-5" /> },
   { name: "Reports", href: "/reports", icon: <FileText className="h-5 w-5" /> },
+  { name: "Builder", href: "/builder", icon: <Wrench className="h-5 w-5" /> },
   { name: "Alerts", href: "/alerts", icon: <Bell className="h-5 w-5" /> },
   { name: "Settings", href: "/settings", icon: <Settings className="h-5 w-5" /> },
 ];
@@ -39,6 +41,10 @@ export default function AuthNavigation({ sidebar = false }: { sidebar?: boolean 
   const { unreadCount } = useNotificationStore();
   const { hasAssigned, loading: tradeCyclesLoading } = useHasAssignedTradeCycles();
   const showSimulation = user?.is_demo || (!tradeCyclesLoading && hasAssigned === false);
+  const tabs = useMemo(
+    () => (user?.is_demo ? baseTabs.filter((t) => t.href !== "/builder") : baseTabs),
+    [user?.is_demo]
+  );
 
   const sendToPage = (url: string) => {
     router.push(url);

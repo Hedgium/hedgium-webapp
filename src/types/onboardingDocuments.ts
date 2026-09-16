@@ -31,6 +31,8 @@ export type FeeScheduleDocument = {
   sections: DocumentSection[];
 };
 
+export type SoftwareTermsDocument = FeeScheduleDocument;
+
 export type MandateDocument = {
   version: string;
   title: string;

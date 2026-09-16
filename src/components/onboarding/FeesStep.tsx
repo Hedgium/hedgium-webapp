@@ -13,6 +13,7 @@ import type {
   FamilyDeclaration,
   FeeScheduleDocument,
 } from "@/types/onboardingDocuments";
+import { isSaasClient } from "@/lib/onboardingSteps";
 
 type FeesStepProps = {
   onBack: () => void;
@@ -20,7 +21,8 @@ type FeesStepProps = {
 };
 
 export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
-  const { updateUser } = useAuthStore();
+  const { updateUser, user } = useAuthStore();
+  const saas = isSaasClient(user);
   const alert = useAlert();
   const [doc, setDoc] = useState<FeeScheduleDocument | null>(null);
   const [loadingDoc, setLoadingDoc] = useState(true);
@@ -57,8 +59,10 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
   const showFamily = clientCategory === "individual_huf";
 
   const canSubmit = useMemo(() => {
-    if (!doc || !agreed || !clientCategory || !typedFullName.trim()) return false;
+    if (!doc || !agreed || !typedFullName.trim()) return false;
     if (gstin.trim() && gstin.trim().length !== 15) return false;
+    if (saas) return true;
+    if (!clientCategory) return false;
     if (showFamily) {
       if (!familyDeclaration) return false;
       if (familyDeclaration === "has_member" && !familyMemberNames.trim()) return false;
@@ -73,23 +77,33 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
     showFamily,
     familyDeclaration,
     familyMemberNames,
+    saas,
   ]);
 
   const handleAccept = async () => {
-    if (!canSubmit || submitting || !clientCategory) return;
+    if (!canSubmit || submitting) return;
+    if (!saas && !clientCategory) return;
     setSubmitting(true);
     try {
-      const data = await acceptFeeSchedule({
-        client_category: clientCategory,
-        family_declaration: showFamily ? (familyDeclaration as FamilyDeclaration) : null,
-        family_member_names:
-          showFamily && familyDeclaration === "has_member"
-            ? familyMemberNames.trim()
-            : null,
-        gstin: gstin.trim().toUpperCase(),
-        typed_full_name: typedFullName.trim(),
-        accepted: true,
-      });
+      const data = await acceptFeeSchedule(
+        saas
+          ? {
+              gstin: gstin.trim().toUpperCase(),
+              typed_full_name: typedFullName.trim(),
+              accepted: true,
+            }
+          : {
+              client_category: clientCategory as ClientCategory,
+              family_declaration: showFamily ? (familyDeclaration as FamilyDeclaration) : null,
+              family_member_names:
+                showFamily && familyDeclaration === "has_member"
+                  ? familyMemberNames.trim()
+                  : null,
+              gstin: gstin.trim().toUpperCase(),
+              typed_full_name: typedFullName.trim(),
+              accepted: true,
+            }
+      );
       updateUser({
         signup_step: data.signup_step,
         client_category: data.client_category ?? clientCategory,
@@ -117,7 +131,9 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
           <p className="mt-1 text-sm text-base-content/70 print:text-black">
             {doc
               ? `Version ${doc.version}. ${doc.subtitle} — please read carefully.`
-              : "Research Services — please read carefully."}
+              : saas
+                ? "Subscription Fee Schedule — please read carefully."
+                : "Research Services — please read carefully."}
           </p>
         </div>
         <button
@@ -153,9 +169,11 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
               <p className="whitespace-pre-wrap text-left text-xs leading-relaxed text-base-content/90 sm:text-sm print:text-sm print:text-black">
                 {doc.intro}
               </p>
-              <p className="mt-4 whitespace-pre-wrap text-left text-xs font-medium leading-relaxed text-base-content sm:text-sm print:text-sm print:text-black">
-                {doc.headline}
-              </p>
+              {doc.headline ? (
+                <p className="mt-4 whitespace-pre-wrap text-left text-xs font-medium leading-relaxed text-base-content sm:text-sm print:text-sm print:text-black">
+                  {doc.headline}
+                </p>
+              ) : null}
               <div className="mt-6 space-y-4 text-left text-xs leading-relaxed text-base-content/90 sm:text-sm print:text-sm print:text-black">
                 {doc.sections.map((s) => (
                   <section key={s.id} id={s.id} className="scroll-mt-2 print:text-black">
@@ -178,6 +196,7 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
           </h2>
           <p className="text-xs text-base-content/70">Please confirm the following before accepting.</p>
 
+          {!saas && (
           <fieldset className="space-y-2" disabled={!doc}>
             <legend className="text-sm font-medium text-base-content">1. Client category</legend>
             {(
@@ -205,8 +224,9 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
               </label>
             ))}
           </fieldset>
+          )}
 
-          {showFamily && (
+          {!saas && showFamily && (
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium text-base-content">2. Family declaration</legend>
               <p className="text-xs text-base-content/70">
@@ -250,7 +270,7 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-base-content" htmlFor="fee-gstin">
-              {showFamily ? "3" : "2"}. GSTIN (optional)
+              {saas ? "1" : showFamily ? "3" : "2"}. GSTIN (optional)
             </label>
             <input
               id="fee-gstin"
@@ -262,11 +282,17 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
               onChange={(e) => setGstin(e.target.value.toUpperCase())}
               disabled={!doc}
             />
+            {saas && (
+              <p className="text-xs text-base-content/70">
+                Furnish only if you are registered under GST and wish to claim input tax credit. You
+                may leave this blank.
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-base-content" htmlFor="fee-full-name">
-              {showFamily ? "4" : "3"}. Full name (as per PAN)
+              {saas ? "2" : showFamily ? "4" : "3"}. Full name (as per PAN)
             </label>
             <input
               id="fee-full-name"
@@ -294,10 +320,21 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
               onChange={(e) => setAgreed(e.target.checked)}
             />
             <span>
-              I ACCEPT — I have read and understood this Fee Schedule
-              {doc ? ` (version ${doc.version})` : ""}, I understand what I will be charged and when,
-              no assured or guaranteed return has been represented to me, and I agree to be bound by
-              these terms.
+              {saas ? (
+                <>
+                  I ACCEPT — I have read and understood this Fee Schedule
+                  {doc ? ` (version ${doc.version})` : ""}, I understand what I will be charged and
+                  when, no assured or guaranteed return has been represented to me, and I agree to
+                  be bound by these terms.
+                </>
+              ) : (
+                <>
+                  I ACCEPT — I have read and understood this Fee Schedule
+                  {doc ? ` (version ${doc.version})` : ""}, I understand what I will be charged and when,
+                  no assured or guaranteed return has been represented to me, and I agree to be bound by
+                  these terms.
+                </>
+              )}
             </span>
           </label>
 
@@ -317,6 +354,12 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
               "Continue"
             )}
           </button>
+          {saas && (
+            <div className="space-y-1 text-center text-[11px] text-base-content/70">
+              <p>Next: Software Services Terms (Step 2 of 2)</p>
+              <p>Hedgium Services LLP · Support: Saas@hedgium.ai</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -327,7 +370,7 @@ export default function FeesStep({ onBack, onComplete }: FeesStepProps) {
           className="inline-flex min-h-10 w-fit items-center gap-1 rounded-lg px-2 py-2 text-sm font-medium text-base-content transition-colors hover:bg-base-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
           <ChevronLeft className="size-4 shrink-0" aria-hidden="true" />
-          Back to Terms
+          Back to {saas ? "email verification" : "Terms"}
         </button>
       </div>
     </div>

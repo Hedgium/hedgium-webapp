@@ -53,6 +53,7 @@ export interface User {
   is_staff: boolean | false;
   is_demo?: boolean;
   role?: string;
+  client_type?: "saas" | "ra_client";
   onboarding?: {
     email_verified: boolean;
     terms_accepted: boolean;

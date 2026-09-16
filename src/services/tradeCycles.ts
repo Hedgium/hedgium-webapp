@@ -33,7 +33,7 @@ export async function fetchTradeCycles(
   page = 1,
   pageSize = 50
 ): Promise<TradeCycleListResponse> {
-  const res = await authFetch(`trade-cycles/?page=${page}&page_size=${pageSize}`);
+  const res = await authFetch(`trade-cycles/?approved=true&page=${page}&page_size=${pageSize}`);
   if (!res.ok) {
     throw new Error("Failed to fetch trade cycles");
   }

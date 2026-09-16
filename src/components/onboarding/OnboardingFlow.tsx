@@ -17,6 +17,7 @@ import {
   type OnboardingStep,
   type OnboardingViewOverride,
   isOnboardingComplete,
+  isSaasClient,
   resolveOnboardingStep,
 } from "@/lib/onboardingSteps";
 
@@ -24,7 +25,7 @@ const STEPPER_STEP_IDS: Record<OnboardingStep, string | null> = {
   signup: null,
   "verify-email": "initiated",
   terms: "terms",
-  fees: "agreements",
+  fees: "fees",
   mandate: "agreements",
   "complete-profile": "documents_uploaded",
   verification: "documents_uploaded",
@@ -55,6 +56,7 @@ export default function OnboardingFlow() {
   const stepperId = STEPPER_STEP_IDS[step];
   const showStepper = stepperId !== null;
   const contentWidth = WIDE_STEPS.includes(step) ? "max-w-2xl" : "max-w-[400px]";
+  const saas = isSaasClient(user);
 
   const clearOverride = () => setViewOverride(null);
 
@@ -93,14 +95,14 @@ export default function OnboardingFlow() {
       case "terms":
         return (
           <TermsStep
-            onBack={() => setViewOverride("verify-email")}
+            onBack={() => setViewOverride(saas ? "fees" : "verify-email")}
             onComplete={clearOverride}
           />
         );
       case "fees":
         return (
           <FeesStep
-            onBack={() => setViewOverride("terms")}
+            onBack={() => setViewOverride(saas ? "verify-email" : "terms")}
             onComplete={clearOverride}
           />
         );
@@ -139,7 +141,7 @@ export default function OnboardingFlow() {
           <div className="flex w-full justify-center">
             <AuthFlowBrand className="mb-0" />
           </div>
-          <SignUpStepper currentStepId={stepperId!} />
+          <SignUpStepper currentStepId={stepperId!} user={user} />
         </div>
       )}
       {renderStep()}

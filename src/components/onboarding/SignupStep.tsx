@@ -35,6 +35,7 @@ export default function SignupStep({ onComplete }: SignupStepProps) {
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [error, setError] = useState("");
+  const [clientType, setClientType] = useState<"saas" | "ra_client">("saas");
 
   const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -44,6 +45,9 @@ export default function SignupStep({ onComplete }: SignupStepProps) {
     setLastName(user.last_name ?? "");
     setEmail(user.email ?? "");
     setMobile((user.mobile ?? "").replace(/\D/g, "").slice(0, 10));
+    if (user.client_type === "ra_client" || user.client_type === "saas") {
+      setClientType(user.client_type);
+    }
   }, [isEditingExisting, user]);
 
   async function handleRegister(e?: React.FormEvent) {
@@ -153,12 +157,13 @@ export default function SignupStep({ onComplete }: SignupStepProps) {
           mobile: mobile.trim(),
           username: email,
           password,
+          client_type: clientType,
         }),
       });
       if (res.ok) {
         alert.success("Account created. Please verify your email.", { duration: 3000 });
         await login(email, password);
-        updateUser({ signup_step: "initiated" });
+        updateUser({ signup_step: "initiated", client_type: clientType });
         onComplete();
         return;
       }
@@ -196,6 +201,26 @@ export default function SignupStep({ onComplete }: SignupStepProps) {
 
       <div className="rounded-xl border border-base-300 bg-base-100 p-6">
         <form onSubmit={handleRegister} className="space-y-4" noValidate>
+          {!isEditingExisting && (
+            <div>
+              <label htmlFor="client_type" className="block text-xs font-medium text-base-content/80 mb-1.5">
+                Account type
+              </label>
+              <select
+                id="client_type"
+                name="client_type"
+                className="select select-bordered select-sm w-full h-9 text-sm bg-base-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                value={clientType}
+                onChange={(e) =>
+                  setClientType(e.target.value === "ra_client" ? "ra_client" : "saas")
+                }
+              >
+                <option value="saas">SAAS User</option>
+                <option value="ra_client">Research Analyst Client</option>
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="first_name" className="block text-xs font-medium text-base-content/80 mb-1.5">First name</label>

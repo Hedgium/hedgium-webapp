@@ -75,9 +75,17 @@ interface BuilderFormProps {
     initialData?: StrategyBuilder;
     onSubmit: (data: StrategyBuilderCreate | StrategyBuilderUpdate) => void | Promise<void>;
     onCancel: () => void;
+    /** Client variant hides staff-only fields (supergroups, status select, dividends). */
+    variant?: "admin" | "client";
 }
 
-export default function BuilderForm({ initialData, onSubmit, onCancel }: BuilderFormProps) {
+export default function BuilderForm({
+    initialData,
+    onSubmit,
+    onCancel,
+    variant = "admin",
+}: BuilderFormProps) {
+    const isClient = variant === "client";
     const [formData, setFormData] = useState<Partial<StrategyBuilderCreate>>({
         name: '',
         exchange: 'NFO',
@@ -251,6 +259,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
     }, [strategyTemplates, initialData]);
 
     useEffect(() => {
+        if (isClient) return;
         const fetchSupergroups = async () => {
             setLoadingSupergroups(true);
             try {
@@ -268,7 +277,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
             }
         };
         fetchSupergroups();
-    }, []);
+    }, [isClient]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -530,6 +539,10 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
         setIsSubmitting(true);
         try {
             const payload = { ...formData } as StrategyBuilderCreate;
+            if (isClient) {
+                payload.status = "CHECKING";
+                payload.supergroup_ids = [];
+            }
             const legPreset = buildLegPresetPayload();
             if (!initialData && legPreset) {
                 payload.leg_preset = legPreset;
@@ -610,13 +623,22 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                 </div>
                 <div className="form-control">
                     <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Status</span></label>
-                    <select name="status" value={formData.status} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
-                        <option value="CHECKING">CHECKING</option>
-                        <option value="ACTIVE">ACTIVE</option>
-                        <option value="EXIT_CHECKING">EXIT_CHECKING</option>
-                        <option value="EXITED">EXITED</option>
-                        <option value="INACTIVE">INACTIVE</option>
-                    </select>
+                    {isClient ? (
+                        <input
+                            type="text"
+                            value="CHECKING"
+                            readOnly
+                            className="input input-bordered input-sm h-9 w-full bg-base-200"
+                        />
+                    ) : (
+                        <select name="status" value={formData.status} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
+                            <option value="CHECKING">CHECKING</option>
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="EXIT_CHECKING">EXIT_CHECKING</option>
+                            <option value="EXITED">EXITED</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                        </select>
+                    )}
                 </div>
                 {/* <div className="form-control">
                     <label className="label"><span className="label-text">Strike Step</span></label>
@@ -803,6 +825,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     </label>
                 </div>
 
+                {!isClient && (
                 <div className="form-control md:col-span-2">
                     <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Supergroups</span></label>
                     <div className="w-full h-28 overflow-y-auto rounded-btn border border-base-300 bg-base-100 p-2 space-y-1">
@@ -835,6 +858,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                         <span className="text-xs text-base-content/60">Select one or more supergroups</span>
                     </label>
                 </div>
+                )}
 
             </div>
             </div>
@@ -903,7 +927,7 @@ export default function BuilderForm({ initialData, onSubmit, onCancel }: Builder
                     </label>
                 </div>
 
-                {initialData ? (
+                {initialData && !isClient ? (
                     <UnderlyingDividendSection
                         symbols={(initialData.builder_legs || []).map((leg) => leg.symbol)}
                     />

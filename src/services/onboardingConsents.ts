@@ -10,12 +10,17 @@ export type {
 } from "@/types/onboardingDocuments";
 
 export type FeeScheduleAcceptPayload = {
-  client_category: ClientCategory;
+  client_category?: ClientCategory;
   family_declaration?: FamilyDeclaration | null;
   family_member_names?: string | null;
   gstin?: string;
   typed_full_name: string;
   accepted: true;
+};
+
+export type TermsAcceptPayload = {
+  accepted: true;
+  typed_full_name?: string;
 };
 
 export type MandateAcceptPayload = {
@@ -76,11 +81,13 @@ export async function fetchMandateDocument() {
   );
 }
 
-export async function acceptResearchTerms(): Promise<OnboardingConsentUser> {
+export async function acceptResearchTerms(
+  payload?: TermsAcceptPayload
+): Promise<OnboardingConsentUser> {
   const res = await authFetch("users/me/terms/accept/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ accepted: true }),
+    body: JSON.stringify({ accepted: true, ...payload }),
   });
   if (!res.ok) {
     throw new Error(await parseError(res));

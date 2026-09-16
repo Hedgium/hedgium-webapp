@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
+import { isSaasClient, type OnboardingUserLike } from "@/lib/onboardingSteps";
 
 type Step = {
   id: string;
   name: string;
 };
 
-const steps: Step[] = [
+const researchSteps: Step[] = [
   { id: "initiated", name: "Initiated" },
   { id: "terms", name: "Terms" },
   { id: "agreements", name: "Fees & Mandate" },
@@ -15,11 +16,21 @@ const steps: Step[] = [
   { id: "verified", name: "Verified" },
 ];
 
+const saasSteps: Step[] = [
+  { id: "initiated", name: "Initiated" },
+  { id: "fees", name: "Fee Schedule" },
+  { id: "terms", name: "Software Terms" },
+  { id: "documents_uploaded", name: "Upload Documents" },
+  { id: "verified", name: "Verified" },
+];
+
 interface StepperProps {
   currentStepId: string;
+  user?: OnboardingUserLike | null;
 }
 
-const SignUpStepper: React.FC<StepperProps> = ({ currentStepId }) => {
+const SignUpStepper: React.FC<StepperProps> = ({ currentStepId, user }) => {
+  const steps = isSaasClient(user) ? saasSteps : researchSteps;
   const currentIndex = steps.findIndex((step) => step.id === currentStepId);
 
   return (
@@ -30,10 +41,10 @@ const SignUpStepper: React.FC<StepperProps> = ({ currentStepId }) => {
             key={step.id}
             className={`step text-xs ${
               idx < currentIndex
-                ? "step-secondary" // ✅ completed
+                ? "step-secondary"
                 : idx === currentIndex
-                ? "step-secondary" // ⏳ current
-                : "" // 🔲 yet to be completed
+                ? "step-secondary"
+                : ""
             }`}
           >
             {step.name}

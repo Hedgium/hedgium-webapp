@@ -141,12 +141,11 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive = true, isSimula
     pickMetric<SpotByUnderlying>(cycle, "greek_delta_by_underlying"),
     pickMetric<SpotByUnderlying>(cycle, "greek_spot_by_underlying")
   );
-  const wpnl = toNum(pickMetric(cycle, "wpnl_total"));
-  const midWpnl = toNum(pickMetric(cycle, "mid_wpnl_total"));
   const spread = toNum(pickMetric(cycle, "atm_spread"));
   const greekUpdatedAt = pickMetric<string>(cycle, "greek_updated_at");
-  const wpnlUpdatedAt = pickMetric<string>(cycle, "wpnl_updated_at");
   const spreadUpdatedAt = pickMetric<string>(cycle, "spread_updated_at");
+  const marginBlocked = toNum(pickMetric(cycle, "margin_blocked"));
+  const marginUpdatedAt = pickMetric<string>(cycle, "margin_updated_at");
 
   async function handleActivate() {
     if (activating) return;
@@ -241,15 +240,13 @@ const TradeCycleCard: React.FC<Props> = ({ tradeCycle, isActive = true, isSimula
               sub={formatSnapshotAt(spreadUpdatedAt) ?? "Not updated"}
             />
             <MetricCell
-              label="WPNL / Mid"
+              label="Utilised margin"
               value={
-                <>
-                  <span className={pnlClass(wpnl)}>{wpnl == null ? "—" : formatMoneyIN(wpnl)}</span>
-                  {" / "}
-                  <span className={pnlClass(midWpnl)}>{midWpnl == null ? "—" : formatMoneyIN(midWpnl)}</span>
-                </>
+                marginUpdatedAt != null && marginBlocked != null
+                  ? formatLakhsIN(marginBlocked)
+                  : "—"
               }
-              sub={formatSnapshotAt(wpnlUpdatedAt) ?? "Not updated"}
+              sub={formatSnapshotAt(marginUpdatedAt) ?? "Not updated"}
             />
           </div>
         )}
