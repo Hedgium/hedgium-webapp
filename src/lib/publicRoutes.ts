@@ -12,6 +12,7 @@ const PUBLIC_PATH_EXACT = new Set([
 /** Prefix match: path equals prefix or starts with prefix + "/" */
 const PUBLIC_PATH_PREFIXES = [
   "/reset-password/",
+  "/pay/",
 ] as const;
 
 /** Root URL where the login form lives (`/`). */
