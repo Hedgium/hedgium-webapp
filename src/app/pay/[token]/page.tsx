@@ -13,6 +13,15 @@ const CLIENT_TYPE_LABEL: Record<string, string> = {
   saas: "Software licence",
 };
 
+function BankRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-3">
+      <dt className="text-base-content/60 shrink-0">{label}</dt>
+      <dd className="text-right font-medium break-all">{value}</dd>
+    </div>
+  );
+}
+
 export default function PublicPayPage() {
   const params = useParams();
   const token = typeof params.token === "string" ? params.token : "";
@@ -177,6 +186,9 @@ export default function PublicPayPage() {
                     <QRCodeSVG value={invoice.upi_payload} size={200} level="M" />
                   </div>
                   <p className="text-xs text-base-content/50">{invoice.payee_name}</p>
+                  {invoice.bank.upi_id ? (
+                    <p className="font-mono text-sm">{invoice.bank.upi_id}</p>
+                  ) : null}
                   <a href={invoice.upi_payload} className="btn btn-primary btn-sm">
                     Open UPI app
                   </a>
@@ -184,6 +196,28 @@ export default function PublicPayPage() {
               ) : (
                 <p className="text-error text-sm">UPI details unavailable.</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {canPay && !isPaid && invoice.bank && (
+          <div className="card bg-base-100/80 border border-base-300 backdrop-blur">
+            <div className="card-body gap-2">
+              <h2 className="font-semibold">Bank transfer</h2>
+              <p className="text-sm text-base-content/70">
+                You can also pay by NEFT / IMPS / RTGS using these details.
+              </p>
+              <dl className="text-sm space-y-1.5">
+                <BankRow label="Beneficiary" value={invoice.bank.beneficiary} />
+                <BankRow label="Bank" value={invoice.bank.bank_name} />
+                <BankRow label="Account number" value={invoice.bank.account_number} />
+                <BankRow label="Account type" value={invoice.bank.account_type} />
+                <BankRow label="IFSC" value={invoice.bank.ifsc} />
+                <BankRow label="Branch" value={invoice.bank.branch} />
+                {invoice.bank.upi_id ? (
+                  <BankRow label="UPI ID" value={invoice.bank.upi_id} />
+                ) : null}
+              </dl>
             </div>
           </div>
         )}

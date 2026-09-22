@@ -50,6 +50,16 @@ export interface Invoice {
   last_quarter_paid: LastQuarterPaid | null;
 }
 
+export interface InvoiceBankDetails {
+  beneficiary: string;
+  bank_name: string;
+  account_number: string;
+  account_type: string;
+  ifsc: string;
+  branch: string;
+  upi_id: string;
+}
+
 export interface PublicInvoice {
   invoice_no: string;
   client_type: string;
@@ -65,6 +75,7 @@ export interface PublicInvoice {
   payee_name: string;
   hedgium_gstin: string | null;
   client_gstin: string | null;
+  bank: InvoiceBankDetails;
 }
 
 export interface CurrentQuarter {
