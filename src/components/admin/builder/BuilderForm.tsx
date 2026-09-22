@@ -89,7 +89,7 @@ export default function BuilderForm({
     const [formData, setFormData] = useState<Partial<StrategyBuilderCreate>>({
         name: '',
         exchange: 'NFO',
-        status: 'CHECKING',
+        status: isClient ? 'SAAS_CHECKING' : 'CHECKING',
         entry_ws: 0,
         exit_ws: 0,
         entry_condition: 'LESS',
@@ -540,7 +540,7 @@ export default function BuilderForm({
         try {
             const payload = { ...formData } as StrategyBuilderCreate;
             if (isClient) {
-                payload.status = "CHECKING";
+                payload.status = "SAAS_CHECKING";
                 payload.supergroup_ids = [];
             }
             const legPreset = buildLegPresetPayload();
@@ -626,13 +626,14 @@ export default function BuilderForm({
                     {isClient ? (
                         <input
                             type="text"
-                            value="CHECKING"
+                            value="SAAS_CHECKING"
                             readOnly
                             className="input input-bordered input-sm h-9 w-full bg-base-200"
                         />
                     ) : (
                         <select name="status" value={formData.status} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
                             <option value="CHECKING">CHECKING</option>
+                            <option value="SAAS_CHECKING">SAAS_CHECKING</option>
                             <option value="ACTIVE">ACTIVE</option>
                             <option value="EXIT_CHECKING">EXIT_CHECKING</option>
                             <option value="EXITED">EXITED</option>

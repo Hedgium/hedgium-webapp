@@ -28,9 +28,8 @@ export default function ProfileLiveModal({ profileId, onClose }: ProfileLiveModa
       <header className="flex shrink-0 items-center justify-between gap-4 border-b border-base-300 px-4 py-3">
         <div className="min-w-0">
           <h3 id="profile-live-modal-title" className="truncate text-lg font-semibold">
-            Live positions & orders
+            Live
           </h3>
-          <p className="truncate text-sm text-base-content/70">Profile #{profileId}</p>
         </div>
         <button
           type="button"

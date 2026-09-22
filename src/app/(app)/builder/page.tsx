@@ -272,6 +272,7 @@ export default function ClientBuilderPage() {
             >
               <option value="">All Statuses</option>
               <option value="CHECKING">Checking</option>
+              <option value="SAAS_CHECKING">SAAS Checking</option>
               <option value="ACTIVE">Active</option>
               <option value="EXIT_CHECKING">Exit Checking</option>
               <option value="EXIT_STARTED">Exit Started</option>

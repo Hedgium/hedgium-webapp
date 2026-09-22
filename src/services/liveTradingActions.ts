@@ -35,6 +35,18 @@ export async function placeOrder(profileId: string | number, payload: PlaceOrder
   return { ok: response.ok, data } as ApiResult<typeof data>;
 }
 
+export async function placeTestOrder(profileId: string | number, payload: PlaceOrderPayload) {
+  const response = await authFetch(`orders/live/orders/${profileId}/place-test/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  return { ok: response.ok, data } as ApiResult<typeof data>;
+}
+
 export async function modifyOrder(
   profileId: string | number,
   orderId: string,

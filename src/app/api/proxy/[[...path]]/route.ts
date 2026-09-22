@@ -41,6 +41,13 @@ function isSessionExempt(normalizedPath: string, method: string): boolean {
     return true;
   if (normalizedPath === "users/" && method === "POST") return true;
   if (normalizedPath === "leads/" && method === "POST") return true;
+  if (normalizedPath.startsWith("billing/pay/") && method === "GET") return true;
+  if (
+    normalizedPath.startsWith("billing/pay/") &&
+    normalizedPath.endsWith("/submit/") &&
+    method === "POST"
+  )
+    return true;
   return false;
 }
 

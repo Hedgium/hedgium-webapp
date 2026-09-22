@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
-import { placeOrder, modifyOrder, cancelOrder } from "@/services/liveTradingActions";
+import { placeOrder, placeTestOrder, modifyOrder, cancelOrder } from "@/services/liveTradingActions";
 import useAlert from "@/hooks/useAlert";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -23,6 +23,7 @@ import {
   ArrowRightLeft,
   BarChart3,
   PieChart,
+  Radio,
   History,
 } from "lucide-react";
 import Link from "next/link";
@@ -178,7 +179,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   const [selectedOrder, setSelectedOrder] = useState<LiveOrder | null>(null);
   const [historyOrder, setHistoryOrder] = useState<LiveOrder | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<LivePosition | null>(null);
-  const [placingOrder, setPlacingOrder] = useState(false);
+  const [placingKind, setPlacingKind] = useState<"place" | "test" | null>(null);
   const [modifyingOrder, setModifyingOrder] = useState(false);
   const [exitingPosition, setExitingPosition] = useState(false);
   const [exitQuantity, setExitQuantity] = useState<string>("");
@@ -316,9 +317,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     fetchTrades();
   }, [fetchProfile, fetchPositions, fetchHoldings, fetchOrders, fetchTrades]);
 
-  const handlePlaceOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const submitPlaceOrder = async (kind: "place" | "test") => {
     const parsedQuantity = parseInt(orderForm.quantity, 10);
     if (!Number.isFinite(parsedQuantity) || parsedQuantity < 1) {
       alert.error("Quantity must be at least 1");
@@ -334,22 +333,25 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
       }
     }
 
-    setPlacingOrder(true);
-    try {
-      const payload = {
-        exchange: orderForm.exchange,
-        tradingsymbol: orderForm.tradingsymbol.trim(),
-        transaction_type: orderForm.transaction_type,
-        quantity: parsedQuantity,
-        order_type: orderForm.order_type,
-        product: orderForm.product,
-        price: parsedPrice,
-      };
+    const payload = {
+      exchange: orderForm.exchange,
+      tradingsymbol: orderForm.tradingsymbol.trim(),
+      transaction_type: orderForm.transaction_type,
+      quantity: parsedQuantity,
+      order_type: orderForm.order_type,
+      product: orderForm.product,
+      price: parsedPrice,
+    };
 
-      const { data } = await placeOrder(profileId, payload);
+    setPlacingKind(kind);
+    try {
+      const { data } =
+        kind === "test"
+          ? await placeTestOrder(profileId, payload)
+          : await placeOrder(profileId, payload);
 
       if (data.status === "success") {
-        alert.success("Order submitted");
+        alert.success(kind === "test" ? "Test order placed" : "Order submitted");
         setShowPlaceOrderForm(false);
         setOrderForm({
           exchange: "NSE",
@@ -363,14 +365,23 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         fetchOrders();
         fetchTrades();
       } else {
-        alert.error(liveApiError(data, "Failed to place order"));
+        alert.error(
+          liveApiError(data, kind === "test" ? "Failed to place test order" : "Failed to place order")
+        );
       }
     } catch (error) {
-      console.error("Error placing order:", error);
-      alert.error(liveApiError(error, "Error placing order"));
+      console.error(kind === "test" ? "Error placing test order:" : "Error placing order:", error);
+      alert.error(
+        liveApiError(error, kind === "test" ? "Error placing test order" : "Error placing order")
+      );
     } finally {
-      setPlacingOrder(false);
+      setPlacingKind(null);
     }
+  };
+
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitPlaceOrder("place");
   };
 
   const handleModifyOrder = async (e: React.FormEvent) => {
@@ -536,24 +547,50 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     </div>
   );
 
+  const liveTitle = profile
+    ? [profile.user?.first_name, profile.broker_name, profile.broker_user_id]
+        .filter(Boolean)
+        .join(" · ") || `Profile #${profileId}`
+    : `Profile #${profileId}`;
+
   return (
     <>
-      {variant === "page" ? (
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button type="button" onClick={() => router.back()} className="btn btn-ghost btn-sm">
-              <ArrowLeft size={20} />
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          {variant === "page" && (
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="btn btn-ghost btn-sm btn-square"
+              aria-label="Back"
+            >
+              <ArrowLeft size={18} />
             </button>
-            <div>
-              <h1 className="text-2xl font-bold">Live trading</h1>
-              {profile && (
-                <p className="text-sm text-gray-400">
-                  {profile.user?.email} - {profile.broker_name}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-2">
+          )}
+          <Radio
+            size={16}
+            className={`shrink-0 ${profile?.broker_logged_in ? "text-success" : "text-base-content/40"}`}
+            aria-hidden
+          />
+          <h1 className="min-w-0 truncate text-sm font-semibold" title={liveTitle}>
+            {liveTitle}
+          </h1>
+          <span className="tabular-nums text-sm font-semibold text-primary">
+            {profile?.margin_equity != null ? formatMoneyIN(profile.margin_equity) : "—"}
+          </span>
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs btn-square"
+            onClick={refreshMarginForProfile}
+            disabled={refreshingMargin}
+            title="Refresh margin"
+            aria-label="Refresh margin"
+          >
+            <RefreshCw size={14} className={refreshingMargin ? "animate-spin" : ""} />
+          </button>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {variant === "page" && (
             <Link
               href={`/admin/profiles/${profileId}/reports`}
               className="btn btn-outline btn-sm gap-2"
@@ -561,49 +598,16 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
               <BarChart3 size={16} />
               Reports
             </Link>
-            {placeOrderButton}
-          </div>
-        </div>
-      ) : (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-base-300">
-          <div className="min-w-0">
-            {profile ? (
-              <p className="truncate text-sm text-base-content/70">
-                {profile.user?.email} — {profile.broker_name}
-              </p>
-            ) : (
-              <p className="text-sm text-base-content/50">Profile #{profileId}</p>
-            )}
-          </div>
+          )}
           {placeOrderButton}
         </div>
-      )}
-
-      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-base-200 p-3">
-        <span className="text-sm text-base-content/70">Margin</span>
-        <span className="badge badge-lg badge-primary">
-          {profile?.margin_equity != null ? formatMoneyIN(profile.margin_equity) : "—"}
-        </span>
-        <span className="text-xs text-base-content/60">
-          Updated: {formatDateTimeCell(profile?.margin_updated_at ?? null)}
-        </span>
-        <button
-          type="button"
-          className="btn btn-ghost btn-xs"
-          onClick={refreshMarginForProfile}
-          disabled={refreshingMargin}
-          title="Refresh margin"
-        >
-          <RefreshCw size={14} className={refreshingMargin ? "animate-spin" : ""} />
-          Refresh
-        </button>
       </div>
 
-      <div className="mb-5">
+      <div className="mb-2 mt-4">
         <div
           role="tablist"
           aria-label="Live broker data"
-          className="flex w-full gap-1 rounded-2xl border border-base-300/70 bg-gradient-to-b from-base-200/80 to-base-200/40 shadow-inner sm:gap-1.5"
+          className="flex w-full gap-1 rounded-xl border border-base-300/70 bg-base-200/50 p-0.5 sm:gap-1 sm:p-1"
         >
           {LIVE_TAB_CONFIG.map(({ id, label, shortLabel, icon: Icon }) => {
             const isActive = activeTab === id;
@@ -623,10 +627,10 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 aria-controls={`live-panel-${id}`}
                 id={`live-tab-${id}`}
                 onClick={() => setActiveTab(id)}
-                className={`flex cursor-pointer min-h-[48px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-2 outline-none transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-200 sm:flex-row sm:gap-2.5 sm:px-4 sm:py-2.5 ${
+                className={`flex min-h-11 min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-200 sm:flex-row sm:gap-1   sm:px-1 sm:py-1.5 ${
                   isActive
-                    ? "bg-base-100 text-base-content shadow-md ring-1 ring-base-300/60 dark:ring-base-content/15"
-                    : "text-base-content/50 hover:bg-base-100/35 hover:text-base-content/90 active:scale-[0.98]"
+                    ? "bg-base-100 text-base-content ring-1 ring-base-300/60"
+                    : "text-base-content/50 hover:bg-base-100/35 hover:text-base-content/90"
                 }`}
               >
                 <Icon
@@ -656,15 +660,15 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
       </div>
 
       <div
-        className="mb-6 rounded-lg bg-base-100 p-6"
+        className="mb-4 rounded-lg bg-base-100 p-3"
         role="tabpanel"
         id={`live-panel-${activeTab}`}
         aria-labelledby={`live-tab-${activeTab}`}
       >
         {activeTab === "positions" && (
           <>
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold">Live positions</h2>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold">Positions</h2>
               <div>
                 <span className="badge badge-md badge-outline">
                   {positions.length} {positions.length === 1 ? "position" : "positions"}
@@ -699,21 +703,21 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
               const totalPnlColor = totalPnl >= 0 ? "text-green-400" : "text-red-400";
 
               return (
-                <div className="mb-4 grid grid-cols-3 gap-4 rounded-lg bg-base-200 p-4">
+                <div className="mb-3 grid grid-cols-3 gap-2 rounded-lg bg-base-200 px-2 py-2">
                   <div className="text-center">
-                    <div className="mb-1 text-xs uppercase tracking-wide text-gray-500">Total P&L</div>
-                    <div className={`flex items-center justify-center gap-1 text-lg font-bold ${totalPnlColor}`}>
-                      {totalPnl >= 0 ? <TrendingUp width={16} /> : <TrendingDown width={16} />}
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">P&L</div>
+                    <div className={`flex items-center justify-center gap-1 text-sm font-bold tabular-nums ${totalPnlColor}`}>
+                      {totalPnl >= 0 ? <TrendingUp width={14} /> : <TrendingDown width={14} />}
                       {formatMoneyIN(totalPnl)}
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="mb-1 text-xs uppercase tracking-wide text-gray-500">Total Realised</div>
-                    <div className="text-lg font-semibold">{formatMoneyIN(totalRealised)}</div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">Realised</div>
+                    <div className="text-sm font-semibold tabular-nums">{formatMoneyIN(totalRealised)}</div>
                   </div>
                   <div className="text-center">
-                    <div className="mb-1 text-xs uppercase tracking-wide text-gray-500">Total Unrealised</div>
-                    <div className="text-lg font-semibold">{formatMoneyIN(totalUnrealised)}</div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">Unrealised</div>
+                    <div className="text-sm font-semibold tabular-nums">{formatMoneyIN(totalUnrealised)}</div>
                   </div>
                 </div>
               );
@@ -799,8 +803,8 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
 
         {activeTab === "orders" && (
           <>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Live orders</h2>
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Orders</h2>
               <div>
                 <span className="badge badge-md badge-outline">
                   {orders.length} {orders.length === 1 ? "order" : "orders"}
@@ -932,8 +936,8 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
 
         {activeTab === "holdings" && (
           <>
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold">Live holdings</h2>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold">Holdings</h2>
               <div className="flex items-center gap-2">
                 <span className="badge badge-md badge-outline">
                   {holdings.length} {holdings.length === 1 ? "holding" : "holdings"}
@@ -1033,8 +1037,8 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
 
         {activeTab === "trades" && (
           <>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Live trades</h2>
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Trades</h2>
               <div>
                 <span className="badge badge-md badge-outline">
                   {trades.length} {trades.length === 1 ? "trade" : "trades"}
@@ -1289,16 +1293,36 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                   type="button"
                   className="btn btn-sm"
                   onClick={() => setShowPlaceOrderForm(false)}
-                  disabled={placingOrder}
+                  disabled={placingKind !== null}
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={(e) => {
+                    const form = e.currentTarget.form;
+                    if (form && !form.reportValidity()) return;
+                    submitPlaceOrder("test");
+                  }}
+                  disabled={placingKind !== null}
+                >
+                  {placingKind === "test" ? (
+                    <span className="loading loading-spinner"></span>
+                  ) : (
+                    "Test Order"
+                  )}
+                </button>
+                <button
                   type="submit"
                   className="btn btn-primary btn-sm"
-                  disabled={placingOrder}
+                  disabled={placingKind !== null}
                 >
-                  {placingOrder ? <span className="loading loading-spinner"></span> : "Place Order"}
+                  {placingKind === "place" ? (
+                    <span className="loading loading-spinner"></span>
+                  ) : (
+                    "Place Order"
+                  )}
                 </button>
               </div>
             </form>
