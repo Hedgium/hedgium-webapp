@@ -39,6 +39,8 @@ export interface MetricSnapshotRow {
   pe_premium?: number | string | null;
   ce_premium?: number | string | null;
   by_expiry?: MetricSnapshotByExpiry[] | null;
+  margin_utilised?: number | string | null;
+  one_day_var?: number | string | null;
   created_at: string;
 }
 
@@ -290,6 +292,8 @@ function buildMetricSnapshotsCsv(rows: MetricSnapshotRow[]): string {
     "atm_strike_spread",
     "famous_strike_spread",
     "straddle_level",
+    "margin_utilised",
+    "one_day_var",
     "delta_band_min",
     "delta_band_max",
     "trade_count",
@@ -320,6 +324,8 @@ function buildMetricSnapshotsCsv(rows: MetricSnapshotRow[]): string {
       csvCell(toNum(row.atm_strike_spread)),
       csvCell(toNum(row.famous_strike_spread)),
       csvCell(toNum(row.straddle_level)),
+      csvCell(toNum(row.margin_utilised)),
+      csvCell(toNum(row.one_day_var)),
       csvCell(toNum(row.delta_band_min)),
       csvCell(toNum(row.delta_band_max)),
       csvCell(row.trade_count),
@@ -502,6 +508,18 @@ export default function StrategyMetricSnapshotsModal({
                   <th className="text-right" title="Avg of near-expiry straddles below and above the future">
                     Straddle lvl
                   </th>
+                  <th
+                    className="text-right"
+                    title="Blocked margin (SPAN + exposure) from Kite basket"
+                  >
+                    Utilised
+                  </th>
+                  <th
+                    className="text-right"
+                    title="1-day VAR = configured % of SPAN"
+                  >
+                    1D VaR
+                  </th>
                   <th className="text-right" title="Absolute delta = net Δ × spot (lakhs)">
                     Abs Δ (L)
                   </th>
@@ -545,6 +563,12 @@ export default function StrategyMetricSnapshotsModal({
                     </td>
                     <td className="text-right tabular-nums whitespace-nowrap">
                       {formatPct(row.straddle_level)}
+                    </td>
+                    <td className="text-right tabular-nums whitespace-nowrap">
+                      {formatLakhCell(row.margin_utilised)}
+                    </td>
+                    <td className="text-right tabular-nums whitespace-nowrap">
+                      {formatLakhCell(row.one_day_var)}
                     </td>
                     <td className="text-right">
                       <AbsoluteDeltaCell

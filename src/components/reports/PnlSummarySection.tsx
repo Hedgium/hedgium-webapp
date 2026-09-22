@@ -14,6 +14,50 @@ function formatDate(d: string) {
   });
 }
 
+/** Local YYYY-MM-DD (browser TZ; app is IST-oriented). */
+function toISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** Calendar starts matching backend `build_pnl_summary` / FY quarter rules. */
+function currentPeriodStarts(now = new Date()): {
+  monthStart: string;
+  quarterStart: string;
+  ytdStart: string;
+} {
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-based
+  const monthStart = toISODate(new Date(year, month, 1));
+
+  const fyYear = month >= 3 ? year : year - 1; // Apr–Mar FY
+  const ytdStart = toISODate(new Date(fyYear, 3, 1)); // 1 Apr
+
+  let quarterStart: string;
+  if (month >= 3) {
+    const qIndex = Math.floor((month - 3) / 3);
+    const startMonth = 3 + qIndex * 3; // Apr=3, Jul=6, Oct=9
+    quarterStart = toISODate(new Date(year, startMonth, 1));
+  } else {
+    quarterStart = toISODate(new Date(year, 0, 1)); // Q4: 1 Jan
+  }
+
+  return { monthStart, quarterStart, ytdStart };
+}
+
+function periodDetail(
+  calendarLabel: string,
+  periodStart: string,
+  joinDate: string | null | undefined
+): string {
+  if (joinDate && joinDate > periodStart) {
+    return `(${formatDate(joinDate)} → Till date)`;
+  }
+  return `(${calendarLabel})`;
+}
+
 function signedClass(value: number): string {
   if (value > 0) return "text-success";
   if (value < 0) return "text-error";
@@ -85,8 +129,10 @@ export default function PnlSummarySection({
 }: PnlSummarySectionProps) {
   const e2PnlTiles = useMemo((): E2PnlTile[] => {
     const selfManaged = pnlSummary.e1_hedgium_managed === false;
-    const allTimeDetail = pnlSummary.pnl_inception_date
-      ? `(${formatDate(pnlSummary.pnl_inception_date)} → Till date)`
+    const joinDate = pnlSummary.pnl_inception_date;
+    const { monthStart, quarterStart, ytdStart } = currentPeriodStarts();
+    const allTimeDetail = joinDate
+      ? `(${formatDate(joinDate)} → Till date)`
       : accountCreatedAt
         ? `(${formatDate(accountCreatedAt)} → Till date)`
         : "(Inception → Till date)";
@@ -138,7 +184,7 @@ export default function PnlSummarySection({
       {
         key: "month",
         label: "Monthly (Current)",
-        detail: `(${pnlSummary.month})`,
+        detail: periodDetail(pnlSummary.month, monthStart, joinDate),
         lines: buildLines(
           pnlSummary.pnl ?? 0,
           pnlSummary.pnl_pct,
@@ -154,7 +200,7 @@ export default function PnlSummarySection({
       {
         key: "quarter",
         label: "Quarterly (Current)",
-        detail: `(${pnlSummary.quarter})`,
+        detail: periodDetail(pnlSummary.quarter, quarterStart, joinDate),
         lines: buildLines(
           pnlSummary.quarter_pnl ?? 0,
           pnlSummary.quarter_pnl_pct,
@@ -170,7 +216,7 @@ export default function PnlSummarySection({
       {
         key: "ytd",
         label: "YTD (Current)",
-        detail: `(${pnlSummary.fy})`,
+        detail: periodDetail(pnlSummary.fy, ytdStart, joinDate),
         lines: buildLines(
           pnlSummary.ytd_pnl ?? 0,
           pnlSummary.ytd_pnl_pct,
