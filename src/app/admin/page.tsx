@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import { CheckCircle, Edit2, Info, LayoutList, ListRestart, RefreshCw } from "lucide-react";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
+import { waitForCeleryTaskComplete } from "@/utils/celeryTask";
 
 import useAlert from "@/hooks/useAlert";
 import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
@@ -128,6 +129,17 @@ const ORDER_OPTIONS = [
   { value: "-name", label: "Name (Z–A)" },
 ] as const;
 
+/** Matches backend get_system_config("ONE_DAY_VAR_PCT_OF_SPAN", default=30). */
+const DEFAULT_ONE_DAY_VAR_PCT = 30;
+
+function oneDayVarFromSpan(
+  span: number | null,
+  pct: number
+): number | null {
+  if (span == null) return null;
+  return (span * pct) / 100;
+}
+
 function buildStrategiesUrl(params: {
   completed: string;
   orderBy: string;
@@ -136,43 +148,12 @@ function buildStrategiesUrl(params: {
 }): string {
   const search = new URLSearchParams();
   search.set("page", "1");
-  search.set("page_size", "20");
+  search.set("page_size", params.completed === "false" ? "1000" : "20");
   if (params.completed) search.set("completed", params.completed);
   if (params.orderBy) search.set("order_by", params.orderBy);
   if (params.startDate) search.set("start_date", params.startDate);
   if (params.endDate) search.set("end_date", params.endDate);
   return `myadmin/strategies/?${search.toString()}`;
-}
-
-const CELERY_TERMINAL_STATUSES = new Set([
-  "SUCCESS",
-  "FAILURE",
-  "REVOKED",
-]);
-
-/** Poll until Celery reports a terminal state (or timeout). */
-async function waitForCeleryTaskComplete(
-  taskId: string,
-  options: { pollMs?: number; maxMs?: number } = {}
-): Promise<string> {
-  const pollMs = options.pollMs ?? 1500;
-  const maxMs = options.maxMs ?? 10 * 60 * 1000;
-  const started = Date.now();
-  for (;;) {
-    const res = await authFetch(
-      `tasks/status/${encodeURIComponent(taskId)}/`
-    );
-    if (!res.ok) {
-      throw new Error(`Task status request failed (${res.status})`);
-    }
-    const data = (await res.json()) as { status?: string };
-    const status = data.status ?? "UNKNOWN";
-    if (CELERY_TERMINAL_STATUSES.has(status)) return status;
-    if (Date.now() - started > maxMs) {
-      throw new Error("Timed out waiting for task");
-    }
-    await new Promise((r) => setTimeout(r, pollMs));
-  }
 }
 
 export default function Page() {
@@ -185,6 +166,9 @@ export default function Page() {
   const [next, setNext] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [refreshingMetrics, setRefreshingMetrics] = React.useState(false);
+  const [refreshingStrategyId, setRefreshingStrategyId] = React.useState<
+    number | null
+  >(null);
   const [orderBy, setOrderBy] = React.useState("-created_at");
   const [completed, setCompleted] = React.useState("false");
   const [startDate, setStartDate] = React.useState("");
@@ -203,6 +187,9 @@ export default function Page() {
   const [strategyReportOpen, setStrategyReportOpen] = React.useState(false);
   const [editingBuilderId, setEditingBuilderId] = React.useState<number | null>(
     null
+  );
+  const [oneDayVarPct, setOneDayVarPct] = React.useState(
+    DEFAULT_ONE_DAY_VAR_PCT
   );
 
   const STRATEGIES_POLL_MS = 25_000;
@@ -263,6 +250,7 @@ export default function Page() {
         const results: Strategy[] = data.results ?? [];
         setStrategies(results);
         void fetchPremiumNotional(results);
+        setOverallPnlRefreshKey((k) => k + 1);
       } catch (e) {
         console.error(e);
         if (!background) setStrategies([]);
@@ -292,6 +280,36 @@ export default function Page() {
               .filter(Boolean)
           )
         );
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const params = new URLSearchParams({
+          page_size: "5",
+          search: "ONE_DAY_VAR_PCT_OF_SPAN",
+        });
+        const res = await authFetch(
+          `core/system-config/?${params.toString()}`
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          results?: { key: string; value: string }[];
+        };
+        const row = (data.results ?? []).find(
+          (r) => r.key === "ONE_DAY_VAR_PCT_OF_SPAN"
+        );
+        if (!row) return;
+        const n = Number(row.value);
+        if (!cancelled && Number.isFinite(n)) setOneDayVarPct(n);
       } catch (e) {
         console.error(e);
       }
@@ -381,7 +399,6 @@ export default function Page() {
           );
         }
         await fetchStrategies(listOpts);
-        setOverallPnlRefreshKey((k) => k + 1);
       } catch (e) {
         console.error(e);
         if (!silent) {
@@ -392,13 +409,61 @@ export default function Page() {
           );
         }
         await fetchStrategies(listOpts);
-        setOverallPnlRefreshKey((k) => k + 1);
       } finally {
         setRefreshingMetrics(false);
         refreshMetricsInFlightRef.current = false;
       }
     },
     [fetchStrategies]
+  );
+
+  const runRefreshStrategyMetrics = React.useCallback(
+    async (strategyId: number) => {
+      if (refreshingStrategyId != null || refreshingMetrics) return;
+      setRefreshingStrategyId(strategyId);
+      const a = alertRef.current;
+      a.info(`Refreshing metrics for strategy ${strategyId}…`);
+      try {
+        const response = await authFetch(
+          `myadmin/strategies/${strategyId}/refresh-metrics/`,
+          { method: "POST" }
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          a.error(
+            typeof data.message === "string"
+              ? data.message
+              : typeof data.error === "string"
+                ? data.error
+                : "Failed to queue strategy metrics refresh"
+          );
+          return;
+        }
+        const taskId = data.task_id as string | undefined;
+        if (!taskId) {
+          a.error("Could not queue strategy metrics refresh (missing task id)");
+          return;
+        }
+        const status = await waitForCeleryTaskComplete(taskId);
+        if (status === "SUCCESS") {
+          a.success(`Strategy ${strategyId} metrics refreshed`);
+        } else {
+          a.error(`Strategy metrics refresh finished with status ${status}`);
+        }
+        await fetchStrategies({ background: true });
+      } catch (e) {
+        console.error(e);
+        a.error(
+          e instanceof Error
+            ? e.message
+            : "Failed to run or wait for strategy metrics refresh"
+        );
+        await fetchStrategies({ background: true });
+      } finally {
+        setRefreshingStrategyId(null);
+      }
+    },
+    [fetchStrategies, refreshingStrategyId, refreshingMetrics]
   );
 
   async function loadMoreStrategies() {
@@ -823,12 +888,19 @@ export default function Page() {
     );
   };
 
-  const MarginUtilisedInfo = ({ strategy }: { strategy: Strategy }) => {
+  const MarginUtilisedInfo = ({
+    strategy,
+    varPct,
+  }: {
+    strategy: Strategy;
+    varPct: number;
+  }) => {
     const span = toNum(strategy.margin_span);
     const exposure = toNum(strategy.margin_exposure);
     const premium = toNum(strategy.margin_premium);
     const total = toNum(strategy.margin_total);
     const blocked = toNum(strategy.margin_blocked);
+    const oneDayVar = oneDayVarFromSpan(span, varPct);
     const hasData = strategy.margin_updated_at != null;
 
     const btnRef = React.useRef<HTMLButtonElement>(null);
@@ -910,6 +982,14 @@ export default function Page() {
                     <td className="pr-2 py-0.5 text-base-content/70">Blocked</td>
                     <td className="text-right py-0.5">
                       {blocked != null ? formatLakhsIN(blocked) : "—"}
+                    </td>
+                  </tr>
+                  <tr className="border-t border-base-300/40 bg-base-100">
+                    <td className="pr-2 py-0.5 text-base-content/70">
+                      1D VaR ({varPct}% SPAN)
+                    </td>
+                    <td className="text-right py-0.5">
+                      {oneDayVar != null ? formatLakhsIN(oneDayVar) : "—"}
                     </td>
                   </tr>
                   <tr className="border-t border-base-300/40 bg-base-100">
@@ -1022,7 +1102,11 @@ export default function Page() {
             <button
               type="button"
               onClick={() => void runRefreshActiveStrategyTasks()}
-              disabled={refreshingMetrics || loading}
+              disabled={
+                refreshingMetrics ||
+                loading ||
+                refreshingStrategyId != null
+              }
               className="btn btn-ghost btn-sm btn-square"
               title="Queue PnL, WPNL, spread, and margin refresh jobs"
               aria-label="Queue PnL, WPNL, spread, and margin refresh jobs"
@@ -1055,11 +1139,11 @@ export default function Page() {
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
                     Total PnL
                   </th>
-                  <th
-                    className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]"
-                    title="SPAN + exposure locked by the master book"
-                  >
-                    Margin
+                  <th className="font-medium text-base-content/70 text-right min-w-[7rem]">
+                    <span className="block whitespace-nowrap">Margin</span>
+                    <span className="block text-[10px] font-normal leading-tight text-base-content/50">
+                      Blocked / 1D VaR
+                    </span>
                   </th>
                   <th className="font-medium text-base-content/70 text-right min-w-[9.5rem]">
                     <span className="block whitespace-nowrap">Spread</span>
@@ -1095,6 +1179,13 @@ export default function Page() {
                     .map((s) => s.trim().toUpperCase())
                     .filter((s) => s && reportSymbols.has(s))
                     .sort();
+                  const oneDayVar =
+                    strategy.margin_updated_at != null
+                      ? oneDayVarFromSpan(
+                          toNum(strategy.margin_span),
+                          oneDayVarPct
+                        )
+                      : null;
                   return (
                     <tr
                       key={strategy.id}
@@ -1132,6 +1223,28 @@ export default function Page() {
                             >
                               {strategy.name}
                             </Link>
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-xs btn-square shrink-0 relative z-10"
+                              disabled={
+                                refreshingStrategyId != null ||
+                                refreshingMetrics ||
+                                loading
+                              }
+                              title="Refresh PnL, WPNL, spread, and margin for this strategy"
+                              aria-label={`Refresh metrics for ${strategy.name}`}
+                              onClick={() => {
+                                void runRefreshStrategyMetrics(strategy.id);
+                              }}
+                            >
+                              <RefreshCw
+                                className={`size-3.5 ${
+                                  refreshingStrategyId === strategy.id
+                                    ? "animate-spin"
+                                    : ""
+                                }`}
+                              />
+                            </button>
                             <button
                               type="button"
                               className="btn btn-ghost btn-xs btn-square shrink-0 relative z-10"
@@ -1278,7 +1391,7 @@ export default function Page() {
                         </div>
                       </td>
                       <td className="text-right align-top min-w-[7rem]">
-                        <div className="flex flex-col items-end gap-1 min-w-[7rem]">
+                        <div className="flex flex-col items-end gap-0.5 min-w-[7rem]">
                           <span className="inline-flex items-center justify-end gap-0.5">
                             <span
                               className="font-semibold tabular-nums text-sm whitespace-nowrap"
@@ -1289,7 +1402,18 @@ export default function Page() {
                                 ? formatLakhsIN(toNum(strategy.margin_blocked))
                                 : "—"}
                             </span>
-                            <MarginUtilisedInfo strategy={strategy} />
+                            <MarginUtilisedInfo
+                              strategy={strategy}
+                              varPct={oneDayVarPct}
+                            />
+                          </span>
+                          <span
+                            className="font-medium text-base-content/70 text-[13px] tabular-nums whitespace-nowrap"
+                            title={`1D VaR = ${oneDayVarPct}% of SPAN`}
+                          >
+                            {oneDayVar != null
+                              ? formatLakhsIN(oneDayVar)
+                              : "—"}
                           </span>
                           <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
                             {formatSnapshotAt(strategy.margin_updated_at) ?? "—"}
