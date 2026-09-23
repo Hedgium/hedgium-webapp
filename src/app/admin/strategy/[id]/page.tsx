@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { authFetch } from "@/utils/api";
+import { waitForCeleryTaskComplete } from "@/utils/celeryTask";
 import Adjustments, { type AdjustmentData } from "@/components/admin/Adjustments";
 import Link from "next/link";
 import TradeCycles from "@/components/admin/TradeCycles";
@@ -173,6 +174,60 @@ export default function StrategyDetailPage() {
       } else {
         setLoading(false);
       }
+    }
+  }
+
+  async function refreshStrategyMetrics() {
+    if (strategyRefreshing || !Number.isFinite(strategyId)) return;
+    setStrategyRefreshing(true);
+    alert.info("Refreshing PnL, WPNL, spread, and margin…");
+    try {
+      const response = await authFetch(
+        `myadmin/strategies/${strategyId}/refresh-metrics/`,
+        { method: "POST" }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        alert.error(
+          typeof data.message === "string"
+            ? data.message
+            : typeof data.error === "string"
+              ? data.error
+              : "Failed to queue strategy metrics refresh"
+        );
+        return;
+      }
+      const taskId = data.task_id as string | undefined;
+      if (!taskId) {
+        alert.error("Could not queue strategy metrics refresh (missing task id)");
+        return;
+      }
+      const status = await waitForCeleryTaskComplete(taskId);
+      if (status === "SUCCESS") {
+        alert.success("Strategy metrics refreshed");
+      } else {
+        alert.error(`Strategy metrics refresh finished with status ${status}`);
+      }
+      const res = await authFetch(`myadmin/strategies/${id}/`);
+      setStrategy(await res.json());
+      setAdjustmentsRefreshVersion((v) => v + 1);
+      await fetchTradeCycles();
+    } catch (e) {
+      console.error(e);
+      alert.error(
+        e instanceof Error
+          ? e.message
+          : "Failed to run or wait for strategy metrics refresh"
+      );
+      try {
+        const res = await authFetch(`myadmin/strategies/${id}/`);
+        setStrategy(await res.json());
+        await fetchTradeCycles();
+      } catch {
+        /* ignore refetch error */
+      }
+    } finally {
+      setStrategyRefreshing(false);
     }
   }
 
@@ -358,10 +413,10 @@ export default function StrategyDetailPage() {
             <div className="flex flex-wrap items-center gap-2 shrink-0 lg:justify-end">
               <button
                 type="button"
-                onClick={() => refreshStrategyAndAdjustments({ silent: true })}
+                onClick={() => void refreshStrategyMetrics()}
                 disabled={strategyRefreshing}
                 className={`btn btn-ghost btn-sm btn-square ${strategyRefreshing ? "animate-spin" : ""}`}
-                title="Refresh strategy metrics"
+                title="Refresh PnL, WPNL, spread, and margin for this strategy"
               >
                 <RotateCw className="size-4" />
               </button>
