@@ -210,7 +210,7 @@ const ProfileTab: React.FC = () => {
               <div className="space-y-4">
                 <div className="form-control">
                   <label className="label cursor-pointer justify-start gap-4">
-                    <span className="label-text font-medium">Auto Trade Allowed</span>
+                    <span className="label-text font-medium">Auto Approved Enabled</span>
                     <input
                       type="checkbox"
                       className="toggle toggle-primary"
