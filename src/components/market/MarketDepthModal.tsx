@@ -86,6 +86,11 @@ function asDepthInstrumentType(value: string | undefined): MarketDepthInstrument
   return undefined;
 }
 
+/** Zerodha cash symbols omit the IIFL series suffix (`INFY-EQ` → `INFY`). */
+function zerodhaLookupSymbol(symbol: string): string {
+  return symbol.trim().replace(/-EQ$/i, "");
+}
+
 function toInstrumentOption(item: InstrumentSearchResult): InstrumentOption {
   return {
     label: `${item.tradingsymbol} — ${item.name} · ${item.exchange}`,
@@ -193,10 +198,11 @@ export default function MarketDepthModal({
 
   const loadOptions = useCallback(
     async (inputValue: string): Promise<InstrumentOption[]> => {
-      if (!inputValue || !inputValue.trim()) return [];
+      const query = zerodhaLookupSymbol(inputValue);
+      if (!query) return [];
       try {
         const response = await authFetch(
-          `market/instruments/search/?instrument_type=${instrumentType}&q=${encodeURIComponent(inputValue)}`
+          `market/instruments/search/?instrument_type=${instrumentType}&q=${encodeURIComponent(query)}`
         );
         if (!response.ok) return [];
         const data = (await response.json()) as InstrumentSearchResult[];
@@ -232,7 +238,7 @@ export default function MarketDepthModal({
 
   useEffect(() => {
     if (!open || seedRanRef.current) return;
-    const symbol = (initialSymbol || "").trim();
+    const symbol = zerodhaLookupSymbol(initialSymbol || "");
     if (!symbol) return;
     seedRanRef.current = true;
     const exchange = (initialExchange || "").trim().toUpperCase();

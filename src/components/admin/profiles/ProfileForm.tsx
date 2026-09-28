@@ -66,7 +66,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         margin_equity: 0,
         pnl_inception_date: '',
         pnl_inception_value: '',
-        order_value_factor: 1,
+        order_value_factor: 3,
         quantity_multiplier: 1,
         is_active: false,
         verified: false,
@@ -168,7 +168,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                 initialData.pnl_inception_value != null
                     ? String(initialData.pnl_inception_value)
                     : '',
-            order_value_factor: initialData.order_value_factor ?? 1,
+            order_value_factor: initialData.order_value_factor ?? 3,
             quantity_multiplier: initialData.quantity_multiplier ?? 1,
             is_active: initialData.is_active,
             verified: initialData.verified,
