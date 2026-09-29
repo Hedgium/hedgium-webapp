@@ -144,9 +144,12 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
     const [instrumentData, setInstrumentData] = useState<InstrumentSearchResult | null>(null);
     const [currentPrice, setCurrentPrice] = useState<number | null>(null);
 
-    // When builder exchange is NFO_BFO, user picks NFO or BFO per leg
-    const [legExchange, setLegExchange] = useState<string>('NFO');
-    const effectiveExchange = exchange === 'NFO_BFO' ? legExchange : exchange;
+    // Mixed builders pick the real exchange per leg.
+    const mixedLegExchanges =
+        exchange === 'NFO_BFO' ? (['NFO', 'BFO'] as const) : exchange === 'MCX_NCO' ? (['MCX', 'NCO'] as const) : null;
+    const [legExchange, setLegExchange] = useState<string>(exchange === 'MCX_NCO' ? 'MCX' : 'NFO');
+    const effectiveExchange = mixedLegExchanges ? legExchange : exchange;
+    const isCommodityExchange = effectiveExchange === 'MCX' || effectiveExchange === 'NCO';
 
     const calculateATMStrike = (currentPrice: number, strikeStep: number, strikeMultiplier: number = 1): number => {
         const step = strikeStep * strikeMultiplier;
@@ -192,9 +195,11 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
             setNoOfLots(initialData.quantity / initialData.lot_size);
             if (exchange === 'NFO_BFO') {
                 setLegExchange(initialData.exchange === 'BFO' ? 'BFO' : 'NFO');
+            } else if (exchange === 'MCX_NCO') {
+                setLegExchange(initialData.exchange === 'NCO' ? 'NCO' : 'MCX');
             }
         } else {
-            setLegExchange(initialData?.exchange || 'NFO');
+            setLegExchange(exchange === 'MCX_NCO' ? 'MCX' : 'NFO');
         } 
     }, [initialData, builderId, exchange]);
 
@@ -355,8 +360,9 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
     const loadOptions = async (inputValue: string) => {
         if (!inputValue) return [];
         try {
-            const instrumentType = effectiveExchange === 'MCX' ? 'FUT' : 'EQ';
-            const response = await authFetch('market/instruments/search/?instrument_type=' + instrumentType + '&q=' + encodeURIComponent(inputValue));
+            const instrumentType = isCommodityExchange ? 'FUT' : 'EQ';
+            const exchangeParam = isCommodityExchange ? '&exchange=' + encodeURIComponent(effectiveExchange) : '';
+            const response = await authFetch('market/instruments/search/?instrument_type=' + instrumentType + '&q=' + encodeURIComponent(inputValue) + exchangeParam);
             const data = await response.json();
             return data.map((item: InstrumentSearchResult) => ({
                 label: `${item.tradingsymbol} - ${item.name} - ${item.exchange}`,
@@ -381,7 +387,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
             
 
             let symbol = '';
-            if (effectiveExchange === "MCX") { symbol = lastWord; } else { symbol = firstWord; }
+            if (isCommodityExchange) { symbol = lastWord; } else { symbol = firstWord; }
             setFormData(prev => ({
                 ...prev,
                 symbol: symbol,
@@ -432,8 +438,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
 
-                {/* Exchange (only when builder exchange is NFO_BFO) */}
-                {exchange === 'NFO_BFO' && (
+                {mixedLegExchanges && (
                     <div className="form-control">
                         <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Exchange</span></label>
                         <select
@@ -441,8 +446,9 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                             onChange={(e) => setLegExchange(e.target.value)}
                             className="select select-bordered select-sm h-9 w-full"
                         >
-                            <option value="NFO">NFO</option>
-                            <option value="BFO">BFO</option>
+                            {mixedLegExchanges.map((ex) => (
+                                <option key={ex} value={ex}>{ex}</option>
+                            ))}
                         </select>
                     </div>
                 )}

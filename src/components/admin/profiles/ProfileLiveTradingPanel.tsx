@@ -1152,6 +1152,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                     <option value="BSE">BSE</option>
                     <option value="NFO">NFO</option>
                     <option value="MCX">MCX</option>
+                    <option value="NCO">NCO</option>
                   </select>
                 </div>
 

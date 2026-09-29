@@ -89,7 +89,7 @@ const MARKET_TABS: {
   },
 ];
 
-const EXCHANGE_OPTIONS = ["MCX", "NFO", "BFO", "CDS", "NCDEX"] as const;
+const EXCHANGE_OPTIONS = ["MCX", "NCO", "NFO", "BFO", "CDS", "NCDEX"] as const;
 
 function normalizeNext(next: string | null): string | null {
   if (!next) return null;
