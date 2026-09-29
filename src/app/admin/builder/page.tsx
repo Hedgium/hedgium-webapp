@@ -125,6 +125,10 @@ export default function BuilderPage() {
                     body: JSON.stringify(data)
                 });
                 const updatedBuilder = await response.json();
+                if (!response.ok) {
+                    alert.error(updatedBuilder.detail || 'Failed to save strategy builder');
+                    return;
+                }
                 setBuilders(prev => prev.map(b => b.id === updatedBuilder.id ? updatedBuilder : b));
                 alert.success('Strategy builder updated successfully');
             } else {
@@ -133,6 +137,10 @@ export default function BuilderPage() {
                     body: JSON.stringify(data)
                 });
                 const newBuilder = await response.json();
+                if (!response.ok) {
+                    alert.error(newBuilder.detail || 'Failed to save strategy builder');
+                    return;
+                }
                 setBuilders(prev => [newBuilder, ...prev]);
                 alert.success('Strategy builder created successfully');
             }
