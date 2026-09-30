@@ -12,6 +12,7 @@ interface LegFormProps {
     onCancel: () => void;
     exchange: string;
     defaultExpiry?: string | null;
+    showAdjustmentExpiry?: boolean;
 }
 
 interface Option {
@@ -96,7 +97,7 @@ const reactSelectStyles: StylesConfig<Option> = {
     }),
 };
 
-export default function LegForm({ initialData, builderId, onSubmit, onCancel, exchange, defaultExpiry }: LegFormProps) {
+export default function LegForm({ initialData, builderId, onSubmit, onCancel, exchange, defaultExpiry, showAdjustmentExpiry }: LegFormProps) {
 
     // Helper function to convert ISO datetime to YYYY-MM-DD format
     const formatDateForInput = (dateString: string | null | undefined): string => {
@@ -137,6 +138,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         // price: 0,
         quantity: 75,
         lot_size: 75,
+        ...(showAdjustmentExpiry ? { is_adjustment_leg: false } : {}),
     });
 
 
@@ -186,7 +188,10 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                 action: initialData.action,
                 price: initialData.price,
                 quantity: initialData.quantity,
-                lot_size: initialData.lot_size
+                lot_size: initialData.lot_size,
+                ...(showAdjustmentExpiry
+                    ? { is_adjustment_leg: initialData.is_adjustment_leg ?? false }
+                    : {}),
                 
             });
             setNoOfLots(initialData.quantity / initialData.lot_size);
@@ -196,7 +201,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         } else {
             setLegExchange(initialData?.exchange || 'NFO');
         } 
-    }, [initialData, builderId, exchange]);
+    }, [initialData, builderId, exchange, showAdjustmentExpiry]);
 
 
     useEffect(() => {
@@ -337,6 +342,11 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
+        const input = e.target;
+        if (input instanceof HTMLInputElement && input.type === 'checkbox') {
+            setFormData(prev => ({ ...prev, [name]: input.checked }));
+            return;
+        }
         setFormData(prev => {
             const updates: Partial<typeof prev> = {
                 [name]: name === 'strike' || name === 'quantity' || name === 'strike_step' || name === 'strike_distance' || name === 'lot_size'
@@ -548,6 +558,24 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                         required
                     />
                 </div>
+
+
+                {showAdjustmentExpiry && (
+                    <div className="form-control md:col-span-2">
+                        <label className="label cursor-pointer justify-start gap-4 py-0">
+                            <span className="label-text text-sm font-medium text-base-content/80">
+                                Use this expiry for automated adjustments
+                            </span>
+                            <input
+                                type="checkbox"
+                                name="is_adjustment_leg"
+                                checked={formData.is_adjustment_leg ?? false}
+                                onChange={handleChange}
+                                className="toggle toggle-primary"
+                            />
+                        </label>
+                    </div>
+                )}
 
 
 

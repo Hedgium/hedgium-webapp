@@ -48,6 +48,7 @@ export interface BuilderLeg {
     symbol: string;
     // period: string;
     expiry: string | null;
+    is_adjustment_leg?: boolean;
     option_type: string;
     action: string;
     price: number;
@@ -171,6 +172,7 @@ export interface BuilderLegCreate {
     symbol: string;
     // period: string;
     expiry?: string | null;
+    is_adjustment_leg?: boolean;
     option_type: string;
     action: string;
     price: number;
@@ -189,6 +191,7 @@ export interface BuilderLegUpdate {
     symbol?: string;
     // period?: string;
     expiry?: string | null;
+    is_adjustment_leg?: boolean;
     option_type?: string;
     action?: string;
     price?: number;
