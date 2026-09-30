@@ -386,6 +386,7 @@ export default function BuilderPage() {
                             onSubmit={handleLegSubmit}
                             onCancel={() => setIsLegModalOpen(false)}
                             exchange={selectedStrategyBuilder?.exchange || 'NFO'}
+                            showAdjustmentExpiry
                         />
                     </div>
                 </div>
