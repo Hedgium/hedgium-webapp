@@ -350,9 +350,15 @@ export default function BuilderForm({
     const loadUnderlyingOptions = async (inputValue: string) => {
         if (!inputValue) return [];
         try {
-            const instrumentType = formData.exchange === 'MCX' ? 'FUT' : 'EQ';
+            const instrumentType = formData.exchange === 'MCX' || formData.exchange === 'NCO' || formData.exchange === 'MCX_NCO' ? 'FUT' : 'EQ';
+            const exchangeParam =
+                formData.exchange === 'MCX' || formData.exchange === 'NCO'
+                    ? `&exchange=${formData.exchange}`
+                    : formData.exchange === 'MCX_NCO'
+                        ? '&exchange=MCX,NCO'
+                        : '';
             const response = await authFetch(
-                `market/instruments/search/?instrument_type=${instrumentType}&q=${encodeURIComponent(inputValue)}`
+                `market/instruments/search/?instrument_type=${instrumentType}&q=${encodeURIComponent(inputValue)}${exchangeParam}`
             );
             const data: InstrumentSearchResult[] = await response.json();
             return data.map((item) => ({
@@ -391,7 +397,7 @@ export default function BuilderForm({
         }
         const parts = option.label.split(' - ');
         const firstWord = option.value.split(' ')[0];
-        const symbol = formData.exchange === 'MCX' ? parts[1] : firstWord;
+        const symbol = formData.exchange === 'MCX' || formData.exchange === 'NCO' || formData.exchange === 'MCX_NCO' ? parts[1] : firstWord;
         setPresetSymbol(symbol);
         setPresetToken(option.token);
         if (option.lot_size > 0) {
@@ -618,7 +624,9 @@ export default function BuilderForm({
                         <option value="NFO">NFO</option>
                         <option value="BFO">BFO</option>
                         <option value="MCX">MCX</option>
+                        <option value="NCO">NCO</option>
                         <option value="NFO_BFO">NFO_BFO</option>
+                        <option value="MCX_NCO">MCX_NCO</option>
                     </select>
                 </div>
                 <div className="form-control">

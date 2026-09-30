@@ -100,3 +100,15 @@ export interface BrokerAccessTokenResponse {
     profile_id: number;
     broker_access_token: string | null;
 }
+
+export interface WhatsAppBroadcastTemplate {
+    key: string;
+    label: string;
+    language_code: string;
+    body_preview: string;
+}
+
+export interface WhatsAppBroadcastResult {
+    queued: number;
+    skipped: number;
+}
