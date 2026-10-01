@@ -76,15 +76,28 @@ interface StrategyPremiumNotional {
   };
 }
 
+interface PositionMismatchDetail {
+  trade_cycle_id: number;
+  client_name: string;
+  missing: number;
+  extra: number;
+  buy_mismatch: number;
+  sell_mismatch: number;
+}
+
+interface StrategyCounts {
+  strategy_id: number;
+  pending_orders_count: number;
+  open_orders_count: number;
+  trade_cycle_count: number;
+  position_mismatch_count: number;
+  position_mismatch_details: PositionMismatchDetail[];
+}
+
 interface Strategy {
   id: number;
   name: string;
   created_at: string;
-  adjustment_count: number;
-  trade_cycle_count: number;
-  leg_count: number;
-  pending_orders_count: number;
-  open_orders_count: number;
   wpnl_total: number | string | null;
   mid_wpnl_total: number | string | null;
   atm_spread: number | string | null;
@@ -117,7 +130,11 @@ interface Strategy {
   auto_approve_count: number;
   auto_approve_max: number | null;
   master_role?: string | null;
-  versions: Version[];
+  last_version: number | null;
+  last_approved: boolean | null;
+  position_mismatch_count: number;
+  position_mismatch_details: PositionMismatchDetail[];
+  position_mismatch_at: string | null;
 }
 
 const ORDER_OPTIONS = [
@@ -177,6 +194,10 @@ export default function Page() {
     React.useState<Record<number, StrategyPremiumNotional>>({});
   const [loadingPremiumNotional, setLoadingPremiumNotional] =
     React.useState(false);
+  const [countsByStrategy, setCountsByStrategy] = React.useState<
+    Record<number, StrategyCounts>
+  >({});
+  const [loadingCounts, setLoadingCounts] = React.useState(false);
   const [overallPnlRefreshKey, setOverallPnlRefreshKey] = React.useState(0);
   const [reportSymbols, setReportSymbols] = React.useState<Set<string>>(
     () => new Set()
@@ -229,6 +250,34 @@ export default function Page() {
     []
   );
 
+  const fetchStrategyCounts = React.useCallback(async (strategyList: Strategy[]) => {
+    if (strategyList.length === 0) {
+      setCountsByStrategy({});
+      return;
+    }
+    const ids = strategyList.map((s) => s.id).join(",");
+    setLoadingCounts(true);
+    try {
+      const res = await authFetch(
+        `myadmin/strategies/counts/?strategy_ids=${encodeURIComponent(ids)}`
+      );
+      if (!res.ok) {
+        console.error("strategy counts fetch failed", res.status);
+        return;
+      }
+      const data = (await res.json()) as { strategies?: StrategyCounts[] };
+      const map: Record<number, StrategyCounts> = {};
+      for (const row of data.strategies ?? []) {
+        map[row.strategy_id] = row;
+      }
+      setCountsByStrategy(map);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingCounts(false);
+    }
+  }, []);
+
   const fetchStrategies = React.useCallback(
     async (options?: { background?: boolean }) => {
       const background = options?.background ?? false;
@@ -250,6 +299,7 @@ export default function Page() {
         const results: Strategy[] = data.results ?? [];
         setStrategies(results);
         void fetchPremiumNotional(results);
+        void fetchStrategyCounts(results);
         setOverallPnlRefreshKey((k) => k + 1);
       } catch (e) {
         console.error(e);
@@ -258,7 +308,7 @@ export default function Page() {
         if (!background) setLoading(false);
       }
     },
-    [completed, orderBy, startDate, endDate, fetchPremiumNotional]
+    [completed, orderBy, startDate, endDate, fetchPremiumNotional, fetchStrategyCounts]
   );
 
   React.useEffect(() => {
@@ -480,13 +530,102 @@ export default function Page() {
     setStrategies((prev) => {
       const merged = [...prev, ...added];
       void fetchPremiumNotional(merged);
+      void fetchStrategyCounts(merged);
       return merged;
     });
     setLoading(false);
   }
 
   const lastAdjustment = (s: Strategy): Version | null =>
-    s.versions?.length ? s.versions[0] : null;
+    s.last_version != null
+      ? { version: s.last_version, approved: Boolean(s.last_approved) }
+      : null;
+
+  const MismatchInfo = ({
+    strategyId,
+    details,
+    checkedAt,
+  }: {
+    strategyId: number;
+    details: PositionMismatchDetail[];
+    checkedAt: string | null;
+  }) => {
+    const btnRef = React.useRef<HTMLButtonElement>(null);
+    const [open, setOpen] = React.useState(false);
+    const [pos, setPos] = React.useState<{ top: number; left: number } | null>(
+      null
+    );
+
+    const toggle = () => {
+      const el = btnRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const width = 320;
+      const left = Math.min(
+        Math.max(8, r.right - width),
+        window.innerWidth - width - 8
+      );
+      setPos({ top: r.bottom + 4, left });
+      setOpen((prev) => !prev);
+    };
+
+    return (
+      <>
+        <button
+          ref={btnRef}
+          type="button"
+          className="btn btn-ghost btn-xs btn-square text-warning"
+          aria-label="Position mismatches versus master"
+          title="Follower cycles that do not match the master book"
+          aria-expanded={open}
+          onClick={toggle}
+        >
+          <Info className="size-3.5" />
+        </button>
+        {open &&
+          pos &&
+          createPortal(
+            <>
+              <div
+                className="fixed inset-0 z-[99]"
+                onClick={() => setOpen(false)}
+              />
+              <div
+                className="fixed z-[100] w-80 rounded-lg border border-base-300 bg-base-100 p-2 text-left shadow-xl"
+                style={{ top: pos.top, left: pos.left }}
+                role="dialog"
+                aria-label="Position mismatches"
+              >
+                <div className="mb-1.5 text-[10px] font-medium text-base-content/60">
+                  Vs master
+                  {checkedAt ? ` · ${formatSnapshotAt(checkedAt)}` : ""}
+                </div>
+                <ul className="flex flex-col gap-1">
+                  {details.map((row) => (
+                    <li key={row.trade_cycle_id}>
+                      <Link
+                        href={`/admin/strategy/${strategyId}`}
+                        className="block rounded-md px-1 py-0.5 text-[11px] leading-tight hover:bg-base-200"
+                        onClick={() => setOpen(false)}
+                      >
+                        <span className="font-medium text-base-content/90">
+                          {row.client_name || "Cycle"} #{row.trade_cycle_id}
+                        </span>
+                        <span className="mt-0.5 block tabular-nums text-base-content/60">
+                          missing {row.missing} · extra {row.extra} · buy{" "}
+                          {row.buy_mismatch} · sell {row.sell_mismatch}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>,
+            document.body
+          )}
+      </>
+    );
+  };
 
   const pnlColor = (val: number | null) => {
     if (val == null) return "";
@@ -1175,6 +1314,18 @@ export default function Page() {
 
                 {strategies.map((strategy) => {
                   const last = lastAdjustment(strategy);
+                  const counts = countsByStrategy[strategy.id];
+                  const pendingOrders = counts?.pending_orders_count;
+                  const openOrders = counts?.open_orders_count;
+                  const allocated = counts?.trade_cycle_count;
+                  const mismatchCount =
+                    counts?.position_mismatch_count ??
+                    strategy.position_mismatch_count ??
+                    0;
+                  const mismatchDetails =
+                    counts?.position_mismatch_details ??
+                    strategy.position_mismatch_details ??
+                    [];
                   const matchingReportSymbols = (strategy.underlying_names ?? [])
                     .map((s) => s.trim().toUpperCase())
                     .filter((s) => s && reportSymbols.has(s))
@@ -1322,25 +1473,45 @@ export default function Page() {
                       <td className="text-right align-top min-w-[6.5rem]">
                         <div className="flex flex-col items-end gap-0.5 tabular-nums text-sm whitespace-nowrap">
                           <span
-                            title="Pending orders"
+                            title={
+                              loadingCounts && pendingOrders == null
+                                ? "Loading order counts"
+                                : "Pending orders"
+                            }
                             className={`font-medium ${
-                              (strategy.pending_orders_count ?? 0) > 0
+                              (pendingOrders ?? 0) > 0
                                 ? "text-warning"
                                 : "text-base-content/90"
                             }`}
-                          > 
-                          Pending - {strategy.pending_orders_count ?? 0}
+                          >
+                            Pending - {pendingOrders == null ? "—" : pendingOrders}
                           </span>
                           <span
                             title="Open orders at broker"
                             className={`font-medium text-[13px] ${
-                              (strategy.open_orders_count ?? 0) > 0
+                              (openOrders ?? 0) > 0
                                 ? "text-warning"
                                 : "text-base-content/70"
                             }`}
                           >
-                          Open - {strategy.open_orders_count ?? 0}
+                            Open - {openOrders == null ? "—" : openOrders}
                           </span>
+                          {mismatchCount > 0 ? (
+                            <span className="inline-flex items-center justify-end gap-0.5 font-medium text-warning">
+                              <span title="Follower cycles whose stored positions do not match the master">
+                                Mismatch - {mismatchCount}
+                              </span>
+                              <MismatchInfo
+                                strategyId={strategy.id}
+                                details={mismatchDetails}
+                                checkedAt={
+                                  counts
+                                    ? null
+                                    : strategy.position_mismatch_at
+                                }
+                              />
+                            </span>
+                          ) : null}
                         </div>
                       </td>
                       <td className="text-right align-top min-w-[7.5rem]">
@@ -1513,7 +1684,7 @@ export default function Page() {
                           <span className="text-base-content/50">—</span>
                         )}
                       </td>
-                      <td>{strategy.trade_cycle_count}</td>
+                      <td>{allocated == null ? "—" : allocated}</td>
                       <td className="text-xs text-base-content/70 tabular-nums whitespace-nowrap">
                         {formatSnapshotAt(strategy.created_at) ?? "—"}
                       </td>
