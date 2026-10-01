@@ -90,6 +90,8 @@ interface StrategyCounts {
   pending_orders_count: number;
   open_orders_count: number;
   trade_cycle_count: number;
+  position_mismatch_count: number;
+  position_mismatch_details: PositionMismatchDetail[];
 }
 
 interface Strategy {
@@ -539,8 +541,15 @@ export default function Page() {
       ? { version: s.last_version, approved: Boolean(s.last_approved) }
       : null;
 
-  const MismatchInfo = ({ strategy }: { strategy: Strategy }) => {
-    const details = strategy.position_mismatch_details ?? [];
+  const MismatchInfo = ({
+    strategyId,
+    details,
+    checkedAt,
+  }: {
+    strategyId: number;
+    details: PositionMismatchDetail[];
+    checkedAt: string | null;
+  }) => {
     const btnRef = React.useRef<HTMLButtonElement>(null);
     const [open, setOpen] = React.useState(false);
     const [pos, setPos] = React.useState<{ top: number; left: number } | null>(
@@ -589,15 +598,13 @@ export default function Page() {
               >
                 <div className="mb-1.5 text-[10px] font-medium text-base-content/60">
                   Vs master
-                  {strategy.position_mismatch_at
-                    ? ` · ${formatSnapshotAt(strategy.position_mismatch_at)}`
-                    : ""}
+                  {checkedAt ? ` · ${formatSnapshotAt(checkedAt)}` : ""}
                 </div>
                 <ul className="flex flex-col gap-1">
                   {details.map((row) => (
                     <li key={row.trade_cycle_id}>
                       <Link
-                        href={`/admin/strategy/${strategy.id}`}
+                        href={`/admin/strategy/${strategyId}`}
                         className="block rounded-md px-1 py-0.5 text-[11px] leading-tight hover:bg-base-200"
                         onClick={() => setOpen(false)}
                       >
@@ -1311,6 +1318,14 @@ export default function Page() {
                   const pendingOrders = counts?.pending_orders_count;
                   const openOrders = counts?.open_orders_count;
                   const allocated = counts?.trade_cycle_count;
+                  const mismatchCount =
+                    counts?.position_mismatch_count ??
+                    strategy.position_mismatch_count ??
+                    0;
+                  const mismatchDetails =
+                    counts?.position_mismatch_details ??
+                    strategy.position_mismatch_details ??
+                    [];
                   const matchingReportSymbols = (strategy.underlying_names ?? [])
                     .map((s) => s.trim().toUpperCase())
                     .filter((s) => s && reportSymbols.has(s))
@@ -1481,12 +1496,20 @@ export default function Page() {
                           >
                             Open - {openOrders == null ? "—" : openOrders}
                           </span>
-                          {(strategy.position_mismatch_count ?? 0) > 0 ? (
+                          {mismatchCount > 0 ? (
                             <span className="inline-flex items-center justify-end gap-0.5 font-medium text-warning">
-                              <span title="Follower cycles that do not match the master">
-                                Mismatch - {strategy.position_mismatch_count}
+                              <span title="Follower cycles whose stored positions do not match the master">
+                                Mismatch - {mismatchCount}
                               </span>
-                              <MismatchInfo strategy={strategy} />
+                              <MismatchInfo
+                                strategyId={strategy.id}
+                                details={mismatchDetails}
+                                checkedAt={
+                                  counts
+                                    ? null
+                                    : strategy.position_mismatch_at
+                                }
+                              />
                             </span>
                           ) : null}
                         </div>
