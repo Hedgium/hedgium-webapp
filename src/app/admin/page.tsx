@@ -800,7 +800,7 @@ export default function Page() {
               role="tooltip"
             >
               <div className="text-[10px] font-medium text-base-content/60 mb-1.5">
-                Premium (qty×LTP) · Notional (qty×spot)
+                Premium (qty×LTP / quote unit) · Notional (qty×spot / quote unit)
               </div>
               <table className="w-full text-[11px] tabular-nums leading-tight bg-base-100">
                 <thead>

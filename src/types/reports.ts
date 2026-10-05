@@ -20,15 +20,22 @@ export type E2PnlSummary = {
   e1_hedgium_managed?: boolean;
   week_pnl: number;
   week_pnl_pct?: number | null;
+  /** Average total account value used as the week % base. */
+  week_dav?: number | null;
   /** Current calendar month E2 PnL */
   pnl: number;
   pnl_pct?: number | null;
+  /** Average total account value used as the month % base. */
+  month_dav?: number | null;
   quarter_pnl: number;
   quarter_pnl_pct?: number | null;
+  quarter_dav?: number | null;
   ytd_pnl: number;
   ytd_pnl_pct?: number | null;
+  ytd_dav?: number | null;
   all_time_pnl: number;
   all_time_pnl_pct?: number | null;
+  all_time_dav?: number | null;
   week_charges?: number;
   /** Current calendar month E2 charges (other costs) */
   charges?: number;

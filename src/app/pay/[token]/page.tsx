@@ -151,6 +151,23 @@ export default function PublicPayPage() {
                 <span>Fee</span>
                 <span>₹{formatMoneyIN(invoice.fee_amount)}</span>
               </div>
+              {invoice.discount_amount > 0 && (
+                <>
+                  <div className="flex justify-between text-base-content/70">
+                    <span>Discount</span>
+                    <span>−₹{formatMoneyIN(invoice.discount_amount)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Amount after discount</span>
+                    <span>
+                      ₹
+                      {formatMoneyIN(
+                        invoice.fee_amount - invoice.discount_amount
+                      )}
+                    </span>
+                  </div>
+                </>
+              )}
               {invoice.gst_amount > 0 && (
                 <div className="flex justify-between">
                   <span>GST</span>
@@ -290,7 +307,8 @@ export default function PublicPayPage() {
         )}
 
         <p className="text-center text-xs text-base-content/50 pb-6">
-          Hedgium Services LLP · Questions: clients@hedgium.ai
+          Hedgium Services LLP
+          {invoice.contact_email ? ` · Questions: ${invoice.contact_email}` : ""}
         </p>
       </div>
     </div>

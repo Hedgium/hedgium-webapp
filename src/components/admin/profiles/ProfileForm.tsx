@@ -66,6 +66,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         margin_equity: 0,
         pnl_inception_date: '',
         pnl_inception_value: '',
+        e1_hedgium_managed: true,
         order_value_factor: 3,
         quantity_multiplier: 1,
         is_active: false,
@@ -168,6 +169,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                 initialData.pnl_inception_value != null
                     ? String(initialData.pnl_inception_value)
                     : '',
+            e1_hedgium_managed: initialData.e1_hedgium_managed !== false,
             order_value_factor: initialData.order_value_factor ?? 3,
             quantity_multiplier: initialData.quantity_multiplier ?? 1,
             is_active: initialData.is_active,
@@ -233,6 +235,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             pnl_inception_value: formData.pnl_inception_value.trim()
                 ? parseFloat(formData.pnl_inception_value)
                 : null,
+            e1_hedgium_managed: formData.e1_hedgium_managed,
             order_value_factor: formData.order_value_factor,
             quantity_multiplier: formData.quantity_multiplier,
             is_active: formData.is_active,
@@ -471,6 +474,22 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                         />
                         <p className="mt-1 text-xs text-base-content/50">
                             Account value at inception date — used for PnL % only.
+                        </p>
+                    </div>
+                    <div className="form-control md:col-span-2">
+                        <label className="label cursor-pointer justify-start gap-4">
+                            <span className="label-text">E1 Hedgium managed</span>
+                            <input
+                                type="checkbox"
+                                name="e1_hedgium_managed"
+                                checked={formData.e1_hedgium_managed}
+                                onChange={handleChange}
+                                className="checkbox checkbox-primary"
+                            />
+                        </label>
+                        <p className="text-xs text-base-content/60 mt-1">
+                            On: Hedgium manages CNC/E1 and reports include it as Hedgium performance.
+                            Off: the client manages E1 themselves, so reports show it as self-managed.
                         </p>
                     </div>
                     <div className="form-control">

@@ -30,6 +30,7 @@ export interface Invoice {
   billing_days: number;
   quarter_days: number;
   fee_amount: number;
+  discount_amount: number;
   gst_rate: number;
   gst_amount: number;
   total_amount: number;
@@ -68,6 +69,7 @@ export interface PublicInvoice {
   period_start: string;
   period_end: string;
   fee_amount: number;
+  discount_amount: number;
   gst_amount: number;
   total_amount: number;
   status: InvoiceStatus;
@@ -75,6 +77,7 @@ export interface PublicInvoice {
   payee_name: string;
   hedgium_gstin: string | null;
   client_gstin: string | null;
+  contact_email: string;
   bank: InvoiceBankDetails;
 }
 
