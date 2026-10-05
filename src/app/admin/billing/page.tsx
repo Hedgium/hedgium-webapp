@@ -6,6 +6,9 @@ import type { StylesConfig } from "react-select";
 import {
   CheckCircle,
   Copy,
+  Download,
+  ExternalLink,
+  Eye,
   FileText,
   IndianRupee,
   Loader2,
@@ -20,6 +23,7 @@ import useAlert from "@/hooks/useAlert";
 import {
   deleteInvoice,
   fetchCurrentQuarter,
+  fetchInvoicePdf,
   generateInvoices,
   generateOneInvoice,
   issueDrafts,
@@ -160,8 +164,11 @@ export default function AdminBillingPage() {
   const [oneFy, setOneFy] = useState("");
   const [oneQuarter, setOneQuarter] = useState("Q1");
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [previewInv, setPreviewInv] = useState<Invoice | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [editInv, setEditInv] = useState<Invoice | null>(null);
   const [editFeeAmount, setEditFeeAmount] = useState("");
+  const [editDiscountAmount, setEditDiscountAmount] = useState("");
   const [editFeeBase, setEditFeeBase] = useState("");
   const [editPeriodEnd, setEditPeriodEnd] = useState("");
   const [editNotes, setEditNotes] = useState("");
@@ -260,6 +267,21 @@ export default function AdminBillingPage() {
     }
   }
 
+  async function openPreview(inv: Invoice) {
+    await withBusy(`pdf-${inv.id}`, async () => {
+      const blob = await fetchInvoicePdf(inv.id);
+      const url = URL.createObjectURL(blob);
+      setPreviewInv(inv);
+      setPreviewUrl(url);
+    });
+  }
+
+  function closePreview() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setPreviewInv(null);
+  }
+
   async function handleGenerate() {
     await withBusy("generate", async () => {
       const res = await generateInvoices(fy, quarter);
@@ -352,6 +374,7 @@ export default function AdminBillingPage() {
   function openEdit(inv: Invoice) {
     setEditInv(inv);
     setEditFeeAmount(String(inv.fee_amount));
+    setEditDiscountAmount(String(inv.discount_amount ?? 0));
     setEditFeeBase(String(inv.fee_base));
     setEditPeriodEnd(inv.period_end);
     setEditNotes(inv.notes || "");
@@ -361,9 +384,18 @@ export default function AdminBillingPage() {
   async function handleSaveEdit() {
     if (!editInv) return;
     const feeAmount = Number(editFeeAmount);
+    const discountAmount = Number(editDiscountAmount);
     const feeBase = Number(editFeeBase);
     if (!Number.isFinite(feeAmount) || feeAmount < 0) {
       alert.error("Enter a valid fee amount");
+      return;
+    }
+    if (!Number.isFinite(discountAmount) || discountAmount < 0) {
+      alert.error("Enter a valid discount amount");
+      return;
+    }
+    if (discountAmount > feeAmount) {
+      alert.error("Discount cannot exceed fee amount");
       return;
     }
     if (!Number.isFinite(feeBase) || feeBase < 0) {
@@ -373,6 +405,7 @@ export default function AdminBillingPage() {
     await withBusy(`edit-${editInv.id}`, async () => {
       await updateInvoice(editInv.id, {
         fee_amount: feeAmount,
+        discount_amount: discountAmount,
         fee_base: feeBase,
         period_end: editPeriodEnd || undefined,
         notes: editNotes,
@@ -837,6 +870,19 @@ export default function AdminBillingPage() {
                           Issue
                         </button>
                       )}
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-ghost"
+                        title="Preview PDF"
+                        disabled={busy === `pdf-${inv.id}`}
+                        onClick={() => void openPreview(inv)}
+                      >
+                        {busy === `pdf-${inv.id}` ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Eye className="h-3 w-3" />
+                        )}
+                      </button>
                       {(inv.status === "DRAFT" || inv.status === "ISSUED") && (
                         <button
                           type="button"
@@ -889,7 +935,7 @@ export default function AdminBillingPage() {
                             type="button"
                             className="btn btn-xs btn-ghost"
                             title="Send WhatsApp"
-                            disabled={busy === `wa-${inv.id}`}
+                            disabled={busy === `wa-${inv.id}` || inv.status === "PAID"}
                             onClick={() =>
                               void withBusy(`wa-${inv.id}`, async () => {
                                 await sendInvoiceWhatsApp(inv.id);
@@ -1004,14 +1050,71 @@ export default function AdminBillingPage() {
         </dialog>
       )}
 
+      {previewInv !== null && previewUrl !== null && (
+        <dialog open className="modal modal-open">
+          <div className="modal-box max-w-5xl w-[95vw] p-0 overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
+              <div className="min-w-0">
+                <h3 className="font-bold text-base truncate">
+                  {previewInv.invoice_no}
+                </h3>
+                <p className="text-xs text-base-content/60">
+                  {previewInv.fy} {previewInv.quarter} · {previewInv.status.replaceAll("_", " ")}
+                  {previewInv.status === "DRAFT"
+                    ? " · pay link appears after issuing"
+                    : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-xs btn-ghost"
+                  title="Open in new tab"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                <a
+                  href={previewUrl}
+                  download={`${previewInv.invoice_no}.pdf`}
+                  className="btn btn-xs btn-ghost"
+                  title="Download"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                </a>
+                <button
+                  type="button"
+                  className="btn btn-xs btn-ghost"
+                  title="Close"
+                  onClick={closePreview}
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            <iframe
+              src={previewUrl}
+              title={`Invoice ${previewInv.invoice_no}`}
+              className="w-full h-[80vh] bg-base-200"
+            />
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button type="button" onClick={closePreview}>
+              close
+            </button>
+          </form>
+        </dialog>
+      )}
+
       {editInv !== null && (
         <dialog open className="modal modal-open">
           <div className="modal-box max-w-lg">
             <h3 className="font-bold text-lg">Edit {editInv.invoice_no}</h3>
             <p className="text-xs text-base-content/60 mb-4 leading-relaxed">
               {editInv.gst_amount > 0 || editInv.gst_rate > 0
-                ? "Total and GST recalculate from the fee amount."
-                : "Total recalculates from the fee amount."}
+                ? "Total and GST recalculate from fee minus discount."
+                : "Total recalculates from fee minus discount."}
               {editInv.status === "ISSUED"
                 ? " UPI QR amount updates too."
                 : ""}
@@ -1025,6 +1128,17 @@ export default function AdminBillingPage() {
                   className="input input-bordered input-sm w-full"
                   value={editFeeAmount}
                   onChange={(e) => setEditFeeAmount(e.target.value)}
+                />
+              </label>
+              <label className="form-control w-full">
+                <span className="label-text text-xs mb-1">Discount amount</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="input input-bordered input-sm w-full"
+                  value={editDiscountAmount}
+                  onChange={(e) => setEditDiscountAmount(e.target.value)}
                 />
               </label>
               <label className="form-control w-full">

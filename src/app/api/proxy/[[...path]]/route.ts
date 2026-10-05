@@ -130,31 +130,36 @@ async function handleProxyRequest(request: Request) {
 
     const contentType =
       response.headers.get("content-type") || "application/json";
-    let data;
-    if (contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
+    const isJson = contentType.includes("application/json");
+    const isText = contentType.startsWith("text/");
+    // Binary bodies (e.g. PDF) must not be decoded as text.
+    let data: string | ArrayBuffer;
+    if (isJson) {
+      data = JSON.stringify(await response.json());
+    } else if (isText) {
       data = await response.text();
+    } else {
+      data = await response.arrayBuffer();
     }
 
     const responseHeaders: Record<string, string> = {
       "Content-Type": contentType,
     };
 
+    const contentDisposition = response.headers.get("content-disposition");
+    if (contentDisposition) {
+      responseHeaders["Content-Disposition"] = contentDisposition;
+    }
+
     const setCookie = response.headers.get("set-cookie");
     if (setCookie) {
       responseHeaders["Set-Cookie"] = setCookie;
     }
 
-    return new NextResponse(
-      contentType.includes("application/json")
-        ? JSON.stringify(data)
-        : data,
-      {
-        status: response.status,
-        headers: responseHeaders,
-      }
-    );
+    return new NextResponse(data, {
+      status: response.status,
+      headers: responseHeaders,
+    });
   } catch (error) {
     console.error("Proxy error:", error);
     return NextResponse.json({ error: "Proxy request failed" }, { status: 500 });

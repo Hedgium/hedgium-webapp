@@ -78,10 +78,12 @@ function formatPnlAmount(value: number | null | undefined): string {
 function e1InfoTip(
   selfManaged: boolean,
   realised: number | null,
-  mtm: number | null
+  mtm: number | null,
+  dav: number | null
 ): string {
   const parts: string[] = [];
   if (selfManaged) parts.push("Self-managed.");
+  if (dav != null) parts.push(`DAV: ₹${formatPnlAmount(dav)}`);
   if (mtm != null) parts.push(`MTM: ₹${formatPnlAmount(mtm)}`);
   if (realised != null) parts.push(`Realised: ₹${formatPnlAmount(realised)}`);
   return parts.join(" ");
@@ -146,7 +148,8 @@ export default function PnlSummarySection({
       combined: number | null | undefined,
       combinedPct: number | null | undefined,
       e1Realised: number | null | undefined,
-      e1Mtm: number | null | undefined
+      e1Mtm: number | null | undefined,
+      dav: number | null | undefined
     ): PnlLine[] => {
       const charges = e2Charges ?? 0;
       const lines: PnlLine[] = [
@@ -159,7 +162,12 @@ export default function PnlSummarySection({
         },
       ];
       if (e1 != null) {
-        const infoTip = e1InfoTip(selfManaged, e1Realised ?? null, e1Mtm ?? null);
+        const infoTip = e1InfoTip(
+          selfManaged,
+          e1Realised ?? null,
+          e1Mtm ?? null,
+          dav ?? null
+        );
         lines.push(
           {
             label: "E1",
@@ -194,7 +202,8 @@ export default function PnlSummarySection({
           pnlSummary.combined_month_pnl,
           pnlSummary.combined_month_pnl_pct,
           pnlSummary.e1_month_realised,
-          pnlSummary.e1_month_mtm
+          pnlSummary.e1_month_mtm,
+          pnlSummary.month_dav
         ),
       },
       {
@@ -210,7 +219,8 @@ export default function PnlSummarySection({
           pnlSummary.combined_quarter_pnl,
           pnlSummary.combined_quarter_pnl_pct,
           pnlSummary.e1_quarter_realised,
-          pnlSummary.e1_quarter_mtm
+          pnlSummary.e1_quarter_mtm,
+          pnlSummary.quarter_dav
         ),
       },
       {
@@ -226,7 +236,8 @@ export default function PnlSummarySection({
           pnlSummary.combined_ytd_pnl,
           pnlSummary.combined_ytd_pnl_pct,
           pnlSummary.e1_ytd_realised,
-          pnlSummary.e1_ytd_mtm
+          pnlSummary.e1_ytd_mtm,
+          pnlSummary.ytd_dav
         ),
         highlight: true,
       },
@@ -243,7 +254,8 @@ export default function PnlSummarySection({
           pnlSummary.combined_all_time_pnl,
           pnlSummary.combined_all_time_pnl_pct,
           pnlSummary.e1_all_time_realised,
-          pnlSummary.e1_all_time_mtm
+          pnlSummary.e1_all_time_mtm,
+          pnlSummary.all_time_dav
         ),
       },
     ];
