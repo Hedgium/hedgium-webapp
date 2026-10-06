@@ -1,11 +1,15 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import AdminSidebar from '@/components/admin/Sidebar';
 import AlertsContainer from '@/components/AlertsContainer';
 import NotificationProvider from '@/providers/NotificationProvider';
 import { ShieldX, LogOut } from 'lucide-react';
+import {
+  adminSectionForPath,
+  canAccessAdminSection,
+} from '@/constants/adminSections';
 
 export default function AdminLayoutClient({
   children,
@@ -13,12 +17,16 @@ export default function AdminLayoutClient({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout } = useAuthStore();
 
   const handleLogout = async () => {
     await logout();
     router.push('/');
   };
+
+  const section = adminSectionForPath(pathname);
+  const sectionAllowed = canAccessAdminSection(user?.admin_sections, section);
 
   return (
     <NotificationProvider>
@@ -64,7 +72,25 @@ export default function AdminLayoutClient({
               tabIndex={-1}
               className="flex-1 bg-base-200 overflow-y-auto flex flex-col outline-none"
             >
-              <div className="flex-1">{children}</div>
+              {sectionAllowed ? (
+                <div className="flex-1">{children}</div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center p-4">
+                  <div className="card bg-base-100 shadow-xl border border-base-300 max-w-md w-full">
+                    <div className="card-body items-center text-center">
+                      <div className="rounded-full bg-warning/10 p-4">
+                        <ShieldX className="size-10 text-warning" aria-hidden />
+                      </div>
+                      <h1 className="card-title text-2xl">Section restricted</h1>
+                      <p className="text-base-content/70">
+                        Your account does not have permission for this admin
+                        section. Ask a superuser to add the section to your
+                        Django group.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </main>
           </div>
           <AlertsContainer />

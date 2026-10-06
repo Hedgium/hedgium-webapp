@@ -5,7 +5,7 @@ import Link from "next/link";
 import React from "react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
-import { CheckCircle, Edit2, Info, LayoutList, ListRestart, RefreshCw } from "lucide-react";
+import { CheckCircle, Edit2, Info, LayoutList, LineChart, ListRestart, RefreshCw } from "lucide-react";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import { waitForCeleryTaskComplete } from "@/utils/celeryTask";
 
@@ -38,6 +38,11 @@ const StrategyDailyReportModal = dynamic(
 const StrategyBuilderEditModal = dynamic(
   () => import("@/components/admin/StrategyBuilderEditModal"),
   { ssr: false }
+);
+
+const BuilderSpreadChartsModal = dynamic(
+  () => import("@/components/admin/builder/BuilderSpreadChartsModal"),
+  { ssr: false, loading: () => null }
 );
 
 const REFRESH_ACTIVE_STRATEGY_TASKS = [
@@ -206,6 +211,10 @@ export default function Page() {
     string[] | null
   >(null);
   const [strategyReportOpen, setStrategyReportOpen] = React.useState(false);
+  const [spreadCharts, setSpreadCharts] = React.useState<{
+    builderId: number;
+    name: string;
+  } | null>(null);
   const [editingBuilderId, setEditingBuilderId] = React.useState<number | null>(
     null
   );
@@ -1350,30 +1359,7 @@ export default function Page() {
                           >
                             {strategy.id}
                           </Link>
-                          {strategy.master_role ? (
-                            <span
-                              className={`badge badge-xs badge-soft w-fit ${
-                                strategy.master_role === "client"
-                                  ? "badge-success"
-                                  : "badge-info"
-                              }`}
-                            >
-                              {strategy.master_role === "client"
-                                ? "Client"
-                                : "Internal"}
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="align-top min-w-[10rem] w-[10rem] max-w-[10rem] overflow-hidden">
-                        <div className="flex flex-col items-start gap-0.5 min-w-0 w-full">
-                          <div className="flex items-start gap-1 min-w-0 w-full">
-                            <Link
-                              href={`/admin/strategy/${strategy.id}`}
-                              className="link link-hover link-primary font-medium wrap-anywhere whitespace-normal leading-snug min-w-0 flex-1"
-                            >
-                              {strategy.name}
-                            </Link>
+                          <div className="flex items-center">
                             <button
                               type="button"
                               className="btn btn-ghost btn-xs btn-square shrink-0 relative z-10"
@@ -1402,6 +1388,31 @@ export default function Page() {
                               disabled={!strategy.builder_id}
                               title={
                                 strategy.builder_id
+                                  ? "Spread charts"
+                                  : "No linked builder"
+                              }
+                              aria-label={
+                                strategy.builder_id
+                                  ? `Spread charts for ${strategy.name}`
+                                  : "No linked builder"
+                              }
+                              onClick={() => {
+                                if (strategy.builder_id) {
+                                  setSpreadCharts({
+                                    builderId: strategy.builder_id,
+                                    name: strategy.name,
+                                  });
+                                }
+                              }}
+                            >
+                              <LineChart className="size-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-xs btn-square shrink-0 relative z-10"
+                              disabled={!strategy.builder_id}
+                              title={
+                                strategy.builder_id
                                   ? "Edit builder"
                                   : "No linked builder"
                               }
@@ -1419,6 +1430,29 @@ export default function Page() {
                               <Edit2 className="size-3.5" />
                             </button>
                           </div>
+                          {strategy.master_role ? (
+                            <span
+                              className={`badge badge-xs badge-soft w-fit ${
+                                strategy.master_role === "client"
+                                  ? "badge-success"
+                                  : "badge-info"
+                              }`}
+                            >
+                              {strategy.master_role === "client"
+                                ? "Client"
+                                : "Internal"}
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="align-top min-w-[10rem] w-[10rem] max-w-[10rem] overflow-hidden">
+                        <div className="flex flex-col items-start gap-0.5 min-w-0 w-full">
+                          <Link
+                            href={`/admin/strategy/${strategy.id}`}
+                            className="link link-hover link-primary font-medium wrap-anywhere whitespace-normal leading-snug min-w-0"
+                          >
+                            {strategy.name}
+                          </Link>
                           <ResearchReportNameAffordance
                             symbols={matchingReportSymbols}
                             onOpen={setReportModalSymbols}
@@ -1740,6 +1774,14 @@ export default function Page() {
           builderId={editingBuilderId}
           onClose={() => setEditingBuilderId(null)}
           onSaved={() => void fetchStrategies({ background: true })}
+        />
+      )}
+
+      {spreadCharts != null && (
+        <BuilderSpreadChartsModal
+          builderId={spreadCharts.builderId}
+          builderName={spreadCharts.name}
+          onClose={() => setSpreadCharts(null)}
         />
       )}
     </div>

@@ -37,6 +37,9 @@ export default function BuilderLegItem({ leg, onEdit, onDelete }: BuilderLegItem
                 <div>
                     <p className="text-sm text-base-content/60">Strike</p>
                     <p className="font-medium">{leg.strike}</p>
+                    <p className="text-xs text-base-content/60">
+                        {leg.strike_type} · dist {leg.strike_distance > 0 ? `+${leg.strike_distance}` : leg.strike_distance}
+                    </p>
                 </div>
                 <div>
                     <p className="text-sm text-base-content/60">Period, Expiry</p>

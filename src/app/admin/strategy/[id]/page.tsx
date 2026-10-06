@@ -11,7 +11,7 @@ import TradeCycles from "@/components/admin/TradeCycles";
 import { formatDateTimeMinutes } from "@/utils/formatDate";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { CheckCircle, ChevronLeft, Layers, Table2, Activity, RotateCcw, RotateCw } from "lucide-react";
+import { CheckCircle, ChevronLeft, Layers, LineChart, Table2, Activity, RotateCcw, RotateCw } from "lucide-react";
 import StrategyAdjustmentsSkeleton from "@/components/skeletons/StrategyAdjustmentsSkeleton";
 import StrategyTradeCyclesSkeleton from "@/components/skeletons/StrategyTradeCyclesSkeleton";
 import ManualAdjustmentModal, {
@@ -26,6 +26,11 @@ const StrategyMetricSnapshotsModal = dynamic(
 
 const StrategyOptionChainModal = dynamic(
   () => import("@/components/admin/strategy/StrategyOptionChainModal"),
+  { ssr: false, loading: () => null }
+);
+
+const BuilderSpreadChartsModal = dynamic(
+  () => import("@/components/admin/builder/BuilderSpreadChartsModal"),
   { ssr: false, loading: () => null }
 );
 
@@ -48,6 +53,7 @@ interface StrategyDetail {
   created_at: string;
   source?: string | null;
   is_active: boolean;
+  builder_id?: number | null;
   completed: boolean;
   completed_at?: string | null;
   trade_cycle_count: number;
@@ -141,6 +147,7 @@ export default function StrategyDetailPage() {
     useState<ManualAdjustmentInitialValues | null>(null);
   const [showOptionChainModal, setShowOptionChainModal] = useState(false);
   const [showMetricSnapshotsModal, setShowMetricSnapshotsModal] = useState(false);
+  const [showSpreadCharts, setShowSpreadCharts] = useState(false);
   const [strategyRefreshing, setStrategyRefreshing] = useState(false);
   const [adjustmentsRefreshVersion, setAdjustmentsRefreshVersion] = useState(0);
   const alert = useAlert();
@@ -436,8 +443,22 @@ export default function StrategyDetailPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setShowSpreadCharts(true)}
+                disabled={!strategy?.builder_id}
+                title={
+                  strategy?.builder_id
+                    ? "Spread charts from builder metric snapshots"
+                    : "No linked builder"
+                }
+                className="btn btn-outline btn-sm gap-1.5 border-base-content/20"
+              >
+                <LineChart className="size-4" />
+                Spreads
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowMetricSnapshotsModal(true)}
-                title="5-minute ACTIVE builder metric snapshots"
+                title="5-minute builder metric snapshots (ACTIVE or Checking)"
                 className="btn btn-outline btn-sm gap-1.5 border-base-content/20"
               >
                 <Activity className="size-4" />
@@ -732,6 +753,14 @@ export default function StrategyDetailPage() {
             strategyId={strategyId}
             strategyName={strategy.name}
             onClose={() => setShowMetricSnapshotsModal(false)}
+          />
+        )}
+
+        {showSpreadCharts && strategy?.builder_id != null && (
+          <BuilderSpreadChartsModal
+            builderId={strategy.builder_id}
+            builderName={strategy.name}
+            onClose={() => setShowSpreadCharts(false)}
           />
         )}
       </div>
