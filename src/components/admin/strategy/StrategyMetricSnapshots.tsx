@@ -491,7 +491,7 @@ export default function StrategyMetricSnapshotsModal({
         ) : !rows.length ? (
           <div className="rounded-lg border border-base-300/70 bg-base-200/40 p-8 text-sm text-base-content/60">
             No metric snapshots yet. Snapshots are recorded every 5 minutes while the
-            builder is ACTIVE.
+            builder is ACTIVE or Checking.
           </div>
         ) : (
           <div className="rounded-lg border border-base-300/70 bg-base-100 overflow-x-auto">

@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { StrategyBuilder, BuilderLeg } from '@/types/builder';
-import { Edit2, Trash2, RotateCw, Plus, Mail, MessageCircle } from 'lucide-react';
+import { Edit2, Trash2, RotateCw, Plus, Mail, MessageCircle, LineChart } from 'lucide-react';
 import BuilderLegItem from './BuilderLegItem';
 import { formatDateTimeMinutes } from '@/utils/formatDate';
+
+const BuilderSpreadChartsModal = dynamic(
+    () => import('./BuilderSpreadChartsModal'),
+    { ssr: false, loading: () => null },
+);
 
 interface BuilderItemProps {
     builder: StrategyBuilder;
@@ -32,6 +38,7 @@ export default function BuilderItem({
 }: BuilderItemProps) {
     const isClient = variant === "client";
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [showSpreadCharts, setShowSpreadCharts] = useState(false);
     const [isSendingPnlEmails, setIsSendingPnlEmails] = useState(false);
     const [isSendingPnlWhatsapp, setIsSendingPnlWhatsapp] = useState(false);
 
@@ -67,7 +74,9 @@ export default function BuilderItem({
         }
     };
 
-    const legs = builder.builder_legs ?? [];
+    const legs = [...(builder.builder_legs ?? [])].sort(
+        (a, b) => a.leg_index - b.leg_index,
+    );
 
     return (
         <div className="bg-base-100/80 rounded-xl p-4 mb-6 border border-base-300">
@@ -102,6 +111,16 @@ export default function BuilderItem({
                 </div>
 
                 <div className="flex items-center space-x-2 mt-4 md:mt-0">
+                    {!isClient && (
+                        <button
+                            type="button"
+                            onClick={() => setShowSpreadCharts(true)}
+                            className="btn btn-ghost btn-sm"
+                            title="Spread charts"
+                        >
+                            <LineChart size={18} />
+                        </button>
+                    )}
                     {!isClient && builder.status === 'EXITED' && onSendPnlEmails && onSendPnlWhatsapp && (
                         <>
                             <button
@@ -186,6 +205,13 @@ export default function BuilderItem({
                     </div>
                 )}
             </div>
+            {showSpreadCharts && (
+                <BuilderSpreadChartsModal
+                    builderId={builder.id}
+                    builderName={builder.name}
+                    onClose={() => setShowSpreadCharts(false)}
+                />
+            )}
         </div>
     );
 }
