@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { StrategyBuilder, BuilderLeg } from '@/types/builder';
-import { Edit2, Trash2, RotateCw, Plus, Mail, MessageCircle, LineChart } from 'lucide-react';
+import { ChevronDown, Edit2, Trash2, RotateCw, Plus, Mail, MessageCircle, LineChart } from 'lucide-react';
 import BuilderLegItem from './BuilderLegItem';
 import { formatDateTimeMinutes } from '@/utils/formatDate';
 
@@ -24,6 +24,14 @@ interface BuilderItemProps {
     variant?: "admin" | "client";
 }
 
+function formatSpotMap(spot: Record<string, number> | null | undefined): string | null {
+    if (!spot || typeof spot !== 'object') return null;
+    const parts = Object.entries(spot)
+        .filter(([, v]) => v != null && Number.isFinite(Number(v)))
+        .map(([sym, v]) => `${sym} ${Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`);
+    return parts.length ? parts.join(' · ') : null;
+}
+
 export default function BuilderItem({
     builder,
     onEdit,
@@ -39,6 +47,7 @@ export default function BuilderItem({
     const isClient = variant === "client";
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showSpreadCharts, setShowSpreadCharts] = useState(false);
+    const [legsOpen, setLegsOpen] = useState(true);
     const [isSendingPnlEmails, setIsSendingPnlEmails] = useState(false);
     const [isSendingPnlWhatsapp, setIsSendingPnlWhatsapp] = useState(false);
 
@@ -77,6 +86,7 @@ export default function BuilderItem({
     const legs = [...(builder.builder_legs ?? [])].sort(
         (a, b) => a.leg_index - b.leg_index,
     );
+    const spotLabel = formatSpotMap(builder.spot_by_underlying);
 
     return (
         <div className="bg-base-100/80 rounded-xl p-4 mb-6 border border-base-300">
@@ -90,11 +100,15 @@ export default function BuilderItem({
                             {builder.status}
                         </span>
                     </h3>
-                    <div className="flex flex-wrap gap-4 mt-2 text-base text-base-content/60">
+                    <div className="flex flex-wrap gap-2 mt-2 text-base text-base-content/60">
                         <span>Exch: <span className="">{builder?.exchange}</span></span>
                         <span>Entry WS: <span className="">{builder?.entry_ws}%</span></span>
+                        <span>Trigger WS: <span className="">{builder?.trigger_ws ?? 0}%</span></span>
                         <span>Exit WS: <span className="">{builder?.exit_ws}%</span></span>
-                        <span>Calc WS: <span className="">{builder?.calculated_ws}%, at {formatDateTimeMinutes(builder?.updated_at)}</span></span>
+                        <span>Calc WS: <span className="">{builder?.calculated_ws != null ? Number(builder.calculated_ws).toFixed(2) : "—"}%, at {formatDateTimeMinutes(builder?.updated_at)}</span></span>
+                        {spotLabel && (
+                            <span>Spot: <span className="text-base-content/80">{spotLabel}</span></span>
+                        )}
                         {!isClient && (
                             <span>
                                 Created by:{" "}
@@ -127,7 +141,7 @@ export default function BuilderItem({
                                 type="button"
                                 onClick={handleSendPnlEmails}
                                 disabled={isSendingPnlEmails}
-                                className="btn btn-outline btn-sm btn-primary gap-1"
+                                className="btn btn-sm btn-ghost primary gap-1"
                                 title="Send PnL Emails"
                             >
                                 {isSendingPnlEmails ? (
@@ -135,21 +149,19 @@ export default function BuilderItem({
                                 ) : (
                                     <Mail size={16} />
                                 )}
-                                Send PnL Emails
                             </button>
                             <button
                                 type="button"
                                 onClick={handleSendPnlWhatsapp}
                                 disabled={isSendingPnlWhatsapp}
-                                className="btn btn-outline btn-sm btn-primary gap-1"
-                                title="Send WhatsApp"
+                                className="btn btn-sm btn-ghost primary gap-1"
+                                title="Send PnL WhatsApp"
                             >
                                 {isSendingPnlWhatsapp ? (
                                     <span className="loading loading-spinner loading-xs" />
                                 ) : (
                                     <MessageCircle size={16} />
                                 )}
-                                Send WhatsApp
                             </button>
                         </>
                     )}
@@ -177,38 +189,50 @@ export default function BuilderItem({
                 </div>
             </div>
 
-            <div className="pl-0 md:pl-0">
-                <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-sm font-semibold text-base-content/60 uppercase tracking-wider">Builder Legs</h4>
+            <div>
+                <div className="flex justify-between items-center mb-2 gap-2">
                     <button
+                        type="button"
+                        onClick={() => setLegsOpen((open) => !open)}
+                        className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-base-content/60 uppercase tracking-wider"
+                    >
+                        <ChevronDown
+                            className={`h-4 w-4 shrink-0 opacity-50 transition-transform ${legsOpen ? "rotate-180" : ""}`}
+                        />
+                        <span>Builder Legs ({legs.length})</span>
+                    </button>
+                    <button
+                        type="button"
                         onClick={() => onAddLeg(builder.id)}
-                        className="btn btn-xs btn-outline btn-primary gap-1"
+                        className="btn btn-xs btn-outline btn-primary gap-1 shrink-0"
                     >
                         <Plus size={14} /> Add Leg
                     </button>
                 </div>
-
-                {legs.length > 0 ? (
-                    <div className="space-y-2">
-                        {legs.map((leg, index) => (
-                            <BuilderLegItem
-                                key={leg.id ?? `leg-${builder.id}-${index}`}
-                                leg={leg}
-                                onEdit={onEditLeg}
-                                onDelete={onDeleteLeg}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-4 bg-base-200/50 rounded-lg text-base-content/60 text-base italic">
-                        No legs configured yet.
-                    </div>
+                {legsOpen && (
+                    legs.length > 0 ? (
+                        <div className="space-y-2">
+                            {legs.map((leg, index) => (
+                                <BuilderLegItem
+                                    key={leg.id ?? `leg-${builder.id}-${index}`}
+                                    leg={leg}
+                                    onEdit={onEditLeg}
+                                    onDelete={onDeleteLeg}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-4 bg-base-200/50 rounded-lg text-base-content/60 text-base italic">
+                            No legs configured yet.
+                        </div>
+                    )
                 )}
             </div>
             {showSpreadCharts && (
                 <BuilderSpreadChartsModal
                     builderId={builder.id}
                     builderName={builder.name}
+                    triggerWs={builder.trigger_ws}
                     onClose={() => setShowSpreadCharts(false)}
                 />
             )}

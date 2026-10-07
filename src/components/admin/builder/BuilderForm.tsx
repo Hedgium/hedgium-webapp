@@ -90,8 +90,9 @@ export default function BuilderForm({
         name: '',
         exchange: 'NFO',
         status: isClient ? 'SAAS_CHECKING' : 'CHECKING',
-        entry_ws: 0,
-        exit_ws: 0,
+        entry_ws: -10,
+        trigger_ws: 0,
+        exit_ws: 10,
         entry_condition: 'LESS',
         exit_pnl: 50000,
         strategy_template_id: null, // Default or fetch from API
@@ -165,6 +166,7 @@ export default function BuilderForm({
                 exchange: initialData.exchange,
                 status: initialData.status,
                 entry_ws: initialData.entry_ws,
+                trigger_ws: initialData.trigger_ws ?? 0,
                 exit_ws: initialData.exit_ws,
                 entry_condition: initialData.entry_condition,
                 exit_pnl: initialData.exit_pnl ?? 50000,
@@ -331,7 +333,7 @@ export default function BuilderForm({
         setFormData(prev => ({
             ...prev,
             [name]: name === 'strike_step' || name === 'strike_multiplier' || name === 'strategy_template_id' || name === 'adjustment_strike_distance' ? parseInt(value) :
-                name === 'entry_ws' || name === 'exit_ws' || name === 'margin_required' ? parseFloat(value) : value
+                name === 'entry_ws' || name === 'trigger_ws' || name === 'exit_ws' || name === 'margin_required' ? parseFloat(value) : value
         }));
     };
 
@@ -665,6 +667,22 @@ export default function BuilderForm({
                         required 
                         name="entry_ws" 
                         value={formData.entry_ws} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
+                        className="input input-bordered input-sm h-9 w-full" 
+                    />
+                </div>
+                <div className="form-control">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Trigger WS (%)</span></label>
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        name="trigger_ws" 
+                        value={formData.trigger_ws ?? 0} 
                         onChange={handleChange}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { authFetch } from "@/utils/api";
-import { sendBuilderPnlEmails, sendBuilderPnlWhatsapp } from "@/services/builder";
+import { refreshBuilder, sendBuilderPnlEmails, sendBuilderPnlWhatsapp } from "@/services/builder";
 import { StrategyBuilder, BuilderLeg, StrategyBuilderCreate, StrategyBuilderUpdate, BuilderLegCreate, BuilderLegUpdate } from "@/types/builder";
 import BuilderItem from "@/components/admin/builder/BuilderItem";
 import useAlert from "@/hooks/useAlert";
@@ -153,10 +153,9 @@ export default function BuilderPage() {
 
     const handleRefreshStatus = async (builderId: number) => {
         try {
-            const response = await authFetch(`builder/builders/${builderId}/`);
-            const updatedBuilder = await response.json();
+            const updatedBuilder = await refreshBuilder(builderId);
             setBuilders(prev => prev.map(b => b.id === updatedBuilder.id ? updatedBuilder : b));
-            alert.success('Status refreshed');
+            alert.success('Spot and status refreshed');
         } catch (error) {
             console.error('Error refreshing status:', error);
             alert.error('Failed to refresh status');

@@ -6,6 +6,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -113,16 +114,37 @@ function SpreadTooltip({
   );
 }
 
+function yDomain(
+  values: (number | null)[],
+  extras: Array<number | null | undefined>,
+): [number, number] | ["auto", "auto"] {
+  const nums = values.filter((v): v is number => v != null);
+  for (const extra of extras) {
+    if (extra != null && Number.isFinite(extra)) nums.push(extra);
+  }
+  if (!nums.length) return ["auto", "auto"];
+  const min = Math.min(...nums);
+  const max = Math.max(...nums);
+  if (min === max) {
+    const pad = Math.max(Math.abs(min) * 0.1, 0.1);
+    return [min - pad, max + pad];
+  }
+  const pad = (max - min) * 0.08;
+  return [min - pad, max + pad];
+}
+
 function SpreadChart({
   seriesKey,
   label,
   color,
   points,
+  triggerWs,
 }: {
   seriesKey: SpreadKey;
   label: string;
   color: string;
   points: SpreadPoint[];
+  triggerWs?: number | null;
 }) {
   const values = points.map((point) => toNum(point[seriesKey]));
   const averages = weightedAvgSeries(values);
@@ -132,6 +154,12 @@ function SpreadChart({
     weightedAvg: averages[index],
   }));
   const hasValue = values.some((value) => value != null);
+  const showTrigger =
+    seriesKey === "spread" &&
+    triggerWs != null &&
+    Number.isFinite(triggerWs) &&
+    triggerWs !== 0;
+  const domain = yDomain(values, showTrigger ? [triggerWs] : []);
 
   return (
     <section className="rounded-lg border border-base-300/70 bg-base-100 p-3">
@@ -153,13 +181,29 @@ function SpreadChart({
                 tick={axisTick}
                 tickFormatter={(v) => formatPct(Number(v))}
                 width={56}
-                domain={["auto", "auto"]}
+                domain={domain}
+                allowDataOverflow={false}
               />
               <Tooltip
                 cursor={{ stroke: "var(--color-base-content)", strokeOpacity: 0.25 }}
                 content={<SpreadTooltip />}
               />
               <Legend />
+              {showTrigger && (
+                <ReferenceLine
+                  y={triggerWs}
+                  stroke="#dc2626"
+                  strokeDasharray="6 4"
+                  strokeWidth={2}
+                  ifOverflow="extendDomain"
+                  label={{
+                    value: `Trigger ${formatPct(triggerWs!)}`,
+                    position: "insideTopRight",
+                    fill: "#dc2626",
+                    fontSize: 11,
+                  }}
+                />
+              )}
               <Line
                 type="monotone"
                 dataKey="value"
@@ -194,11 +238,22 @@ function SpreadChart({
 interface Props {
   builderId: number;
   builderName: string;
+  triggerWs?: number | null;
   onClose: () => void;
 }
 
-export default function BuilderSpreadChartsModal({ builderId, builderName, onClose }: Props) {
+export default function BuilderSpreadChartsModal({
+  builderId,
+  builderName,
+  triggerWs: triggerWsProp,
+  onClose,
+}: Props) {
   const [points, setPoints] = useState<SpreadPoint[]>([]);
+  const [triggerWs, setTriggerWs] = useState<number | null>(
+    triggerWsProp != null && Number.isFinite(Number(triggerWsProp))
+      ? Number(triggerWsProp)
+      : null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -206,23 +261,35 @@ export default function BuilderSpreadChartsModal({ builderId, builderName, onClo
     setLoading(true);
     setError(null);
     try {
-      const res = await authFetch(
-        `builder/builders/${builderId}/metric-snapshots/?limit=${SNAPSHOT_LIMIT}`
-      );
-      if (!res.ok) {
+      const [snapRes, builderRes] = await Promise.all([
+        authFetch(`builder/builders/${builderId}/metric-snapshots/?limit=${SNAPSHOT_LIMIT}`),
+        authFetch(`builder/builders/${builderId}/`),
+      ]);
+      if (!snapRes.ok) {
         setError("Failed to load spread snapshots.");
         setPoints([]);
         return;
       }
-      const data: SpreadPoint[] = await res.json();
+      const data: SpreadPoint[] = await snapRes.json();
       setPoints(Array.isArray(data) ? data : []);
+
+      // Prefer live builder value so charts opened from admin/strategy pages still work.
+      let tw: number | null = null;
+      if (builderRes.ok) {
+        const builder = await builderRes.json();
+        tw = toNum(builder?.trigger_ws);
+      }
+      if (tw == null && triggerWsProp != null) {
+        tw = toNum(triggerWsProp);
+      }
+      setTriggerWs(tw);
     } catch {
       setError("Error loading spread snapshots.");
       setPoints([]);
     } finally {
       setLoading(false);
     }
-  }, [builderId]);
+  }, [builderId, triggerWsProp]);
 
   useEffect(() => {
     void load();
@@ -250,7 +317,11 @@ export default function BuilderSpreadChartsModal({ builderId, builderName, onClo
               Spreads — {builderName}
             </h3>
             <p className="text-xs text-base-content/55 mt-0.5">
-              Latest {SNAPSHOT_LIMIT} snapshots. The dashed line is the expanding weighted average — newer points weigh more.
+              Latest {SNAPSHOT_LIMIT} snapshots. Dashed gray = weighted avg
+              {triggerWs != null && triggerWs !== 0
+                ? `; red dashed = trigger (${formatPct(triggerWs)})`
+                : " (set Trigger WS ≠ 0 to show the trigger line)"}
+              .
             </p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -288,6 +359,7 @@ export default function BuilderSpreadChartsModal({ builderId, builderName, onClo
                 label={series.label}
                 color={series.color}
                 points={points}
+                triggerWs={triggerWs}
               />
             ))}
           </div>
