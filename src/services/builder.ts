@@ -76,6 +76,17 @@ export async function getBuilder(builderId: number): Promise<StrategyBuilder> {
   return (await response.json()) as StrategyBuilder;
 }
 
+/** Recalculate and persist live spot (+ calculated WS) for a builder. */
+export async function refreshBuilder(builderId: number): Promise<StrategyBuilder> {
+  const response = await authFetch(`builder/builders/${builderId}/refresh/`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error("Failed to refresh strategy builder");
+  }
+  return (await response.json()) as StrategyBuilder;
+}
+
 export async function createBuilder(
   data: StrategyBuilderCreate
 ): Promise<StrategyBuilder> {
