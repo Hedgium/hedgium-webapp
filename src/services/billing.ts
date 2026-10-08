@@ -151,6 +151,7 @@ export async function updateInvoice(
     fee_rate?: number;
     fixed_fee_amount?: number;
     period_end?: string;
+    start_date?: string;
     notes?: string;
     is_final?: boolean;
   }

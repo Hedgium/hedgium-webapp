@@ -167,10 +167,9 @@ export default function AdminBillingPage() {
   const [previewInv, setPreviewInv] = useState<Invoice | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [editInv, setEditInv] = useState<Invoice | null>(null);
-  const [editFeeAmount, setEditFeeAmount] = useState("");
   const [editDiscountAmount, setEditDiscountAmount] = useState("");
-  const [editFeeBase, setEditFeeBase] = useState("");
   const [editPeriodEnd, setEditPeriodEnd] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [editIsFinal, setEditIsFinal] = useState(false);
   const [viewTab, setViewTab] = useState<BillingTab>("invoices");
@@ -373,41 +372,33 @@ export default function AdminBillingPage() {
 
   function openEdit(inv: Invoice) {
     setEditInv(inv);
-    setEditFeeAmount(String(inv.fee_amount));
     setEditDiscountAmount(String(inv.discount_amount ?? 0));
-    setEditFeeBase(String(inv.fee_base));
     setEditPeriodEnd(inv.period_end);
+    setEditStartDate(inv.start_date || "");
     setEditNotes(inv.notes || "");
     setEditIsFinal(Boolean(inv.is_final));
   }
 
   async function handleSaveEdit() {
     if (!editInv) return;
-    const feeAmount = Number(editFeeAmount);
     const discountAmount = Number(editDiscountAmount);
-    const feeBase = Number(editFeeBase);
-    if (!Number.isFinite(feeAmount) || feeAmount < 0) {
-      alert.error("Enter a valid fee amount");
-      return;
-    }
     if (!Number.isFinite(discountAmount) || discountAmount < 0) {
       alert.error("Enter a valid discount amount");
       return;
     }
-    if (discountAmount > feeAmount) {
+    if (discountAmount > editInv.fee_amount) {
       alert.error("Discount cannot exceed fee amount");
       return;
     }
-    if (!Number.isFinite(feeBase) || feeBase < 0) {
-      alert.error("Enter a valid fee base");
+    if (!editStartDate) {
+      alert.error("Enter a start date");
       return;
     }
     await withBusy(`edit-${editInv.id}`, async () => {
       await updateInvoice(editInv.id, {
-        fee_amount: feeAmount,
         discount_amount: discountAmount,
-        fee_base: feeBase,
         period_end: editPeriodEnd || undefined,
+        start_date: editStartDate,
         notes: editNotes,
         is_final: editIsFinal,
       });
@@ -774,8 +765,8 @@ export default function AdminBillingPage() {
                 <th>Client</th>
                 <th>Type</th>
                 <th>Fee</th>
-                <th>Fee base</th>
-                <th>Total</th>
+                <th>Fee Base (AUM)</th>
+                <th>Fee Amount</th>
                 <th>Status</th>
                 <th>Last Q</th>
                 <th>Proof</th>
@@ -789,8 +780,14 @@ export default function AdminBillingPage() {
                     <div className="font-mono text-xs">{inv.invoice_no}</div>
                     <div className="text-xs text-base-content/50">
                       {inv.billing_days}/{inv.quarter_days}d
-                      {inv.sebi_cap_applied ? " · SEBI cap" : ""}
+                      {/* {inv.start_date ? ` · from ${inv.start_date}` : ""} */}
+                      {/* {inv.sebi_cap_applied ? " · SEBI cap" : ""} */}
                     </div>
+                    {/* {inv.invoice_date ? (
+                      <div className="text-xs text-base-content/50">
+                        Invoice date {inv.invoice_date}
+                      </div>
+                    ) : null} */}
                   </td>
                   <td>
                     <div className="font-medium text-sm">
@@ -1123,11 +1120,11 @@ export default function AdminBillingPage() {
               <label className="form-control w-full">
                 <span className="label-text text-xs mb-1">Fee amount</span>
                 <input
-                  type="number"
-                  step="0.01"
-                  className="input input-bordered input-sm w-full"
-                  value={editFeeAmount}
-                  onChange={(e) => setEditFeeAmount(e.target.value)}
+                  type="text"
+                  readOnly
+                  aria-readonly="true"
+                  className="input input-bordered input-sm w-full bg-base-200 cursor-default"
+                  value={editInv.fee_amount}
                 />
               </label>
               <label className="form-control w-full">
@@ -1144,13 +1141,31 @@ export default function AdminBillingPage() {
               <label className="form-control w-full">
                 <span className="label-text text-xs mb-1">Fee base (AUM)</span>
                 <input
-                  type="number"
-                  step="0.01"
-                  className="input input-bordered input-sm w-full"
-                  value={editFeeBase}
-                  onChange={(e) => setEditFeeBase(e.target.value)}
+                  type="text"
+                  readOnly
+                  aria-readonly="true"
+                  className="input input-bordered input-sm w-full bg-base-200 cursor-default"
+                  value={editInv.fee_base}
                 />
               </label>
+              <label className="form-control w-full">
+                <span className="label-text text-xs mb-1">Start date</span>
+                <input
+                  type="date"
+                  className="input input-bordered input-sm w-full"
+                  value={editStartDate}
+                  onChange={(e) => setEditStartDate(e.target.value)}
+                />
+                <span className="label-text-alt text-xs text-base-content/50 mt-1">
+                  Defaults to the client inception date, or the profile created date.
+                </span>
+              </label>
+              {editInv.invoice_date ? (
+                <p className="text-xs text-base-content/60">
+                  Invoice date {editInv.invoice_date}. Once the quarter has
+                  ended, this is the last day of that quarter.
+                </p>
+              ) : null}
               <label className="form-control w-full">
                 <span className="label-text text-xs mb-1">Period end</span>
                 <input

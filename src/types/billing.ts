@@ -18,6 +18,8 @@ export interface Invoice {
   quarter: string;
   period_start: string;
   period_end: string;
+  start_date: string | null;
+  invoice_date: string | null;
   is_final: boolean;
   fee_base: number;
   fee_base_source: string;
