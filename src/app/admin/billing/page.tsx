@@ -38,6 +38,7 @@ import {
   verifyInvoice,
   voidInvoice,
 } from "@/services/billing";
+import NetPnlWithCosts from "@/components/reports/NetPnlWithCosts";
 import type { BillingClient, Invoice, LastQuarterPaid } from "@/types/billing";
 import { formatMoneyIN } from "@/utils/formatNumber";
 
@@ -766,6 +767,7 @@ export default function AdminBillingPage() {
                 <th>Type</th>
                 <th>Fee</th>
                 <th>Fee Base (AUM)</th>
+                <th>E2 PnL</th>
                 <th>Fee Amount</th>
                 <th>Status</th>
                 <th>Last Q</th>
@@ -780,14 +782,7 @@ export default function AdminBillingPage() {
                     <div className="font-mono text-xs">{inv.invoice_no}</div>
                     <div className="text-xs text-base-content/50">
                       {inv.billing_days}/{inv.quarter_days}d
-                      {/* {inv.start_date ? ` · from ${inv.start_date}` : ""} */}
-                      {/* {inv.sebi_cap_applied ? " · SEBI cap" : ""} */}
                     </div>
-                    {/* {inv.invoice_date ? (
-                      <div className="text-xs text-base-content/50">
-                        Invoice date {inv.invoice_date}
-                      </div>
-                    ) : null} */}
                   </td>
                   <td>
                     <div className="font-medium text-sm">
@@ -809,6 +804,17 @@ export default function AdminBillingPage() {
                     <div className="text-xs text-base-content/50">
                       {inv.fee_base_source}
                     </div>
+                  </td>
+                  <td className="text-sm tabular-nums">
+                    {inv.engine2_quarter_pnl == null ? (
+                      "—"
+                    ) : (
+                      <NetPnlWithCosts
+                        gross={inv.engine2_quarter_pnl}
+                        charges={inv.engine2_quarter_charges ?? 0}
+                        compact
+                      />
+                    )}
                   </td>
                   <td className="font-medium">₹{formatMoneyIN(inv.total_amount)}</td>
                   <td>
@@ -1164,6 +1170,9 @@ export default function AdminBillingPage() {
                 <p className="text-xs text-base-content/60">
                   Invoice date {editInv.invoice_date}. Once the quarter has
                   ended, this is the last day of that quarter.
+                  {editInv.due_date
+                    ? ` Due ${editInv.due_date} (created date + 10 days).`
+                    : ""}
                 </p>
               ) : null}
               <label className="form-control w-full">
