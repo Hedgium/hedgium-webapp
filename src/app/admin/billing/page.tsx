@@ -776,7 +776,7 @@ export default function AdminBillingPage() {
               </tr>
             </thead>
             <tbody>
-              {invoices.map((inv) => (
+              {invoices.map((inv, invIndex) => (
                 <tr key={inv.id}>
                   <td>
                     <div className="font-mono text-xs">{inv.invoice_no}</div>
@@ -813,6 +813,8 @@ export default function AdminBillingPage() {
                         gross={inv.engine2_quarter_pnl}
                         charges={inv.engine2_quarter_charges ?? 0}
                         compact
+                        dropdownLeft
+                        dropdownTop={invIndex >= invoices.length - 2}
                       />
                     )}
                   </td>

@@ -31,12 +31,15 @@ export default function NetPnlWithCosts({
   compact,
   className,
   dropdownLeft,
+  dropdownTop,
 }: {
   gross: number | null | undefined;
   charges: number | null | undefined;
   compact?: boolean;
   className?: string;
   dropdownLeft?: boolean;
+  /** Open upward — use near the bottom of overflow containers to avoid scrollbar flicker. */
+  dropdownTop?: boolean;
 }) {
   const net = e2NetPnl(gross, charges);
   const hasBreakdown = gross != null && !Number.isNaN(gross);
@@ -49,7 +52,7 @@ export default function NetPnlWithCosts({
       {formatAmount(net, compact)}
       {hasBreakdown ? (
         <div
-          className={`dropdown dropdown-hover dropdown-start ${dropdownLeft ? "dropdown-left" : "dropdown-right"}`}
+          className={`dropdown dropdown-hover dropdown-start ${dropdownTop ? "dropdown-top" : ""} ${dropdownLeft ? "dropdown-left" : "dropdown-right"}`}
         >
           <button
             type="button"
@@ -61,7 +64,7 @@ export default function NetPnlWithCosts({
           </button>
           <div
             tabIndex={0}
-            className="dropdown-content z-50 w-44 rounded-lg border border-base-300 bg-base-100 p-2 text-left text-xs font-normal text-base-content"
+            className="dropdown-content z-50 w-44 rounded-lg border border-base-300 bg-base-100 p-2 text-left text-xs font-normal text-base-content shadow-md"
           >
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-base-content/55">Gross</span>
