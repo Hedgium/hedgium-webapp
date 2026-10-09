@@ -20,7 +20,10 @@ export interface Invoice {
   period_end: string;
   start_date: string | null;
   invoice_date: string | null;
+  due_date: string | null;
   is_final: boolean;
+  engine2_quarter_pnl: number | null;
+  engine2_quarter_charges: number | null;
   fee_base: number;
   fee_base_source: string;
   snapshot_count: number;
