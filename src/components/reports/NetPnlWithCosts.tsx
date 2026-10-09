@@ -1,6 +1,8 @@
 "use client";
 
 import { Info } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { formatMoneyIN } from "@/utils/formatNumber";
 
 export function e2NetPnl(
@@ -25,6 +27,10 @@ function formatAmount(value: number | null | undefined, compact?: boolean): stri
   return formatMoneyIN(value);
 }
 
+const PANEL_W = 176; // w-44
+const PANEL_H = 64;
+const GAP = 4;
+
 export default function NetPnlWithCosts({
   gross,
   charges,
@@ -38,12 +44,59 @@ export default function NetPnlWithCosts({
   compact?: boolean;
   className?: string;
   dropdownLeft?: boolean;
-  /** Open upward — use near the bottom of overflow containers to avoid scrollbar flicker. */
+  /** Prefer opening above the trigger (still clamped to the viewport). */
   dropdownTop?: boolean;
 }) {
   const net = e2NetPnl(gross, charges);
   const hasBreakdown = gross != null && !Number.isNaN(gross);
   const chargesValue = charges != null && !Number.isNaN(charges) ? charges : 0;
+
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+
+  const updatePosition = useCallback(() => {
+    const el = btnRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    let left = dropdownLeft ? r.left - PANEL_W - GAP : r.right + GAP;
+    let top = dropdownTop ? r.top - PANEL_H - GAP : r.bottom + GAP;
+    left = Math.max(8, Math.min(left, window.innerWidth - PANEL_W - 8));
+    top = Math.max(8, Math.min(top, window.innerHeight - PANEL_H - 8));
+    setCoords({ top, left });
+  }, [dropdownLeft, dropdownTop]);
+
+  const clearCloseTimer = () => {
+    if (closeTimer.current != null) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  };
+
+  const openPanel = () => {
+    clearCloseTimer();
+    updatePosition();
+    setOpen(true);
+  };
+
+  const scheduleClose = () => {
+    clearCloseTimer();
+    closeTimer.current = setTimeout(() => setOpen(false), 120);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onReposition = () => updatePosition();
+    window.addEventListener("scroll", onReposition, true);
+    window.addEventListener("resize", onReposition);
+    return () => {
+      window.removeEventListener("scroll", onReposition, true);
+      window.removeEventListener("resize", onReposition);
+    };
+  }, [open, updatePosition]);
+
+  useEffect(() => () => clearCloseTimer(), []);
 
   return (
     <span
@@ -51,31 +104,46 @@ export default function NetPnlWithCosts({
     >
       {formatAmount(net, compact)}
       {hasBreakdown ? (
-        <div
-          className={`dropdown dropdown-hover dropdown-start ${dropdownTop ? "dropdown-top" : ""} ${dropdownLeft ? "dropdown-left" : "dropdown-right"}`}
-        >
+        <>
           <button
+            ref={btnRef}
             type="button"
-            tabIndex={0}
             className="inline-flex cursor-pointer text-base-content/45 hover:text-base-content/70"
             aria-label="PnL breakdown: gross and other costs"
+            aria-expanded={open}
+            onMouseEnter={openPanel}
+            onMouseLeave={scheduleClose}
+            onFocus={openPanel}
+            onBlur={scheduleClose}
           >
             <Info className="h-3 w-3" strokeWidth={2.5} aria-hidden />
           </button>
-          <div
-            tabIndex={0}
-            className="dropdown-content z-50 w-44 rounded-lg border border-base-300 bg-base-100 p-2 text-left text-xs font-normal text-base-content shadow-md"
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-base-content/55">Gross</span>
-              <span className={`tabular-nums ${signedClass(gross)}`}>{formatAmount(gross)}</span>
-            </div>
-            <div className="mt-1 flex items-baseline justify-between gap-3">
-              <span className="text-base-content/55">Other costs</span>
-              <span className="tabular-nums text-base-content/80">{formatAmount(chargesValue)}</span>
-            </div>
-          </div>
-        </div>
+          {open && coords && typeof document !== "undefined"
+            ? createPortal(
+                <div
+                  role="tooltip"
+                  style={{ top: coords.top, left: coords.left }}
+                  className="fixed z-[200] w-44 rounded-lg border border-base-300 bg-base-100 p-2 text-left text-xs font-normal text-base-content shadow-md"
+                  onMouseEnter={openPanel}
+                  onMouseLeave={scheduleClose}
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-base-content/55">Gross</span>
+                    <span className={`tabular-nums ${signedClass(gross)}`}>
+                      {formatAmount(gross)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between gap-3">
+                    <span className="text-base-content/55">Other costs</span>
+                    <span className="tabular-nums text-base-content/80">
+                      {formatAmount(chargesValue)}
+                    </span>
+                  </div>
+                </div>,
+                document.body
+              )
+            : null}
+        </>
       ) : null}
     </span>
   );
