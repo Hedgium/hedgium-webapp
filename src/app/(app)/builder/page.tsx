@@ -271,6 +271,7 @@ export default function ClientBuilderPage() {
               aria-label="Filter by status"
             >
               <option value="">All Statuses</option>
+              <option value="PRECHECK">Precheck</option>
               <option value="CHECKING">Checking</option>
               <option value="SAAS_CHECKING">SAAS Checking</option>
               <option value="ACTIVE">Active</option>

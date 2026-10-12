@@ -89,7 +89,7 @@ export default function BuilderForm({
     const [formData, setFormData] = useState<Partial<StrategyBuilderCreate>>({
         name: '',
         exchange: 'NFO',
-        status: isClient ? 'SAAS_CHECKING' : 'CHECKING',
+        status: isClient ? 'SAAS_CHECKING' : 'PRECHECK',
         entry_ws: -10,
         trigger_ws: 0,
         exit_ws: 10,
@@ -539,6 +539,16 @@ export default function BuilderForm({
                 return;
             }
         }
+        const spotMin = formData.spot_dev_pct_min;
+        if (spotMin != null && Number.isFinite(Number(spotMin)) && Number(spotMin) > -0.01) {
+            alert('Spot deviation min cannot be greater than -0.01.');
+            return;
+        }
+        const spotMax = formData.spot_dev_pct_max;
+        if (spotMax != null && Number.isFinite(Number(spotMax)) && Number(spotMax) < 0.01) {
+            alert('Spot deviation max cannot be less than 0.01.');
+            return;
+        }
         if (!initialData && legPresetConfig && !presetReady) {
             alert('Please complete all leg setup fields before submitting.');
             return;
@@ -642,6 +652,7 @@ export default function BuilderForm({
                         />
                     ) : (
                         <select name="status" value={formData.status} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
+                            <option value="PRECHECK">PRECHECK</option>
                             <option value="CHECKING">CHECKING</option>
                             <option value="SAAS_CHECKING">SAAS_CHECKING</option>
                             <option value="ACTIVE">ACTIVE</option>
@@ -974,6 +985,7 @@ export default function BuilderForm({
                             <input
                                 type="number"
                                 step="any"
+                                max={-0.01}
                                 name="spot_dev_pct_min"
                                 value={optionalNumberValue(formData.spot_dev_pct_min)}
                                 onChange={handleChange}
@@ -991,6 +1003,7 @@ export default function BuilderForm({
                             <input
                                 type="number"
                                 step="any"
+                                min={0.01}
                                 name="spot_dev_pct_max"
                                 value={optionalNumberValue(formData.spot_dev_pct_max)}
                                 onChange={handleChange}
@@ -1005,6 +1018,7 @@ export default function BuilderForm({
                     <label className="label">
                         <span className="text-xs text-base-content/60">
                             Leave either field empty to disable spot deviation checks.
+                            Min cannot be greater than -0.01. Max cannot be less than 0.01.
                         </span>
                     </label>
                 </div>

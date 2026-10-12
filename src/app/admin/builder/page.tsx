@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { authFetch } from "@/utils/api";
 import { refreshBuilder, sendBuilderPnlEmails, sendBuilderPnlWhatsapp } from "@/services/builder";
@@ -44,48 +44,73 @@ export default function BuilderPage() {
     const [selectedBuilderId, setSelectedBuilderId] = useState<number | null>(null);
     const [selectedStrategyBuilder, setSelectedStrategyBuilder] = useState<StrategyBuilder | undefined>(undefined);
     const [statusFilter, setStatusFilter] = useState<string>("ACTIVE");
+    const listRequestGen = useRef(0);
 
     const alert = useAlert();
 
+    const refreshListedSpots = async (rows: StrategyBuilder[], gen: number) => {
+        await Promise.all(
+            rows.map(async (builder) => {
+                if (builder.id == null) return;
+                try {
+                    const updated = await refreshBuilder(builder.id);
+                    if (gen !== listRequestGen.current) return;
+                    setBuilders((prev) =>
+                        prev.map((b) => (b.id === updated.id ? updated : b))
+                    );
+                } catch (error) {
+                    console.error("Error refreshing builder spot:", error);
+                }
+            })
+        );
+    };
+
     const fetchBuilders = async () => {
+        const gen = ++listRequestGen.current;
         setLoading(true);
         try {
             const params = new URLSearchParams();
             if (statusFilter) params.set("status", statusFilter);
             const query = params.toString();
             const url = query ? `builder/builders/?${query}` : "builder/builders/";
-            const response = await authFetch(url);
+            const response = await authFetch(url, { cache: "no-store" });
             const data = await response.json();
+            if (gen !== listRequestGen.current) return;
 
-            setBuilders(data.results ?? []);
+            const rows: StrategyBuilder[] = data.results ?? [];
+            setBuilders(rows);
             setNextPage(data.next ?? null);
+            void refreshListedSpots(rows, gen);
         } catch (error) {
             console.error('Error fetching builders:', error);
             alert.error('Failed to fetch strategy builders');
         } finally {
-            setLoading(false);
+            if (gen === listRequestGen.current) setLoading(false);
         }
     };
 
     const fetchNextPage = async () => {
         if (!nextPage) return;
+        const gen = listRequestGen.current;
         setLoadingMore(true);
         try {
             const url = new URL(nextPage);
             const path = url.pathname.replace(/^\/api\//, "") || "builder/builders/";
-            const response = await authFetch(`${path}${url.search}`);
+            const response = await authFetch(`${path}${url.search}`, { cache: "no-store" });
             const data = await response.json();
+            if (gen !== listRequestGen.current) return;
+            const incoming: StrategyBuilder[] = data.results ?? [];
             setBuilders((prev) => {
-                const incoming = data.results ?? [];
                 const seen = new Set(prev.map((b) => b.id));
                 return [...prev, ...incoming.filter((b) => b.id != null && !seen.has(b.id))];
             });
             setNextPage(data.next ?? null);
+            void refreshListedSpots(incoming, gen);
         } catch (error) {
             console.error('Error fetching next page:', error);
             alert.error('Failed to load more builders');
         } finally {
-            setLoadingMore(false);
+            if (gen === listRequestGen.current) setLoadingMore(false);
         }
     };
 
@@ -285,6 +310,7 @@ export default function BuilderPage() {
                                 className="select select-bordered select-sm h-9 w-48"
                             >
                                 <option value="">All Statuses</option>
+                                <option value="PRECHECK">Precheck</option>
                                 <option value="CHECKING">Checking</option>
                                 <option value="SAAS_CHECKING">SAAS Checking</option>
                                 <option value="ACTIVE">Active</option>
