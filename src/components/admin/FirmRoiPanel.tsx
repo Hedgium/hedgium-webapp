@@ -28,6 +28,15 @@ type FirmRoiPeriod = {
   e2_accounts: number;
 };
 
+type FirmRoiPeriodKey = "month" | "quarter" | "ytd" | "all_time";
+
+type FirmRoiAccountPeriod = {
+  e1_return: number | null;
+  e1_base: number | null;
+  e2_return: number | null;
+  e2_base: number | null;
+};
+
 type FirmRoiAccount = {
   profile_id: number;
   client_id: string;
@@ -38,17 +47,13 @@ type FirmRoiAccount = {
   e2_return: number | null;
   e2_base: number | null;
   e2_base_kind: "account_value" | "margin";
+  periods?: Partial<Record<FirmRoiPeriodKey, FirmRoiAccountPeriod>>;
 };
 
 type FirmRoiResponse = {
   profiles_considered: number;
   profiles_included: number;
-  periods: {
-    month: FirmRoiPeriod;
-    quarter: FirmRoiPeriod;
-    ytd: FirmRoiPeriod;
-    all_time: FirmRoiPeriod;
-  };
+  periods: Record<FirmRoiPeriodKey, FirmRoiPeriod>;
   accounts: FirmRoiAccount[];
   month: string | null;
   quarter: string | null;
@@ -85,8 +90,37 @@ function formatAmt(value: number | null | undefined): string {
   return formatMoneyIN(value);
 }
 
+const BREAKDOWN_PERIODS: { key: FirmRoiPeriodKey; label: string }[] = [
+  { key: "month", label: "Monthly" },
+  { key: "quarter", label: "Quarterly" },
+  { key: "ytd", label: "YTD" },
+  { key: "all_time", label: "All time" },
+];
+
+function accountPeriodFigures(
+  row: FirmRoiAccount,
+  period: FirmRoiPeriodKey
+): FirmRoiAccountPeriod {
+  const fromApi = row.periods?.[period];
+  if (fromApi) return fromApi;
+  if (period === "all_time") {
+    return {
+      e1_return: row.e1_return,
+      e1_base: row.e1_base,
+      e2_return: row.e2_return,
+      e2_base: row.e2_base,
+    };
+  }
+  return {
+    e1_return: null,
+    e1_base: null,
+    e2_return: null,
+    e2_base: null,
+  };
+}
+
 const PERIOD_META: {
-  key: keyof FirmRoiResponse["periods"];
+  key: FirmRoiPeriodKey;
   label: string;
   detailKey: "month" | "quarter" | "fy" | null;
   highlight?: boolean;
@@ -103,42 +137,63 @@ export default function FirmRoiPanel() {
   alertRef.current = alert;
   const [data, setData] = useState<FirmRoiResponse | null>(null);
   const [monthly, setMonthly] = useState<FirmRoiMonthlyResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [monthlyLoading, setMonthlyLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [monthlyError, setMonthlyError] = useState<string | null>(null);
   const [breakdownOpen, setBreakdownOpen] = useState(false);
+  const [breakdownPeriod, setBreakdownPeriod] = useState<FirmRoiPeriodKey>("all_time");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
+  const summaryGen = useRef(0);
+  const monthlyGen = useRef(0);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadSummary = useCallback(async () => {
+    const gen = ++summaryGen.current;
+    setSummaryLoading(true);
+    setSummaryError(null);
     try {
-      const [firmRes, monthlyRes] = await Promise.all([
-        authFetch("positions/pnl/firm-roi/"),
-        authFetch("positions/pnl/firm-roi/monthly/"),
-      ]);
-      if (!firmRes.ok) throw new Error("Failed to load firm ROI");
-      const json = (await firmRes.json()) as FirmRoiResponse;
-      setData(json);
+      const res = await authFetch("positions/pnl/firm-roi/");
+      if (summaryGen.current !== gen) return;
+      if (!res.ok) throw new Error("Failed to load firm ROI");
+      setData((await res.json()) as FirmRoiResponse);
       setPage(0);
-      if (monthlyRes.ok) {
-        setMonthly((await monthlyRes.json()) as FirmRoiMonthlyResponse);
-      } else {
-        setMonthly(null);
-      }
     } catch (e) {
       console.error(e);
-      setData(null);
-      setMonthly(null);
-      setError("Failed to load firm ROI");
+      if (summaryGen.current !== gen) return;
+      setSummaryError("Failed to load firm ROI");
       alertRef.current.error("Failed to load firm ROI");
     } finally {
-      setLoading(false);
+      if (summaryGen.current === gen) setSummaryLoading(false);
     }
   }, []);
 
+  const loadMonthly = useCallback(async () => {
+    const gen = ++monthlyGen.current;
+    setMonthlyLoading(true);
+    setMonthlyError(null);
+    try {
+      const res = await authFetch("positions/pnl/firm-roi/monthly/");
+      if (monthlyGen.current !== gen) return;
+      if (!res.ok) throw new Error("Failed to load monthly ROI");
+      setMonthly((await res.json()) as FirmRoiMonthlyResponse);
+    } catch (e) {
+      console.error(e);
+      if (monthlyGen.current !== gen) return;
+      setMonthlyError("Failed to load monthly ROI");
+      alertRef.current.error("Failed to load monthly ROI");
+    } finally {
+      if (monthlyGen.current === gen) setMonthlyLoading(false);
+    }
+  }, []);
+
+  const load = useCallback(() => {
+    void loadSummary();
+    void loadMonthly();
+  }, [loadSummary, loadMonthly]);
+
   useEffect(() => {
-    void load();
+    load();
   }, [load]);
 
   const accounts = data?.accounts ?? [];
@@ -191,27 +246,29 @@ export default function FirmRoiPanel() {
         <button
           type="button"
           className="btn btn-primary btn-sm gap-2 self-start"
-          onClick={() => void load()}
-          disabled={loading}
+          onClick={load}
+          disabled={summaryLoading || monthlyLoading}
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden />
+          <RefreshCw
+            className={`h-4 w-4 ${summaryLoading || monthlyLoading ? "animate-spin" : ""}`}
+            aria-hidden
+          />
           Refresh
         </button>
       </div>
 
-      {loading && !data ? (
+      {summaryLoading && !data ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-40 animate-pulse rounded-2xl bg-base-300/40" />
           ))}
         </div>
-      ) : error && !data ? (
+      ) : summaryError && !data ? (
         <p className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
-          {error}
+          {summaryError}
         </p>
       ) : data ? (
-        <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 ${summaryLoading ? "opacity-60" : ""}`}>
             {PERIOD_META.map((meta) => {
               const period = data.periods[meta.key];
               const detail =
@@ -287,6 +344,7 @@ export default function FirmRoiPanel() {
               );
             })}
           </div>
+      ) : null}
 
           <div className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
             <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
@@ -300,31 +358,64 @@ export default function FirmRoiPanel() {
                 </p>
               ) : null}
             </div>
-            <FirmRoiMonthlyChart data={monthly?.months ?? []} />
+            {monthlyLoading && !monthly ? (
+              <div className="h-64 animate-pulse rounded-xl bg-base-300/40" />
+            ) : monthlyError && !monthly ? (
+              <p className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
+                {monthlyError}
+              </p>
+            ) : (
+              <div className={monthlyLoading ? "opacity-60" : ""}>
+                <FirmRoiMonthlyChart data={monthly?.months ?? []} />
+              </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-base-300 bg-base-100 shadow-sm">
-            <button
-              type="button"
-              className="flex w-full items-center cursor-pointer justify-between gap-3 px-4 py-3 text-left hover:bg-base-200/40"
-              aria-expanded={breakdownOpen}
-              onClick={() => setBreakdownOpen((open) => !open)}
-            >
-              <span className="flex items-center gap-2 text-sm font-medium">
-                {breakdownOpen ? (
-                  <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-                ) : (
-                  <ChevronRight className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-                )}
-                Account breakdown
-                <span className="text-xs font-normal  text-base-content/55">
-                  ({data.accounts.length} · all-time)
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-3 text-left hover:opacity-80"
+                aria-expanded={breakdownOpen}
+                onClick={() => setBreakdownOpen((open) => !open)}
+              >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  {breakdownOpen ? (
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+                  )}
+                  Account breakdown
+                  <span className="text-xs font-normal text-base-content/55">
+                    {data
+                      ? `(${data.accounts.length} · ${
+                          BREAKDOWN_PERIODS.find((opt) => opt.key === breakdownPeriod)?.label
+                        })`
+                      : summaryLoading
+                        ? "(Loading…)"
+                        : null}
+                  </span>
                 </span>
-              </span>
-              <span className="text-xs text-base-content/50">
-                {breakdownOpen ? "Hide" : "Show"}
-              </span>
-            </button>
+                <span className="text-xs text-base-content/50">
+                  {breakdownOpen ? "Hide" : "Show"}
+                </span>
+              </button>
+              <select
+                className="select select-bordered select-sm w-auto min-w-[8.5rem]"
+                aria-label="Account breakdown period"
+                value={breakdownPeriod}
+                onChange={(e) => {
+                  setBreakdownPeriod(e.target.value as FirmRoiPeriodKey);
+                  setPage(0);
+                }}
+              >
+                {BREAKDOWN_PERIODS.map((opt) => (
+                  <option key={opt.key} value={opt.key}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {breakdownOpen ? (
               <div className="space-y-3 border-t border-base-300 px-4 py-3">
@@ -364,7 +455,17 @@ export default function FirmRoiPanel() {
                       </tr>
                     </thead>
                     <tbody>
-                      {pageRows.length === 0 ? (
+                      {!data ? (
+                        <tr>
+                          <td colSpan={7} className="py-10 text-center text-base-content/55">
+                            {summaryLoading ? (
+                              <span className="loading loading-dots loading-sm" />
+                            ) : (
+                              summaryError ?? "Firm ROI is unavailable."
+                            )}
+                          </td>
+                        </tr>
+                      ) : pageRows.length === 0 ? (
                         <tr>
                           <td
                             colSpan={7}
@@ -376,7 +477,9 @@ export default function FirmRoiPanel() {
                           </td>
                         </tr>
                       ) : (
-                        pageRows.map((row) => (
+                        pageRows.map((row) => {
+                          const figures = accountPeriodFigures(row, breakdownPeriod);
+                          return (
                           <tr key={row.profile_id}>
                             <td className="min-w-[12rem]">
                               <div className="font-mono text-sm font-medium">
@@ -393,20 +496,20 @@ export default function FirmRoiPanel() {
                               {row.e1_hedgium_managed ? "Yes" : "Self"}
                             </td>
                             <td
-                              className={`text-right tabular-nums ${signedClass(row.e1_return)}`}
+                              className={`text-right tabular-nums ${signedClass(figures.e1_return)}`}
                             >
-                              {formatAmt(row.e1_return)}
+                              {formatAmt(figures.e1_return)}
                             </td>
                             <td className="text-right tabular-nums">
-                              {formatAmt(row.e1_base)}
+                              {formatAmt(figures.e1_base)}
                             </td>
                             <td
-                              className={`text-right tabular-nums ${signedClass(row.e2_return)}`}
+                              className={`text-right tabular-nums ${signedClass(figures.e2_return)}`}
                             >
-                              {formatAmt(row.e2_return)}
+                              {formatAmt(figures.e2_return)}
                             </td>
                             <td className="text-right tabular-nums">
-                              {formatAmt(row.e2_base)}
+                              {formatAmt(figures.e2_base)}
                             </td>
                             <td className="text-right text-xs text-base-content/70">
                               {row.e2_base_kind === "margin"
@@ -414,7 +517,8 @@ export default function FirmRoiPanel() {
                                 : "Account value"}
                             </td>
                           </tr>
-                        ))
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
@@ -446,8 +550,6 @@ export default function FirmRoiPanel() {
               </div>
             ) : null}
           </div>
-        </>
-      ) : null}
     </div>
   );
 }
