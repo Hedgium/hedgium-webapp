@@ -19,12 +19,9 @@ import {
   ReportsMarginChart,
   ReportsPnlMonthlyBarChart,
   getChartDateRange,
-  getPnlBarChartDateRange,
   aggregateMarginSnapshots,
-  buildPnlMonthlyBars,
-  parsePnlSnapshotsResponse,
 } from "@/components/reports/ReportCharts";
-import type { ChartPeriod, PnlSnapshotRow } from "@/components/reports/ReportCharts";
+import type { ChartPeriod, PnlMonthlyBarPoint } from "@/components/reports/ReportCharts";
 import PnlSummarySection from "@/components/reports/PnlSummarySection";
 import AllocationSummarySection from "@/components/reports/AllocationSummarySection";
 import NetPnlWithCosts, { e2NetPnl } from "@/components/reports/NetPnlWithCosts";
@@ -37,9 +34,9 @@ import useAlert from "@/hooks/useAlert";
 import {
   fetchAccountCreatedAt,
   fetchAllocationSummary,
+  fetchE2MonthlyPnl,
   fetchE2PnlSummary,
   fetchMarginSnapshots,
-  fetchPnlSnapshots,
   fetchTradeCycleReports,
   pollTaskUntilDone,
   refreshProfilePnlAsync,
@@ -104,7 +101,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
   const [marginSnapshots, setMarginSnapshots] = useState<
     { snapshot_date: string; net: number; available?: number; utilised?: number }[]
   >([]);
-  const [pnlSnapshots, setPnlSnapshots] = useState<PnlSnapshotRow[]>([]);
+  const [pnlChartData, setPnlChartData] = useState<PnlMonthlyBarPoint[]>([]);
   const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingReports, setLoadingReports] = useState(true);
@@ -146,17 +143,24 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
   const fetchChartsData = useCallback(async () => {
     setLoadingCharts(true);
     try {
-      const pnlRange = getPnlBarChartDateRange();
-      const [marginRows, pnlRaw] = await Promise.all([
+      const [marginRows, monthlyPnl] = await Promise.all([
         fetchMarginSnapshots(stableScope, { dateFrom: chartRange.from, dateTo: chartRange.to }),
-        fetchPnlSnapshots(stableScope, { dateFrom: pnlRange.from, dateTo: pnlRange.to }),
+        fetchE2MonthlyPnl(stableScope),
       ]);
       setMarginSnapshots(marginRows);
-      setPnlSnapshots(parsePnlSnapshotsResponse(pnlRaw));
+      const months = monthlyPnl?.months ?? [];
+      setPnlChartData(
+        months.map((m) => ({
+          time: `${m.month}-01`,
+          value: m.net,
+          gross: m.gross,
+          charges: m.charges,
+        }))
+      );
     } catch (e) {
       console.error("Error fetching chart data:", e);
       setMarginSnapshots([]);
-      setPnlSnapshots([]);
+      setPnlChartData([]);
     } finally {
       setLoadingCharts(false);
     }
@@ -181,7 +185,6 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
   }, [stableScope]);
 
   const marginChartData = aggregateMarginSnapshots(marginSnapshots, effectivePeriod);
-  const pnlChartData = buildPnlMonthlyBars(pnlSnapshots, 12);
 
   useEffect(() => {
     setPage(1);

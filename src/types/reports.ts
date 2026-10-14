@@ -90,6 +90,21 @@ export type AllocationSummary = {
   all_time: number;
 };
 
+/** Monthly E2 series from `positions/pnl/monthly/` (booked on trade-cycle close date). */
+export type E2MonthlyPnlPoint = {
+  month: string;
+  label: string;
+  gross: number;
+  charges: number;
+  net: number;
+};
+
+export type E2MonthlyPnlResponse = {
+  months: E2MonthlyPnlPoint[];
+  from_month: string;
+  to_month: string;
+};
+
 export type TradeCycleReport = {
   id: number;
   name: string;
