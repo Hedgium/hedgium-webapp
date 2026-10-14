@@ -458,7 +458,7 @@ export default function StrategyDetailPage() {
               <button
                 type="button"
                 onClick={() => setShowMetricSnapshotsModal(true)}
-                title="5-minute builder metric snapshots (ACTIVE or Checking)"
+                title="5-minute builder metric snapshots (ACTIVE, Precheck, or Checking)"
                 className="btn btn-outline btn-sm gap-1.5 border-base-content/20"
               >
                 <Activity className="size-4" />

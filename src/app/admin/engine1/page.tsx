@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncSelect from "react-select/async";
 import type { StylesConfig } from "react-select";
-import { Check, Pencil, PieChart, Plus, Save, Trash2, X } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Check, Pencil, PieChart, Plus, Save, Trash2, Wallet, X } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import { authFetch } from "@/utils/api";
 import {
@@ -14,6 +15,18 @@ import {
   saveEngine1ClassInstruments,
   saveEngine1Grid,
 } from "@/services/engine1";
+
+const CashParkPanel = dynamic(
+  () => import("@/components/admin/engine1/CashParkPanel"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-lg border border-base-300 bg-base-100 p-12 text-center text-base-content/60">
+        Loading cash park...
+      </div>
+    ),
+  }
+);
 import {
   ENGINE1_HOLDING_PERIOD_LABELS,
   ENGINE1_HOLDING_PERIODS,
@@ -25,6 +38,33 @@ import {
   type Engine1InstrumentDraft,
   type Engine1Risk,
 } from "@/types/engine1";
+
+type PageTab = "allocation" | "cash-park";
+
+const ENGINE1_TABS: {
+  id: PageTab;
+  label: string;
+  shortLabel: string;
+  description: string;
+  icon: typeof PieChart;
+}[] = [
+  {
+    id: "allocation",
+    label: "Allocation",
+    shortLabel: "Alloc",
+    description:
+      "Asset-class grid by risk and holding period, plus ETF/instrument mix. Cash reserve is taken from gross allocation at execute time.",
+    icon: PieChart,
+  },
+  {
+    id: "cash-park",
+    label: "Cash park",
+    shortLabel: "Cash",
+    description:
+      "Park surplus cash in LIQUIDCASE before broker settlement, then sell when you need it back.",
+    icon: Wallet,
+  },
+];
 
 const PERCENT_TOLERANCE = 0.01;
 
@@ -85,6 +125,8 @@ export default function AdminEngine1Page() {
   const alertRef = useRef(alert);
   alertRef.current = alert;
 
+  const [pageTab, setPageTab] = useState<PageTab>("allocation");
+  const activeTabMeta = ENGINE1_TABS.find((t) => t.id === pageTab)!;
   const [loading, setLoading] = useState(true);
   const [savingGrid, setSavingGrid] = useState(false);
   const [savingInstruments, setSavingInstruments] = useState(false);
@@ -145,16 +187,19 @@ export default function AdminEngine1Page() {
   }, []);
 
   useEffect(() => {
-    loadGrid();
-  }, [loadGrid]);
+    if (pageTab === "allocation") {
+      loadGrid();
+    }
+  }, [pageTab, loadGrid]);
 
   useEffect(() => {
+    if (pageTab !== "allocation") return;
     if (instrumentClassId != null) {
       loadInstruments(instrumentClassId);
     } else {
       setDrafts([]);
     }
-  }, [instrumentClassId, loadInstruments]);
+  }, [pageTab, instrumentClassId, loadInstruments]);
 
   const columnSums = useMemo(() => {
     const sums: Record<Engine1HoldingPeriod, number> = {
@@ -361,20 +406,66 @@ export default function AdminEngine1Page() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto lg:px-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <PieChart className="size-8 text-primary" />
+      <header className="mb-6">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 rounded-xl bg-primary/10 p-2.5">
+            <PieChart className="size-6 text-primary" aria-hidden />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold">Engine 1 allocation</h1>
-            <p className="text-sm text-base-content/70">
-              Asset-class grid by risk and holding period, plus ETF/instrument mix.
-              Cash reserve {cashReservePct}% is taken from gross allocation at execute time.
+            <h1 className="text-2xl font-semibold tracking-tight text-base-content">
+              Engine 1
+            </h1>
+            <p className="mt-1 text-sm text-base-content/55">
+              {pageTab === "allocation"
+                ? `Asset-class grid by risk and holding period, plus ETF/instrument mix. Cash reserve ${cashReservePct}% is taken from gross allocation at execute time.`
+                : activeTabMeta.description}
             </p>
           </div>
         </div>
+      </header>
+
+      <div
+        className="mb-5 inline-flex w-full flex-col gap-1 rounded-xl border border-base-300/80 bg-base-200/40 p-1 sm:w-auto sm:flex-row"
+        role="tablist"
+        aria-label="Engine 1"
+      >
+        {ENGINE1_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const selected = pageTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              id={`engine1-tab-${tab.id}`}
+              aria-controls={`engine1-panel-${tab.id}`}
+              onClick={() => setPageTab(tab.id)}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-colors sm:min-w-[10.5rem] ${
+                selected
+                  ? "bg-base-100 text-base-content ring-1 ring-base-300/60"
+                  : "cursor-pointer text-base-content/65 hover:bg-base-100/60 hover:text-base-content"
+              }`}
+            >
+              <Icon
+                className={`size-4 shrink-0 ${selected ? "text-primary" : "opacity-80"}`}
+                aria-hidden
+              />
+              <span className="sm:hidden">{tab.shortLabel}</span>
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {loading ? (
+      <section
+        id={`engine1-panel-${pageTab}`}
+        role="tabpanel"
+        aria-labelledby={`engine1-tab-${pageTab}`}
+      >
+      {pageTab === "cash-park" ? (
+        <CashParkPanel />
+      ) : loading ? (
         <div className="rounded-lg border border-base-300 bg-base-100 p-12 text-center text-base-content/60">
           Loading Engine 1 config...
         </div>
@@ -719,6 +810,7 @@ export default function AdminEngine1Page() {
           </section>
         </div>
       )}
+      </section>
     </div>
   );
 }

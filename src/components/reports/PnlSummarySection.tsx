@@ -354,8 +354,9 @@ export default function PnlSummarySection({
         ))}
       </dl>
       <p className="max-w-4xl text-xs leading-relaxed text-base-content/70">
-        E2 is net PnL from Hedgium trading strategies (hover the info icon for gross
-        and other costs). E1 is CNC equity holdings
+        E2 is net PnL from Hedgium trading strategies, booked on each trade cycle&apos;s
+        close date (open cycles count in the current period until they close; hover the
+        info icon for gross and other costs). E1 is CNC equity holdings
         {pnlSummary.e1_hedgium_managed === false ? (
           <span className="text-warning">
             {" "}

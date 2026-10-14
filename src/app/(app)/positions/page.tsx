@@ -139,7 +139,7 @@ export default function PositionsPage() {
       <div className="relative mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
         <h1 className="sr-only">Positions</h1>
 
-        {/* PnL summary — positions/pnl/summary/ (cycles scoped by total_updated_at on backend) */}
+        {/* PnL summary — positions/pnl/summary/ (E2 booked on trade-cycle closed_at) */}
         <section className="mb-8" aria-labelledby="positions-summary-heading">
             {/* <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" /> */}
             <h2
