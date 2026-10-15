@@ -10,6 +10,7 @@ import {
   fetchCashParkRow,
   fetchCashParks,
   sellCashPark,
+  updateCashParkQuantity,
 } from "@/services/engine1";
 import type { CashParkRow } from "@/types/engine1";
 import { formatMoneyIN } from "@/utils/formatNumber";
@@ -64,7 +65,10 @@ export default function CashParkPanel() {
   const [listLoading, setListLoading] = useState(true);
   const [cashLoading, setCashLoading] = useState<Record<number, boolean>>({});
   const [refreshingAllCash, setRefreshingAllCash] = useState(false);
-  const [busy, setBusy] = useState<Record<number, "block" | "sell" | null>>({});
+  const [busy, setBusy] = useState<Record<number, "block" | "sell" | "save" | null>>({});
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draftBuy, setDraftBuy] = useState("");
+  const [draftSell, setDraftSell] = useState("");
   const [liveModalProfileId, setLiveModalProfileId] = useState<number | null>(null);
   const cashLoadIdRef = useRef(0);
   const mountedRef = useRef(true);
@@ -189,6 +193,48 @@ export default function CashParkPanel() {
     }
   };
 
+  const startEdit = (row: CashParkRow) => {
+    setEditingId(row.profile_id);
+    setDraftBuy(String(row.buy_quantity));
+    setDraftSell(String(row.sell_quantity));
+  };
+
+  const handleSaveQuantity = async (profileId: number) => {
+    const buyQuantity = Number(draftBuy);
+    const sellQuantity = Number(draftSell);
+    if (
+      draftBuy.trim() === "" ||
+      draftSell.trim() === "" ||
+      !Number.isInteger(buyQuantity) ||
+      !Number.isInteger(sellQuantity) ||
+      buyQuantity < 0 ||
+      sellQuantity < 0
+    ) {
+      alert.error("Enter whole numbers for buy and sell quantity");
+      return;
+    }
+    if (sellQuantity > buyQuantity) {
+      alert.error("Sell quantity cannot exceed buy quantity");
+      return;
+    }
+
+    setBusy((prev) => ({ ...prev, [profileId]: "save" }));
+    try {
+      const updated = await updateCashParkQuantity(
+        profileId,
+        buyQuantity,
+        sellQuantity
+      );
+      setRows((prev) => mergeRow(prev, updated));
+      setEditingId(null);
+      alert.success(`Quantity updated. Outstanding: ${updated.outstanding}`);
+    } catch (e) {
+      alert.error(e instanceof Error ? e.message : "Failed to update quantity");
+    } finally {
+      setBusy((prev) => ({ ...prev, [profileId]: null }));
+    }
+  };
+
   const handleSell = async (profileId: number) => {
     setBusy((prev) => ({ ...prev, [profileId]: "sell" }));
     try {
@@ -296,8 +342,38 @@ export default function CashParkPanel() {
                         </button>
                       </div>
                     </td>
-                    <td className="text-right tabular-nums">{row.buy_quantity}</td>
-                    <td className="text-right tabular-nums">{row.sell_quantity}</td>
+                    <td className="text-right tabular-nums">
+                      {editingId === row.profile_id ? (
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          inputMode="numeric"
+                          aria-label={`Buy quantity for ${row.username}`}
+                          className="input input-bordered input-xs h-7 w-20 text-right ml-auto"
+                          value={draftBuy}
+                          onChange={(e) => setDraftBuy(e.target.value)}
+                        />
+                      ) : (
+                        row.buy_quantity
+                      )}
+                    </td>
+                    <td className="text-right tabular-nums">
+                      {editingId === row.profile_id ? (
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          inputMode="numeric"
+                          aria-label={`Sell quantity for ${row.username}`}
+                          className="input input-bordered input-xs h-7 w-20 text-right ml-auto"
+                          value={draftSell}
+                          onChange={(e) => setDraftSell(e.target.value)}
+                        />
+                      ) : (
+                        row.sell_quantity
+                      )}
+                    </td>
                     <td className="text-right tabular-nums font-medium">
                       {row.outstanding}
                     </td>
@@ -314,34 +390,69 @@ export default function CashParkPanel() {
                         >
                           <Eye className="size-3.5" />
                         </button>
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-xs"
-                          disabled={!!rowBusy || row.operation_running}
-                          onClick={() => handleBlock(row.profile_id)}
-                        >
-                          {rowBusy === "block" ? (
-                            <span className="loading loading-spinner loading-xs" />
-                          ) : (
-                            "Block"
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-outline btn-xs"
-                          disabled={
-                            !!rowBusy ||
-                            row.operation_running ||
-                            row.outstanding <= 0
-                          }
-                          onClick={() => handleSell(row.profile_id)}
-                        >
-                          {rowBusy === "sell" ? (
-                            <span className="loading loading-spinner loading-xs" />
-                          ) : (
-                            "Sell"
-                          )}
-                        </button>
+                        {editingId === row.profile_id ? (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-xs"
+                              disabled={!!rowBusy}
+                              onClick={() => void handleSaveQuantity(row.profile_id)}
+                            >
+                              {rowBusy === "save" ? (
+                                <span className="loading loading-spinner loading-xs" />
+                              ) : (
+                                "Save"
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-xs"
+                              disabled={!!rowBusy}
+                              onClick={() => setEditingId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-xs"
+                              disabled={!!rowBusy || row.operation_running}
+                              onClick={() => handleBlock(row.profile_id)}
+                            >
+                              {rowBusy === "block" ? (
+                                <span className="loading loading-spinner loading-xs" />
+                              ) : (
+                                "Block"
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline btn-xs"
+                              disabled={
+                                !!rowBusy ||
+                                row.operation_running ||
+                                row.outstanding <= 0
+                              }
+                              onClick={() => handleSell(row.profile_id)}
+                            >
+                              {rowBusy === "sell" ? (
+                                <span className="loading loading-spinner loading-xs" />
+                              ) : (
+                                "Sell"
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-xs"
+                              disabled={!!rowBusy || row.operation_running}
+                              onClick={() => startEdit(row)}
+                            >
+                              Update qty
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
