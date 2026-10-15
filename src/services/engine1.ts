@@ -124,6 +124,23 @@ export async function blockCashPark(profileId: string | number): Promise<CashPar
   return res.json() as Promise<CashParkRow>;
 }
 
+export async function updateCashParkQuantity(
+  profileId: string | number,
+  buyQuantity: number,
+  sellQuantity: number
+): Promise<CashParkRow> {
+  const res = await authFetch(`engine1/cash-park/${profileId}/quantity/`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      buy_quantity: buyQuantity,
+      sell_quantity: sellQuantity,
+    }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Failed to update quantity"));
+  return res.json() as Promise<CashParkRow>;
+}
+
 export async function sellCashPark(profileId: string | number): Promise<CashParkRow> {
   const res = await authFetch(`engine1/cash-park/${profileId}/sell/`, {
     method: "POST",
