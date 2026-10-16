@@ -7,7 +7,7 @@ import { refreshBuilder, sendBuilderPnlEmails, sendBuilderPnlWhatsapp } from "@/
 import { StrategyBuilder, BuilderLeg, StrategyBuilderCreate, StrategyBuilderUpdate, BuilderLegCreate, BuilderLegUpdate } from "@/types/builder";
 import BuilderItem from "@/components/admin/builder/BuilderItem";
 import useAlert from "@/hooks/useAlert";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 import BuilderItemSkeleton from "@/components/skeletons/BuilderItemSkeleton";
 
@@ -44,6 +44,8 @@ export default function BuilderPage() {
     const [selectedBuilderId, setSelectedBuilderId] = useState<number | null>(null);
     const [selectedStrategyBuilder, setSelectedStrategyBuilder] = useState<StrategyBuilder | undefined>(undefined);
     const [statusFilter, setStatusFilter] = useState<string>("ACTIVE");
+    const [nameSearch, setNameSearch] = useState("");
+    const [debouncedNameSearch, setDebouncedNameSearch] = useState("");
     const listRequestGen = useRef(0);
 
     const alert = useAlert();
@@ -71,6 +73,7 @@ export default function BuilderPage() {
         try {
             const params = new URLSearchParams();
             if (statusFilter) params.set("status", statusFilter);
+            if (debouncedNameSearch) params.set("search", debouncedNameSearch);
             const query = params.toString();
             const url = query ? `builder/builders/?${query}` : "builder/builders/";
             const response = await authFetch(url, { cache: "no-store" });
@@ -115,8 +118,13 @@ export default function BuilderPage() {
     };
 
     useEffect(() => {
+        const timer = setTimeout(() => setDebouncedNameSearch(nameSearch.trim()), 400);
+        return () => clearTimeout(timer);
+    }, [nameSearch]);
+
+    useEffect(() => {
         fetchBuilders();
-    }, [statusFilter]);
+    }, [statusFilter, debouncedNameSearch]);
 
     // --- Builder Actions ---
 
@@ -299,9 +307,24 @@ export default function BuilderPage() {
         <div className="p-6 max-w-7xl mx-auto lg:px-8">
             {/* Header Section */}
             <div className="mb-6">
-                <div className="flex justify-between items-center mb-4 border-b border-base-300 pb-4">
+                <div className="flex flex-wrap justify-between items-center mb-4 border-b border-base-300 pb-4 gap-4">
                     <h1 className="text-2xl font-semibold">Strategy Builder</h1>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="relative">
+                            <div className="absolute inset-y-0 z-10 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search size={16} className="text-base-content/60" />
+                            </div>
+                            <input
+                                type="search"
+                                name="builder-name-search"
+                                autoComplete="off"
+                                placeholder="Search builder name"
+                                aria-label="Search by builder name"
+                                className="input input-bordered input-sm h-9 w-56 pl-9"
+                                value={nameSearch}
+                                onChange={(e) => setNameSearch(e.target.value)}
+                            />
+                        </div>
                         <div className="flex items-center gap-2">
                             <label className="text-sm font-medium text-base-content/80">Filter by Status:</label>
                             <select
@@ -319,9 +342,12 @@ export default function BuilderPage() {
                                 <option value="EXITED">Exited</option>
                                 <option value="INACTIVE">Inactive</option>
                             </select>
-                            {statusFilter && (
+                            {(statusFilter || nameSearch) && (
                                 <button
-                                    onClick={() => setStatusFilter("")}
+                                    onClick={() => {
+                                        setStatusFilter("");
+                                        setNameSearch("");
+                                    }}
                                     className="btn btn-ghost btn-sm"
                                 >
                                     Clear Filter

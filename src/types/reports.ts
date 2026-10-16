@@ -16,6 +16,7 @@ export type E2PnlSummary = {
   month: string;
   quarter: string;
   fy: string;
+  /** Reporting start: saved inception, or the account created date when inception is blank. */
   pnl_inception_date?: string | null;
   e1_hedgium_managed?: boolean;
   week_pnl: number;
