@@ -21,8 +21,10 @@ export type FirmRoiMonthPoint = {
   month: string;
   label: string;
   e1_return: number | null;
+  e1_base?: number | null;
   e1_pct: number | null;
   e2_return: number | null;
+  e2_base?: number | null;
   e2_pct: number | null;
   total_pct: number | null;
   e1_accounts: number;
@@ -75,11 +77,25 @@ function FirmMonthTooltip({
         value={`${formatAmt(row.e1_return)} · ${formatPct(row.e1_pct)}`}
         tone={signedTone(row.e1_return ?? row.e1_pct)}
       />
+      {row.e1_base != null && !Number.isNaN(row.e1_base) ? (
+        <ReportsChartTooltipRow
+          label="E1 DAV"
+          value={`₹${formatAmt(row.e1_base)}`}
+          tone="muted"
+        />
+      ) : null}
       <ReportsChartTooltipRow
         label="E2"
         value={`${formatAmt(row.e2_return)} · ${formatPct(row.e2_pct)}`}
         tone={signedTone(row.e2_return ?? row.e2_pct)}
       />
+      {row.e2_base != null && !Number.isNaN(row.e2_base) ? (
+        <ReportsChartTooltipRow
+          label="E2 DAV"
+          value={`₹${formatAmt(row.e2_base)}`}
+          tone="muted"
+        />
+      ) : null}
       <ReportsChartTooltipRow
         label="Combined"
         value={formatPct(row.total_pct)}

@@ -63,7 +63,7 @@ type FirmRoiResponse = {
 const PAGE_SIZE = 25;
 
 const METHODOLOGY_TIP =
-  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value. E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net. Total = E1% + E2%. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
+  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value. E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net. Firm totals days-weight each account average by days live in the period (inception, or created date if blank) over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
 
 type FirmRoiMonthlyResponse = {
   months: FirmRoiMonthPoint[];
@@ -88,6 +88,11 @@ function formatPct(pct: number | null | undefined): string {
 function formatAmt(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
   return formatMoneyIN(value);
+}
+
+function davTip(base: number | null | undefined): string | undefined {
+  if (base == null || Number.isNaN(base)) return undefined;
+  return `DAV: ₹${formatMoneyIN(base)}`;
 }
 
 const BREAKDOWN_PERIODS: { key: FirmRoiPeriodKey; label: string }[] = [
@@ -277,13 +282,19 @@ export default function FirmRoiPanel() {
                   : meta.key === "all_time"
                     ? "(Inception → Till date)"
                     : null;
+              const tipSide =
+                meta.key === "month" || meta.key === "ytd"
+                  ? "tooltip-right"
+                  : "tooltip-left";
+              const e1Dav = davTip(period.e1_base);
+              const e2Dav = davTip(period.e2_base);
               return (
                 <div
                   key={meta.key}
                   className={
                     meta.highlight
-                      ? "rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4"
-                      : "rounded-2xl border border-base-300/60 bg-base-200/35 p-4"
+                      ? "relative z-0 hover:z-20 focus-within:z-20 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4"
+                      : "relative z-0 hover:z-20 focus-within:z-20 rounded-2xl border border-base-300/60 bg-base-200/35 p-4"
                   }
                 >
                   <div className="mb-2 text-xs font-medium uppercase tracking-wider text-base-content">
@@ -291,8 +302,18 @@ export default function FirmRoiPanel() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-base-content/55">
+                      <span className="inline-flex items-center gap-0.5 shrink-0 text-[11px] font-medium uppercase tracking-wide text-base-content/55">
                         E1
+                        {e1Dav ? (
+                          <button
+                            type="button"
+                            className={`tooltip z-30 cursor-pointer inline-flex text-base-content/45 hover:text-base-content/70 before:z-30 before:max-w-[14rem] before:text-left before:whitespace-normal before:px-3 before:py-2 before:normal-case before:tracking-normal after:z-30 ${tipSide}`}
+                            data-tip={e1Dav}
+                            aria-label={e1Dav}
+                          >
+                            <Info className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                          </button>
+                        ) : null}
                       </span>
                       <div className="min-w-0 text-right">
                         <div
@@ -308,8 +329,18 @@ export default function FirmRoiPanel() {
                       </div>
                     </div>
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-base-content/55">
+                      <span className="inline-flex items-center gap-0.5 shrink-0 text-[11px] font-medium uppercase tracking-wide text-base-content/55">
                         E2
+                        {e2Dav ? (
+                          <button
+                            type="button"
+                            className={`tooltip z-30 cursor-pointer inline-flex text-base-content/45 hover:text-base-content/70 before:z-30 before:max-w-[14rem] before:text-left before:whitespace-normal before:px-3 before:py-2 before:normal-case before:tracking-normal after:z-30 ${tipSide}`}
+                            data-tip={e2Dav}
+                            aria-label={e2Dav}
+                          >
+                            <Info className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                          </button>
+                        ) : null}
                       </span>
                       <div className="min-w-0 text-right">
                         <div
