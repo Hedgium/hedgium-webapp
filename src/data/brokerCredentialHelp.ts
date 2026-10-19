@@ -56,6 +56,15 @@ export const BROKER_CREDENTIAL_HELP: BrokerCredentialHelp = {
         },
       ],
     },
+    {
+      field: "broker_twofa",
+      label: "TOTP Secret",
+      steps: [
+        { text: "Log in to **Kite** (kite.zerodha.com)." },
+        { text: "Open your profile, then **Password & security**, then **External TOTP**." },
+        { text: "**Copy the TOTP secret** (not the 6-digit code) and paste it here so Hedgium can complete daily login." },
+      ],
+    },
   ],
   SHOONYA: [
     {

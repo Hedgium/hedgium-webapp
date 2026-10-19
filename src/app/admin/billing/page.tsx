@@ -6,6 +6,9 @@ import type { StylesConfig } from "react-select";
 import {
   CheckCircle,
   Copy,
+  Download,
+  ExternalLink,
+  Eye,
   FileText,
   IndianRupee,
   Loader2,
@@ -20,6 +23,7 @@ import useAlert from "@/hooks/useAlert";
 import {
   deleteInvoice,
   fetchCurrentQuarter,
+  fetchInvoicePdf,
   generateInvoices,
   generateOneInvoice,
   issueDrafts,
@@ -34,6 +38,7 @@ import {
   verifyInvoice,
   voidInvoice,
 } from "@/services/billing";
+import NetPnlWithCosts from "@/components/reports/NetPnlWithCosts";
 import type { BillingClient, Invoice, LastQuarterPaid } from "@/types/billing";
 import { formatMoneyIN } from "@/utils/formatNumber";
 
@@ -160,10 +165,12 @@ export default function AdminBillingPage() {
   const [oneFy, setOneFy] = useState("");
   const [oneQuarter, setOneQuarter] = useState("Q1");
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [previewInv, setPreviewInv] = useState<Invoice | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [editInv, setEditInv] = useState<Invoice | null>(null);
-  const [editFeeAmount, setEditFeeAmount] = useState("");
-  const [editFeeBase, setEditFeeBase] = useState("");
+  const [editDiscountAmount, setEditDiscountAmount] = useState("");
   const [editPeriodEnd, setEditPeriodEnd] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [editIsFinal, setEditIsFinal] = useState(false);
   const [viewTab, setViewTab] = useState<BillingTab>("invoices");
@@ -260,6 +267,21 @@ export default function AdminBillingPage() {
     }
   }
 
+  async function openPreview(inv: Invoice) {
+    await withBusy(`pdf-${inv.id}`, async () => {
+      const blob = await fetchInvoicePdf(inv.id);
+      const url = URL.createObjectURL(blob);
+      setPreviewInv(inv);
+      setPreviewUrl(url);
+    });
+  }
+
+  function closePreview() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setPreviewInv(null);
+  }
+
   async function handleGenerate() {
     await withBusy("generate", async () => {
       const res = await generateInvoices(fy, quarter);
@@ -351,30 +373,33 @@ export default function AdminBillingPage() {
 
   function openEdit(inv: Invoice) {
     setEditInv(inv);
-    setEditFeeAmount(String(inv.fee_amount));
-    setEditFeeBase(String(inv.fee_base));
+    setEditDiscountAmount(String(inv.discount_amount ?? 0));
     setEditPeriodEnd(inv.period_end);
+    setEditStartDate(inv.start_date || "");
     setEditNotes(inv.notes || "");
     setEditIsFinal(Boolean(inv.is_final));
   }
 
   async function handleSaveEdit() {
     if (!editInv) return;
-    const feeAmount = Number(editFeeAmount);
-    const feeBase = Number(editFeeBase);
-    if (!Number.isFinite(feeAmount) || feeAmount < 0) {
-      alert.error("Enter a valid fee amount");
+    const discountAmount = Number(editDiscountAmount);
+    if (!Number.isFinite(discountAmount) || discountAmount < 0) {
+      alert.error("Enter a valid discount amount");
       return;
     }
-    if (!Number.isFinite(feeBase) || feeBase < 0) {
-      alert.error("Enter a valid fee base");
+    if (discountAmount > editInv.fee_amount) {
+      alert.error("Discount cannot exceed fee amount");
+      return;
+    }
+    if (!editStartDate) {
+      alert.error("Enter a start date");
       return;
     }
     await withBusy(`edit-${editInv.id}`, async () => {
       await updateInvoice(editInv.id, {
-        fee_amount: feeAmount,
-        fee_base: feeBase,
+        discount_amount: discountAmount,
         period_end: editPeriodEnd || undefined,
+        start_date: editStartDate,
         notes: editNotes,
         is_final: editIsFinal,
       });
@@ -741,8 +766,9 @@ export default function AdminBillingPage() {
                 <th>Client</th>
                 <th>Type</th>
                 <th>Fee</th>
-                <th>Fee base</th>
-                <th>Total</th>
+                <th>Fee Base (AUM)</th>
+                <th>E2 PnL</th>
+                <th>Fee Amount</th>
                 <th>Status</th>
                 <th>Last Q</th>
                 <th>Proof</th>
@@ -756,7 +782,6 @@ export default function AdminBillingPage() {
                     <div className="font-mono text-xs">{inv.invoice_no}</div>
                     <div className="text-xs text-base-content/50">
                       {inv.billing_days}/{inv.quarter_days}d
-                      {inv.sebi_cap_applied ? " · SEBI cap" : ""}
                     </div>
                   </td>
                   <td>
@@ -779,6 +804,17 @@ export default function AdminBillingPage() {
                     <div className="text-xs text-base-content/50">
                       {inv.fee_base_source}
                     </div>
+                  </td>
+                  <td className="text-sm tabular-nums">
+                    {inv.engine2_quarter_pnl == null ? (
+                      "—"
+                    ) : (
+                      <NetPnlWithCosts
+                        gross={inv.engine2_quarter_pnl}
+                        charges={inv.engine2_quarter_charges ?? 0}
+                        compact
+                      />
+                    )}
                   </td>
                   <td className="font-medium">₹{formatMoneyIN(inv.total_amount)}</td>
                   <td>
@@ -820,7 +856,7 @@ export default function AdminBillingPage() {
                     {!inv.submitted_txn_last4 && !inv.screenshot && "—"}
                   </td>
                   <td>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-nowrap gap-1 whitespace-nowrap">
                       {inv.status === "DRAFT" && (
                         <button
                           type="button"
@@ -837,6 +873,19 @@ export default function AdminBillingPage() {
                           Issue
                         </button>
                       )}
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-ghost"
+                        title="Preview PDF"
+                        disabled={busy === `pdf-${inv.id}`}
+                        onClick={() => void openPreview(inv)}
+                      >
+                        {busy === `pdf-${inv.id}` ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Eye className="h-3 w-3" />
+                        )}
+                      </button>
                       {(inv.status === "DRAFT" || inv.status === "ISSUED") && (
                         <button
                           type="button"
@@ -889,7 +938,7 @@ export default function AdminBillingPage() {
                             type="button"
                             className="btn btn-xs btn-ghost"
                             title="Send WhatsApp"
-                            disabled={busy === `wa-${inv.id}`}
+                            disabled={busy === `wa-${inv.id}` || inv.status === "PAID"}
                             onClick={() =>
                               void withBusy(`wa-${inv.id}`, async () => {
                                 await sendInvoiceWhatsApp(inv.id);
@@ -1004,14 +1053,71 @@ export default function AdminBillingPage() {
         </dialog>
       )}
 
+      {previewInv !== null && previewUrl !== null && (
+        <dialog open className="modal modal-open">
+          <div className="modal-box max-w-5xl w-[95vw] p-0 overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
+              <div className="min-w-0">
+                <h3 className="font-bold text-base truncate">
+                  {previewInv.invoice_no}
+                </h3>
+                <p className="text-xs text-base-content/60">
+                  {previewInv.fy} {previewInv.quarter} · {previewInv.status.replaceAll("_", " ")}
+                  {previewInv.status === "DRAFT"
+                    ? " · pay link appears after issuing"
+                    : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-xs btn-ghost"
+                  title="Open in new tab"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                <a
+                  href={previewUrl}
+                  download={`${previewInv.invoice_no}.pdf`}
+                  className="btn btn-xs btn-ghost"
+                  title="Download"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                </a>
+                <button
+                  type="button"
+                  className="btn btn-xs btn-ghost"
+                  title="Close"
+                  onClick={closePreview}
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            <iframe
+              src={previewUrl}
+              title={`Invoice ${previewInv.invoice_no}`}
+              className="w-full h-[80vh] bg-base-200"
+            />
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button type="button" onClick={closePreview}>
+              close
+            </button>
+          </form>
+        </dialog>
+      )}
+
       {editInv !== null && (
         <dialog open className="modal modal-open">
           <div className="modal-box max-w-lg">
             <h3 className="font-bold text-lg">Edit {editInv.invoice_no}</h3>
             <p className="text-xs text-base-content/60 mb-4 leading-relaxed">
               {editInv.gst_amount > 0 || editInv.gst_rate > 0
-                ? "Total and GST recalculate from the fee amount."
-                : "Total recalculates from the fee amount."}
+                ? "Total and GST recalculate from fee minus discount."
+                : "Total recalculates from fee minus discount."}
               {editInv.status === "ISSUED"
                 ? " UPI QR amount updates too."
                 : ""}
@@ -1020,23 +1126,55 @@ export default function AdminBillingPage() {
               <label className="form-control w-full">
                 <span className="label-text text-xs mb-1">Fee amount</span>
                 <input
+                  type="text"
+                  readOnly
+                  aria-readonly="true"
+                  className="input input-bordered input-sm w-full bg-base-200 cursor-default"
+                  value={editInv.fee_amount}
+                />
+              </label>
+              <label className="form-control w-full">
+                <span className="label-text text-xs mb-1">Discount amount</span>
+                <input
                   type="number"
                   step="0.01"
+                  min="0"
                   className="input input-bordered input-sm w-full"
-                  value={editFeeAmount}
-                  onChange={(e) => setEditFeeAmount(e.target.value)}
+                  value={editDiscountAmount}
+                  onChange={(e) => setEditDiscountAmount(e.target.value)}
                 />
               </label>
               <label className="form-control w-full">
                 <span className="label-text text-xs mb-1">Fee base (AUM)</span>
                 <input
-                  type="number"
-                  step="0.01"
-                  className="input input-bordered input-sm w-full"
-                  value={editFeeBase}
-                  onChange={(e) => setEditFeeBase(e.target.value)}
+                  type="text"
+                  readOnly
+                  aria-readonly="true"
+                  className="input input-bordered input-sm w-full bg-base-200 cursor-default"
+                  value={editInv.fee_base}
                 />
               </label>
+              <label className="form-control w-full">
+                <span className="label-text text-xs mb-1">Start date</span>
+                <input
+                  type="date"
+                  className="input input-bordered input-sm w-full"
+                  value={editStartDate}
+                  onChange={(e) => setEditStartDate(e.target.value)}
+                />
+                <span className="label-text-alt text-xs text-base-content/50 mt-1">
+                  Defaults to the client inception date, or the profile created date.
+                </span>
+              </label>
+              {editInv.invoice_date ? (
+                <p className="text-xs text-base-content/60">
+                  Invoice date {editInv.invoice_date}. Once the quarter has
+                  ended, this is the last day of that quarter.
+                  {editInv.due_date
+                    ? ` Due ${editInv.due_date} (created date + 10 days).`
+                    : ""}
+                </p>
+              ) : null}
               <label className="form-control w-full">
                 <span className="label-text text-xs mb-1">Period end</span>
                 <input

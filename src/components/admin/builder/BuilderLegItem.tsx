@@ -37,10 +37,20 @@ export default function BuilderLegItem({ leg, onEdit, onDelete }: BuilderLegItem
                 <div>
                     <p className="text-sm text-base-content/60">Strike</p>
                     <p className="font-medium">{leg.strike}</p>
+                    <p className="text-xs text-base-content/60">
+                        {leg.strike_type} · dist {leg.strike_distance > 0 ? `+${leg.strike_distance}` : leg.strike_distance}
+                    </p>
                 </div>
                 <div>
                     <p className="text-sm text-base-content/60">Period, Expiry</p>
-                    <p className="font-medium">{formatDateOnly(leg.expiry)}</p>
+                    <p className="font-medium flex items-center gap-2">
+                        {formatDateOnly(leg.expiry)}
+                        {leg.is_adjustment_leg && (
+                            <span className="px-2 py-0.5 rounded text-xs bg-primary/20 text-primary">
+                                Adjustment
+                            </span>
+                        )}
+                    </p>
                 </div>
             </div>
 

@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useWhatsAppStore } from "@/store/whatsappStore";
+import { canAccessAdminSection } from "@/constants/adminSections";
 
 const tabs = [
   { name: "Strategies", href: "/admin", icon: <LineChart className="h-5 w-5" /> },
@@ -44,10 +45,11 @@ export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
   const { unreadCount } = useNotificationStore();
   const { unreadCount: whatsappUnreadCount, fetchUnreadCount } = useWhatsAppStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const canPollWhatsApp = canAccessAdminSection(user?.admin_sections, "whatsapp");
 
   // Load sidebar state from localStorage on mount
   useEffect(() => {
@@ -63,10 +65,11 @@ export default function AdminSidebar() {
   }, [isCollapsed]);
 
   useEffect(() => {
+    if (!canPollWhatsApp) return;
     void fetchUnreadCount();
     const interval = setInterval(() => void fetchUnreadCount(), WHATSAPP_UNREAD_POLL_MS);
     return () => clearInterval(interval);
-  }, [fetchUnreadCount]);
+  }, [fetchUnreadCount, canPollWhatsApp]);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);

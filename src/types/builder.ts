@@ -48,6 +48,7 @@ export interface BuilderLeg {
     symbol: string;
     // period: string;
     expiry: string | null;
+    is_adjustment_leg?: boolean;
     option_type: string;
     action: string;
     price: number;
@@ -64,11 +65,13 @@ export interface StrategyBuilder {
     strike_step: number;
     strike_multiplier: number;
     entry_ws: number;
+    trigger_ws?: number;
     exit_ws: number;
     entry_condition: string;
     created_at: string;
     updated_at: string;
     calculated_ws: number;
+    spot_by_underlying?: Record<string, number> | null;
     exit_pnl: number;
     margin_required: number;
     multiplier_allowed: boolean;
@@ -105,6 +108,7 @@ export interface StrategyBuilderCreate {
     strike_step: number;
     strike_multiplier: number;
     entry_ws: number;
+    trigger_ws?: number;
     exit_ws: number;
     entry_condition: string;
     exit_pnl: number;
@@ -137,6 +141,7 @@ export interface StrategyBuilderUpdate {
     strike_step?: number;
     strike_multiplier?: number;
     entry_ws?: number;
+    trigger_ws?: number;
     exit_ws?: number;
     entry_condition?: string;
     strategy_template_id?: number;
@@ -171,6 +176,7 @@ export interface BuilderLegCreate {
     symbol: string;
     // period: string;
     expiry?: string | null;
+    is_adjustment_leg?: boolean;
     option_type: string;
     action: string;
     price: number;
@@ -189,6 +195,7 @@ export interface BuilderLegUpdate {
     symbol?: string;
     // period?: string;
     expiry?: string | null;
+    is_adjustment_leg?: boolean;
     option_type?: string;
     action?: string;
     price?: number;

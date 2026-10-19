@@ -18,7 +18,12 @@ export interface Invoice {
   quarter: string;
   period_start: string;
   period_end: string;
+  start_date: string | null;
+  invoice_date: string | null;
+  due_date: string | null;
   is_final: boolean;
+  engine2_quarter_pnl: number | null;
+  engine2_quarter_charges: number | null;
   fee_base: number;
   fee_base_source: string;
   snapshot_count: number;
@@ -30,6 +35,7 @@ export interface Invoice {
   billing_days: number;
   quarter_days: number;
   fee_amount: number;
+  discount_amount: number;
   gst_rate: number;
   gst_amount: number;
   total_amount: number;
@@ -68,6 +74,7 @@ export interface PublicInvoice {
   period_start: string;
   period_end: string;
   fee_amount: number;
+  discount_amount: number;
   gst_amount: number;
   total_amount: number;
   status: InvoiceStatus;
@@ -75,6 +82,7 @@ export interface PublicInvoice {
   payee_name: string;
   hedgium_gstin: string | null;
   client_gstin: string | null;
+  contact_email: string;
   bank: InvoiceBankDetails;
 }
 

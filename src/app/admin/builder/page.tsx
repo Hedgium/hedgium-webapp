@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { authFetch } from "@/utils/api";
-import { sendBuilderPnlEmails, sendBuilderPnlWhatsapp } from "@/services/builder";
+import { refreshBuilder, sendBuilderPnlEmails, sendBuilderPnlWhatsapp } from "@/services/builder";
 import { StrategyBuilder, BuilderLeg, StrategyBuilderCreate, StrategyBuilderUpdate, BuilderLegCreate, BuilderLegUpdate } from "@/types/builder";
 import BuilderItem from "@/components/admin/builder/BuilderItem";
 import useAlert from "@/hooks/useAlert";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 import BuilderItemSkeleton from "@/components/skeletons/BuilderItemSkeleton";
 
@@ -44,54 +44,87 @@ export default function BuilderPage() {
     const [selectedBuilderId, setSelectedBuilderId] = useState<number | null>(null);
     const [selectedStrategyBuilder, setSelectedStrategyBuilder] = useState<StrategyBuilder | undefined>(undefined);
     const [statusFilter, setStatusFilter] = useState<string>("ACTIVE");
+    const [nameSearch, setNameSearch] = useState("");
+    const [debouncedNameSearch, setDebouncedNameSearch] = useState("");
+    const listRequestGen = useRef(0);
 
     const alert = useAlert();
 
+    const refreshListedSpots = async (rows: StrategyBuilder[], gen: number) => {
+        await Promise.all(
+            rows.map(async (builder) => {
+                if (builder.id == null) return;
+                try {
+                    const updated = await refreshBuilder(builder.id);
+                    if (gen !== listRequestGen.current) return;
+                    setBuilders((prev) =>
+                        prev.map((b) => (b.id === updated.id ? updated : b))
+                    );
+                } catch (error) {
+                    console.error("Error refreshing builder spot:", error);
+                }
+            })
+        );
+    };
+
     const fetchBuilders = async () => {
+        const gen = ++listRequestGen.current;
         setLoading(true);
         try {
             const params = new URLSearchParams();
             if (statusFilter) params.set("status", statusFilter);
+            if (debouncedNameSearch) params.set("search", debouncedNameSearch);
             const query = params.toString();
             const url = query ? `builder/builders/?${query}` : "builder/builders/";
-            const response = await authFetch(url);
+            const response = await authFetch(url, { cache: "no-store" });
             const data = await response.json();
+            if (gen !== listRequestGen.current) return;
 
-            setBuilders(data.results ?? []);
+            const rows: StrategyBuilder[] = data.results ?? [];
+            setBuilders(rows);
             setNextPage(data.next ?? null);
+            void refreshListedSpots(rows, gen);
         } catch (error) {
             console.error('Error fetching builders:', error);
             alert.error('Failed to fetch strategy builders');
         } finally {
-            setLoading(false);
+            if (gen === listRequestGen.current) setLoading(false);
         }
     };
 
     const fetchNextPage = async () => {
         if (!nextPage) return;
+        const gen = listRequestGen.current;
         setLoadingMore(true);
         try {
             const url = new URL(nextPage);
             const path = url.pathname.replace(/^\/api\//, "") || "builder/builders/";
-            const response = await authFetch(`${path}${url.search}`);
+            const response = await authFetch(`${path}${url.search}`, { cache: "no-store" });
             const data = await response.json();
+            if (gen !== listRequestGen.current) return;
+            const incoming: StrategyBuilder[] = data.results ?? [];
             setBuilders((prev) => {
-                const incoming = data.results ?? [];
                 const seen = new Set(prev.map((b) => b.id));
                 return [...prev, ...incoming.filter((b) => b.id != null && !seen.has(b.id))];
             });
             setNextPage(data.next ?? null);
+            void refreshListedSpots(incoming, gen);
         } catch (error) {
             console.error('Error fetching next page:', error);
             alert.error('Failed to load more builders');
         } finally {
-            setLoadingMore(false);
+            if (gen === listRequestGen.current) setLoadingMore(false);
         }
     };
 
     useEffect(() => {
+        const timer = setTimeout(() => setDebouncedNameSearch(nameSearch.trim()), 400);
+        return () => clearTimeout(timer);
+    }, [nameSearch]);
+
+    useEffect(() => {
         fetchBuilders();
-    }, [statusFilter]);
+    }, [statusFilter, debouncedNameSearch]);
 
     // --- Builder Actions ---
 
@@ -125,6 +158,10 @@ export default function BuilderPage() {
                     body: JSON.stringify(data)
                 });
                 const updatedBuilder = await response.json();
+                if (!response.ok) {
+                    alert.error(updatedBuilder.detail || 'Failed to save strategy builder');
+                    return;
+                }
                 setBuilders(prev => prev.map(b => b.id === updatedBuilder.id ? updatedBuilder : b));
                 alert.success('Strategy builder updated successfully');
             } else {
@@ -133,6 +170,10 @@ export default function BuilderPage() {
                     body: JSON.stringify(data)
                 });
                 const newBuilder = await response.json();
+                if (!response.ok) {
+                    alert.error(newBuilder.detail || 'Failed to save strategy builder');
+                    return;
+                }
                 setBuilders(prev => [newBuilder, ...prev]);
                 alert.success('Strategy builder created successfully');
             }
@@ -145,10 +186,9 @@ export default function BuilderPage() {
 
     const handleRefreshStatus = async (builderId: number) => {
         try {
-            const response = await authFetch(`builder/builders/${builderId}/`);
-            const updatedBuilder = await response.json();
+            const updatedBuilder = await refreshBuilder(builderId);
             setBuilders(prev => prev.map(b => b.id === updatedBuilder.id ? updatedBuilder : b));
-            alert.success('Status refreshed');
+            alert.success('Spot and status refreshed');
         } catch (error) {
             console.error('Error refreshing status:', error);
             alert.error('Failed to refresh status');
@@ -267,9 +307,24 @@ export default function BuilderPage() {
         <div className="p-6 max-w-7xl mx-auto lg:px-8">
             {/* Header Section */}
             <div className="mb-6">
-                <div className="flex justify-between items-center mb-4 border-b border-base-300 pb-4">
+                <div className="flex flex-wrap justify-between items-center mb-4 border-b border-base-300 pb-4 gap-4">
                     <h1 className="text-2xl font-semibold">Strategy Builder</h1>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="relative">
+                            <div className="absolute inset-y-0 z-10 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search size={16} className="text-base-content/60" />
+                            </div>
+                            <input
+                                type="search"
+                                name="builder-name-search"
+                                autoComplete="off"
+                                placeholder="Search builder name"
+                                aria-label="Search by builder name"
+                                className="input input-bordered input-sm h-9 w-56 pl-9"
+                                value={nameSearch}
+                                onChange={(e) => setNameSearch(e.target.value)}
+                            />
+                        </div>
                         <div className="flex items-center gap-2">
                             <label className="text-sm font-medium text-base-content/80">Filter by Status:</label>
                             <select
@@ -278,6 +333,7 @@ export default function BuilderPage() {
                                 className="select select-bordered select-sm h-9 w-48"
                             >
                                 <option value="">All Statuses</option>
+                                <option value="PRECHECK">Precheck</option>
                                 <option value="CHECKING">Checking</option>
                                 <option value="SAAS_CHECKING">SAAS Checking</option>
                                 <option value="ACTIVE">Active</option>
@@ -286,9 +342,12 @@ export default function BuilderPage() {
                                 <option value="EXITED">Exited</option>
                                 <option value="INACTIVE">Inactive</option>
                             </select>
-                            {statusFilter && (
+                            {(statusFilter || nameSearch) && (
                                 <button
-                                    onClick={() => setStatusFilter("")}
+                                    onClick={() => {
+                                        setStatusFilter("");
+                                        setNameSearch("");
+                                    }}
                                     className="btn btn-ghost btn-sm"
                                 >
                                     Clear Filter
@@ -378,6 +437,7 @@ export default function BuilderPage() {
                             onSubmit={handleLegSubmit}
                             onCancel={() => setIsLegModalOpen(false)}
                             exchange={selectedStrategyBuilder?.exchange || 'NFO'}
+                            showAdjustmentExpiry
                         />
                     </div>
                 </div>

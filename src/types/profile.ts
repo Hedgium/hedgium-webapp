@@ -56,6 +56,8 @@ export interface Profile {
     pnl_inception_date?: string | null;
     /** Capital / account value at pnl_inception_date for PnL % only. */
     pnl_inception_value?: number | null;
+    /** If false, the client manages CNC/E1 themselves. Default true. */
+    e1_hedgium_managed?: boolean;
     /** Calendar days since last NFO/BFO/MCX Trade fill. */
     last_trade_days?: number | null;
     order_value_factor: number;
@@ -99,4 +101,16 @@ export interface ProfileResponse {
 export interface BrokerAccessTokenResponse {
     profile_id: number;
     broker_access_token: string | null;
+}
+
+export interface WhatsAppBroadcastTemplate {
+    key: string;
+    label: string;
+    language_code: string;
+    body_preview: string;
+}
+
+export interface WhatsAppBroadcastResult {
+    queued: number;
+    skipped: number;
 }

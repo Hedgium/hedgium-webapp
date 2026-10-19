@@ -53,6 +53,8 @@ export interface User {
   is_staff: boolean | false;
   is_demo?: boolean;
   role?: string;
+  /** null/undefined = unrestricted; else allowed admin section keys */
+  admin_sections?: string[] | null;
   client_type?: "saas" | "ra_client";
   onboarding?: {
     email_verified: boolean;

@@ -145,11 +145,13 @@ export async function updateInvoice(
   id: number,
   payload: {
     fee_amount?: number;
+    discount_amount?: number;
     fee_base?: number;
     fee_mode?: string;
     fee_rate?: number;
     fixed_fee_amount?: number;
     period_end?: string;
+    start_date?: string;
     notes?: string;
     is_final?: boolean;
   }
@@ -195,6 +197,17 @@ export async function rejectInvoice(id: number, notes?: string): Promise<Invoice
     throw new Error(err.detail || "Failed to reject invoice");
   }
   return res.json();
+}
+
+export async function fetchInvoicePdf(id: number): Promise<Blob> {
+  const res = await authFetch(`billing/invoices/${id}/pdf/`, {
+    headers: { Accept: "application/pdf" },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load invoice PDF");
+  }
+  return res.blob();
 }
 
 export async function sendInvoiceEmail(id: number): Promise<Invoice> {

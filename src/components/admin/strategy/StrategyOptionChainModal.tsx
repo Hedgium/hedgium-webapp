@@ -44,6 +44,8 @@ function streamSymbol(exchange: string, underlying: string): string {
   if (ex === "NFO_BFO") return `NFO:${underlying}`;
   if (ex === "BFO") return `BFO:${underlying}`;
   if (ex === "MCX") return `MCX:${underlying}`;
+  if (ex === "NCO") return `NCO:${underlying}`;
+  if (ex === "MCX_NCO") return "";
   return `NFO:${underlying}`;
 }
 
@@ -336,11 +338,15 @@ export default function StrategyOptionChainModal({
     const underInstr = streamSymbol(exchange, underlying);
 
     try {
-      const res = await authFetch("market/quotes/", {}, { instruments: underInstr });
       let ltp: number | null = null;
-      if (res.ok) {
-        const payload = (await res.json()) as { data?: Record<string, QuoteRow> };
-        ltp = lastPriceFromQuoteData(payload?.data ?? {}, underInstr, undefined);
+      let quoteOk = true;
+      if (underInstr) {
+        const res = await authFetch("market/quotes/", {}, { instruments: underInstr });
+        quoteOk = res.ok;
+        if (res.ok) {
+          const payload = (await res.json()) as { data?: Record<string, QuoteRow> };
+          ltp = lastPriceFromQuoteData(payload?.data ?? {}, underInstr, undefined);
+        }
       }
       if (ltp == null) {
         const utok = underlyingTokenFromMap(underlyingInstrumentTokens, underlying);
@@ -357,7 +363,7 @@ export default function StrategyOptionChainModal({
         setStreamNote(null);
       } else {
         setUnderlyingLtp(null);
-        if (!res.ok) {
+        if (!quoteOk) {
           setStreamNote("Could not load underlying LTP (quotes).");
         } else {
           setStreamNote("No LTP in quote for this symbol.");

@@ -16,19 +16,27 @@ export type E2PnlSummary = {
   month: string;
   quarter: string;
   fy: string;
+  /** Reporting start: saved inception, or the account created date when inception is blank. */
   pnl_inception_date?: string | null;
   e1_hedgium_managed?: boolean;
   week_pnl: number;
   week_pnl_pct?: number | null;
+  /** Average total account value used as the week % base. */
+  week_dav?: number | null;
   /** Current calendar month E2 PnL */
   pnl: number;
   pnl_pct?: number | null;
+  /** Average total account value used as the month % base. */
+  month_dav?: number | null;
   quarter_pnl: number;
   quarter_pnl_pct?: number | null;
+  quarter_dav?: number | null;
   ytd_pnl: number;
   ytd_pnl_pct?: number | null;
+  ytd_dav?: number | null;
   all_time_pnl: number;
   all_time_pnl_pct?: number | null;
+  all_time_dav?: number | null;
   week_charges?: number;
   /** Current calendar month E2 charges (other costs) */
   charges?: number;
@@ -81,6 +89,21 @@ export type AllocationSummary = {
   quarter_count: number;
   ytd_count: number;
   all_time: number;
+};
+
+/** Monthly E2 series from `positions/pnl/monthly/` (booked on trade-cycle close date). */
+export type E2MonthlyPnlPoint = {
+  month: string;
+  label: string;
+  gross: number;
+  charges: number;
+  net: number;
+};
+
+export type E2MonthlyPnlResponse = {
+  months: E2MonthlyPnlPoint[];
+  from_month: string;
+  to_month: string;
 };
 
 export type TradeCycleReport = {

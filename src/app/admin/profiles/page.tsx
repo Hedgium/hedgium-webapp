@@ -7,7 +7,12 @@ import { Profile } from "@/types/profile";
 import ProfileItem from "@/components/admin/ProfileItem";
 import UserWithoutProfileItem, { UserWithoutProfile } from "@/components/admin/UserWithoutProfileItem";
 import useAlert from "@/hooks/useAlert";
-import { Search } from "lucide-react";
+import { MessageCircle, Search } from "lucide-react";
+import {
+  listWhatsAppBroadcastTemplates,
+  sendWhatsAppBroadcast,
+} from "@/services/profile";
+import type { WhatsAppBroadcastTemplate } from "@/types/profile";
 import ProfileItemSkeleton from "@/components/skeletons/ProfileItemSkeleton";
 import { USER_ROLE_FILTER_OPTIONS } from "@/constants/userRoles";
 
@@ -40,6 +45,11 @@ export default function ProfilesPage() {
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [subscriptionModalProfile, setSubscriptionModalProfile] = useState<Profile | null>(null);
   const [subscriptionModalMode, setSubscriptionModalMode] = useState<"add" | "modify">("add");
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [broadcastTemplates, setBroadcastTemplates] = useState<WhatsAppBroadcastTemplate[]>([]);
+  const [broadcastTemplateKey, setBroadcastTemplateKey] = useState("");
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+  const [broadcastSending, setBroadcastSending] = useState(false);
 
   const alert = useAlert();
 
@@ -145,6 +155,49 @@ export default function ProfilesPage() {
     }
   };
 
+  const openBroadcast = async () => {
+    setBroadcastOpen(true);
+    setBroadcastLoading(true);
+    try {
+      const templates = await listWhatsAppBroadcastTemplates();
+      setBroadcastTemplates(templates);
+      setBroadcastTemplateKey((current) => current || templates[0]?.key || "");
+    } catch (error) {
+      console.error("Error loading WhatsApp templates:", error);
+      alert.error(error instanceof Error ? error.message : "Failed to load WhatsApp templates");
+      setBroadcastOpen(false);
+    } finally {
+      setBroadcastLoading(false);
+    }
+  };
+
+  const closeBroadcast = () => {
+    if (broadcastSending) return;
+    setBroadcastOpen(false);
+  };
+
+  const handleSendBroadcast = async () => {
+    if (!broadcastTemplateKey) return;
+    setBroadcastSending(true);
+    try {
+      const result = await sendWhatsAppBroadcast(broadcastTemplateKey);
+      const queuedLabel = result.queued === 1 ? "1 client" : `${result.queued} clients`;
+      const skipped =
+        result.skipped > 0
+          ? ` Skipped ${result.skipped} who are not verified or have no verified mobile.`
+          : "";
+      alert.success(`WhatsApp queued for ${queuedLabel}.${skipped}`);
+      setBroadcastOpen(false);
+    } catch (error) {
+      console.error("Error sending WhatsApp broadcast:", error);
+      alert.error(error instanceof Error ? error.message : "Failed to send WhatsApp message");
+    } finally {
+      setBroadcastSending(false);
+    }
+  };
+
+  const selectedBroadcast = broadcastTemplates.find((item) => item.key === broadcastTemplateKey);
+
   const clearAllFilters = () => {
     setBrokerFilter("");
     setSubscriptionFilter("");
@@ -166,7 +219,17 @@ export default function ProfilesPage() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-base-300 pb-4">
-          <h1 className="text-2xl font-semibold">User Profiles</h1>
+          <div className="flex items-center gap-3 shrink-0">
+            <h1 className="text-2xl font-semibold">User Profiles</h1>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm gap-2"
+              onClick={openBroadcast}
+            >
+              <MessageCircle size={16} />
+              Send WhatsApp
+            </button>
+          </div>
           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
             <div className="relative flex-1 md:flex-initial md:w-56">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -341,6 +404,68 @@ export default function ProfilesPage() {
             />
           </div>
           <div className="modal-backdrop" onClick={() => setIsEditModalOpen(false)} />
+        </div>
+      )}
+
+      {broadcastOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-lg rounded-xl">
+            <h3 className="font-semibold text-lg">Send WhatsApp</h3>
+            <p className="text-sm text-base-content/70 mt-2">
+              Sends one message to every verified client who has a profile and a verified mobile number.
+            </p>
+            {broadcastLoading ? (
+              <div className="py-8 flex justify-center">
+                <span className="loading loading-spinner loading-md" />
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                <label className="form-control w-full">
+                  <span className="label-text mb-1">Template</span>
+                  <select
+                    className="select select-bordered select-sm w-full"
+                    value={broadcastTemplateKey}
+                    onChange={(e) => setBroadcastTemplateKey(e.target.value)}
+                    disabled={broadcastSending}
+                    aria-label="WhatsApp template"
+                  >
+                    {broadcastTemplates.map((item) => (
+                      <option key={item.key} value={item.key}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {selectedBroadcast && (
+                  <pre className="whitespace-pre-wrap text-sm bg-base-200 rounded-lg p-3 font-sans">
+                    {selectedBroadcast.body_preview}
+                  </pre>
+                )}
+              </div>
+            )}
+            <div className="modal-action">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={closeBroadcast}
+                disabled={broadcastSending}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={handleSendBroadcast}
+                disabled={broadcastLoading || broadcastSending || !broadcastTemplateKey}
+              >
+                {broadcastSending ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : null}
+                Send
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={closeBroadcast} />
         </div>
       )}
 

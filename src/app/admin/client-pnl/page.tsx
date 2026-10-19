@@ -7,9 +7,21 @@ import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { Profile } from "@/types/profile";
 import { LiveHolding } from "@/types/positions";
-import { IndianRupee, RefreshCw, Search, BarChart3, Info } from "lucide-react";
+import { IndianRupee, RefreshCw, Search, BarChart3, Info, Users, TrendingUp } from "lucide-react";
 import { USER_ROLE_FILTER_OPTIONS, userRoleLabel } from "@/constants/userRoles";
 import NetPnlWithCosts from "@/components/reports/NetPnlWithCosts";
+import FirmRoiPanel from "@/components/admin/FirmRoiPanel";
+
+type ClientPnlTab = "clients" | "performance";
+
+const CLIENT_PNL_TABS: {
+  id: ClientPnlTab;
+  label: string;
+  icon: typeof Users;
+}[] = [
+  { id: "clients", label: "Clients", icon: Users },
+  { id: "performance", label: "Performance", icon: TrendingUp },
+];
 
 type PnlSummary = {
   month: string;
@@ -392,6 +404,7 @@ export default function AdminClientPnlPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("client");
+  const [activeTab, setActiveTab] = useState<ClientPnlTab>("clients");
   const [engine2Period, setEngine2Period] = useState<{ month: string; quarter: string } | null>(
     null
   );
@@ -507,46 +520,91 @@ export default function AdminClientPnlPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {activeTab === "clients" ? (
+          <div className="flex items-center gap-2">
+            <label className="input input-bordered input-sm flex w-full items-center gap-2 sm:w-64">
+              <Search className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+              <input
+                type="search"
+                className="min-w-0 grow"
+                placeholder="Search client / email"
+                aria-label="Search client or email"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </label>
 
-        <label className="input input-bordered input-sm flex w-full items-center gap-2 sm:w-64">
-            <Search className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
-            <input
-              type="search"
-              className="min-w-0 grow"
-              placeholder="Search client / email"
-              aria-label="Search client or email"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </label>
-          
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="select select-bordered select-sm h-9 min-w-[10rem]"
-            aria-label="Filter by user role"
-          >
-            {USER_ROLE_FILTER_OPTIONS.map((opt) => (
-              <option key={opt.value || "all"} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm gap-2"
-            onClick={() => void handleRefreshAll()}
-            disabled={refreshingAll || loadingProfiles || profiles.length === 0}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${refreshingAll || anyLoading ? "animate-spin" : ""}`}
-              aria-hidden
-            />
-          </button>
-        </div>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="select select-bordered select-sm h-9 min-w-[10rem]"
+              aria-label="Filter by user role"
+            >
+              {USER_ROLE_FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value || "all"} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm gap-2"
+              onClick={() => void handleRefreshAll()}
+              disabled={refreshingAll || loadingProfiles || profiles.length === 0}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${refreshingAll || anyLoading ? "animate-spin" : ""}`}
+                aria-hidden
+              />
+            </button>
+          </div>
+        ) : null}
       </div>
 
+      <div
+        className="mb-5 inline-flex w-full flex-col gap-1 rounded-xl border border-base-300/80 bg-base-200/40 p-1 sm:w-auto sm:flex-row"
+        role="tablist"
+        aria-label="Client PnL views"
+      >
+        {CLIENT_PNL_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const selected = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              id={`client-pnl-tab-${tab.id}`}
+              aria-controls={`client-pnl-panel-${tab.id}`}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-colors sm:min-w-[11rem] ${
+                selected
+                  ? "bg-base-100 text-base-content shadow-sm ring-1 ring-base-300/60"
+                  : "text-base-content/65 cursor-pointer hover:bg-base-100/60 hover:text-base-content"
+              }`}
+            >
+              <Icon className="size-4 shrink-0 opacity-80" aria-hidden />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {activeTab === "performance" ? (
+        <section
+          id="client-pnl-panel-performance"
+          role="tabpanel"
+          aria-labelledby="client-pnl-tab-performance"
+        >
+          <FirmRoiPanel />
+        </section>
+      ) : (
+      <section
+        id="client-pnl-panel-clients"
+        role="tabpanel"
+        aria-labelledby="client-pnl-tab-clients"
+      >
       <div className="overflow-x-auto rounded-xl border border-base-300 bg-base-100 shadow-sm">
         <table className="table table-zebra table-sm md:table-md">
           <thead>
@@ -796,6 +854,8 @@ export default function AdminClientPnlPage() {
           Some rows could not load all metrics (broker session, API limits, or missing data). Use per-row refresh to retry.
         </p>
       ) : null}
+      </section>
+      )}
     </div>
   );
 }

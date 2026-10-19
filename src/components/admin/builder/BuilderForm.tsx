@@ -89,9 +89,10 @@ export default function BuilderForm({
     const [formData, setFormData] = useState<Partial<StrategyBuilderCreate>>({
         name: '',
         exchange: 'NFO',
-        status: isClient ? 'SAAS_CHECKING' : 'CHECKING',
-        entry_ws: 0,
-        exit_ws: 0,
+        status: isClient ? 'SAAS_CHECKING' : 'PRECHECK',
+        entry_ws: -10,
+        trigger_ws: 0,
+        exit_ws: 10,
         entry_condition: 'LESS',
         exit_pnl: 50000,
         strategy_template_id: null, // Default or fetch from API
@@ -165,6 +166,7 @@ export default function BuilderForm({
                 exchange: initialData.exchange,
                 status: initialData.status,
                 entry_ws: initialData.entry_ws,
+                trigger_ws: initialData.trigger_ws ?? 0,
                 exit_ws: initialData.exit_ws,
                 entry_condition: initialData.entry_condition,
                 exit_pnl: initialData.exit_pnl ?? 50000,
@@ -331,7 +333,7 @@ export default function BuilderForm({
         setFormData(prev => ({
             ...prev,
             [name]: name === 'strike_step' || name === 'strike_multiplier' || name === 'strategy_template_id' || name === 'adjustment_strike_distance' ? parseInt(value) :
-                name === 'entry_ws' || name === 'exit_ws' || name === 'margin_required' ? parseFloat(value) : value
+                name === 'entry_ws' || name === 'trigger_ws' || name === 'exit_ws' || name === 'margin_required' ? parseFloat(value) : value
         }));
     };
 
@@ -350,9 +352,15 @@ export default function BuilderForm({
     const loadUnderlyingOptions = async (inputValue: string) => {
         if (!inputValue) return [];
         try {
-            const instrumentType = formData.exchange === 'MCX' ? 'FUT' : 'EQ';
+            const instrumentType = formData.exchange === 'MCX' || formData.exchange === 'NCO' || formData.exchange === 'MCX_NCO' ? 'FUT' : 'EQ';
+            const exchangeParam =
+                formData.exchange === 'MCX' || formData.exchange === 'NCO'
+                    ? `&exchange=${formData.exchange}`
+                    : formData.exchange === 'MCX_NCO'
+                        ? '&exchange=MCX,NCO'
+                        : '';
             const response = await authFetch(
-                `market/instruments/search/?instrument_type=${instrumentType}&q=${encodeURIComponent(inputValue)}`
+                `market/instruments/search/?instrument_type=${instrumentType}&q=${encodeURIComponent(inputValue)}${exchangeParam}`
             );
             const data: InstrumentSearchResult[] = await response.json();
             return data.map((item) => ({
@@ -391,7 +399,7 @@ export default function BuilderForm({
         }
         const parts = option.label.split(' - ');
         const firstWord = option.value.split(' ')[0];
-        const symbol = formData.exchange === 'MCX' ? parts[1] : firstWord;
+        const symbol = formData.exchange === 'MCX' || formData.exchange === 'NCO' || formData.exchange === 'MCX_NCO' ? parts[1] : firstWord;
         setPresetSymbol(symbol);
         setPresetToken(option.token);
         if (option.lot_size > 0) {
@@ -531,6 +539,16 @@ export default function BuilderForm({
                 return;
             }
         }
+        const spotMin = formData.spot_dev_pct_min;
+        if (spotMin != null && Number.isFinite(Number(spotMin)) && Number(spotMin) > -0.01) {
+            alert('Spot deviation min cannot be greater than -0.01.');
+            return;
+        }
+        const spotMax = formData.spot_dev_pct_max;
+        if (spotMax != null && Number.isFinite(Number(spotMax)) && Number(spotMax) < 0.01) {
+            alert('Spot deviation max cannot be less than 0.01.');
+            return;
+        }
         if (!initialData && legPresetConfig && !presetReady) {
             alert('Please complete all leg setup fields before submitting.');
             return;
@@ -618,7 +636,9 @@ export default function BuilderForm({
                         <option value="NFO">NFO</option>
                         <option value="BFO">BFO</option>
                         <option value="MCX">MCX</option>
+                        <option value="NCO">NCO</option>
                         <option value="NFO_BFO">NFO_BFO</option>
+                        <option value="MCX_NCO">MCX_NCO</option>
                     </select>
                 </div>
                 <div className="form-control">
@@ -632,6 +652,7 @@ export default function BuilderForm({
                         />
                     ) : (
                         <select name="status" value={formData.status} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
+                            <option value="PRECHECK">PRECHECK</option>
                             <option value="CHECKING">CHECKING</option>
                             <option value="SAAS_CHECKING">SAAS_CHECKING</option>
                             <option value="ACTIVE">ACTIVE</option>
@@ -657,6 +678,22 @@ export default function BuilderForm({
                         required 
                         name="entry_ws" 
                         value={formData.entry_ws} 
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                handleSubmit(e);
+                            }
+                        }}
+                        className="input input-bordered input-sm h-9 w-full" 
+                    />
+                </div>
+                <div className="form-control">
+                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Trigger WS (%)</span></label>
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        name="trigger_ws" 
+                        value={formData.trigger_ws ?? 0} 
                         onChange={handleChange}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
@@ -948,6 +985,7 @@ export default function BuilderForm({
                             <input
                                 type="number"
                                 step="any"
+                                max={-0.01}
                                 name="spot_dev_pct_min"
                                 value={optionalNumberValue(formData.spot_dev_pct_min)}
                                 onChange={handleChange}
@@ -965,6 +1003,7 @@ export default function BuilderForm({
                             <input
                                 type="number"
                                 step="any"
+                                min={0.01}
                                 name="spot_dev_pct_max"
                                 value={optionalNumberValue(formData.spot_dev_pct_max)}
                                 onChange={handleChange}
@@ -979,6 +1018,7 @@ export default function BuilderForm({
                     <label className="label">
                         <span className="text-xs text-base-content/60">
                             Leave either field empty to disable spot deviation checks.
+                            Min cannot be greater than -0.01. Max cannot be less than 0.01.
                         </span>
                     </label>
                 </div>

@@ -238,7 +238,9 @@ export default function ManualAdjustmentModal({
                             <option value="NFO">NFO</option>
                             <option value="BFO">BFO</option>
                             <option value="MCX">MCX</option>
+                            <option value="NCO">NCO</option>
                             <option value="NFO_BFO">NFO + BFO (mixed)</option>
+                            <option value="MCX_NCO">MCX + NCO (mixed)</option>
                         </select>
                     </div>
 

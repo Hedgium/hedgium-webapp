@@ -7,8 +7,8 @@ import {
   createBuilderLeg,
   deleteBuilder,
   deleteBuilderLeg,
-  getBuilder,
   listBuilders,
+  refreshBuilder,
   updateBuilder,
   updateBuilderLeg,
 } from "@/services/builder";
@@ -154,9 +154,9 @@ export default function ClientBuilderPage() {
 
   const handleRefreshStatus = async (builderId: number) => {
     try {
-      const updatedBuilder = await getBuilder(builderId);
+      const updatedBuilder = await refreshBuilder(builderId);
       setBuilders((prev) => prev.map((b) => (b.id === updatedBuilder.id ? updatedBuilder : b)));
-      alert.success("Status refreshed");
+      alert.success("Spot and status refreshed");
     } catch (error) {
       console.error("Error refreshing status:", error);
       alert.error("Failed to refresh status");
@@ -271,6 +271,7 @@ export default function ClientBuilderPage() {
               aria-label="Filter by status"
             >
               <option value="">All Statuses</option>
+              <option value="PRECHECK">Precheck</option>
               <option value="CHECKING">Checking</option>
               <option value="SAAS_CHECKING">SAAS Checking</option>
               <option value="ACTIVE">Active</option>
@@ -360,6 +361,7 @@ export default function ClientBuilderPage() {
               onSubmit={handleLegSubmit}
               onCancel={() => setIsLegModalOpen(false)}
               exchange={selectedStrategyBuilder?.exchange || "NFO"}
+              showAdjustmentExpiry
             />
           </div>
         </div>

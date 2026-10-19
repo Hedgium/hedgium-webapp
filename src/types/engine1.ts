@@ -125,3 +125,22 @@ export interface Engine1ExecutePayload extends Engine1PreviewPayload {
   instrument_ids?: number[];
   overrides?: Engine1ExecuteOverride[];
 }
+
+export type CashParkStatus = "idle" | "parked" | "released" | string;
+
+export interface CashParkRow {
+  profile_id: number;
+  username: string;
+  email: string;
+  broker_name: string;
+  tradingsymbol: string;
+  exchange: string;
+  buy_quantity: number;
+  sell_quantity: number;
+  outstanding: number;
+  available_cash: number | null;
+  status: CashParkStatus;
+  last_buy_order_id: string | null;
+  last_sell_order_id: string | null;
+  operation_running: boolean;
+}

@@ -43,6 +43,11 @@ export default function RootLayoutClient({
 
   useEffect(() => {
     if (!isInitializing && accessToken) {
+      // Invoice links are public. A session must not bounce them into the app.
+      if (pathname === '/pay' || pathname?.startsWith('/pay/')) {
+        return;
+      }
+
       if (user?.is_demo) {
         if (isLoginRootPath(pathname) || pathname?.startsWith('/onboarding')) {
           router.push('/home');
