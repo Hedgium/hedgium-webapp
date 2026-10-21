@@ -452,8 +452,12 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                                 Created {formatCardDate(profile.created_at)}
                             </p>
                             <p className="text-xs text-base-content/70 mt-0.5">
-                                Inception {formatCardDate(profile.pnl_inception_date)}
+                                E1 {formatCardDate(profile.pnl_inception_date)}
                                 <span className="text-base-content/40"> · </span>
+                                E2 {formatCardDate(profile.e2_pnl_inception_date)}
+                            </p>
+                            <p className="text-xs text-base-content/70 mt-0.5">
+                                Value{" "}
                                 <span className="tabular-nums">
                                     {profile.pnl_inception_value != null
                                         ? formatMoneyIN(profile.pnl_inception_value, { decimals: 0 })

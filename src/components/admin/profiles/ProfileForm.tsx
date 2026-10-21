@@ -65,6 +65,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         broker_user_id: '',
         margin_equity: 0,
         pnl_inception_date: '',
+        e2_pnl_inception_date: '',
         pnl_inception_value: '',
         e1_hedgium_managed: true,
         order_value_factor: 3,
@@ -165,6 +166,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             broker_user_id: initialData.broker_user_id ?? '',
             margin_equity: initialData.margin_equity,
             pnl_inception_date: (initialData.pnl_inception_date ?? '').slice(0, 10),
+            e2_pnl_inception_date: (initialData.e2_pnl_inception_date ?? '').slice(0, 10),
             pnl_inception_value:
                 initialData.pnl_inception_value != null
                     ? String(initialData.pnl_inception_value)
@@ -232,6 +234,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             broker_user_id: formData.broker_user_id || undefined,
             margin_equity: formData.margin_equity,
             pnl_inception_date: formData.pnl_inception_date.trim() || null,
+            e2_pnl_inception_date: formData.e2_pnl_inception_date.trim() || null,
             pnl_inception_value: formData.pnl_inception_value.trim()
                 ? parseFloat(formData.pnl_inception_value)
                 : null,
@@ -449,7 +452,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                         />
                     </div>
                     <div className="form-control">
-                        <label className="label"><span className="label-text">PnL inception date</span></label>
+                        <label className="label"><span className="label-text">E1 inception date</span></label>
                         <input
                             type="date"
                             name="pnl_inception_date"
@@ -458,7 +461,20 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                             className="input input-bordered w-full"
                         />
                         <p className="mt-1 text-xs text-base-content/50">
-                            Capital deployed / Hedgium reporting start (not account join date).
+                            First MarginSnapshot with e1_total (E1 reporting start).
+                        </p>
+                    </div>
+                    <div className="form-control">
+                        <label className="label"><span className="label-text">E2 inception date</span></label>
+                        <input
+                            type="date"
+                            name="e2_pnl_inception_date"
+                            value={formData.e2_pnl_inception_date}
+                            onChange={handleChange}
+                            className="input input-bordered w-full"
+                        />
+                        <p className="mt-1 text-xs text-base-content/50">
+                            First day of the month of the first closed trade cycle (E2 / billing start).
                         </p>
                     </div>
                     <div className="form-control">
@@ -470,10 +486,10 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                             value={formData.pnl_inception_value}
                             onChange={handleChange}
                             className="input input-bordered w-full"
-                            placeholder="Capital at inception date"
+                            placeholder="Capital at E1 inception date"
                         />
                         <p className="mt-1 text-xs text-base-content/50">
-                            Account value at inception date — used for PnL % only.
+                            Account value at E1 inception — used for PnL % only when Hedgium-managed.
                         </p>
                     </div>
                     <div className="form-control md:col-span-2">

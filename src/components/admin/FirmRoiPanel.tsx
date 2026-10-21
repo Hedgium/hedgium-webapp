@@ -63,7 +63,7 @@ type FirmRoiResponse = {
 const PAGE_SIZE = 25;
 
 const METHODOLOGY_TIP =
-  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value. E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net. Firm totals days-weight each account average by days live in the period (inception, or created date if blank) over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
+  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception. E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
 
 type FirmRoiMonthlyResponse = {
   months: FirmRoiMonthPoint[];
