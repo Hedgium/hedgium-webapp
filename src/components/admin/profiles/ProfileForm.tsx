@@ -461,7 +461,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                             className="input input-bordered w-full"
                         />
                         <p className="mt-1 text-xs text-base-content/50">
-                            First MarginSnapshot with e1_total (E1 reporting start).
+                            First MarginSnapshot date (E1 reporting start).
                         </p>
                     </div>
                     <div className="form-control">

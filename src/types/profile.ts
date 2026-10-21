@@ -52,7 +52,7 @@ export interface Profile {
     margin_equity: number;
     /** ISO datetime when margin_equity last changed (broker refresh, admin, bulk task). */
     margin_updated_at?: string | null;
-    /** YYYY-MM-DD E1 reporting start (first e1_total snapshot). Not account join date. */
+    /** YYYY-MM-DD E1 reporting start (first MarginSnapshot). Not account join date. */
     pnl_inception_date?: string | null;
     /** YYYY-MM-DD E2 reporting / billing start (month start of first closed cycle). */
     e2_pnl_inception_date?: string | null;

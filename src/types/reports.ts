@@ -39,6 +39,12 @@ export type E2PnlSummary = {
   all_time_pnl: number;
   all_time_pnl_pct?: number | null;
   all_time_dav?: number | null;
+  /** E1 % bases (always avg total account value over the E1 window). */
+  e1_week_dav?: number | null;
+  e1_month_dav?: number | null;
+  e1_quarter_dav?: number | null;
+  e1_ytd_dav?: number | null;
+  e1_all_time_dav?: number | null;
   week_charges?: number;
   /** Current calendar month E2 charges (other costs) */
   charges?: number;
