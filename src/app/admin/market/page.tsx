@@ -3,6 +3,7 @@
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import {
+  CalendarDays,
   CandlestickChart,
   Eye,
   FileText,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ResearchReportHtmlModal from "@/components/admin/ResearchReportHtmlModal";
+import SessionCalendarPanel from "@/components/admin/SessionCalendarPanel";
 
 type StrikeCsvUploadResponse = {
   message: string;
@@ -55,7 +57,11 @@ const REPORT_ORDERING_OPTIONS = [
   { value: "-symbol", label: "Symbol (Z–A)" },
 ] as const;
 
-type MarketTabId = "strike-steps" | "contract-lots" | "research-reports";
+type MarketTabId =
+  | "strike-steps"
+  | "contract-lots"
+  | "research-reports"
+  | "session-calendar";
 
 const MARKET_TABS: {
   id: MarketTabId;
@@ -86,6 +92,14 @@ const MARKET_TABS: {
     description:
       "HTML research reports per underlying. One report per symbol; saving again updates the existing row.",
     icon: FileText,
+  },
+  {
+    id: "session-calendar",
+    label: "Session calendar",
+    shortLabel: "Calendar",
+    description:
+      "NSE / MCX holiday and evening-only overrides. Beat tasks and quoting skip closed sessions.",
+    icon: CalendarDays,
   },
 ];
 
@@ -1076,6 +1090,8 @@ export default function AdminMarketPage() {
           )}
         </>
       )}
+
+      {activeTab === "session-calendar" && <SessionCalendarPanel />}
       </section>
 
       {strikeCsvModalOpen && (
