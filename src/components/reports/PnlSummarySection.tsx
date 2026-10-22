@@ -50,10 +50,10 @@ function currentPeriodStarts(now = new Date()): {
 function periodDetail(
   calendarLabel: string,
   periodStart: string,
-  joinDate: string | null | undefined
+  e2JoinDate: string | null | undefined
 ): string {
-  if (joinDate && joinDate > periodStart) {
-    return `(${formatDate(joinDate)} → Till date)`;
+  if (e2JoinDate && e2JoinDate > periodStart) {
+    return `(E2 from ${formatDate(e2JoinDate)} → Till date)`;
   }
   return `(${calendarLabel})`;
 }
@@ -129,12 +129,15 @@ export default function PnlSummarySection({
   pnlSummary,
   accountCreatedAt = null,
 }: PnlSummarySectionProps) {
+  const e1JoinDate = pnlSummary.pnl_inception_date;
+  const e2JoinDate =
+    pnlSummary.e2_pnl_inception_date ?? pnlSummary.pnl_inception_date ?? null;
+
   const e2PnlTiles = useMemo((): E2PnlTile[] => {
     const selfManaged = pnlSummary.e1_hedgium_managed === false;
-    const joinDate = pnlSummary.pnl_inception_date;
     const { monthStart, quarterStart, ytdStart } = currentPeriodStarts();
-    const allTimeDetail = joinDate
-      ? `(${formatDate(joinDate)} → Till date)`
+    const allTimeDetail = e2JoinDate
+      ? `(E2 from ${formatDate(e2JoinDate)} → Till date)`
       : accountCreatedAt
         ? `(${formatDate(accountCreatedAt)} → Till date)`
         : "(Inception → Till date)";
@@ -146,28 +149,32 @@ export default function PnlSummarySection({
       e1: number | null | undefined,
       e1Pct: number | null | undefined,
       combined: number | null | undefined,
-      combinedPct: number | null | undefined,
       e1Realised: number | null | undefined,
       e1Mtm: number | null | undefined,
-      dav: number | null | undefined
+      e1Dav: number | null | undefined,
+      e1Inception: string | null | undefined
     ): PnlLine[] => {
       const charges = e2Charges ?? 0;
+      const e2NetPct = netScaledPct(e2, charges, e2Pct);
       const lines: PnlLine[] = [
         {
           label: "E2",
           value: e2NetPnl(e2, charges),
-          pct: netScaledPct(e2, charges, e2Pct),
+          pct: e2NetPct,
           gross: e2,
           charges,
         },
       ];
       if (e1 != null) {
-        const infoTip = e1InfoTip(
-          selfManaged,
-          e1Realised ?? null,
-          e1Mtm ?? null,
-          dav ?? null
-        );
+        const tipParts = [
+          e1InfoTip(selfManaged, e1Realised ?? null, e1Mtm ?? null, e1Dav ?? null),
+        ];
+        if (e1Inception) tipParts.push(`From ${formatDate(e1Inception)}`);
+        const infoTip = tipParts.filter(Boolean).join(" ");
+        const totalPct =
+          e1Pct != null || e2NetPct != null
+            ? Math.round(((e1Pct ?? 0) + (e2NetPct ?? 0)) * 100) / 100
+            : null;
         lines.push(
           {
             label: "E1",
@@ -178,7 +185,7 @@ export default function PnlSummarySection({
           {
             label: "Total",
             value: combined != null ? e2NetPnl(combined, charges) : null,
-            pct: netScaledPct(combined, charges, combinedPct),
+            pct: totalPct,
             gross: combined ?? null,
             charges,
             emphasis: true,
@@ -192,7 +199,7 @@ export default function PnlSummarySection({
       {
         key: "month",
         label: "Monthly (Current)",
-        detail: periodDetail(pnlSummary.month, monthStart, joinDate),
+        detail: periodDetail(pnlSummary.month, monthStart, e2JoinDate),
         lines: buildLines(
           pnlSummary.pnl ?? 0,
           pnlSummary.pnl_pct,
@@ -200,16 +207,16 @@ export default function PnlSummarySection({
           pnlSummary.e1_month_pnl,
           pnlSummary.e1_month_pnl_pct,
           pnlSummary.combined_month_pnl,
-          pnlSummary.combined_month_pnl_pct,
           pnlSummary.e1_month_realised,
           pnlSummary.e1_month_mtm,
-          pnlSummary.month_dav
+          pnlSummary.e1_month_dav ?? pnlSummary.month_dav,
+          e1JoinDate
         ),
       },
       {
         key: "quarter",
         label: "Quarterly (Current)",
-        detail: periodDetail(pnlSummary.quarter, quarterStart, joinDate),
+        detail: periodDetail(pnlSummary.quarter, quarterStart, e2JoinDate),
         lines: buildLines(
           pnlSummary.quarter_pnl ?? 0,
           pnlSummary.quarter_pnl_pct,
@@ -217,16 +224,16 @@ export default function PnlSummarySection({
           pnlSummary.e1_quarter_pnl,
           pnlSummary.e1_quarter_pnl_pct,
           pnlSummary.combined_quarter_pnl,
-          pnlSummary.combined_quarter_pnl_pct,
           pnlSummary.e1_quarter_realised,
           pnlSummary.e1_quarter_mtm,
-          pnlSummary.quarter_dav
+          pnlSummary.e1_quarter_dav ?? pnlSummary.quarter_dav,
+          e1JoinDate
         ),
       },
       {
         key: "ytd",
         label: "YTD (Current)",
-        detail: periodDetail(pnlSummary.fy, ytdStart, joinDate),
+        detail: periodDetail(pnlSummary.fy, ytdStart, e2JoinDate),
         lines: buildLines(
           pnlSummary.ytd_pnl ?? 0,
           pnlSummary.ytd_pnl_pct,
@@ -234,10 +241,10 @@ export default function PnlSummarySection({
           pnlSummary.e1_ytd_pnl,
           pnlSummary.e1_ytd_pnl_pct,
           pnlSummary.combined_ytd_pnl,
-          pnlSummary.combined_ytd_pnl_pct,
           pnlSummary.e1_ytd_realised,
           pnlSummary.e1_ytd_mtm,
-          pnlSummary.ytd_dav
+          pnlSummary.e1_ytd_dav ?? pnlSummary.ytd_dav,
+          e1JoinDate
         ),
         highlight: true,
       },
@@ -252,14 +259,14 @@ export default function PnlSummarySection({
           pnlSummary.e1_all_time_pnl,
           pnlSummary.e1_all_time_pnl_pct,
           pnlSummary.combined_all_time_pnl,
-          pnlSummary.combined_all_time_pnl_pct,
           pnlSummary.e1_all_time_realised,
           pnlSummary.e1_all_time_mtm,
-          pnlSummary.all_time_dav
+          pnlSummary.e1_all_time_dav ?? pnlSummary.all_time_dav,
+          e1JoinDate
         ),
       },
     ];
-  }, [pnlSummary, accountCreatedAt]);
+  }, [pnlSummary, accountCreatedAt, e1JoinDate, e2JoinDate]);
 
   return (
     <div className="space-y-4">
@@ -270,6 +277,23 @@ export default function PnlSummarySection({
             PnL
           </h2>
         </div>
+        {(e1JoinDate || e2JoinDate) && (
+          <p className="text-xs text-base-content/60 tabular-nums">
+            {e1JoinDate ? (
+              <span>
+                E1 from <span className="text-base-content/80">{formatDate(e1JoinDate)}</span>
+              </span>
+            ) : null}
+            {e1JoinDate && e2JoinDate ? (
+              <span className="text-base-content/35"> · </span>
+            ) : null}
+            {e2JoinDate ? (
+              <span>
+                E2 from <span className="text-base-content/80">{formatDate(e2JoinDate)}</span>
+              </span>
+            ) : null}
+          </p>
+        )}
       </div>
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {e2PnlTiles.map((tile) => (
