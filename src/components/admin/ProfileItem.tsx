@@ -404,6 +404,14 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                             <p className="text-lg font-semibold tabular-nums leading-tight text-base-content">
                                 {formatMoneyIN(equityMargin, { decimals: 0 })}
                             </p>
+                            {profile.broker_name === "PAPER" ? (
+                                <p className="mt-1 text-xs text-base-content/60">
+                                    Starting capital{" "}
+                                    <span className="tabular-nums font-medium text-base-content/85">
+                                        {formatMoneyIN(profile.starting_capital ?? 0, { decimals: 0 })}
+                                    </span>
+                                </p>
+                            ) : null}
                         </div>
                         <div className="min-w-0 border-t border-base-300/50 pt-3 sm:border-l sm:border-t-0 sm:border-base-300/50 sm:pl-6 sm:pt-0">
                             <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">
@@ -452,8 +460,12 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                                 Created {formatCardDate(profile.created_at)}
                             </p>
                             <p className="text-xs text-base-content/70 mt-0.5">
-                                Inception {formatCardDate(profile.pnl_inception_date)}
+                                E1 {formatCardDate(profile.pnl_inception_date)}
                                 <span className="text-base-content/40"> · </span>
+                                E2 {formatCardDate(profile.e2_pnl_inception_date)}
+                            </p>
+                            <p className="text-xs text-base-content/70 mt-0.5">
+                                Value{" "}
                                 <span className="tabular-nums">
                                     {profile.pnl_inception_value != null
                                         ? formatMoneyIN(profile.pnl_inception_value, { decimals: 0 })
@@ -572,7 +584,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                         )}
                     </div>
                     {/* Desktop: stack broker actions under icons so the row stays one line tall */}
-                    {!brokerLoggedIn && (
+                    {!brokerLoggedIn && profile.broker_name !== "PAPER" && (
                         <div className="hidden w-full min-w-[11rem] flex-col gap-1.5 lg:flex">
                             <button
                                 type="button"
@@ -601,7 +613,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                 </div>
             </div>
 
-            {!brokerLoggedIn && (
+            {!brokerLoggedIn && profile.broker_name !== "PAPER" && (
                 <div className="mt-3 flex flex-wrap gap-2 lg:hidden">
                     <button
                         type="button"

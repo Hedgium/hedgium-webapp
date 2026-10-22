@@ -55,6 +55,7 @@ type ClientPnlRow = {
   brokerName: string;
   brokerLoggedIn: boolean;
   pnlInceptionDate: string | null;
+  e2PnlInceptionDate: string | null;
   lastTradeDays: number | null;
   status: "idle" | "loading" | "done" | "error";
   error?: string;
@@ -382,6 +383,7 @@ function profileToRow(profile: Profile, partial?: Partial<ClientPnlRow>): Client
     brokerName: profile.broker_name,
     brokerLoggedIn: profile.broker_logged_in,
     pnlInceptionDate: profile.pnl_inception_date ?? null,
+    e2PnlInceptionDate: profile.e2_pnl_inception_date ?? null,
     lastTradeDays: profile.last_trade_days ?? null,
     status: "idle",
     engine1Total: null,
@@ -748,7 +750,9 @@ export default function AdminClientPnlPage() {
                       </p>
                       {row.userRole ? (
                         <span className="text-xs">
-                          {formatInceptionDate(row.pnlInceptionDate)}
+                          E1 {formatInceptionDate(row.pnlInceptionDate)}
+                          {" · "}
+                          E2 {formatInceptionDate(row.e2PnlInceptionDate)}
                         <span className="badge badge-outline badge-xs ml-2 w-fit">
                          {userRoleLabel(row.userRole)}
                         </span>

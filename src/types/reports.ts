@@ -16,8 +16,10 @@ export type E2PnlSummary = {
   month: string;
   quarter: string;
   fy: string;
-  /** Reporting start: saved inception, or the account created date when inception is blank. */
+  /** E1 reporting start: saved inception, or the account created date when blank. */
   pnl_inception_date?: string | null;
+  /** E2 reporting start: saved E2 inception, or the account created date when blank. */
+  e2_pnl_inception_date?: string | null;
   e1_hedgium_managed?: boolean;
   week_pnl: number;
   week_pnl_pct?: number | null;
@@ -37,6 +39,12 @@ export type E2PnlSummary = {
   all_time_pnl: number;
   all_time_pnl_pct?: number | null;
   all_time_dav?: number | null;
+  /** E1 % bases (always avg total account value over the E1 window). */
+  e1_week_dav?: number | null;
+  e1_month_dav?: number | null;
+  e1_quarter_dav?: number | null;
+  e1_ytd_dav?: number | null;
+  e1_all_time_dav?: number | null;
   week_charges?: number;
   /** Current calendar month E2 charges (other costs) */
   charges?: number;

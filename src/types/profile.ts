@@ -50,10 +50,14 @@ export interface Profile {
     broker_name: string;
     broker_user_id: string;
     margin_equity: number;
+    /** Paper broker starting cash. Required when broker_name is PAPER. */
+    starting_capital?: number | null;
     /** ISO datetime when margin_equity last changed (broker refresh, admin, bulk task). */
     margin_updated_at?: string | null;
-    /** YYYY-MM-DD capital deployed / Hedgium reporting start. Not account join date. */
+    /** YYYY-MM-DD E1 reporting start (first MarginSnapshot). Not account join date. */
     pnl_inception_date?: string | null;
+    /** YYYY-MM-DD E2 reporting / billing start (month start of first closed cycle). */
+    e2_pnl_inception_date?: string | null;
     /** Capital / account value at pnl_inception_date for PnL % only. */
     pnl_inception_value?: number | null;
     /** If false, the client manages CNC/E1 themselves. Default true. */
