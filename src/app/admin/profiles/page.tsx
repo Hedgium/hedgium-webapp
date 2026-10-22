@@ -258,6 +258,7 @@ export default function ProfilesPage() {
               <option value="IIFLCAPITAL">IIFL Capital</option>
               <option value="PROSTOCKS">ProStocks</option>
               <option value="SHAREINDIA">Share India</option>
+              <option value="PAPER">Paper</option>
             </select>
             <select
               value={subscriptionFilter}

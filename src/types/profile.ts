@@ -50,6 +50,8 @@ export interface Profile {
     broker_name: string;
     broker_user_id: string;
     margin_equity: number;
+    /** Paper broker starting cash. Required when broker_name is PAPER. */
+    starting_capital?: number | null;
     /** ISO datetime when margin_equity last changed (broker refresh, admin, bulk task). */
     margin_updated_at?: string | null;
     /** YYYY-MM-DD capital deployed / Hedgium reporting start. Not account join date. */
