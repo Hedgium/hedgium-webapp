@@ -77,6 +77,17 @@ export type E2PnlSummary = {
   combined_ytd_pnl_pct?: number | null;
   combined_all_time_pnl?: number | null;
   combined_all_time_pnl_pct?: number | null;
+  /** Combined E1+E2 annualized XIRR for FY YTD (percent). */
+  xirr_ytd?: number | null;
+  /** Combined E1+E2 annualized XIRR since first TAV on/after 2026-07-24. */
+  xirr_all_time?: number | null;
+  /** Opening TAV date used for all-time XIRR. */
+  xirr_start_date?: string | null;
+  /** Opening TAV date used for YTD XIRR (later of FY start and first TAV). */
+  xirr_ytd_start_date?: string | null;
+  xirr_as_of?: string | null;
+  /** Suggested ExternalCashFlow rows not yet confirmed/rejected. */
+  xirr_pending_count?: number | null;
 };
 
 export type AllocationSummary = {

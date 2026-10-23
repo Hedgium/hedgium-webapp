@@ -70,6 +70,27 @@ function formatPnlPct(pct: number | null | undefined): string {
   return `${sign}${pct.toFixed(2)}%`;
 }
 
+function formatXirrPct(pct: number | null | undefined): string {
+  if (pct == null || Number.isNaN(pct)) return "—";
+  const sign = pct > 0 ? "+" : "";
+  return `${sign}${pct.toFixed(2)}% annualized`;
+}
+
+function xirrTooltip(
+  startDate: string | null | undefined,
+  pendingCount: number | null | undefined
+): string {
+  const start =
+    startDate != null && startDate !== ""
+      ? `Combined account rate since ${formatDate(startDate)}.`
+      : "Combined account rate from total account value.";
+  const pending =
+    pendingCount != null && pendingCount > 0
+      ? ` ${pendingCount} unconfirmed cash flow(s) excluded.`
+      : " Unconfirmed cash flows are excluded.";
+  return `${start}${pending}`;
+}
+
 function formatPnlAmount(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
   return formatMoneyIN(value);
@@ -118,6 +139,8 @@ type E2PnlTile = {
   detail: string;
   lines: PnlLine[];
   highlight?: boolean;
+  xirrPct?: number | null;
+  xirrTip?: string;
 };
 
 export interface PnlSummarySectionProps {
@@ -240,6 +263,11 @@ export default function PnlSummarySection({
           pnlSummary.ytd_dav
         ),
         highlight: true,
+        xirrPct: pnlSummary.xirr_ytd,
+        xirrTip: xirrTooltip(
+          pnlSummary.xirr_ytd_start_date ?? pnlSummary.xirr_start_date,
+          pnlSummary.xirr_pending_count
+        ),
       },
       {
         key: "all_time",
@@ -256,6 +284,11 @@ export default function PnlSummarySection({
           pnlSummary.e1_all_time_realised,
           pnlSummary.e1_all_time_mtm,
           pnlSummary.all_time_dav
+        ),
+        xirrPct: pnlSummary.xirr_all_time,
+        xirrTip: xirrTooltip(
+          pnlSummary.xirr_start_date,
+          pnlSummary.xirr_pending_count
         ),
       },
     ];
@@ -346,6 +379,34 @@ export default function PnlSummarySection({
                   </div>
                 </div>
               ))}
+              {tile.xirrPct !== undefined ? (
+                <div className="mt-1.5 flex items-baseline justify-between gap-2 border-t border-base-300/40 pt-1.5">
+                  <span className="inline-flex items-center gap-0.5 shrink-0 text-[11px] font-medium uppercase tracking-wide text-base-content/55">
+                    XIRR
+                    {tile.xirrTip ? (
+                      <button
+                        type="button"
+                        className={`tooltip z-30 cursor-pointer inline-flex text-base-content/45 hover:text-base-content/70 before:z-30 before:max-w-[14rem] before:text-left before:whitespace-normal before:px-3 before:py-2 before:normal-case before:tracking-normal after:z-30 ${
+                          tile.key === "ytd" ? "tooltip-right" : "tooltip-left"
+                        }`}
+                        data-tip={tile.xirrTip}
+                        aria-label={tile.xirrTip}
+                      >
+                        <Info className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                      </button>
+                    ) : null}
+                  </span>
+                  <div
+                    className={`text-[11px] font-semibold tabular-nums ${
+                      tile.xirrPct == null
+                        ? "text-base-content/45"
+                        : signedClass(tile.xirrPct)
+                    }`}
+                  >
+                    {formatXirrPct(tile.xirrPct)}
+                  </div>
+                </div>
+              ) : null}
             </dd>
             <dd className="m-0 mt-2 text-[11px] leading-snug text-base-content/70">
               {tile.detail}
@@ -354,16 +415,11 @@ export default function PnlSummarySection({
         ))}
       </dl>
       <p className="max-w-4xl text-xs leading-relaxed text-base-content/70">
-        E2 is net PnL from Hedgium trading strategies, booked on each trade cycle&apos;s
-        close date (open cycles count in the current period until they close; hover the
-        info icon for gross and other costs). E1 is CNC equity holdings
+        E2 = strategies. E1 = equity holdings
         {pnlSummary.e1_hedgium_managed === false ? (
-          <span className="text-warning">
-            {" "}
-            (self-managed — not managed by Hedgium)
-          </span>
+          <span className="text-warning"> (self-managed)</span>
         ) : null}
-        . Total is both combined, for the current month, quarter, financial year, and all time.
+        . Total = both. XIRR = annualized account return after deposits and withdrawals.
       </p>
     </div>
   );

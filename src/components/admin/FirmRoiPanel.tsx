@@ -63,7 +63,7 @@ type FirmRoiResponse = {
 const PAGE_SIZE = 25;
 
 const METHODOLOGY_TIP =
-  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value. E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net. Firm totals days-weight each account average by days live in the period (inception, or created date if blank) over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
+  "Active clients with E2 history. E1 = Hedgium-managed equity %; E2 = strategy %. Base = avg daily account value (or margin if E1 is self-managed). Firm % days-weights late joiners. Total = E1% + E2%.";
 
 type FirmRoiMonthlyResponse = {
   months: FirmRoiMonthPoint[];
