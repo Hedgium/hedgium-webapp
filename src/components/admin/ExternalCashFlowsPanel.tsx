@@ -39,7 +39,7 @@ type ListResponse = {
 const PAGE_SIZE = 50;
 
 const TIP =
-  "Suggested when |Δ total account value| is at least 5% of the previous day (or first funding from ₹0). Amount is the raw TAV change. Positive = deposit, negative = withdrawal. Only confirmed rows affect XIRR. Re-scan updates suggested rows and drops stale ones.";
+  "Suggested when the account moves at least 5% versus the previous day (or first funding from ₹0). The check uses total account value when it is stored, and available margin on earlier days. Amount is the change in available cash when that is stored on both days, otherwise the change in available margin. Positive = deposit, negative = withdrawal. Only confirmed rows affect XIRR. Re-scan updates suggested rows and drops stale ones.";
 
 function signedClass(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "text-base-content/60";
