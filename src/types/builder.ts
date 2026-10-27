@@ -1,3 +1,5 @@
+export type LegStrikeType = 'FIXED' | 'DYNAMIC';
+
 export interface LegPresetConfig {
     version: number;
     inputs: string[];
@@ -8,12 +10,20 @@ export interface LegPresetConfig {
         strike_distance?: number;
         /** Percent of ATM (signed: + above, - below). Resolved to strike_distance at create. */
         strike_pct?: number;
+        /** Defaults to FIXED when omitted. */
+        strike_type?: LegStrikeType;
         expiry_ref: string;
         when?: Record<string, string[]>;
     }>;
 }
 
 export type CalendarMode = 'CE' | 'PE' | 'BOTH';
+
+export type LegStrikeOverride = {
+    strike_pct?: number;
+    strike_distance?: number;
+    strike_type?: LegStrikeType;
+};
 
 export interface LegPresetInputs {
     symbol: string;
@@ -27,6 +37,8 @@ export interface LegPresetInputs {
     near_expiry?: string;
     far_expiry?: string;
     calendar_mode?: CalendarMode;
+    /** One entry per template leg index; null keeps the JSON default. */
+    leg_overrides?: Array<LegStrikeOverride | null>;
 }
 
 export interface StrategyTemplate {
