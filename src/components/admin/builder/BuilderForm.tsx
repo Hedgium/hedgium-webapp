@@ -95,6 +95,15 @@ function defaultLegStrikeTypes(
     return (config?.legs ?? []).map(defaultLegStrikeType);
 }
 
+function defaultLegNoLegs(leg: PresetLeg): number {
+    const n = leg.no_legs;
+    return typeof n === 'number' && Number.isInteger(n) && n >= 1 ? n : 1;
+}
+
+function defaultLegNoLegsList(config: LegPresetConfig | null | undefined): number[] {
+    return (config?.legs ?? []).map(defaultLegNoLegs);
+}
+
 function legMatchesWhen(leg: PresetLeg, choices: Record<string, string>): boolean {
     if (!leg.when) return true;
     return Object.entries(leg.when).every(([key, allowed]) => allowed.includes(choices[key]));
@@ -202,6 +211,7 @@ export default function BuilderForm({
     const [whenChoices, setWhenChoices] = useState<Record<string, string>>({});
     const [legStrikeEdits, setLegStrikeEdits] = useState<Array<number | null>>([]);
     const [legStrikeTypes, setLegStrikeTypes] = useState<LegStrikeType[]>([]);
+    const [legNoLegs, setLegNoLegs] = useState<number[]>([]);
     const [presetSpotPrice, setPresetSpotPrice] = useState<number | null>(null);
     const [presetAtmStrike, setPresetAtmStrike] = useState<number | null>(null);
 
@@ -243,6 +253,7 @@ export default function BuilderForm({
         setWhenChoices(defaultWhenChoices(config));
         setLegStrikeEdits(defaultLegStrikeEdits(config));
         setLegStrikeTypes(defaultLegStrikeTypes(config));
+        setLegNoLegs(defaultLegNoLegsList(config));
         setPresetSpotPrice(null);
         setPresetAtmStrike(null);
     };
@@ -628,6 +639,8 @@ export default function BuilderForm({
             const strikeType = legStrikeTypes[index] ?? defaultLegStrikeType(leg);
             const defaultType = defaultLegStrikeType(leg);
             const typeChanged = strikeType !== defaultType;
+            const noLegs = legNoLegs[index] ?? defaultLegNoLegs(leg);
+            const noLegsChanged = noLegs !== defaultLegNoLegs(leg);
 
             const override: LegStrikeOverride = {};
             if (edited != null && Number.isFinite(edited)) {
@@ -641,6 +654,9 @@ export default function BuilderForm({
             }
             if (typeChanged) {
                 override.strike_type = strikeType;
+            }
+            if (noLegsChanged) {
+                override.no_legs = noLegs;
             }
             return Object.keys(override).length ? override : null;
         });
@@ -689,6 +705,15 @@ export default function BuilderForm({
         setLegStrikeTypes((prev) => {
             const next = [...prev];
             next[index] = value;
+            return next;
+        });
+    };
+
+    const updateLegNoLegs = (index: number, raw: string) => {
+        const n = parseInt(raw, 10);
+        setLegNoLegs((prev) => {
+            const next = [...prev];
+            next[index] = Number.isFinite(n) ? Math.max(1, n) : 1;
             return next;
         });
     };
@@ -981,6 +1006,8 @@ export default function BuilderForm({
                                     const edited = legStrikeEdits[index];
                                     const strikeType =
                                         legStrikeTypes[index] ?? defaultLegStrikeType(leg);
+                                    const noLegs =
+                                        legNoLegs[index] ?? defaultLegNoLegs(leg);
                                     const resolved =
                                         edited != null &&
                                         Number.isFinite(edited) &&
@@ -999,7 +1026,7 @@ export default function BuilderForm({
                                     return (
                                         <div
                                             key={index}
-                                            className="grid grid-cols-1 sm:grid-cols-[6.5rem_1fr_7.5rem_auto] gap-2 items-center"
+                                            className="grid grid-cols-1 sm:grid-cols-[6.5rem_1fr_4.5rem_7.5rem_auto] gap-2 items-center"
                                         >
                                             <span className="text-sm font-medium">
                                                 {leg.action} {leg.option_type}
@@ -1016,6 +1043,23 @@ export default function BuilderForm({
                                                     value={edited ?? ''}
                                                     onChange={(e) =>
                                                         updateLegStrikeEdit(index, e.target.value)
+                                                    }
+                                                    className="input input-bordered input-sm h-9 w-full"
+                                                />
+                                            </div>
+                                            <div className="form-control">
+                                                <label className="label py-0">
+                                                    <span className="text-xs text-base-content/60">
+                                                        no_legs
+                                                    </span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    step={1}
+                                                    value={noLegs}
+                                                    onChange={(e) =>
+                                                        updateLegNoLegs(index, e.target.value)
                                                     }
                                                     className="input input-bordered input-sm h-9 w-full"
                                                 />
