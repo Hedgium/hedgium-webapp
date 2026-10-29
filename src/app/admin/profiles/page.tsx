@@ -341,6 +341,11 @@ export default function ProfilesPage() {
               onEdit={handleEdit}
               onAddPlan={handleAddPlan}
               onModifyPlan={handleModifyPlan}
+              onUpdated={(updated) => {
+                setProfiles((prev) =>
+                  prev.map((p) => (p.id === updated.id ? updated : p))
+                );
+              }}
             />
           ))}
           {profiles.length === 0 && usersWithoutProfiles.length === 0 && !loading && (
