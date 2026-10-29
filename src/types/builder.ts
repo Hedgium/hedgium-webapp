@@ -12,6 +12,8 @@ export interface LegPresetConfig {
         strike_pct?: number;
         /** Defaults to FIXED when omitted. */
         strike_type?: LegStrikeType;
+        /** Multiple of the structure Lots. Defaults to 1 when omitted. */
+        no_legs?: number;
         expiry_ref: string;
         when?: Record<string, string[]>;
     }>;
@@ -23,6 +25,7 @@ export type LegStrikeOverride = {
     strike_pct?: number;
     strike_distance?: number;
     strike_type?: LegStrikeType;
+    no_legs?: number;
 };
 
 export interface LegPresetInputs {
