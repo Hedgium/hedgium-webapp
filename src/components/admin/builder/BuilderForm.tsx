@@ -6,8 +6,10 @@ import {
     StrategyBuilderCreate,
     StrategyBuilderUpdate,
     StrategyTemplate,
-    CalendarMode,
+    LegPresetConfig,
     LegPresetInputs,
+    LegStrikeOverride,
+    LegStrikeType,
 } from '@/types/builder';
 import UnderlyingDividendSection from '@/components/admin/builder/UnderlyingDividendSection';
 import { authFetch } from '@/utils/api';
@@ -43,6 +45,81 @@ function monthlyExpiriesFromList(expiries: string[]): string[] {
         byMonth.set(d.slice(0, 7), d);
     }
     return Array.from(byMonth.values()).sort();
+}
+
+type PresetLeg = LegPresetConfig['legs'][number];
+
+function whenChoiceOptionsFromConfig(
+    config: LegPresetConfig | null | undefined
+): Record<string, string[]> {
+    const map: Record<string, string[]> = {};
+    for (const leg of config?.legs ?? []) {
+        if (!leg.when) continue;
+        for (const [key, values] of Object.entries(leg.when)) {
+            const merged = new Set([...(map[key] ?? []), ...values]);
+            map[key] = Array.from(merged).sort();
+        }
+    }
+    return map;
+}
+
+function defaultWhenChoices(config: LegPresetConfig | null | undefined): Record<string, string> {
+    const options = whenChoiceOptionsFromConfig(config);
+    const defaults: Record<string, string> = {};
+    for (const [key, values] of Object.entries(options)) {
+        // Prefer PE for calendar_mode to match prior form default.
+        if (key === 'calendar_mode' && values.includes('PE')) {
+            defaults[key] = 'PE';
+        } else {
+            defaults[key] = values[0] ?? '';
+        }
+    }
+    return defaults;
+}
+
+function defaultLegStrikeEdits(config: LegPresetConfig | null | undefined): Array<number | null> {
+    return (config?.legs ?? []).map((leg) => {
+        if (leg.strike_pct != null) return Number(leg.strike_pct);
+        if (leg.strike_distance != null) return Number(leg.strike_distance);
+        return null;
+    });
+}
+
+function defaultLegStrikeType(leg: PresetLeg): LegStrikeType {
+    return leg.strike_type === 'DYNAMIC' ? 'DYNAMIC' : 'FIXED';
+}
+
+function defaultLegStrikeTypes(
+    config: LegPresetConfig | null | undefined
+): LegStrikeType[] {
+    return (config?.legs ?? []).map(defaultLegStrikeType);
+}
+
+function defaultLegNoLegs(leg: PresetLeg): number {
+    const n = leg.no_legs;
+    return typeof n === 'number' && Number.isInteger(n) && n >= 1 ? n : 1;
+}
+
+function defaultLegNoLegsList(config: LegPresetConfig | null | undefined): number[] {
+    return (config?.legs ?? []).map(defaultLegNoLegs);
+}
+
+function legMatchesWhen(leg: PresetLeg, choices: Record<string, string>): boolean {
+    if (!leg.when) return true;
+    return Object.entries(leg.when).every(([key, allowed]) => allowed.includes(choices[key]));
+}
+
+function resolveStrikeDistancePreview(
+    leg: PresetLeg,
+    strikeValue: number,
+    atmStrike: number,
+    strikeStep: number
+): number {
+    if (leg.strike_pct != null) {
+        if (strikeStep === 0) return 0;
+        return Math.round((atmStrike * strikeValue) / 100 / strikeStep);
+    }
+    return Math.trunc(strikeValue);
 }
 
 const reactSelectStyles: StylesConfig<UnderlyingOption> = {
@@ -130,7 +207,11 @@ export default function BuilderForm({
     const [presetExpiry, setPresetExpiry] = useState('');
     const [presetNearExpiry, setPresetNearExpiry] = useState('');
     const [presetFarExpiry, setPresetFarExpiry] = useState('');
-    const [presetCalendarMode, setPresetCalendarMode] = useState<CalendarMode>('PE');
+    const [presetExpiryOptions, setPresetExpiryOptions] = useState<string[]>([]);
+    const [whenChoices, setWhenChoices] = useState<Record<string, string>>({});
+    const [legStrikeEdits, setLegStrikeEdits] = useState<Array<number | null>>([]);
+    const [legStrikeTypes, setLegStrikeTypes] = useState<LegStrikeType[]>([]);
+    const [legNoLegs, setLegNoLegs] = useState<number[]>([]);
     const [presetSpotPrice, setPresetSpotPrice] = useState<number | null>(null);
     const [presetAtmStrike, setPresetAtmStrike] = useState<number | null>(null);
 
@@ -144,8 +225,22 @@ export default function BuilderForm({
         [strategyTemplates, formData.strategy_template_id]
     );
     const legPresetConfig = selectedTemplate?.leg_preset_config ?? null;
+    const isCreate = !initialData;
+    const usePresetCreate = isCreate && Boolean(legPresetConfig);
 
-    const resetPresetInputs = () => {
+    const whenChoiceOptions = useMemo(
+        () => whenChoiceOptionsFromConfig(legPresetConfig),
+        [legPresetConfig]
+    );
+
+    const visiblePresetLegs = useMemo(() => {
+        if (!legPresetConfig?.legs) return [];
+        return legPresetConfig.legs
+            .map((leg, index) => ({ leg, index }))
+            .filter(({ leg }) => legMatchesWhen(leg, whenChoices));
+    }, [legPresetConfig, whenChoices]);
+
+    const resetPresetInputs = (config: LegPresetConfig | null = null) => {
         setPresetSymbol('');
         setPresetToken('');
         setPresetStrikeStep(50);
@@ -154,7 +249,11 @@ export default function BuilderForm({
         setPresetExpiry('');
         setPresetNearExpiry('');
         setPresetFarExpiry('');
-        setPresetCalendarMode('PE');
+        setPresetExpiryOptions([]);
+        setWhenChoices(defaultWhenChoices(config));
+        setLegStrikeEdits(defaultLegStrikeEdits(config));
+        setLegStrikeTypes(defaultLegStrikeTypes(config));
+        setLegNoLegs(defaultLegNoLegsList(config));
         setPresetSpotPrice(null);
         setPresetAtmStrike(null);
     };
@@ -230,7 +329,7 @@ export default function BuilderForm({
         const fetchTemplates = async () => {
             setLoadingTemplates(true);
             try {
-                const response = await authFetch('strategies/templates/', {
+                const response = await authFetch('strategies/templates/?page_size=100', {
                     method: 'GET',
                 });
                 if (response.ok) {
@@ -288,11 +387,29 @@ export default function BuilderForm({
         if (name === 'strategy_template_id') {
             const templateId = value === '' ? null : parseInt(value, 10);
             const selected = templateId != null ? strategyTemplates.find(t => t.id === templateId) : null;
-            resetPresetInputs();
+            resetPresetInputs(selected?.leg_preset_config ?? null);
             setFormData(prev => ({
                 ...prev,
                 [name]: templateId,
+                name: isCreate && selected?.leg_preset_config ? '' : prev.name,
                 margin_required: selected?.minimum_capital || prev.margin_required || 0
+            }));
+            return;
+        }
+
+        if (name === 'exchange') {
+            setPresetSymbol('');
+            setPresetToken('');
+            setPresetSpotPrice(null);
+            setPresetAtmStrike(null);
+            setPresetExpiry('');
+            setPresetNearExpiry('');
+            setPresetFarExpiry('');
+            setPresetExpiryOptions([]);
+            setFormData(prev => ({
+                ...prev,
+                exchange: value,
+                ...(usePresetCreate ? { name: '' } : {}),
             }));
             return;
         }
@@ -395,6 +512,10 @@ export default function BuilderForm({
             setPresetExpiry('');
             setPresetNearExpiry('');
             setPresetFarExpiry('');
+            setPresetExpiryOptions([]);
+            if (usePresetCreate) {
+                setFormData(prev => ({ ...prev, name: '' }));
+            }
             return;
         }
         const parts = option.label.split(' - ');
@@ -402,6 +523,12 @@ export default function BuilderForm({
         const symbol = formData.exchange === 'MCX' || formData.exchange === 'NCO' || formData.exchange === 'MCX_NCO' ? parts[1] : firstWord;
         setPresetSymbol(symbol);
         setPresetToken(option.token);
+        // Store symbol only; final "Template - SYMBOL" is composed once on submit.
+        setFormData(prev => ({
+            ...prev,
+            name: symbol,
+        }));
+
         if (option.lot_size > 0) {
             setPresetLotSize(option.lot_size);
         }
@@ -433,6 +560,7 @@ export default function BuilderForm({
         const needsNearFar =
             inputs.includes('near_expiry') || inputs.includes('far_expiry');
         if (!needsExpiry && !needsNearFar) {
+            setPresetExpiryOptions([]);
             return;
         }
         try {
@@ -444,6 +572,7 @@ export default function BuilderForm({
             const exData = await exRes.json();
             const list: string[] = Array.isArray(exData.expiries) ? exData.expiries : [];
             const monthly = monthlyExpiriesFromList(list);
+            setPresetExpiryOptions(monthly);
             if (needsExpiry) {
                 setPresetExpiry(monthly[0] ?? '');
             }
@@ -454,6 +583,7 @@ export default function BuilderForm({
                 setPresetFarExpiry(monthly[1] ?? '');
             }
         } catch {
+            setPresetExpiryOptions([]);
             if (needsExpiry) setPresetExpiry('');
             if (inputs.includes('near_expiry')) setPresetNearExpiry('');
             if (inputs.includes('far_expiry')) setPresetFarExpiry('');
@@ -473,12 +603,18 @@ export default function BuilderForm({
             expiry: presetExpiry,
             near_expiry: presetNearExpiry,
             far_expiry: presetFarExpiry,
-            calendar_mode: presetCalendarMode,
+            ...whenChoices,
         };
-        return legPresetConfig.inputs.every((key) => {
-            if (key === 'strike_distance') return true;
+        const inputsOk = legPresetConfig.inputs.every((key) => {
+            if (key === 'strike_distance' || key === 'lot_size') return true;
             const value = values[key];
             return value !== '' && value !== null && value !== undefined;
+        });
+        if (!inputsOk) return false;
+        return legPresetConfig.legs.every((leg, index) => {
+            if (!legMatchesWhen(leg, whenChoices)) return true;
+            const edited = legStrikeEdits[index];
+            return edited != null && Number.isFinite(edited);
         });
     }, [
         legPresetConfig,
@@ -490,9 +626,41 @@ export default function BuilderForm({
         presetExpiry,
         presetNearExpiry,
         presetFarExpiry,
-        presetCalendarMode,
+        whenChoices,
+        legStrikeEdits,
         presetAtmStrike,
     ]);
+
+    const buildLegOverrides = (): Array<LegStrikeOverride | null> | undefined => {
+        if (!legPresetConfig?.legs?.length) return undefined;
+        return legPresetConfig.legs.map((leg, index) => {
+            if (!legMatchesWhen(leg, whenChoices)) return null;
+            const edited = legStrikeEdits[index];
+            const strikeType = legStrikeTypes[index] ?? defaultLegStrikeType(leg);
+            const defaultType = defaultLegStrikeType(leg);
+            const typeChanged = strikeType !== defaultType;
+            const noLegs = legNoLegs[index] ?? defaultLegNoLegs(leg);
+            const noLegsChanged = noLegs !== defaultLegNoLegs(leg);
+
+            const override: LegStrikeOverride = {};
+            if (edited != null && Number.isFinite(edited)) {
+                if (leg.strike_pct != null) {
+                    if (edited !== Number(leg.strike_pct)) {
+                        override.strike_pct = edited;
+                    }
+                } else if (edited !== Number(leg.strike_distance)) {
+                    override.strike_distance = Math.trunc(edited);
+                }
+            }
+            if (typeChanged) {
+                override.strike_type = strikeType;
+            }
+            if (noLegsChanged) {
+                override.no_legs = noLegs;
+            }
+            return Object.keys(override).length ? override : null;
+        });
+    };
 
     const buildLegPresetPayload = (): LegPresetInputs | undefined => {
         if (!legPresetConfig || !presetReady || presetAtmStrike == null) return undefined;
@@ -514,10 +682,40 @@ export default function BuilderForm({
         if (legPresetConfig.inputs.includes('far_expiry')) {
             payload.far_expiry = presetFarExpiry;
         }
-        if (legPresetConfig.inputs.includes('calendar_mode')) {
-            payload.calendar_mode = presetCalendarMode;
+        if (whenChoices.calendar_mode) {
+            payload.calendar_mode = whenChoices.calendar_mode as LegPresetInputs['calendar_mode'];
+        }
+        const overrides = buildLegOverrides();
+        if (overrides && overrides.some((entry) => entry != null)) {
+            payload.leg_overrides = overrides;
         }
         return payload;
+    };
+
+    const updateLegStrikeEdit = (index: number, raw: string) => {
+        const n = parseFloat(raw);
+        setLegStrikeEdits((prev) => {
+            const next = [...prev];
+            next[index] = Number.isFinite(n) ? n : null;
+            return next;
+        });
+    };
+
+    const updateLegStrikeType = (index: number, value: LegStrikeType) => {
+        setLegStrikeTypes((prev) => {
+            const next = [...prev];
+            next[index] = value;
+            return next;
+        });
+    };
+
+    const updateLegNoLegs = (index: number, raw: string) => {
+        const n = parseInt(raw, 10);
+        setLegNoLegs((prev) => {
+            const next = [...prev];
+            next[index] = Number.isFinite(n) ? Math.max(1, n) : 1;
+            return next;
+        });
     };
 
     const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
@@ -564,6 +762,12 @@ export default function BuilderForm({
             const legPreset = buildLegPresetPayload();
             if (!initialData && legPreset) {
                 payload.leg_preset = legPreset;
+                // Compose once here so template name cannot be stacked from form state.
+                const templateName = selectedTemplate?.name?.trim() ?? '';
+                const symbol = presetSymbol.trim();
+                payload.name = templateName && symbol
+                    ? `${templateName} - ${symbol}`
+                    : symbol || templateName || payload.name || '';
             }
             await Promise.resolve(onSubmit(payload));
         } finally {
@@ -578,13 +782,334 @@ export default function BuilderForm({
         return '';
     };
 
+    const templateSelect = (
+        <div className="form-control">
+            <label className="label py-0">
+                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Strategy Template</span>
+            </label>
+            <select
+                name="strategy_template_id"
+                value={formData.strategy_template_id ?? ''}
+                onChange={handleChange}
+                className="select select-bordered select-sm h-9 w-full"
+                disabled={loadingTemplates}
+            >
+                <option value="">Select template...</option>
+                {strategyTemplates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                        {template.name}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+
+    const exchangeSelect = (
+        <div className="form-control">
+            <label className="label py-0">
+                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Exchange</span>
+            </label>
+            <select
+                name="exchange"
+                value={formData.exchange}
+                onChange={handleChange}
+                className="select select-bordered select-sm h-9 w-full"
+            >
+                <option value="NSE">NSE</option>
+                <option value="BSE">BSE</option>
+                <option value="NFO">NFO</option>
+                <option value="BFO">BFO</option>
+                <option value="MCX">MCX</option>
+                <option value="NCO">NCO</option>
+                <option value="NFO_BFO">NFO_BFO</option>
+                <option value="MCX_NCO">MCX_NCO</option>
+            </select>
+        </div>
+    );
+
     return (
         <form onSubmit={handleSubmit} className="space-y-3" aria-busy={isSubmitting}>
             <div className="join join-vertical w-full border border-base-300 rounded-box overflow-hidden bg-base-100">
+            {isCreate ? (
             <div className="collapse collapse-arrow join-item border-0 !rounded-none min-h-0">
                 <input
                     type="checkbox"
                     defaultChecked
+                    aria-label="Show or hide Leg setup"
+                    className="min-h-0"
+                />
+                <div className="collapse-title min-h-0 py-3 text-sm font-semibold text-base-content after:!top-1/2 after:!-translate-y-1/2">
+                    Leg setup
+                </div>
+                <div className="collapse-content pt-0">
+                <div className="px-0 pb-4 sm:px-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {templateSelect}
+                    {exchangeSelect}
+
+                    {legPresetConfig ? (
+                    <>
+                    {legPresetConfig.inputs.includes('symbol') ? (
+                        <div className="form-control md:col-span-2">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Underlying</span>
+                            </label>
+                            <AsyncSelect
+                                cacheOptions
+                                defaultOptions
+                                loadOptions={loadUnderlyingOptions}
+                                onChange={handlePresetUnderlyingChange}
+                                value={
+                                    presetSymbol
+                                        ? {
+                                              label: presetSymbol,
+                                              value: presetSymbol,
+                                              token: presetToken,
+                                              lot_size: presetLotSize,
+                                          }
+                                        : null
+                                }
+                                placeholder="Search symbol (e.g. NIFTY)..."
+                                styles={reactSelectStyles}
+                            />
+                            <label className="label py-0">
+                                <span className="text-xs text-base-content/60">
+                                    Token: {presetToken || '—'}, strike step: {presetStrikeStep}
+                                    {presetSpotPrice != null ? `, spot: ${presetSpotPrice}` : ''}
+                                    {presetAtmStrike != null ? `, ATM: ${presetAtmStrike}` : ''}
+                                    {selectedTemplate && presetSymbol
+                                        ? ` · saves as: ${selectedTemplate.name} - ${presetSymbol}`
+                                        : ''}
+                                </span>
+                            </label>
+                        </div>
+                    ) : null}
+
+                    {legPresetConfig.inputs.includes('lots') ? (
+                        <div className="form-control">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Lots</span>
+                            </label>
+                            <input
+                                type="number"
+                                min={1}
+                                value={presetLots}
+                                onChange={(e) => setPresetLots(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                                className="input input-bordered input-sm h-9 w-full"
+                            />
+                        </div>
+                    ) : null}
+
+                    {legPresetConfig.inputs.includes('expiry') ? (
+                        <div className="form-control">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Expiry</span>
+                            </label>
+                            <select
+                                value={presetExpiry}
+                                onChange={(e) => setPresetExpiry(e.target.value)}
+                                className="select select-bordered select-sm h-9 w-full"
+                                required
+                                disabled={!presetExpiryOptions.length}
+                            >
+                                <option value="">
+                                    {presetExpiryOptions.length ? 'Select expiry...' : 'Select underlying first'}
+                                </option>
+                                {presetExpiryOptions.map((d) => (
+                                    <option key={d} value={d}>{d}</option>
+                                ))}
+                            </select>
+                        </div>
+                    ) : null}
+
+                    {legPresetConfig.inputs.includes('near_expiry') ? (
+                        <div className="form-control">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Near expiry</span>
+                            </label>
+                            <select
+                                value={presetNearExpiry}
+                                onChange={(e) => setPresetNearExpiry(e.target.value)}
+                                className="select select-bordered select-sm h-9 w-full"
+                                required
+                                disabled={!presetExpiryOptions.length}
+                            >
+                                <option value="">
+                                    {presetExpiryOptions.length ? 'Select near expiry...' : 'Select underlying first'}
+                                </option>
+                                {presetExpiryOptions.map((d) => (
+                                    <option key={`near-${d}`} value={d}>{d}</option>
+                                ))}
+                            </select>
+                        </div>
+                    ) : null}
+
+                    {legPresetConfig.inputs.includes('far_expiry') ? (
+                        <div className="form-control">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Far expiry</span>
+                            </label>
+                            <select
+                                value={presetFarExpiry}
+                                onChange={(e) => setPresetFarExpiry(e.target.value)}
+                                className="select select-bordered select-sm h-9 w-full"
+                                required
+                                disabled={!presetExpiryOptions.length}
+                            >
+                                <option value="">
+                                    {presetExpiryOptions.length ? 'Select far expiry...' : 'Select underlying first'}
+                                </option>
+                                {presetExpiryOptions.map((d) => (
+                                    <option key={`far-${d}`} value={d}>{d}</option>
+                                ))}
+                            </select>
+                        </div>
+                    ) : null}
+
+                    {Object.entries(whenChoiceOptions).map(([key, values]) => (
+                        <div className="form-control" key={key}>
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">
+                                    {key === 'calendar_mode' ? 'Calendar legs' : key}
+                                </span>
+                            </label>
+                            <select
+                                value={whenChoices[key] ?? ''}
+                                onChange={(e) =>
+                                    setWhenChoices((prev) => ({ ...prev, [key]: e.target.value }))
+                                }
+                                className="select select-bordered select-sm h-9 w-full"
+                            >
+                                {values.map((value) => (
+                                    <option key={value} value={value}>
+                                        {key === 'calendar_mode'
+                                            ? value === 'CE'
+                                                ? 'Call (CE) — 2 legs'
+                                                : value === 'PE'
+                                                    ? 'Put (PE) — 2 legs'
+                                                    : 'Both CE and PE — 4 legs'
+                                            : value}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    ))}
+
+                    {visiblePresetLegs.length > 0 ? (
+                        <div className="form-control md:col-span-2">
+                            <label className="label py-0">
+                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Legs</span>
+                            </label>
+                            <div className="space-y-2 rounded-box border border-base-300 p-3">
+                                {visiblePresetLegs.map(({ leg, index }) => {
+                                    const isPct = leg.strike_pct != null;
+                                    const edited = legStrikeEdits[index];
+                                    const strikeType =
+                                        legStrikeTypes[index] ?? defaultLegStrikeType(leg);
+                                    const noLegs =
+                                        legNoLegs[index] ?? defaultLegNoLegs(leg);
+                                    const resolved =
+                                        edited != null &&
+                                        Number.isFinite(edited) &&
+                                        presetAtmStrike != null
+                                            ? resolveStrikeDistancePreview(
+                                                  leg,
+                                                  edited,
+                                                  presetAtmStrike,
+                                                  presetStrikeStep
+                                              )
+                                            : null;
+                                    const resolvedStrike =
+                                        resolved != null && presetAtmStrike != null
+                                            ? presetAtmStrike + resolved * presetStrikeStep
+                                            : null;
+                                    return (
+                                        <div
+                                            key={index}
+                                            className="grid grid-cols-1 sm:grid-cols-[6.5rem_1fr_4.5rem_7.5rem_auto] gap-2 items-center"
+                                        >
+                                            <span className="text-sm font-medium">
+                                                {leg.action} {leg.option_type}
+                                            </span>
+                                            <div className="form-control">
+                                                <label className="label py-0">
+                                                    <span className="text-xs text-base-content/60">
+                                                        {isPct ? 'pct' : 'strike_distance'}
+                                                    </span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    step={isPct ? 'any' : '1'}
+                                                    value={edited ?? ''}
+                                                    onChange={(e) =>
+                                                        updateLegStrikeEdit(index, e.target.value)
+                                                    }
+                                                    className="input input-bordered input-sm h-9 w-full"
+                                                />
+                                            </div>
+                                            <div className="form-control">
+                                                <label className="label py-0">
+                                                    <span className="text-xs text-base-content/60">
+                                                        no_legs
+                                                    </span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    step={1}
+                                                    value={noLegs}
+                                                    onChange={(e) =>
+                                                        updateLegNoLegs(index, e.target.value)
+                                                    }
+                                                    className="input input-bordered input-sm h-9 w-full"
+                                                />
+                                            </div>
+                                            <div className="form-control">
+                                                <label className="label py-0">
+                                                    <span className="text-xs text-base-content/60">
+                                                        type
+                                                    </span>
+                                                </label>
+                                                <select
+                                                    value={strikeType}
+                                                    onChange={(e) =>
+                                                        updateLegStrikeType(
+                                                            index,
+                                                            e.target.value as LegStrikeType
+                                                        )
+                                                    }
+                                                    className="select select-bordered select-sm h-9 w-full"
+                                                >
+                                                    <option value="FIXED">FIXED</option>
+                                                    <option value="DYNAMIC">DYNAMIC</option>
+                                                </select>
+                                            </div>
+                                            <span className="text-xs text-base-content/60 sm:pt-4">
+                                                {resolved != null
+                                                    ? `→ ${resolved} dist${
+                                                          resolvedStrike != null
+                                                              ? ` (${resolvedStrike})`
+                                                              : ''
+                                                      }`
+                                                    : '—'}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : null}
+                    </>
+                    ) : null}
+                </div>
+                </div>
+                </div>
+            </div>
+            ) : null}
+
+            <div className={`collapse collapse-arrow join-item border-0 !rounded-none min-h-0${isCreate ? ' border-t border-base-300' : ''}`}>
+                <input
+                    type="checkbox"
                     aria-label="Show or hide General"
                     className="min-h-0"
                 />
@@ -594,24 +1119,10 @@ export default function BuilderForm({
                 <div className="collapse-content pt-0">
                 <div className="px-0 pb-4 sm:px-1">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="form-control">
-                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Strategy Template</span></label>
-                    <select 
-                        name="strategy_template_id" 
-                        value={formData.strategy_template_id ?? ''} 
-                        onChange={handleChange} 
-                        className="select select-bordered select-sm h-9 w-full"
-                        disabled={loadingTemplates}
-                    >
-                        <option value="">Select template...</option>
-                        {strategyTemplates.map(template => (
-                            <option key={template.id} value={template.id}>
-                                {template.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                
+            {!isCreate ? templateSelect : null}
+            {!isCreate ? exchangeSelect : null}
+
+                {!usePresetCreate ? (
                 <div className="form-control">
                     <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Name</span></label>
                     <input 
@@ -628,19 +1139,7 @@ export default function BuilderForm({
                         required 
                     />
                 </div>
-                <div className="form-control">
-                    <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Exchange</span></label>
-                    <select name="exchange" value={formData.exchange} onChange={handleChange} className="select select-bordered select-sm h-9 w-full">
-                        <option value="NSE">NSE</option>
-                        <option value="BSE">BSE</option>
-                        <option value="NFO">NFO</option>
-                        <option value="BFO">BFO</option>
-                        <option value="MCX">MCX</option>
-                        <option value="NCO">NCO</option>
-                        <option value="NFO_BFO">NFO_BFO</option>
-                        <option value="MCX_NCO">MCX_NCO</option>
-                    </select>
-                </div>
+                ) : null}
                 <div className="form-control">
                     <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Status</span></label>
                     {isClient ? (
@@ -1145,135 +1644,6 @@ export default function BuilderForm({
             </div>
             </div>
             </div>
-
-            {!initialData && legPresetConfig ? (
-            <div className="collapse collapse-arrow join-item border-0 !rounded-none border-t border-base-300 min-h-0">
-                <input
-                    type="checkbox"
-                    defaultChecked
-                    aria-label="Show or hide Leg setup"
-                    className="min-h-0"
-                />
-                <div className="collapse-title min-h-0 py-3 text-sm font-semibold text-base-content after:!top-1/2 after:!-translate-y-1/2">
-                    Leg setup
-                </div>
-                <div className="collapse-content pt-0">
-                <div className="px-0 pb-4 sm:px-1">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {legPresetConfig.inputs.includes('symbol') ? (
-                        <div className="form-control md:col-span-2">
-                            <label className="label py-0">
-                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Underlying</span>
-                            </label>
-                            <AsyncSelect
-                                cacheOptions
-                                defaultOptions
-                                loadOptions={loadUnderlyingOptions}
-                                onChange={handlePresetUnderlyingChange}
-                                value={
-                                    presetSymbol
-                                        ? {
-                                              label: presetSymbol,
-                                              value: presetSymbol,
-                                              token: presetToken,
-                                              lot_size: presetLotSize,
-                                          }
-                                        : null
-                                }
-                                placeholder="Search symbol (e.g. NIFTY)..."
-                                styles={reactSelectStyles}
-                            />
-                            <label className="label py-0">
-                                <span className="text-xs text-base-content/60">
-                                    Token: {presetToken || '—'}, strike step: {presetStrikeStep},
-                                    {presetSpotPrice != null ? `, spot: ${presetSpotPrice}` : ''}
-                                    {presetAtmStrike != null ? `, ATM: ${presetAtmStrike}` : ''}
-                                </span>
-                            </label>
-                        </div>
-                    ) : null}
-
-                    {legPresetConfig.inputs.includes('lots') ? (
-                        <div className="form-control">
-                            <label className="label py-0">
-                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Lots</span>
-                            </label>
-                            <input
-                                type="number"
-                                min={1}
-                                value={presetLots}
-                                onChange={(e) => setPresetLots(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                                className="input input-bordered input-sm h-9 w-full"
-                            />
-                        </div>
-                    ) : null}
-
-                    {legPresetConfig.inputs.includes('expiry') ? (
-                        <div className="form-control">
-                            <label className="label py-0">
-                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Expiry</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={presetExpiry}
-                                onChange={(e) => setPresetExpiry(e.target.value)}
-                                className="input input-bordered input-sm h-9 w-full"
-                                required
-                            />
-                        </div>
-                    ) : null}
-
-                    {legPresetConfig.inputs.includes('near_expiry') ? (
-                        <div className="form-control">
-                            <label className="label py-0">
-                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Near expiry</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={presetNearExpiry}
-                                onChange={(e) => setPresetNearExpiry(e.target.value)}
-                                className="input input-bordered input-sm h-9 w-full"
-                                required
-                            />
-                        </div>
-                    ) : null}
-
-                    {legPresetConfig.inputs.includes('far_expiry') ? (
-                        <div className="form-control">
-                            <label className="label py-0">
-                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Far expiry</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={presetFarExpiry}
-                                onChange={(e) => setPresetFarExpiry(e.target.value)}
-                                className="input input-bordered input-sm h-9 w-full"
-                                required
-                            />
-                        </div>
-                    ) : null}
-
-                    {legPresetConfig.inputs.includes('calendar_mode') ? (
-                        <div className="form-control">
-                            <label className="label py-0">
-                                <span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Calendar legs</span>
-                            </label>
-                            <select
-                                value={presetCalendarMode}
-                                onChange={(e) => setPresetCalendarMode(e.target.value as CalendarMode)}
-                                className="select select-bordered select-sm h-9 w-full"
-                            >
-                                <option value="CE">Call (CE) — 2 legs</option>
-                                <option value="PE">Put (PE) — 2 legs</option>
-                                <option value="BOTH">Both CE and PE — 4 legs</option>
-                            </select>
-                        </div>
-                    ) : null}
-                </div>
-                </div>
-                </div>
-            </div>
-            ) : null}
 
             <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={onCancel} disabled={isSubmitting} className="btn btn-ghost btn-sm">
