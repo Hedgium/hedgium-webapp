@@ -329,7 +329,7 @@ export default function BuilderForm({
         const fetchTemplates = async () => {
             setLoadingTemplates(true);
             try {
-                const response = await authFetch('strategies/templates/', {
+                const response = await authFetch('strategies/templates/?page_size=100', {
                     method: 'GET',
                 });
                 if (response.ok) {
