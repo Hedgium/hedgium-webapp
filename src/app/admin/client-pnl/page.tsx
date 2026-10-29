@@ -7,12 +7,13 @@ import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { Profile } from "@/types/profile";
 import { LiveHolding } from "@/types/positions";
-import { IndianRupee, RefreshCw, Search, BarChart3, Info, Users, TrendingUp } from "lucide-react";
+import { IndianRupee, RefreshCw, Search, BarChart3, Info, Users, TrendingUp, Wallet } from "lucide-react";
 import { USER_ROLE_FILTER_OPTIONS, userRoleLabel } from "@/constants/userRoles";
 import NetPnlWithCosts from "@/components/reports/NetPnlWithCosts";
 import FirmRoiPanel from "@/components/admin/FirmRoiPanel";
+import CashFlowPanel from "@/components/admin/CashFlowPanel";
 
-type ClientPnlTab = "clients" | "performance";
+type ClientPnlTab = "clients" | "performance" | "cashflow";
 
 const CLIENT_PNL_TABS: {
   id: ClientPnlTab;
@@ -21,6 +22,7 @@ const CLIENT_PNL_TABS: {
 }[] = [
   { id: "clients", label: "Clients", icon: Users },
   { id: "performance", label: "Performance", icon: TrendingUp },
+  { id: "cashflow", label: "Cash flow", icon: Wallet },
 ];
 
 type PnlSummary = {
@@ -600,6 +602,14 @@ export default function AdminClientPnlPage() {
           aria-labelledby="client-pnl-tab-performance"
         >
           <FirmRoiPanel />
+        </section>
+      ) : activeTab === "cashflow" ? (
+        <section
+          id="client-pnl-panel-cashflow"
+          role="tabpanel"
+          aria-labelledby="client-pnl-tab-cashflow"
+        >
+          <CashFlowPanel />
         </section>
       ) : (
       <section
