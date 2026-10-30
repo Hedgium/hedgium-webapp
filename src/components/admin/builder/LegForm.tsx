@@ -15,6 +15,16 @@ interface LegFormProps {
     showAdjustmentExpiry?: boolean;
 }
 
+/** Last expiry date per calendar month (monthly contracts), sorted ascending. */
+function monthlyExpiriesFromList(expiries: string[]): string[] {
+    const byMonth = new Map<string, string>();
+    for (const d of expiries) {
+        if (!d || d.length < 7) continue;
+        byMonth.set(d.slice(0, 7), d);
+    }
+    return Array.from(byMonth.values()).sort();
+}
+
 interface Option {
     label: string;
     value: string;
@@ -115,14 +125,6 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         const day = date.getDate().toString().padStart(2, '0');
         return `${year} ${month} ${day}`;
     };
-    const formatDateDisplay = (dateString: string | null | undefined): string => {
-        if (!dateString) return '';
-        const parts = dateString.split('-');
-        if (parts.length !== 3) return dateString;
-        return `${parts[2]}-${parts[1]}-${parts[0].slice(-2)}`;
-    }
-
-    const [expiryInputType, setExpiryInputType] = useState<string>('text');
 
     const [formData, setFormData] = useState<Partial<BuilderLegCreate>>({
         strategy_builder_id: builderId,
@@ -145,6 +147,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
     const [noOfLots, setNoOfLots] = useState<number>(1); // Default number of lots
     const [instrumentData, setInstrumentData] = useState<InstrumentSearchResult | null>(null);
     const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+    const [expiryOptions, setExpiryOptions] = useState<string[]>([]);
 
     // Mixed builders pick the real exchange per leg.
     const mixedLegExchanges =
@@ -316,6 +319,55 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         const timeoutId = setTimeout(fetchPrice, 500);
         return () => clearTimeout(timeoutId);
     }, [formData.token]);
+
+    // Load available expiries for the selected underlying
+    useEffect(() => {
+        const symbol = formData.symbol;
+        if (!symbol) {
+            setExpiryOptions([]);
+            return;
+        }
+        let cancelled = false;
+        const loadExpiries = async () => {
+            try {
+                const exRes = await authFetch('optionchain/expiries/', {}, {
+                    underlying_symbol: symbol,
+                    exchange: effectiveExchange || 'NFO',
+                });
+                const exData = await exRes.json();
+                const list: string[] = Array.isArray(exData.expiries) ? exData.expiries : [];
+                const monthly = monthlyExpiriesFromList(list);
+                if (cancelled) return;
+                setExpiryOptions((prev) => {
+                    const current = formatDateForInput(formData.expiry);
+                    const merged = new Set(monthly);
+                    if (current) merged.add(current);
+                    for (const d of prev) merged.add(d);
+                    return Array.from(merged).sort();
+                });
+                if (!formData.expiry && monthly[0]) {
+                    setFormData((prev) => ({ ...prev, expiry: prev.expiry || monthly[0] }));
+                }
+            } catch {
+                if (!cancelled) setExpiryOptions([]);
+            }
+        };
+        void loadExpiries();
+        return () => {
+            cancelled = true;
+        };
+        // Intentionally omit formData.expiry from deps — only re-fetch on symbol/exchange.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.symbol, effectiveExchange]);
+
+    // Keep the selected/edit expiry visible in the select even if it is not monthly.
+    useEffect(() => {
+        const current = formatDateForInput(formData.expiry);
+        if (!current) return;
+        setExpiryOptions((prev) =>
+            prev.includes(current) ? prev : [...prev, current].sort()
+        );
+    }, [formData.expiry]);
 
 
     async function fetchDepthToken() {
@@ -522,6 +574,14 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                         }}
                         className="input input-bordered input-sm h-9 w-full" 
                     />
+                    {formData.strike_type === 'DYNAMIC' ? (
+                        <label className="label py-0">
+                            <span className="label-text text-sm text-base-content/60">
+                                Calculated strike: {formData.strike ?? '—'}
+                                {formData.strike_step != null ? ` (step ${formData.strike_step})` : ''}
+                            </span>
+                        </label>
+                    ) : null}
                 </div>
 
                 {formData.strike_type === 'FIXED' && (<div className="form-control">
@@ -547,22 +607,25 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
 
                 <div className="form-control">
                     <label className="label py-0"><span className="label-text text-sm font-medium text-base-content/80 mb-1.5">Expiry</span></label>
-                    <input
-                        type={expiryInputType}
+                    <select
                         name="expiry"
-                        value={expiryInputType === 'date' ? (formData.expiry || '') : formatDateDisplay(formData.expiry)}
+                        value={formData.expiry || ''}
                         onChange={handleChange}
-                        onFocus={() => setExpiryInputType('date')}
-                        onBlur={() => setExpiryInputType('text')}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                handleSubmit(e);
-                            }
-                        }}
-                        placeholder="DD-MM-YY"
-                        className="input input-bordered input-sm h-9 w-full"
+                        className="select select-bordered select-sm h-9 w-full"
                         required
-                    />
+                        disabled={!formData.symbol || !expiryOptions.length}
+                    >
+                        <option value="">
+                            {!formData.symbol
+                                ? 'Select symbol first'
+                                : expiryOptions.length
+                                    ? 'Select expiry...'
+                                    : 'Loading expiries...'}
+                        </option>
+                        {expiryOptions.map((d) => (
+                            <option key={d} value={d}>{d}</option>
+                        ))}
+                    </select>
                 </div>
 
 
