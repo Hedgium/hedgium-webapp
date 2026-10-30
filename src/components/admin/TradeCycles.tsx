@@ -287,7 +287,31 @@ export default function TradeCycles({
       setSelectedProfiles([]);
       setShowAddCyclesModal(false);
 
-      alert.success("Trade cycles created!", { duration: 3000 });
+      const skippedBlocked = Array.isArray(data?.skipped_blocked)
+        ? data.skipped_blocked
+        : [];
+      const created = Number(data?.tradecycles_created || 0);
+      if (skippedBlocked.length > 0) {
+        const detail = skippedBlocked
+          .map(
+            (row: { profile_id?: number; symbol?: string }) =>
+              `HID ${row.profile_id}: ${row.symbol || "blocked"}`
+          )
+          .join("; ");
+        if (created === 0) {
+          alert.error(
+            `No trade cycles created. Blocked symbols — ${detail}`,
+            { duration: 6000 }
+          );
+        } else {
+          alert.success(
+            `Created ${created}. Skipped blocked — ${detail}`,
+            { duration: 6000 }
+          );
+        }
+      } else {
+        alert.success("Trade cycles created!", { duration: 3000 });
+      }
     } catch (error) {
       console.error("Create error:", error);
     } finally {
