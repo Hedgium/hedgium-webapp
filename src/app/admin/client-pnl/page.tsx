@@ -7,10 +7,11 @@ import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { Profile } from "@/types/profile";
 import { LiveHolding } from "@/types/positions";
-import { IndianRupee, RefreshCw, Search, BarChart3, Info, Users, TrendingUp } from "lucide-react";
+import { IndianRupee, RefreshCw, Search, BarChart3, Info, Users, TrendingUp, ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { USER_ROLE_FILTER_OPTIONS, userRoleLabel } from "@/constants/userRoles";
 import NetPnlWithCosts from "@/components/reports/NetPnlWithCosts";
 import FirmRoiPanel from "@/components/admin/FirmRoiPanel";
+import { ENGINE1_RISKS, ENGINE1_RISK_LABELS, type Engine1Risk } from "@/types/engine1";
 
 type ClientPnlTab = "clients" | "performance";
 
@@ -54,6 +55,7 @@ type ClientPnlRow = {
   userRole?: string | null;
   brokerName: string;
   brokerLoggedIn: boolean;
+  riskProfile: string | null;
   pnlInceptionDate: string | null;
   e2PnlInceptionDate: string | null;
   lastTradeDays: number | null;
@@ -64,6 +66,92 @@ type ClientPnlRow = {
   engine2: PnlSummary | null;
   margin: LiveMargin | null;
 };
+
+type SortKey =
+  | "clientId"
+  | "risk"
+  | "lastTradeDays"
+  | "utilisedMargin"
+  | "engine1Total"
+  | "availableCash"
+  | "totalAc"
+  | "engine1Pnl"
+  | "e2Ytd"
+  | "e2Quarter"
+  | "e2Month"
+  | "availableMargin";
+
+type SortDir = "asc" | "desc";
+
+const RISK_SORT_ORDER: Record<string, number> = {
+  LOW: 0,
+  MEDIUM: 1,
+  HIGH: 2,
+};
+
+const ALL_RISKS = new Set<Engine1Risk>(ENGINE1_RISKS);
+
+function asRisk(value: string | null | undefined): Engine1Risk | null {
+  const upper = (value || "").trim().toUpperCase();
+  if (upper === "LOW" || upper === "MEDIUM" || upper === "HIGH") return upper;
+  return null;
+}
+
+function riskBadgeClass(risk: Engine1Risk | null): string {
+  if (risk === "HIGH") return "badge-error";
+  if (risk === "MEDIUM") return "badge-warning";
+  if (risk === "LOW") return "badge-success";
+  return "badge-ghost";
+}
+
+function sortValue(row: ClientPnlRow, key: SortKey): number | string | null {
+  switch (key) {
+    case "clientId":
+      return row.clientId.toLowerCase();
+    case "risk": {
+      const risk = asRisk(row.riskProfile);
+      return risk != null ? RISK_SORT_ORDER[risk] : null;
+    }
+    case "lastTradeDays":
+      return row.lastTradeDays;
+    case "utilisedMargin":
+      return row.margin?.utilised_total ?? null;
+    case "engine1Total":
+      return row.engine1Total;
+    case "availableCash":
+      return totalAcCashAddend(row.margin);
+    case "totalAc":
+      return totalAcValue(row.engine1Total, totalAcCashAddend(row.margin));
+    case "engine1Pnl":
+      return e1PnlSum(row.engine1Pnl, row.engine2?.e1_all_time_realised);
+    case "e2Ytd":
+      return row.engine2?.ytd_pnl ?? null;
+    case "e2Quarter":
+      return row.engine2?.quarter_pnl ?? null;
+    case "e2Month":
+      return row.engine2?.pnl ?? null;
+    case "availableMargin":
+      return row.margin?.available_total ?? null;
+  }
+}
+
+function compareRows(a: ClientPnlRow, b: ClientPnlRow, key: SortKey, dir: SortDir): number {
+  const av = sortValue(a, key);
+  const bv = sortValue(b, key);
+  const aNull = av == null || (typeof av === "number" && Number.isNaN(av));
+  const bNull = bv == null || (typeof bv === "number" && Number.isNaN(bv));
+  if (aNull && bNull) return 0;
+  if (aNull) return 1;
+  if (bNull) return -1;
+
+  let cmp = 0;
+  if (typeof av === "string" && typeof bv === "string") {
+    cmp = av.localeCompare(bv);
+  } else {
+    cmp = Number(av) - Number(bv);
+  }
+  return dir === "asc" ? cmp : -cmp;
+}
 
 const FETCH_CONCURRENCY = 4;
 const MAX_ROW_ATTEMPTS = 3;
@@ -382,6 +470,7 @@ function profileToRow(profile: Profile, partial?: Partial<ClientPnlRow>): Client
     userRole: profile.user?.role ?? null,
     brokerName: profile.broker_name,
     brokerLoggedIn: profile.broker_logged_in,
+    riskProfile: profile.risk_profile ?? null,
     pnlInceptionDate: profile.pnl_inception_date ?? null,
     e2PnlInceptionDate: profile.e2_pnl_inception_date ?? null,
     lastTradeDays: profile.last_trade_days ?? null,
@@ -392,6 +481,40 @@ function profileToRow(profile: Profile, partial?: Partial<ClientPnlRow>): Client
     margin: null,
     ...partial,
   };
+}
+
+function SortableTh({
+  label,
+  sortKey,
+  activeKey,
+  dir,
+  onSort,
+  className = "text-right",
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeKey: SortKey | null;
+  dir: SortDir;
+  onSort: (key: SortKey) => void;
+  className?: string;
+}) {
+  const active = activeKey === sortKey;
+  const Icon = active ? (dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <th className={className}>
+      <button
+        type="button"
+        className={`inline-flex items-center gap-1 uppercase tracking-wide ${
+          active ? "text-base-content" : "text-base-content/60"
+        } hover:text-base-content`}
+        onClick={() => onSort(sortKey)}
+        aria-label={`Sort by ${label}`}
+      >
+        {label}
+        <Icon className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+      </button>
+    </th>
+  );
 }
 
 export default function AdminClientPnlPage() {
@@ -406,6 +529,9 @@ export default function AdminClientPnlPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("client");
+  const [riskFilters, setRiskFilters] = useState<Set<Engine1Risk>>(() => new Set(ALL_RISKS));
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [activeTab, setActiveTab] = useState<ClientPnlTab>("clients");
   const [engine2Period, setEngine2Period] = useState<{ month: string; quarter: string } | null>(
     null
@@ -509,58 +635,45 @@ export default function AdminClientPnlPage() {
   };
 
   const anyLoading = rows.some((r) => r.status === "loading");
-  const totals = useMemo(() => computeTotals(rows), [rows]);
-  const showTotals = !loadingProfiles && rows.length > 0;
+
+  const toggleRiskFilter = (risk: Engine1Risk) => {
+    setRiskFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(risk)) next.delete(risk);
+      else next.add(risk);
+      return next;
+    });
+  };
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "clientId" || key === "risk" ? "asc" : "desc");
+    }
+  };
+
+  const visibleRows = useMemo(() => {
+    const filtered = rows.filter((row) => {
+      const risk = asRisk(row.riskProfile);
+      if (risk == null) return riskFilters.size === ALL_RISKS.size;
+      return riskFilters.has(risk);
+    });
+    if (!sortKey) return filtered;
+    return [...filtered].sort((a, b) => compareRows(a, b, sortKey, sortDir));
+  }, [rows, riskFilters, sortKey, sortDir]);
+
+  const totals = useMemo(() => computeTotals(visibleRows), [visibleRows]);
+  const showTotals = !loadingProfiles && visibleRows.length > 0;
 
   return (
-    <div className="mx-auto max-w-[1600px] p-4 md:p-6 lg:p-8">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <IndianRupee className="h-6 w-6 text-primary" aria-hidden />
-            <h1 className="text-2xl font-bold">Client PnL</h1>
-          </div>
+    <div className="p-4 md:p-6 lg:p-8">
+      <div className="mb-6">
+        <div className="flex items-center gap-2">
+          <IndianRupee className="h-6 w-6 text-primary" aria-hidden />
+          <h1 className="text-2xl font-bold">Client PnL</h1>
         </div>
-
-        {activeTab === "clients" ? (
-          <div className="flex items-center gap-2">
-            <label className="input input-bordered input-sm flex w-full items-center gap-2 sm:w-64">
-              <Search className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
-              <input
-                type="search"
-                className="min-w-0 grow"
-                placeholder="Search client / email"
-                aria-label="Search client or email"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </label>
-
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="select select-bordered select-sm h-9 min-w-[10rem]"
-              aria-label="Filter by user role"
-            >
-              {USER_ROLE_FILTER_OPTIONS.map((opt) => (
-                <option key={opt.value || "all"} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm gap-2"
-              onClick={() => void handleRefreshAll()}
-              disabled={refreshingAll || loadingProfiles || profiles.length === 0}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${refreshingAll || anyLoading ? "animate-spin" : ""}`}
-                aria-hidden
-              />
-            </button>
-          </div>
-        ) : null}
       </div>
 
       <div
@@ -607,6 +720,61 @@ export default function AdminClientPnlPage() {
         role="tabpanel"
         aria-labelledby="client-pnl-tab-clients"
       >
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <label className="input input-bordered input-sm flex w-full items-center gap-2 sm:w-64">
+          <Search className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+          <input
+            type="search"
+            className="min-w-0 grow"
+            placeholder="Search client / email"
+            aria-label="Search client or email"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </label>
+
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="select select-bordered select-sm h-9 w-28"
+          aria-label="Filter by user role"
+        >
+          {USER_ROLE_FILTER_OPTIONS.map((opt) => (
+            <option key={opt.value || "all"} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        <fieldset className="flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 px-2.5 py-1">
+          <legend className="sr-only">Filter by risk category</legend>
+          <span className="text-xs font-medium text-base-content/55">Risk</span>
+          {([...ENGINE1_RISKS].reverse() as Engine1Risk[]).map((risk) => (
+            <label key={risk} className="flex cursor-pointer items-center gap-1 text-xs">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-xs"
+                checked={riskFilters.has(risk)}
+                onChange={() => toggleRiskFilter(risk)}
+              />
+              {ENGINE1_RISK_LABELS[risk]}
+            </label>
+          ))}
+        </fieldset>
+
+        <button
+          type="button"
+          className="btn btn-primary btn-sm gap-2"
+          onClick={() => void handleRefreshAll()}
+          disabled={refreshingAll || loadingProfiles || profiles.length === 0}
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${refreshingAll || anyLoading ? "animate-spin" : ""}`}
+            aria-hidden
+          />
+        </button>
+      </div>
+
       <div className="overflow-x-auto rounded-xl border border-base-300 bg-base-100 shadow-sm">
         <table className="table table-zebra table-sm md:table-md">
           <thead>
@@ -616,14 +784,21 @@ export default function AdminClientPnlPage() {
                   <span>All clients total</span>
                   <span className="mt-0.5 block text-[10px] font-normal text-base-content/50">
                     {anyLoading
-                      ? `Updating… (${totals.clientsIncluded} of ${rows.length})`
-                      : `${totals.clientsIncluded} of ${rows.length} clients`}
+                      ? `Updating… (${totals.clientsIncluded} of ${visibleRows.length})`
+                      : `${totals.clientsIncluded} of ${visibleRows.length} clients`}
                     {engine2Period
                       ? ` · E2 ${engine2Period.month} / ${engine2Period.quarter}`
                       : null}
                   </span>
                 </th>
+                <th className="text-right align-middle" aria-label="Risk" />
                 <th className="text-right align-middle" aria-label="Last trade days" />
+                <th className="text-right align-middle tabular-nums font-semibold text-base-content">
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.availableMargin)}
+                </th>
+                <th className="text-right align-middle tabular-nums font-semibold text-base-content">
+                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.utilisedMargin)}
+                </th>
                 <th className="text-right align-middle tabular-nums font-semibold text-base-content">
                   {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.engine1Total)}
                 </th>
@@ -682,27 +857,96 @@ export default function AdminClientPnlPage() {
                     />
                   )}
                 </th>
-                <th className="text-right align-middle tabular-nums font-semibold text-base-content">
-                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.availableMargin)}
-                </th>
-                <th className="text-right align-middle tabular-nums font-semibold text-base-content">
-                  {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.utilisedMargin)}
-                </th>
                 <th className="w-12" aria-hidden />
               </tr>
             ) : null}
             <tr className="text-xs uppercase tracking-wide text-base-content/60">
-              <th className="min-w-[12rem]">Client info</th>
-              <th className="text-right">Last trade (days)</th>
-              <th className="text-right">E1 Total</th>
-              <th className="text-right">Avl cash</th>
-              <th className="text-right">Total AC</th>
-              <th className="text-right">E1 PnL</th>
-              <th className="text-right">E2 YTD</th>
-              <th className="text-right">E2 Quarterly</th>
-              <th className="text-right">E2 Monthly</th>
-              <th className="text-right">Avl margin</th>
-              <th className="text-right">Utilised margin</th>
+              <SortableTh
+                label="Client info"
+                sortKey="clientId"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+                className="min-w-[12rem] text-left"
+              />
+              <SortableTh
+                label="Risk"
+                sortKey="risk"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+                className="text-left"
+              />
+              <SortableTh
+                label="Last trade"
+                sortKey="lastTradeDays"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
+                label="Avl margin"
+                sortKey="availableMargin"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
+                label="Util margin"
+                sortKey="utilisedMargin"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
+                label="E1 Total"
+                sortKey="engine1Total"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
+                label="Avl cash"
+                sortKey="availableCash"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
+                label="Total AC"
+                sortKey="totalAc"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
+                label="E1 PnL"
+                sortKey="engine1Pnl"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
+                label="E2 YTD"
+                sortKey="e2Ytd"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
+                label="E2 Quarterly"
+                sortKey="e2Quarter"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
+                label="E2 Monthly"
+                sortKey="e2Month"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
               <th className="w-12" />
             </tr>
           </thead>
@@ -710,19 +954,23 @@ export default function AdminClientPnlPage() {
             {loadingProfiles ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={12}>
+                  <td colSpan={13}>
                     <div className="h-8 animate-pulse rounded bg-base-300/40" />
                   </td>
                 </tr>
               ))
-            ) : rows.length === 0 ? (
+            ) : visibleRows.length === 0 ? (
               <tr>
-                <td colSpan={12} className="py-12 text-center text-base-content/55">
-                  No active profiles found.
+                <td colSpan={13} className="py-12 text-center text-base-content/55">
+                  {rows.length === 0
+                    ? "No active profiles found."
+                    : "No clients match the selected risk filters."}
                 </td>
               </tr>
             ) : (
-              rows.map((row) => (
+              visibleRows.map((row) => {
+                const risk = asRisk(row.riskProfile);
+                return (
                 <tr key={row.profileId}>
                   <td className="min-w-[12rem] max-w-[18rem]">
                     <div className="flex flex-col gap-0.5">
@@ -761,10 +1009,21 @@ export default function AdminClientPnlPage() {
                       
                     </div>
                   </td>
+                  <td>
+                    <span className={`badge badge-xs ${riskBadgeClass(risk)}`}>
+                      {risk ? ENGINE1_RISK_LABELS[risk] : "—"}
+                    </span>
+                  </td>
                   <td className={`text-right ${lastTradeDaysClass(row.lastTradeDays)}`}>
                     {row.lastTradeDays == null || Number.isNaN(row.lastTradeDays)
                       ? "—"
                       : row.lastTradeDays}
+                  </td>
+                  <td className="text-right tabular-nums">
+                    {row.status === "loading" ? "…" : formatCell(row.margin?.available_total ?? null)}
+                  </td>
+                  <td className="text-right tabular-nums">
+                    {row.status === "loading" ? "…" : formatCell(row.margin?.utilised_total ?? null)}
                   </td>
                   <td className="text-right tabular-nums">
                     {row.status === "loading" ? (
@@ -826,12 +1085,6 @@ export default function AdminClientPnlPage() {
                       />
                     )}
                   </td>
-                  <td className="text-right tabular-nums">
-                    {row.status === "loading" ? "…" : formatCell(row.margin?.available_total ?? null)}
-                  </td>
-                  <td className="text-right tabular-nums">
-                    {row.status === "loading" ? "…" : formatCell(row.margin?.utilised_total ?? null)}
-                  </td>
                   <td>
                     <button
                       type="button"
@@ -847,7 +1100,8 @@ export default function AdminClientPnlPage() {
                     </button>
                   </td>
                 </tr>
-              ))
+              );
+              })
             )}
           </tbody>
         </table>

@@ -15,14 +15,22 @@ interface LegFormProps {
     showAdjustmentExpiry?: boolean;
 }
 
-/** Last expiry date per calendar month (monthly contracts), sorted ascending. */
-function monthlyExpiriesFromList(expiries: string[]): string[] {
-    const byMonth = new Map<string, string>();
-    for (const d of expiries) {
-        if (!d || d.length < 7) continue;
-        byMonth.set(d.slice(0, 7), d);
+/** Every listed expiry in the next 4 calendar months (this month included), sorted ascending. */
+function expiriesWithinMonths(expiries: string[], months = 4): string[] {
+    const now = new Date();
+    const cutoff = new Date(now.getFullYear(), now.getMonth() + months, 0);
+    const cutoffIso = [
+        cutoff.getFullYear(),
+        String(cutoff.getMonth() + 1).padStart(2, '0'),
+        String(cutoff.getDate()).padStart(2, '0'),
+    ].join('-');
+    const dates = new Set<string>();
+    for (const raw of expiries) {
+        if (!raw || raw.length < 10) continue;
+        const iso = raw.slice(0, 10);
+        if (iso <= cutoffIso) dates.add(iso);
     }
-    return Array.from(byMonth.values()).sort();
+    return Array.from(dates).sort();
 }
 
 interface Option {
@@ -336,17 +344,17 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
                 });
                 const exData = await exRes.json();
                 const list: string[] = Array.isArray(exData.expiries) ? exData.expiries : [];
-                const monthly = monthlyExpiriesFromList(list);
+                const listed = expiriesWithinMonths(list);
                 if (cancelled) return;
                 setExpiryOptions((prev) => {
                     const current = formatDateForInput(formData.expiry);
-                    const merged = new Set(monthly);
+                    const merged = new Set(listed);
                     if (current) merged.add(current);
                     for (const d of prev) merged.add(d);
                     return Array.from(merged).sort();
                 });
-                if (!formData.expiry && monthly[0]) {
-                    setFormData((prev) => ({ ...prev, expiry: prev.expiry || monthly[0] }));
+                if (!formData.expiry && listed[0]) {
+                    setFormData((prev) => ({ ...prev, expiry: prev.expiry || listed[0] }));
                 }
             } catch {
                 if (!cancelled) setExpiryOptions([]);
@@ -360,7 +368,7 @@ export default function LegForm({ initialData, builderId, onSubmit, onCancel, ex
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.symbol, effectiveExchange]);
 
-    // Keep the selected/edit expiry visible in the select even if it is not monthly.
+    // Keep the selected/edit expiry visible even when it sits outside the 4-month window.
     useEffect(() => {
         const current = formatDateForInput(formData.expiry);
         if (!current) return;

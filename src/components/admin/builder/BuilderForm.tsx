@@ -37,6 +37,24 @@ interface InstrumentSearchResult {
     lot_size: number;
 }
 
+/** Every listed expiry in the next 4 calendar months (this month included), sorted ascending. */
+function expiriesWithinMonths(expiries: string[], months = 4): string[] {
+    const now = new Date();
+    const cutoff = new Date(now.getFullYear(), now.getMonth() + months, 0);
+    const cutoffIso = [
+        cutoff.getFullYear(),
+        String(cutoff.getMonth() + 1).padStart(2, '0'),
+        String(cutoff.getDate()).padStart(2, '0'),
+    ].join('-');
+    const dates = new Set<string>();
+    for (const raw of expiries) {
+        if (!raw || raw.length < 10) continue;
+        const iso = raw.slice(0, 10);
+        if (iso <= cutoffIso) dates.add(iso);
+    }
+    return Array.from(dates).sort();
+}
+
 /** Last expiry date per calendar month (monthly contracts), sorted ascending. */
 function monthlyExpiriesFromList(expiries: string[]): string[] {
     const byMonth = new Map<string, string>();
@@ -571,16 +589,17 @@ export default function BuilderForm({
             });
             const exData = await exRes.json();
             const list: string[] = Array.isArray(exData.expiries) ? exData.expiries : [];
-            const monthly = monthlyExpiriesFromList(list);
-            setPresetExpiryOptions(monthly);
+            const listed = expiriesWithinMonths(list);
+            const monthlies = monthlyExpiriesFromList(listed);
+            setPresetExpiryOptions(listed);
             if (needsExpiry) {
-                setPresetExpiry(monthly[0] ?? '');
+                setPresetExpiry(listed[0] ?? '');
             }
             if (inputs.includes('near_expiry')) {
-                setPresetNearExpiry(monthly[0] ?? '');
+                setPresetNearExpiry(listed[0] ?? '');
             }
             if (inputs.includes('far_expiry')) {
-                setPresetFarExpiry(monthly[1] ?? '');
+                setPresetFarExpiry(monthlies[1] ?? listed[1] ?? '');
             }
         } catch {
             setPresetExpiryOptions([]);
