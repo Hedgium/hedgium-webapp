@@ -94,6 +94,9 @@ export default function BuilderItem({
                 <div>
                     <h3 className="text-xl font-semibold text-primary flex items-center gap-2">
                         {builder.name}
+                        <span className="text-sm font-mono font-normal text-base-content/50">
+                            #{builder.id}
+                        </span>
                         <span className={`text-sm px-2 py-0.5 rounded-full border ${builder.status === 'ACTIVE' ? 'border-success text-success' :
                             builder.status === 'INACTIVE' ? 'border-error text-error' : 'border-base-content/40 text-base-content/60'
                             }`}>
