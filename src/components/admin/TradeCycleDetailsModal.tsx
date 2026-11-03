@@ -379,11 +379,9 @@ export default function TradeCycleDetailsModal({
                             <div className="mb-4 rounded-lg border border-base-300">
                                 <PositionsTable
                                     positions={data.positions}
-                                    showOrdersCount={true}
                                     showAdminTradesAction={true}
                                     showAdminExitAction={true}
                                     showGreeks={true}
-                                    showNote={true}
                                     groupByExpiry={true}
                                     onAdminViewTrades={openTradesForPosition}
                                     onAdminPositionOrder={openExitForPosition}
