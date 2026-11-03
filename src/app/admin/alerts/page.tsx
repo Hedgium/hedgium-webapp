@@ -15,6 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useNotificationStore } from "@/store/notificationStore";
+import useAdminAlertPopupStore from "@/store/adminAlertPopupStore";
 import { authFetch } from "@/utils/api";
 import type {
   Notification,
@@ -58,6 +59,9 @@ const DEFAULT_FILTERS = {
 export default function AdminAlertsPage() {
   const { markAllAsRead, deleteNotification, fetchNotifications, unreadCount: storeUnreadCount } =
     useNotificationStore();
+  const popupEnabled = useAdminAlertPopupStore((s) => s.enabled);
+  const setPopupEnabled = useAdminAlertPopupStore((s) => s.setEnabled);
+  const hydratePopups = useAdminAlertPopupStore((s) => s.hydrate);
 
   const [alerts, setAlerts] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,6 +70,10 @@ export default function AdminAlertsPage() {
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    hydratePopups();
+  }, [hydratePopups]);
 
   const [daysFilter, setDaysFilter] = useState<DaysFilter>(DEFAULT_FILTERS.daysFilter);
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>(DEFAULT_FILTERS.sourceFilter);
@@ -204,7 +212,27 @@ export default function AdminAlertsPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-    
+              <div className="flex flex-col gap-0.5">
+                <label
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-base-300/60 px-3 py-1.5 text-sm"
+                  title="When off, non-error alerts stay on this page without a toast. Error alerts always pop up."
+                >
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-sm toggle-primary"
+                    checked={popupEnabled}
+                    onChange={(e) => setPopupEnabled(e.target.checked)}
+                    aria-describedby="admin-alert-popups-hint"
+                  />
+                  <span className="font-medium text-base-content">Pop-up alerts</span>
+                </label>
+                <span
+                  id="admin-alert-popups-hint"
+                  className={`px-1 text-[11px] text-base-content/45 ${popupEnabled ? "sr-only" : ""}`}
+                >
+                  Errors still pop up
+                </span>
+              </div>
 
               <button
                 type="button"
