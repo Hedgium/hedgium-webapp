@@ -22,7 +22,9 @@ import {
   aggregateMarginSnapshots,
 } from "@/components/reports/ReportCharts";
 import type { ChartPeriod, PnlMonthlyBarPoint } from "@/components/reports/ReportCharts";
-import PnlSummarySection from "@/components/reports/PnlSummarySection";
+import PnlSummarySection, {
+  type PnlHeadingStats,
+} from "@/components/reports/PnlSummarySection";
 import AllocationSummarySection from "@/components/reports/AllocationSummarySection";
 import NetPnlWithCosts, { e2NetPnl } from "@/components/reports/NetPnlWithCosts";
 import { authFetch } from "@/utils/api";
@@ -60,6 +62,58 @@ function formatDate(d: string) {
     month: "short",
     year: "numeric",
   });
+}
+
+function asNumber(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+async function fetchPnlHeadingStats(profileId: string): Promise<PnlHeadingStats> {
+  const empty: PnlHeadingStats = {
+    totalAccountValue: null,
+    margin: null,
+    availableCash: null,
+  };
+  try {
+    const [holdingsRes, marginRes] = await Promise.allSettled([
+      authFetch(`positions/live/holdings/${profileId}/`),
+      authFetch(`profiles/live/margin/${profileId}/`),
+    ]);
+
+    let engine1Total: number | null = null;
+    if (holdingsRes.status === "fulfilled" && holdingsRes.value.ok) {
+      const data = await holdingsRes.value.json();
+      if (data?.status === "success" && Array.isArray(data.data)) {
+        engine1Total = data.data.reduce(
+          (sum: number, holding: { current_value?: number | null }) =>
+            sum + (Number(holding.current_value) || 0),
+          0
+        );
+      }
+    }
+
+    let margin: number | null = null;
+    let availableCash: number | null = null;
+    if (marginRes.status === "fulfilled" && marginRes.value.ok) {
+      const data = await marginRes.value.json();
+      if (data?.status === "success") {
+        margin = asNumber(data.net);
+        availableCash = asNumber(data.total_account_cash) ?? asNumber(data.available_cash);
+      }
+    }
+
+    return {
+      totalAccountValue:
+        engine1Total != null && availableCash != null ? engine1Total + availableCash : null,
+      margin,
+      availableCash,
+    };
+  } catch (e) {
+    console.error("Error fetching PnL heading stats:", e);
+    return empty;
+  }
 }
 
 function stateChipClass(state: string): string {
@@ -103,6 +157,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
   >([]);
   const [pnlChartData, setPnlChartData] = useState<PnlMonthlyBarPoint[]>([]);
   const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
+  const [headingStats, setHeadingStats] = useState<PnlHeadingStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingReports, setLoadingReports] = useState(true);
   const [loadingCharts, setLoadingCharts] = useState(true);
@@ -169,13 +224,15 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
   const loadSummaries = useCallback(async () => {
     setLoading(true);
     try {
-      const [pnl, alloc, createdAt] = await Promise.all([
+      const [pnl, alloc, createdAt, stats] = await Promise.all([
         fetchE2PnlSummary(stableScope),
         fetchAllocationSummary(stableScope),
         fetchAccountCreatedAt(stableScope),
+        isAdmin ? fetchPnlHeadingStats(adminProfileId) : Promise.resolve(null),
       ]);
       setPnlSummary(pnl);
       setAllocationSummary(alloc);
+      setHeadingStats(stats);
       if (createdAt) setAccountCreatedAt(createdAt);
     } catch (e) {
       console.error("Error fetching summaries:", e);
@@ -282,6 +339,7 @@ export default function ProfileReportsPanel({ scope, header }: ProfileReportsPan
                 <PnlSummarySection
                   pnlSummary={pnlSummary}
                   accountCreatedAt={accountCreatedAt}
+                  headingStats={headingStats}
                 />
               ) : null}
 
