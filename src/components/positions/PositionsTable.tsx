@@ -1,10 +1,15 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, TrendingUp, TrendingDown, Plus, Minus, LogOut } from "lucide-react";
+import dynamic from "next/dynamic";
+import { ArrowDown, ArrowUp, BarChart3, ChevronDown, ChevronRight, TrendingUp, TrendingDown, Plus, Minus, LogOut } from "lucide-react";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import PositionGreeksCell from "@/components/admin/PositionGreeksCell";
 import type { PositionGreeksSnapshot } from "@/types/positions";
+
+const MarketDepthModal = dynamic(() => import("@/components/market/MarketDepthModal"), {
+  ssr: false,
+});
 
 export interface Position extends PositionGreeksSnapshot {
   id: number;
@@ -19,9 +24,8 @@ export interface Position extends PositionGreeksSnapshot {
   realised_total: number;
   unrealised_total?: number;
   pnl: number;
-  /** Operator or system note (e.g. broker vs trades reconciliation) */
-  note?: string | null;
-  orders?: Array<{ id: number }>;
+  /** Last traded price from the broker. */
+  last_price?: number | null;
   /** Staff-only: OptionChain contract identity. */
   expiry?: string | null;
   strike?: number | string | null;
@@ -36,7 +40,6 @@ const OTHER_EXPIRY_KEY = "";
 
 interface PositionsTableProps {
   positions: Position[];
-  showOrdersCount?: boolean;
   /** Staff-only: show a control to inspect stored trades for this position (admin UI). */
   showAdminTradesAction?: boolean;
   onAdminViewTrades?: (position: Position) => void;
@@ -44,8 +47,6 @@ interface PositionsTableProps {
   showAdminExitAction?: boolean;
   onAdminPositionOrder?: (position: Position, intent: PositionOrderIntent) => void;
   showGreeks?: boolean;
-  /** Staff-only: operator/system note (e.g. broker vs trades reconciliation). */
-  showNote?: boolean;
   /** Staff-only: section by expiry with a strike sort control. */
   groupByExpiry?: boolean;
   className?: string;
@@ -134,19 +135,19 @@ function PositionRow({
   colSpanFlags,
   onAdminViewTrades,
   onAdminPositionOrder,
+  onOpenDepth,
 }: {
   pos: Position;
   colSpanFlags: {
     showStrike: boolean;
     showGreeks: boolean;
-    showNote: boolean;
-    showOrdersCount: boolean;
     showActions: boolean;
     showAdminTradesAction: boolean;
     showAdminExitAction: boolean;
   };
   onAdminViewTrades?: (position: Position) => void;
   onAdminPositionOrder?: (position: Position, intent: PositionOrderIntent) => void;
+  onOpenDepth: (position: Position) => void;
 }) {
   const pnlColor = getPnLColor(pos.pnl);
   const unrealisedValue = pos.unrealised_total ?? 0;
@@ -167,6 +168,9 @@ function PositionRow({
       <td>
         {pos.average_sell_price ? formatMoneyIN(pos.average_sell_price) : "-"}
       </td>
+      <td className="tabular-nums">
+        {pos.last_price ? formatMoneyIN(pos.last_price) : "-"}
+      </td>
       <td>{formatMoneyIN(unrealisedValue)}</td>
       <td>{formatMoneyIN(realisedValue)}</td>
       <td className={pnlColor}>
@@ -184,18 +188,18 @@ function PositionRow({
           <PositionGreeksCell greeks={pos} compact />
         </td>
       )}
-      {colSpanFlags.showNote && (
-        <td className="max-w-[14rem] truncate text-xs text-base-content/80">
-          {pos.note?.trim() ? pos.note.trim() : "—"}
-        </td>
-      )}
-      {colSpanFlags.showOrdersCount && (
-        <td className="text-right">{pos.orders?.length ?? 0}</td>
-      )}
-      {colSpanFlags.showActions && (
-        <td className="whitespace-nowrap">
-          <div className="flex flex-nowrap items-center gap-1">
-            {colSpanFlags.showAdminTradesAction && onAdminViewTrades ? (
+      <td className="whitespace-nowrap">
+        <div className="flex flex-nowrap items-center gap-1">
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs"
+            title="See depth"
+            aria-label={`See depth for ${pos.instrument}`}
+            onClick={() => onOpenDepth(pos)}
+          >
+            <BarChart3 size={14} aria-hidden="true" />
+          </button>
+          {colSpanFlags.showActions && colSpanFlags.showAdminTradesAction && onAdminViewTrades ? (
               <button
                 type="button"
                 className="btn btn-xs btn-outline"
@@ -237,22 +241,19 @@ function PositionRow({
                 </button>
               </>
             ) : null}
-          </div>
-        </td>
-      )}
+        </div>
+      </td>
     </tr>
   );
 }
 
 export default function PositionsTable({
   positions,
-  showOrdersCount = false,
   showAdminTradesAction = false,
   onAdminViewTrades,
   showAdminExitAction = false,
   onAdminPositionOrder,
   showGreeks = false,
-  showNote = false,
   groupByExpiry = false,
   className = "",
 }: PositionsTableProps) {
@@ -260,6 +261,9 @@ export default function PositionsTable({
   const [strikeSort, setStrikeSort] = useState<StrikeSort>("asc");
   const [collapsedByExpiry, setCollapsedByExpiry] = useState<Record<string, boolean>>(
     {}
+  );
+  const [depthTarget, setDepthTarget] = useState<{ symbol: string; exchange: string } | null>(
+    null
   );
 
   const grouped = useMemo(
@@ -270,26 +274,28 @@ export default function PositionsTable({
   const colSpanFlags = {
     showStrike: groupByExpiry,
     showGreeks,
-    showNote,
-    showOrdersCount,
     showActions,
     showAdminTradesAction,
     showAdminExitAction,
   };
 
   const columnCount =
-    7 +
+    9 +
     (colSpanFlags.showStrike ? 1 : 0) +
-    (showGreeks ? 1 : 0) +
-    (showNote ? 1 : 0) +
-    (showOrdersCount ? 1 : 0) +
-    (showActions ? 1 : 0);
+    (showGreeks ? 1 : 0);
 
   if (positions.length === 0) {
     return (
       <p className="text-sm text-base-content/70 text-center py-3">No positions yet.</p>
     );
   }
+
+  const openDepth = (pos: Position) => {
+    setDepthTarget({
+      symbol: pos.instrument,
+      exchange: (pos.exchange || "").trim(),
+    });
+  };
 
   const toggleStrikeSort = () => {
     setStrikeSort((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -343,6 +349,7 @@ export default function PositionsTable({
                   colSpanFlags={colSpanFlags}
                   onAdminViewTrades={onAdminViewTrades}
                   onAdminPositionOrder={onAdminPositionOrder}
+                  onOpenDepth={openDepth}
                 />
               ))),
         ];
@@ -354,10 +361,12 @@ export default function PositionsTable({
           colSpanFlags={colSpanFlags}
           onAdminViewTrades={onAdminViewTrades}
           onAdminPositionOrder={onAdminPositionOrder}
+          onOpenDepth={openDepth}
         />
       ));
 
   return (
+    <>
     <div className={`overflow-x-auto ${className}`}>
       <table className="table w-full text-sm">
         <caption className="sr-only">
@@ -391,17 +400,25 @@ export default function PositionsTable({
             <th scope="col">Qty(B/S)</th>
             <th scope="col">Buy Avg</th>
             <th scope="col">Sell Avg</th>
+            <th scope="col">LTP</th>
             <th scope="col">Unrealised</th>
             <th scope="col">Realised</th>
             <th scope="col">PnL</th>
             {showGreeks && <th scope="col">Greeks</th>}
-            {showNote && <th scope="col" className="min-w-[8rem] max-w-[14rem]">Note</th>}
-            {showOrdersCount && <th scope="col">Orders</th>}
-            {showActions && <th scope="col" className="whitespace-nowrap">Actions</th>}
+            <th scope="col" className="whitespace-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody>{rows}</tbody>
       </table>
     </div>
+    {depthTarget ? (
+      <MarketDepthModal
+        open
+        onClose={() => setDepthTarget(null)}
+        initialSymbol={depthTarget.symbol}
+        initialExchange={depthTarget.exchange}
+      />
+    ) : null}
+    </>
   );
 }

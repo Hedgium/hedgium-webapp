@@ -5,7 +5,7 @@ import Link from "next/link";
 import React from "react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
-import { CheckCircle, Edit2, Info, LayoutList, LineChart, ListRestart, RefreshCw } from "lucide-react";
+import { Check, CheckCircle, Edit2, Info, LayoutList, LineChart, ListRestart, RefreshCw, X } from "lucide-react";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import { waitForCeleryTaskComplete } from "@/utils/celeryTask";
 
@@ -137,6 +137,7 @@ interface Strategy {
   master_role?: string | null;
   last_version: number | null;
   last_approved: boolean | null;
+  last_completed: boolean | null;
   position_mismatch_count: number;
   position_mismatch_details: PositionMismatchDetail[];
   position_mismatch_at: string | null;
@@ -1278,7 +1279,7 @@ export default function Page() {
                     Name
                   </th>
                   <th className="font-medium text-base-content/70">Status</th>
-                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[6.5rem]">
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7.5rem]">
                     Orders
                   </th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7.5rem]">
@@ -1504,7 +1505,7 @@ export default function Page() {
                           </span>
                         </div>
                       </td>
-                      <td className="text-right align-top min-w-[6.5rem]">
+                      <td className="text-right align-top min-w-[7.5rem]">
                         <div className="flex flex-col items-end gap-0.5 tabular-nums text-sm whitespace-nowrap">
                           <span
                             title={
@@ -1530,6 +1531,23 @@ export default function Page() {
                           >
                             Open - {openOrders == null ? "—" : openOrders}
                           </span>
+                          {strategy.last_version != null && (
+                            <span
+                              title={
+                                strategy.last_completed
+                                  ? "Latest adjustment complete"
+                                  : "Latest adjustment not complete"
+                              }
+                              className="inline-flex items-center justify-end gap-1 font-medium text-[13px] text-base-content/70"
+                            >
+                              Last Adj
+                              {strategy.last_completed ? (
+                                <Check className="size-3.5 text-success" aria-hidden />
+                              ) : (
+                                <X className="size-3.5 text-error" aria-hidden />
+                              )}
+                            </span>
+                          )}
                           {mismatchCount > 0 ? (
                             <span className="inline-flex items-center justify-end gap-0.5 font-medium text-warning">
                               <span title="Follower cycles whose stored positions do not match the master">
