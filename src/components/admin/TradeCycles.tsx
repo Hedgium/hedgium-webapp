@@ -287,7 +287,39 @@ export default function TradeCycles({
       setSelectedProfiles([]);
       setShowAddCyclesModal(false);
 
-      alert.success("Trade cycles created!", { duration: 3000 });
+      const skippedBlocked = Array.isArray(data?.skipped_blocked)
+        ? data.skipped_blocked
+        : [];
+      const skippedConflict = Array.isArray(data?.skipped_underlying_conflict)
+        ? data.skipped_underlying_conflict
+        : [];
+      const created = Number(data?.tradecycles_created || 0);
+      const formatSkip = (
+        rows: { profile_id?: number; symbol?: string }[],
+        emptyLabel: string
+      ) =>
+        rows
+          .map((row) => `HID ${row.profile_id}: ${row.symbol || emptyLabel}`)
+          .join("; ");
+      const notes: string[] = [];
+      if (skippedBlocked.length > 0) {
+        notes.push(`Blocked symbols — ${formatSkip(skippedBlocked, "blocked")}`);
+      }
+      if (skippedConflict.length > 0) {
+        notes.push(
+          `Already active on underlying — ${formatSkip(skippedConflict, "underlying")}`
+        );
+      }
+      if (notes.length > 0) {
+        const detail = notes.join(". ");
+        if (created === 0) {
+          alert.error(`No trade cycles created. ${detail}`, { duration: 6000 });
+        } else {
+          alert.success(`Created ${created}. ${detail}`, { duration: 6000 });
+        }
+      } else {
+        alert.success("Trade cycles created!", { duration: 3000 });
+      }
     } catch (error) {
       console.error("Create error:", error);
     } finally {
