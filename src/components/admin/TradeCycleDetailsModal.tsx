@@ -56,9 +56,15 @@ interface TradeCycleDetailsModalProps {
 }
 
 function positionOrderTitle(intent: PositionOrderIntent): string {
+    if (intent === "buy") return "Buy";
+    if (intent === "sell") return "Sell";
     if (intent === "increase") return "Increase position";
     if (intent === "decrease") return "Decrease position";
     return "Exit position";
+}
+
+function isOpeningIntent(intent: PositionOrderIntent): boolean {
+    return intent === "buy" || intent === "sell" || intent === "increase";
 }
 
 function defaultPositionOrderQty(pos: Position, intent: PositionOrderIntent): number {
@@ -70,6 +76,8 @@ function defaultPositionOrderQty(pos: Position, intent: PositionOrderIntent): nu
 }
 
 function positionOrderAction(pos: Position, intent: PositionOrderIntent): "BUY" | "SELL" {
+    if (intent === "buy") return "BUY";
+    if (intent === "sell") return "SELL";
     if (pos.quantity > 0) {
         return intent === "increase" ? "BUY" : "SELL";
     }
@@ -188,7 +196,8 @@ export default function TradeCycleDetailsModal({
         e.preventDefault();
         if (!exitPosition) return;
 
-        if (exitPosition.quantity === 0) {
+        const opening = exitIntent === "buy" || exitIntent === "sell";
+        if (exitPosition.quantity === 0 && !opening) {
             alert.error("Cannot adjust a flat position");
             return;
         }
@@ -199,7 +208,7 @@ export default function TradeCycleDetailsModal({
             alert.error("Quantity must be at least 1");
             return;
         }
-        if (exitIntent !== "increase" && parsedQty > absNet) {
+        if (!opening && exitIntent !== "increase" && parsedQty > absNet) {
             alert.error(`Quantity cannot exceed open size ${absNet}`);
             return;
         }
@@ -501,7 +510,8 @@ export default function TradeCycleDetailsModal({
                 </div>
             ) : null}
 
-            {exitPosition && exitPosition.quantity !== 0 && (
+            {exitPosition &&
+            (exitPosition.quantity !== 0 || exitIntent === "buy" || exitIntent === "sell") && (
                 <div className="modal modal-open z-[1100]" role="dialog" aria-modal="true" aria-labelledby="exit-position-title">
                     <div className="modal-box">
                         <h3 id="exit-position-title" className="mb-4 text-lg font-bold">
@@ -527,12 +537,12 @@ export default function TradeCycleDetailsModal({
                                     onChange={(e) => setExitQuantity(e.target.value)}
                                     min={exitPosition.lot_size && exitPosition.lot_size > 1 ? exitPosition.lot_size : 1}
                                     step={exitPosition.lot_size && exitPosition.lot_size > 1 ? exitPosition.lot_size : 1}
-                                    max={exitIntent === "increase" ? undefined : Math.abs(exitPosition.quantity)}
+                                    max={isOpeningIntent(exitIntent) ? undefined : Math.abs(exitPosition.quantity)}
                                     required
                                 />
                                 <label className="label">
                                     <span className="text-xs text-base-content/60">
-                                        {exitIntent === "increase"
+                                        {isOpeningIntent(exitIntent)
                                             ? exitPosition.lot_size && exitPosition.lot_size > 1
                                                 ? `Lot size ${exitPosition.lot_size}`
                                                 : "Units to add"
@@ -565,6 +575,10 @@ export default function TradeCycleDetailsModal({
                                 >
                                     {exitingPosition ? (
                                         <span className="loading loading-spinner"></span>
+                                    ) : exitIntent === "buy" ? (
+                                        "Place buy order"
+                                    ) : exitIntent === "sell" ? (
+                                        "Place sell order"
                                     ) : exitIntent === "increase" ? (
                                         "Place increase order"
                                     ) : exitIntent === "decrease" ? (
