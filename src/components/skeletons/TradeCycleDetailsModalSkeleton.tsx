@@ -23,7 +23,7 @@ export default function TradeCycleDetailsModalSkeleton() {
           <table className="table w-full text-sm">
             <thead>
               <tr className="border-b border-base-300/80 bg-base-200/40">
-                {["Ins", "Qty", "Buy", "Sell", "Unr", "Rea", "PnL", "Ord", "Act"].map((label) => (
+                {["Ins", "Qty", "Buy", "Sell", "LTP", "Unr", "Rea", "PnL", "Act"].map((label) => (
                   <th key={label} className="text-xs font-semibold uppercase text-base-content/40">
                     <div className="mx-auto h-3 w-8 rounded bg-base-300/80" />
                   </th>
