@@ -32,7 +32,7 @@ export interface Position extends PositionGreeksSnapshot {
   option_type?: string | null;
 }
 
-export type PositionOrderIntent = "exit" | "increase" | "decrease";
+export type PositionOrderIntent = "exit" | "increase" | "decrease" | "buy" | "sell";
 
 type StrikeSort = "asc" | "desc";
 
@@ -207,6 +207,30 @@ function PositionRow({
               >
                 Trades
               </button>
+            ) : null}
+            {colSpanFlags.showAdminExitAction &&
+            onAdminPositionOrder &&
+            pos.quantity === 0 ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-xs btn-square btn-outline btn-success font-semibold"
+                  title="Buy"
+                  aria-label="Buy"
+                  onClick={() => onAdminPositionOrder(pos, "buy")}
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-xs btn-square btn-outline btn-error font-semibold"
+                  title="Sell"
+                  aria-label="Sell"
+                  onClick={() => onAdminPositionOrder(pos, "sell")}
+                >
+                  S
+                </button>
+              </>
             ) : null}
             {colSpanFlags.showAdminExitAction &&
             onAdminPositionOrder &&
