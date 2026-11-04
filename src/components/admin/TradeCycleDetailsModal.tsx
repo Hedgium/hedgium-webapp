@@ -34,6 +34,14 @@ interface TradeCycleDetails {
         total_buy_qty: number;
         total_sell_qty: number;
     } | null;
+    underlyings?: UnderlyingMarket[];
+}
+
+interface UnderlyingMarket {
+    symbol: string;
+    spot: number | null;
+    strike_step: number | null;
+    atm: number | null;
 }
 
 interface PositionTradeRow {
@@ -84,6 +92,14 @@ function positionOrderAction(pos: Position, intent: PositionOrderIntent): "BUY" 
     return intent === "increase" ? "SELL" : "BUY";
 }
 
+function formatMarketNumber(value: number | null | undefined): string {
+    if (value == null || !Number.isFinite(Number(value))) return "—";
+    const n = Number(value);
+    return n.toLocaleString("en-IN", {
+        maximumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    });
+}
+
 function formatTradeTime(iso: string | null): string {
     if (!iso) return "—";
     try {
@@ -125,7 +141,9 @@ export default function TradeCycleDetailsModal({
             setLoading(true);
             setError(null);
 
-            const res = await authFetch(`trade-cycles/${tradeCycleId}/details/?load_all=true`);
+            const res = await authFetch(
+                `trade-cycles/${tradeCycleId}/details/?load_all=true&with_market=true`
+            );
             if (!res.ok) {
                 throw new Error("Failed to fetch trade cycle details");
             }
@@ -320,6 +338,7 @@ export default function TradeCycleDetailsModal({
     }, [exitPosition, tradesPanel, onClose]);
 
     const tradesTotalPages = Math.max(1, Math.ceil(tradesCount / tradesPageSize));
+    const underlyings = data?.underlyings ?? [];
 
     return (
         <div
@@ -337,6 +356,22 @@ export default function TradeCycleDetailsModal({
                         <div className="mt-1 h-4 max-w-xs animate-pulse rounded bg-base-300/70" aria-hidden />
                     ) : data?.trade_cycle?.name ? (
                         <p className="truncate text-sm text-base-content/70">{data.trade_cycle.name}</p>
+                    ) : null}
+                    {!loading && underlyings.length > 0 ? (
+                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-base-content/70">
+                            {underlyings.map((row) => (
+                                <p key={row.symbol} className="tabular-nums">
+                                    {underlyings.length > 1 ? (
+                                        <span className="font-medium text-base-content/80">{row.symbol} </span>
+                                    ) : null}
+                                    Spot {formatMarketNumber(row.spot)}
+                                    <span className="px-1.5 text-base-content/30">·</span>
+                                    Strike step {formatMarketNumber(row.strike_step)}
+                                    <span className="px-1.5 text-base-content/30">·</span>
+                                    ATM {formatMarketNumber(row.atm)}
+                                </p>
+                            ))}
+                        </div>
                     ) : null}
                 </div>
                 <button
