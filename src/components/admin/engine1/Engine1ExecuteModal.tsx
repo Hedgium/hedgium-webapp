@@ -36,6 +36,7 @@ function skipLabel(reason: string | null): string {
   if (reason === "class_zero") return "Class 0%";
   if (reason === "no_quote") return "No quote";
   if (reason === "qty_zero") return "Qty 0";
+  if (reason === "blocked") return "Blocked";
   return reason;
 }
 
@@ -305,7 +306,7 @@ export default function Engine1ExecuteModal({
               ...item,
               quantity: qty,
               price,
-              skip_reason: null,
+              skip_reason: item.skip_reason === "blocked" ? "blocked" : null,
               ...derived,
             }
           : item
@@ -570,7 +571,7 @@ export default function Engine1ExecuteModal({
                                   type="button"
                                   className="btn btn-ghost btn-xs"
                                   onClick={() => startEdit(row)}
-                                  disabled={busy || placed}
+                                  disabled={busy || placed || row.skip_reason === "blocked"}
                                   title="Edit"
                                   aria-label={`Edit ${row.tradingsymbol}`}
                                 >
