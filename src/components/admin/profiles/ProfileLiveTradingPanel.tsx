@@ -29,6 +29,7 @@ import {
 import Link from "next/link";
 import { Profile } from "@/types/profile";
 import { LiveHolding, LivePosition } from "@/types/positions";
+import { useAuthStore } from "@/store/authStore";
 
 const MarketDepthModal = dynamic(() => import("@/components/market/MarketDepthModal"), {
   ssr: false,
@@ -147,6 +148,12 @@ export interface ProfileLiveTradingPanelProps {
 export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileLiveTradingPanelProps) {
   const router = useRouter();
   const alert = useAlert();
+  const isSuperuser = Boolean(useAuthStore((s) => s.user?.is_superuser));
+  const canViewHoldings = isSuperuser;
+  const canPlaceOrder = isSuperuser;
+  const liveTabs = canViewHoldings
+    ? LIVE_TAB_CONFIG
+    : LIVE_TAB_CONFIG.filter((tab) => tab.id !== "holdings");
 
   const [activeTab, setActiveTab] = useState<LivePanelTab>("positions");
   const [positions, setPositions] = useState<LivePosition[]>([]);
@@ -252,6 +259,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   }, [profileId]);
 
   const fetchHoldings = useCallback(async () => {
+    if (!canViewHoldings) {
+      setHoldings([]);
+      setHoldingsFetchedAt(null);
+      return;
+    }
     setLoadingHoldings(true);
     try {
       const response = await authFetch(`positions/live/holdings/${profileId}/`);
@@ -269,7 +281,9 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     } finally {
       setLoadingHoldings(false);
     }
-  }, [profileId]);
+    // alert is stable enough for calls; omit from deps (same pattern as other fetches).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canViewHoldings, profileId]);
 
   const refreshMarginForProfile = useCallback(async () => {
     setRefreshingMargin(true);
@@ -310,14 +324,32 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   }, [profileId]);
 
   useEffect(() => {
-    fetchProfile();
-    fetchPositions();
-    fetchHoldings();
-    fetchOrders();
-    fetchTrades();
-  }, [fetchProfile, fetchPositions, fetchHoldings, fetchOrders, fetchTrades]);
+    if (!canViewHoldings && activeTab === "holdings") {
+      setActiveTab("positions");
+    }
+  }, [activeTab, canViewHoldings]);
+
+  useEffect(() => {
+    if (!canPlaceOrder) {
+      setShowPlaceOrderForm(false);
+    }
+  }, [canPlaceOrder]);
+
+  // Fetch once per profile — do not depend on callback identities (avoids request loops).
+  useEffect(() => {
+    void fetchProfile();
+    void fetchPositions();
+    void fetchHoldings();
+    void fetchOrders();
+    void fetchTrades();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileId, canViewHoldings]);
 
   const submitPlaceOrder = async (kind: "place" | "test") => {
+    if (!canPlaceOrder) {
+      alert.error("Superuser access required to place orders");
+      return;
+    }
     const parsedQuantity = parseInt(orderForm.quantity, 10);
     if (!Number.isFinite(parsedQuantity) || parsedQuantity < 1) {
       alert.error("Quantity must be at least 1");
@@ -536,14 +568,16 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         <PieChart size={16} />
         Engine 1
       </button>
-      <button
-        type="button"
-        onClick={() => setShowPlaceOrderForm(true)}
-        className="btn btn-primary btn-sm"
-      >
-        <Plus size={16} />
-        Place Order
-      </button>
+      {canPlaceOrder ? (
+        <button
+          type="button"
+          onClick={() => setShowPlaceOrderForm(true)}
+          className="btn btn-primary btn-sm"
+        >
+          <Plus size={16} />
+          Place Order
+        </button>
+      ) : null}
     </div>
   );
 
@@ -609,7 +643,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
           aria-label="Live broker data"
           className="flex w-full gap-1 rounded-xl border border-base-300/70 bg-base-200/50 p-0.5 sm:gap-1 sm:p-1"
         >
-          {LIVE_TAB_CONFIG.map(({ id, label, shortLabel, icon: Icon }) => {
+          {liveTabs.map(({ id, label, shortLabel, icon: Icon }) => {
             const isActive = activeTab === id;
             const count = id === "positions"
               ? positions.length
