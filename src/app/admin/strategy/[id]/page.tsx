@@ -731,6 +731,8 @@ export default function StrategyDetailPage() {
         {manualAdjustmentInitial !== null && (
           <ManualAdjustmentModal
             strategyId={strategyId}
+            underlyings={strategy?.underlying_names ?? []}
+            underlyingTokens={strategy?.underlying_instrument_tokens ?? {}}
             initialValues={manualAdjustmentInitial}
             onClose={() => setManualAdjustmentInitial(null)}
             onSuccess={() => refreshStrategyAndAdjustments({ silent: true })}
