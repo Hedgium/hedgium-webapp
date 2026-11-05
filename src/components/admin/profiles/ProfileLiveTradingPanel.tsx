@@ -332,6 +332,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   useEffect(() => {
     if (!canPlaceOrder) {
       setShowPlaceOrderForm(false);
+      setShowEngine1Modal(false);
     }
   }, [canPlaceOrder]);
 
@@ -558,7 +559,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     }
   };
 
-  const placeOrderButton = (
+  const placeOrderButton = canPlaceOrder ? (
     <div className="flex shrink-0 gap-2">
       <button
         type="button"
@@ -568,18 +569,16 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
         <PieChart size={16} />
         Engine 1
       </button>
-      {canPlaceOrder ? (
-        <button
-          type="button"
-          onClick={() => setShowPlaceOrderForm(true)}
-          className="btn btn-primary btn-sm"
-        >
-          <Plus size={16} />
-          Place Order
-        </button>
-      ) : null}
+      <button
+        type="button"
+        onClick={() => setShowPlaceOrderForm(true)}
+        className="btn btn-primary btn-sm"
+      >
+        <Plus size={16} />
+        Place Order
+      </button>
     </div>
-  );
+  ) : null;
 
   const liveTitle = profile
     ? [profile.user?.first_name, profile.broker_name, profile.broker_user_id]
