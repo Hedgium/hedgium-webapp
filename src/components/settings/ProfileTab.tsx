@@ -7,11 +7,13 @@ import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import VerifyEmail from "@/components/VerifyEmail";
 import ActionOtpModal from "@/components/settings/ActionOtpModal";
+import TwoFactorOtpModal from "@/components/settings/TwoFactorOtpModal";
 import {
   confirmAutoTrade,
   confirmStrategiesPaused,
   type ProfileActionOtpPurpose,
 } from "@/services/profileActions";
+import { confirmTwoFactorToggle } from "@/services/twoFactor";
 
 /** Shown if API omits relationship_manager (should be set on the server). */
 const DEFAULT_RELATIONSHIP_MANAGER = {
@@ -44,6 +46,7 @@ const ProfileTab: React.FC = () => {
     | { purpose: ProfileActionOtpPurpose; nextValue: boolean }
     | null
   >(null);
+  const [twoFactorPending, setTwoFactorPending] = useState<boolean | null>(null);
   const verifyEmailDialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -167,6 +170,28 @@ const ProfileTab: React.FC = () => {
         <div>
           <p className="text-sm text-base-content/70">Phone</p>
           <p className="font-medium">{user.mobile || "—"}</p>
+        </div>
+
+        <div className="form-control pt-2 border-t border-base-300">
+          <label className="label cursor-pointer justify-start gap-4">
+            <span className="label-text font-medium">Two-factor authentication</span>
+            <input
+              type="checkbox"
+              className="toggle toggle-primary"
+              checked={Boolean(user.two_factor_enabled)}
+              onChange={() => {
+                if (isDemoUser(user)) return;
+                setTwoFactorPending(!user.two_factor_enabled);
+              }}
+              disabled={isDemoUser(user)}
+              aria-disabled={isDemoUser(user)}
+            />
+          </label>
+          <p className="text-xs text-base-content/70 mt-1">
+            {isDemoUser(user)
+              ? "Preview account — settings are read-only."
+              : "When enabled, login requires a code sent to your email and WhatsApp. Trusted devices skip the code for 21 days."}
+          </p>
         </div>
 
         {loading ? (
@@ -326,6 +351,21 @@ const ProfileTab: React.FC = () => {
             confirmLabel="Confirm"
             onConfirm={handleOtpConfirm}
             onClose={() => setOtpAction(null)}
+          />
+        ) : null}
+
+        {twoFactorPending != null ? (
+          <TwoFactorOtpModal
+            open={twoFactorPending != null}
+            nextEnabled={twoFactorPending}
+            onConfirm={async (otp) => {
+              const enabled = await confirmTwoFactorToggle(twoFactorPending, otp);
+              updateUser({ two_factor_enabled: enabled });
+              alert.success(
+                enabled ? "Two-factor authentication enabled" : "Two-factor authentication disabled"
+              );
+            }}
+            onClose={() => setTwoFactorPending(null)}
           />
         ) : null}
       </div>

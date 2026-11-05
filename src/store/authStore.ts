@@ -51,6 +51,8 @@ export interface User {
   active_subscription: UserSubscription | null;
   broker_logged_in: boolean | false;
   is_staff: boolean | false;
+  is_superuser?: boolean;
+  two_factor_enabled?: boolean;
   is_demo?: boolean;
   role?: string;
   /** null/undefined = unrestricted; else allowed admin section keys */
@@ -68,11 +70,19 @@ export interface User {
   } | null;
 }
 
+export type LoginResult =
+  | { status: "ok" }
+  | { status: "two_factor_required"; pendingToken: string };
+
 /** Renew __app_session gate cookie (httpOnly) so it stays aligned with refresh_token. */
-async function renewAppSession(): Promise<void> {
+async function renewAppSession(expiresIn?: number): Promise<void> {
   if (typeof window === "undefined") return;
   try {
-    await fetch("/api/session", { method: "GET", credentials: "include" });
+    const qs =
+      typeof expiresIn === "number" && Number.isFinite(expiresIn) && expiresIn > 0
+        ? `?maxAge=${Math.floor(expiresIn)}`
+        : "";
+    await fetch(`/api/session${qs}`, { method: "GET", credentials: "include" });
   } catch {
     // Non-fatal — proxy calls may still fail with session_required and clearLocalSession.
   }
@@ -86,7 +96,9 @@ interface AuthState {
   refreshTimerId: NodeJS.Timeout | null;
   keys: Keys | null;
 
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<LoginResult>;
+  verifyLogin2fa: (pendingToken: string, otp: string) => Promise<void>;
+  resendLogin2fa: (pendingToken: string) => Promise<void>;
   userKeyGet: () => Promise<Keys|null>;
   userKeyCreateUpdate: () => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
@@ -165,22 +177,62 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (!res.ok) {
       set({ isLoading: false });
-      const data =  await res.json();
+      const data = await res.json();
       throw data;
     }
 
     const data = await res.json();
-    await renewAppSession();
+    if (data.two_factor_required && data.pending_token) {
+      set({ isLoading: false });
+      return {
+        status: "two_factor_required",
+        pendingToken: data.pending_token as string,
+      };
+    }
+
+    await renewAppSession(data.refresh_expires_in);
     set({ accessToken: data.access_token, isLoading: false });
     set({ isInitializing: false });
 
     get().fetchUser();
-
-    // const keys = await get().userKeyGet();
-    // if (!keys) {
-    //   get().userKeyCreateUpdate();
-    // }
     get().startAutoRefresh();
+    return { status: "ok" };
+  },
+
+  verifyLogin2fa: async (pendingToken, otp) => {
+    set({ isLoading: true });
+    const res = await fetch("/api/proxy/users/auth/login/verify-2fa/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pending_token: pendingToken, otp, mobile: false }),
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      set({ isLoading: false });
+      const data = await res.json();
+      throw data;
+    }
+
+    const data = await res.json();
+    await renewAppSession(data.refresh_expires_in);
+    set({ accessToken: data.access_token, isLoading: false });
+    set({ isInitializing: false });
+    get().fetchUser();
+    get().startAutoRefresh();
+  },
+
+  resendLogin2fa: async (pendingToken) => {
+    const res = await fetch("/api/proxy/users/auth/login/resend-2fa/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pending_token: pendingToken }),
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw data;
+    }
   },
 
   refreshAccessToken: async () => {
@@ -192,7 +244,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (res.ok) {
         const data = await res.json();
-        await renewAppSession();
+        await renewAppSession(data.refresh_expires_in);
         set({ accessToken: data.access_token });
         return true;
       } else {
