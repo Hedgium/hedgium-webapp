@@ -2,6 +2,7 @@
 export const runtime = "edge";
 
 import { getSessionCookie } from '@/utils/sessions';
+import { getIncomingClientIp } from "@/lib/clientIp";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -55,15 +56,6 @@ function isSessionExempt(normalizedPath: string, method: string): boolean {
   )
     return true;
   return false;
-}
-
-function getIncomingClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  return request.headers.get("x-real-ip")?.trim() || "";
 }
 
 async function handleProxyRequest(request: Request) {
