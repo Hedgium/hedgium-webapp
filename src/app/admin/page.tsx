@@ -100,8 +100,6 @@ interface StrategyCounts {
   pending_orders_count: number;
   open_orders_count: number;
   trade_cycle_count: number;
-  position_mismatch_count: number;
-  position_mismatch_details: PositionMismatchDetail[];
 }
 
 interface Strategy {
@@ -647,7 +645,7 @@ export default function Page() {
           type="button"
           className="btn btn-ghost btn-xs btn-square text-warning"
           aria-label="Position mismatches versus master"
-          title="Follower cycles that do not match the master book"
+          title="Follower cycles that did not match the master on the last auto-match check"
           aria-expanded={open}
           onClick={toggle}
         >
@@ -1407,14 +1405,8 @@ export default function Page() {
                   const pendingOrders = counts?.pending_orders_count;
                   const openOrders = counts?.open_orders_count;
                   const allocated = counts?.trade_cycle_count;
-                  const mismatchCount =
-                    counts?.position_mismatch_count ??
-                    strategy.position_mismatch_count ??
-                    0;
-                  const mismatchDetails =
-                    counts?.position_mismatch_details ??
-                    strategy.position_mismatch_details ??
-                    [];
+                  const mismatchCount = strategy.position_mismatch_count ?? 0;
+                  const mismatchDetails = strategy.position_mismatch_details ?? [];
                   const matchingReportSymbols = (strategy.underlying_names ?? [])
                     .map((s) => s.trim().toUpperCase())
                     .filter((s) => s && reportSymbols.has(s))
@@ -1693,17 +1685,13 @@ export default function Page() {
                           )}
                           {mismatchCount > 0 ? (
                             <span className="inline-flex items-center justify-end gap-0.5 font-medium text-warning">
-                              <span title="Follower cycles whose stored positions do not match the master">
+                              <span title="Follower cycles that did not match the master on the last auto-match check">
                                 Mismatch - {mismatchCount}
                               </span>
                               <MismatchInfo
                                 strategyId={strategy.id}
                                 details={mismatchDetails}
-                                checkedAt={
-                                  counts
-                                    ? null
-                                    : strategy.position_mismatch_at
-                                }
+                                checkedAt={strategy.position_mismatch_at}
                               />
                             </span>
                           ) : null}
