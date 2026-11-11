@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Bell, Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Phone, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network, CandlestickChart, IndianRupee, FlaskConical, Settings2, PieChart, Receipt } from "lucide-react";
+import { Bell, Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Phone, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network, CandlestickChart, IndianRupee, FlaskConical, Settings2, PieChart, Receipt, Shield } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
@@ -25,6 +25,7 @@ const tabs = [
   { name: "Alerts", href: "/admin/alerts", icon: <Bell className="h-5 w-5" /> },
   { name: "Tasks", href: "/admin/tasks", icon: <ListTodo className="h-5 w-5" /> },
   { name: "Settings", href: "/admin/settings", icon: <Settings2 className="h-5 w-5" /> },
+  { name: "Security", href: "/admin/security", icon: <Shield className="h-5 w-5" /> },
   { name: "Billing", href: "/admin/billing", icon: <Receipt className="h-5 w-5" /> },
   // { name: "Payments", href: "/admin/payments", icon: <CreditCard className="h-5 w-5" /> },
 ];

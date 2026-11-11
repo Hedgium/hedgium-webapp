@@ -48,8 +48,7 @@ export async function middleware(request: NextRequest) {
       if (res.ok) {
         const data = (await res.json()) as { allowed?: boolean; ip?: string };
         if (data.allowed === false) {
-          const denied = new URL('/home', request.url);
-          denied.searchParams.set('admin_ip_denied', '1');
+          const denied = new URL('/admin-access', request.url);
           const checked = (data.ip || clientIp || '').trim();
           if (checked) {
             denied.searchParams.set('checked_ip', checked);
