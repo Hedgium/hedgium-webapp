@@ -21,6 +21,7 @@ const APP_SHELL_PATH_PREFIXES = [
   '/alerts',
   '/settings',
   '/add-broker',
+  '/admin-access',
 ] as const;
 
 function isAppShellPath(pathname: string | null): boolean {
