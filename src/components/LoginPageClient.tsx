@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import AuthFlowBrand from "@/components/AuthFlowBrand";
 import { getSafeNext } from "@/lib/publicRoutes";
+
+const OTP_LENGTH = 6;
+const RESEND_COOLDOWN = 60;
 
 function LoginPageContent() {
   const [email, setEmail] = useState("");
@@ -16,8 +19,14 @@ function LoginPageContent() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
+  const [cooldown, setCooldown] = useState(0);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { login, accessToken, isLoading, isInitializing } = useAuthStore();
+  const { login, verifyLogin2fa, resendLogin2fa, accessToken, isLoading, isInitializing } =
+    useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = getSafeNext(searchParams.get("next"));
@@ -31,6 +40,26 @@ function LoginPageContent() {
       router.push(nextPath || "/home");
     }
   }, [accessToken, isInitializing, router, nextPath]);
+
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+    };
+  }, []);
+
+  const startCooldown = useCallback(() => {
+    setCooldown(RESEND_COOLDOWN);
+    if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+    cooldownTimerRef.current = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) {
+          if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
 
   const handleLogin = async (e?: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent) => {
     if (e) e.preventDefault();
@@ -49,12 +78,165 @@ function LoginPageContent() {
     } else setPasswordError("");
     if (valid) {
       try {
-        await login(email, password);
+        const result = await login(email, password);
+        if (result.status === "two_factor_required") {
+          setPendingToken(result.pendingToken);
+          setOtp(Array(OTP_LENGTH).fill(""));
+          startCooldown();
+          setTimeout(() => inputRefs.current[0]?.focus(), 50);
+        }
       } catch (err: unknown) {
         setLoginError((err as { detail?: string })?.detail || "Something went wrong");
       }
     }
   };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const updated = [...otp];
+    updated[index] = value.slice(-1);
+    setOtp(updated);
+    setLoginError("");
+    if (value && index < OTP_LENGTH - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    if (digits.length === OTP_LENGTH) {
+      e.preventDefault();
+      setOtp(digits.split(""));
+      setLoginError("");
+      inputRefs.current[OTP_LENGTH - 1]?.focus();
+    }
+  };
+
+  const handleVerify2fa = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!pendingToken) return;
+    const code = otp.join("");
+    if (code.length !== OTP_LENGTH) {
+      setLoginError("Enter the 6-digit code");
+      return;
+    }
+    setLoginError("");
+    try {
+      await verifyLogin2fa(pendingToken, code);
+    } catch (err: unknown) {
+      setLoginError((err as { detail?: string })?.detail || "Invalid code");
+    }
+  };
+
+  const handleResend = async () => {
+    if (!pendingToken || cooldown > 0) return;
+    setLoginError("");
+    try {
+      await resendLogin2fa(pendingToken);
+      startCooldown();
+    } catch (err: unknown) {
+      setLoginError((err as { detail?: string })?.detail || "Could not resend code");
+    }
+  };
+
+  if (pendingToken) {
+    return (
+      <div className="w-full max-w-[400px]">
+        <AuthFlowBrand />
+        <div className="mb-6 text-center">
+          <h1 id="login-2fa-heading" className="text-xl font-semibold tracking-tight text-base-content">
+            Verify it&apos;s you
+          </h1>
+          <p className="mt-1 text-sm text-base-content/70">
+            Enter the code sent to your email{email ? ` (${email})` : ""} and WhatsApp if linked.
+          </p>
+        </div>
+        <section
+          aria-labelledby="login-2fa-heading"
+          className="rounded-xl border border-base-300 bg-base-100 p-6"
+        >
+          <form onSubmit={handleVerify2fa} className="space-y-4" noValidate>
+            <div
+              className="flex justify-center gap-2"
+              role="group"
+              aria-label="One-time code"
+              onPaste={handleOtpPaste}
+            >
+              {otp.map((digit, i) => (
+                <input
+                  key={i}
+                  ref={(el) => {
+                    inputRefs.current[i] = el;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete={i === 0 ? "one-time-code" : "off"}
+                  maxLength={1}
+                  className={`input input-bordered input-sm h-11 w-10 text-center text-base font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                    loginError ? "input-error" : digit ? "input-primary" : ""
+                  }`}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                  aria-label={`Digit ${i + 1}`}
+                />
+              ))}
+            </div>
+            {loginError ? (
+              <p role="alert" className="text-center text-xs text-error">
+                {loginError}
+              </p>
+            ) : null}
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm h-11 min-h-11 w-full text-sm font-medium normal-case"
+              disabled={isLoading}
+              aria-busy={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  <span>Verifying…</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4" aria-hidden />
+                  Continue
+                </>
+              )}
+            </button>
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <button
+                type="button"
+                className="text-primary hover:underline disabled:opacity-50"
+                disabled={cooldown > 0}
+                onClick={handleResend}
+              >
+                {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+              </button>
+              <button
+                type="button"
+                className="text-base-content/70 hover:underline"
+                onClick={() => {
+                  setPendingToken(null);
+                  setLoginError("");
+                  setOtp(Array(OTP_LENGTH).fill(""));
+                }}
+              >
+                Back to login
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-[400px]">

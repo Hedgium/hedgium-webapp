@@ -2,6 +2,7 @@
 export const runtime = "edge";
 
 import { getSessionCookie } from '@/utils/sessions';
+import { getIncomingClientIp } from "@/lib/clientIp";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -23,6 +24,12 @@ export async function PATCH(request: Request) {
 /** Backend paths that must work without __app_session (login, signup, public APIs). */
 function isSessionExempt(normalizedPath: string, method: string): boolean {
   if (normalizedPath === "users/auth/login/" && method === "POST") return true;
+  if (normalizedPath === "users/auth/login/verify-2fa/" && method === "POST")
+    return true;
+  if (normalizedPath === "users/auth/login/resend-2fa/" && method === "POST")
+    return true;
+  if (normalizedPath === "users/auth/admin-ip-allowed/" && method === "GET")
+    return true;
   if (normalizedPath === "users/token/refresh/" && method === "POST") return true;
   if (
     normalizedPath.startsWith("users/token/exchange-token/") &&
@@ -95,9 +102,14 @@ async function handleProxyRequest(request: Request) {
   }
 
   try {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       "X-API-Key": apiKey,
     };
+
+    const clientIp = getIncomingClientIp(request);
+    if (clientIp) {
+      headers["X-Hedgium-Client-IP"] = clientIp;
+    }
 
     // ✅ Forward content-type if client set one (don’t force JSON!)
     const clientContentType = request.headers.get("content-type");
@@ -142,24 +154,34 @@ async function handleProxyRequest(request: Request) {
       data = await response.arrayBuffer();
     }
 
-    const responseHeaders: Record<string, string> = {
-      "Content-Type": contentType,
-    };
+    const out = new NextResponse(data, {
+      status: response.status,
+      headers: {
+        "Content-Type": contentType,
+      },
+    });
 
     const contentDisposition = response.headers.get("content-disposition");
     if (contentDisposition) {
-      responseHeaders["Content-Disposition"] = contentDisposition;
+      out.headers.set("Content-Disposition", contentDisposition);
     }
 
-    const setCookie = response.headers.get("set-cookie");
-    if (setCookie) {
-      responseHeaders["Set-Cookie"] = setCookie;
+    // Forward every Set-Cookie (refresh + trusted_device may both be set).
+    const getSetCookie = (
+      response.headers as Headers & { getSetCookie?: () => string[] }
+    ).getSetCookie?.();
+    if (getSetCookie && getSetCookie.length > 0) {
+      for (const cookie of getSetCookie) {
+        out.headers.append("Set-Cookie", cookie);
+      }
+    } else {
+      const setCookie = response.headers.get("set-cookie");
+      if (setCookie) {
+        out.headers.append("Set-Cookie", setCookie);
+      }
     }
 
-    return new NextResponse(data, {
-      status: response.status,
-      headers: responseHeaders,
-    });
+    return out;
   } catch (error) {
     console.error("Proxy error:", error);
     return NextResponse.json({ error: "Proxy request failed" }, { status: 500 });
