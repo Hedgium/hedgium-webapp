@@ -188,18 +188,19 @@ function PositionRow({
           <PositionGreeksCell greeks={pos} compact />
         </td>
       )}
-      <td className="whitespace-nowrap">
-        <div className="flex flex-nowrap items-center gap-1">
-          <button
-            type="button"
-            className="btn btn-ghost btn-xs"
-            title="See depth"
-            aria-label={`See depth for ${pos.instrument}`}
-            onClick={() => onOpenDepth(pos)}
-          >
-            <BarChart3 size={14} aria-hidden="true" />
-          </button>
-          {colSpanFlags.showActions && colSpanFlags.showAdminTradesAction && onAdminViewTrades ? (
+      {colSpanFlags.showActions ? (
+        <td className="whitespace-nowrap">
+          <div className="flex flex-nowrap items-center gap-1">
+            <button
+              type="button"
+              className="btn btn-ghost btn-xs"
+              title="See depth"
+              aria-label={`See depth for ${pos.instrument}`}
+              onClick={() => onOpenDepth(pos)}
+            >
+              <BarChart3 size={14} aria-hidden="true" />
+            </button>
+            {colSpanFlags.showAdminTradesAction && onAdminViewTrades ? (
               <button
                 type="button"
                 className="btn btn-xs btn-outline"
@@ -265,8 +266,9 @@ function PositionRow({
                 </button>
               </>
             ) : null}
-        </div>
-      </td>
+          </div>
+        </td>
+      ) : null}
     </tr>
   );
 }
@@ -304,9 +306,10 @@ export default function PositionsTable({
   };
 
   const columnCount =
-    9 +
+    8 +
     (colSpanFlags.showStrike ? 1 : 0) +
-    (showGreeks ? 1 : 0);
+    (showGreeks ? 1 : 0) +
+    (showActions ? 1 : 0);
 
   if (positions.length === 0) {
     return (
@@ -429,7 +432,11 @@ export default function PositionsTable({
             <th scope="col">Realised</th>
             <th scope="col">PnL</th>
             {showGreeks && <th scope="col">Greeks</th>}
-            <th scope="col" className="whitespace-nowrap">Actions</th>
+            {showActions ? (
+              <th scope="col" className="whitespace-nowrap">
+                Actions
+              </th>
+            ) : null}
           </tr>
         </thead>
         <tbody>{rows}</tbody>

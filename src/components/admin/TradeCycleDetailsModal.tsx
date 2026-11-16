@@ -13,12 +13,16 @@ import {
     Wallet,
     ClipboardList,
     BarChart3,
+    Table2,
 } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import PositionsTable, { Position } from "../positions/PositionsTable";
 import UnmappedOrdersTable, { UnmappedOrder } from "../positions/UnmappedOrdersTable";
 import PositionsSummary from "../positions/PositionsSummary";
 import TradeCycleDetailsModalSkeleton from "@/components/skeletons/TradeCycleDetailsModalSkeleton";
+import TradeCycleOptionChainPanel, {
+    type ChainOrderRequest,
+} from "@/components/admin/TradeCycleOptionChainPanel";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import {
     placePositionOrder,
@@ -31,7 +35,7 @@ const MarketDepthModal = dynamic(() => import("@/components/market/MarketDepthMo
     ssr: false,
 });
 
-type CycleDetailsTab = "positions" | "orders";
+type CycleDetailsTab = "positions" | "orders" | "optionchain";
 
 const CYCLE_TAB_CONFIG: {
     id: CycleDetailsTab;
@@ -41,12 +45,16 @@ const CYCLE_TAB_CONFIG: {
 }[] = [
     { id: "positions", label: "Live positions", shortLabel: "Pos", icon: Wallet },
     { id: "orders", label: "Live orders", shortLabel: "Ord", icon: ClipboardList },
+    { id: "optionchain", label: "Option chain", shortLabel: "OC", icon: Table2 },
 ];
 
 interface TradeCycleDetails {
     trade_cycle: {
         id: number;
         profile_id?: number;
+        strategy_id?: number | null;
+        exchange?: string | null;
+        broker_name?: string | null;
         name: string;
         state: string;
         sub_state: string;
@@ -498,6 +506,25 @@ export default function TradeCycleDetailsModal({
         setExitQuantity(String(defaultPositionOrderQty(pos, intent)));
     }
 
+    function openChainOrder(req: ChainOrderRequest) {
+        setExitPosition({
+            id: 0,
+            instrument: req.instrument,
+            exchange: req.exchange,
+            lot_size: req.lot_size,
+            buy_quantity: 0,
+            sell_quantity: 0,
+            average_buy_price: 0,
+            average_sell_price: 0,
+            quantity: 0,
+            realised_total: 0,
+            unrealised_total: 0,
+            pnl: 0,
+        });
+        setExitIntent(req.intent);
+        setExitQuantity(String(req.lot_size > 0 ? req.lot_size : 1));
+    }
+
     function closeExitForm() {
         setExitPosition(null);
         setExitQuantity("");
@@ -509,6 +536,11 @@ export default function TradeCycleDetailsModal({
         if (!exitPosition) return;
 
         const opening = exitIntent === "buy" || exitIntent === "sell";
+        const byInstrument = !exitPosition.id;
+        if (byInstrument && !opening) {
+            alert.error("Option chain actions only support buy or sell");
+            return;
+        }
         if (exitPosition.quantity === 0 && !opening) {
             alert.error("Cannot adjust a flat position");
             return;
@@ -533,11 +565,21 @@ export default function TradeCycleDetailsModal({
 
         setExitingPosition(true);
         try {
-            const { ok, data } = await placePositionOrder(tradeCycleId, {
-                position_id: exitPosition.id,
-                intent: exitIntent,
-                quantity: parsedQty,
-            });
+            const { ok, data } = await placePositionOrder(
+                tradeCycleId,
+                byInstrument
+                    ? {
+                          instrument: exitPosition.instrument,
+                          exchange: exitPosition.exchange || "NFO",
+                          intent: exitIntent,
+                          quantity: parsedQty,
+                      }
+                    : {
+                          position_id: exitPosition.id,
+                          intent: exitIntent,
+                          quantity: parsedQty,
+                      }
+            );
             const detail =
                 typeof data.detail === "string" ? data.detail : "Failed to place position order";
             if (ok && data.status === "success") {
@@ -806,9 +848,11 @@ export default function TradeCycleDetailsModal({
                                     const count =
                                         id === "positions"
                                             ? displayPositions.length
-                                            : openLiveOrderCount > 0
-                                              ? openLiveOrderCount
-                                              : liveOrders.length;
+                                            : id === "orders"
+                                              ? openLiveOrderCount > 0
+                                                ? openLiveOrderCount
+                                                : liveOrders.length
+                                              : underlyings.length;
                                     return (
                                         <button
                                             key={id}
@@ -1073,6 +1117,15 @@ export default function TradeCycleDetailsModal({
                                         </div>
                                     )}
                                 </div>
+                            )}
+
+                            {activeTab === "optionchain" && (
+                                <TradeCycleOptionChainPanel
+                                    underlyings={underlyings}
+                                    exchange={data.trade_cycle.exchange}
+                                    brokerName={data.trade_cycle.broker_name}
+                                    onBuySell={openChainOrder}
+                                />
                             )}
                         </div>
                     </>
