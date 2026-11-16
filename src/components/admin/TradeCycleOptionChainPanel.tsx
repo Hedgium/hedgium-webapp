@@ -126,7 +126,7 @@ function buildBoard(
     centerAtm = mid;
   }
 
-  let atmStrike = strikes.reduce((best, s) =>
+  const atmStrike = strikes.reduce((best, s) =>
     Math.abs(s - centerAtm!) < Math.abs(best - centerAtm!) ? s : best
   );
 
