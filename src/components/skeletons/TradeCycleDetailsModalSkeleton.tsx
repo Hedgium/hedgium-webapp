@@ -7,7 +7,7 @@ export default function TradeCycleDetailsModalSkeleton() {
   return (
     <div className="animate-pulse space-y-4" aria-hidden>
       <div className="flex w-full gap-1 rounded-xl border border-base-300/70 bg-base-200/50 p-0.5 sm:p-1">
-        {[0, 1].map((tab) => (
+        {[0, 1, 2].map((tab) => (
           <div
             key={tab}
             className={`flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-2 py-1.5 ${
