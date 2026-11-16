@@ -31,6 +31,7 @@ export interface AdjustmentData {
   completed: boolean;
   approved: boolean;
   require_entry_spread?: boolean;
+  spread?: number | string | null;
   legs: AdjustmentLeg[];
 }
 
@@ -146,6 +147,11 @@ function Adjustment({
           <span className="text-gray-700">{adjustment.title || "-"}</span>
           {(adjustment.require_entry_spread || adjustment.version === 1) && (
             <span className="badge badge-ghost badge-sm">entry spread</span>
+          )}
+          {adjustment.spread != null && adjustment.spread !== "" && (
+            <span className="text-sm tabular-nums opacity-70">
+              {Number(adjustment.spread).toFixed(4)}%
+            </span>
           )}
         </div>
 
