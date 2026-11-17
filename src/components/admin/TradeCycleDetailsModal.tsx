@@ -12,17 +12,14 @@ import {
     Edit2,
     Wallet,
     ClipboardList,
+    Database,
     BarChart3,
-    Table2,
 } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import PositionsTable, { Position } from "../positions/PositionsTable";
 import UnmappedOrdersTable, { UnmappedOrder } from "../positions/UnmappedOrdersTable";
 import PositionsSummary from "../positions/PositionsSummary";
 import TradeCycleDetailsModalSkeleton from "@/components/skeletons/TradeCycleDetailsModalSkeleton";
-import TradeCycleOptionChainPanel, {
-    type ChainOrderRequest,
-} from "@/components/admin/TradeCycleOptionChainPanel";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import {
     placePositionOrder,
@@ -35,7 +32,7 @@ const MarketDepthModal = dynamic(() => import("@/components/market/MarketDepthMo
     ssr: false,
 });
 
-type CycleDetailsTab = "positions" | "orders" | "optionchain";
+type CycleDetailsTab = "positions" | "orders" | "stored";
 
 const CYCLE_TAB_CONFIG: {
     id: CycleDetailsTab;
@@ -45,7 +42,7 @@ const CYCLE_TAB_CONFIG: {
 }[] = [
     { id: "positions", label: "Live positions", shortLabel: "Pos", icon: Wallet },
     { id: "orders", label: "Live orders", shortLabel: "Ord", icon: ClipboardList },
-    { id: "optionchain", label: "Option chain", shortLabel: "OC", icon: Table2 },
+    { id: "stored", label: "All positions", shortLabel: "All", icon: Database },
 ];
 
 interface TradeCycleDetails {
@@ -301,6 +298,7 @@ export default function TradeCycleDetailsModal({
     const [data, setData] = useState<TradeCycleDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [refreshingStored, setRefreshingStored] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<CycleDetailsTab>("positions");
 
@@ -344,9 +342,15 @@ export default function TradeCycleDetailsModal({
 
     const profileId = tradeCycle?.profile_id ?? data?.trade_cycle?.profile_id;
 
-    async function fetchDetails(): Promise<TradeCycleDetails | null> {
+    async function fetchDetails(options?: {
+        /** When true, update data in place without modal-wide skeleton. */
+        silent?: boolean;
+    }): Promise<TradeCycleDetails | null> {
+        const silent = options?.silent === true;
         try {
-            setLoading(true);
+            if (!silent) {
+                setLoading(true);
+            }
             setError(null);
 
             const res = await authFetch(
@@ -363,7 +367,9 @@ export default function TradeCycleDetailsModal({
             alert.error("Error fetching trade cycle details:");
             return null;
         } finally {
-            setLoading(false);
+            if (!silent) {
+                setLoading(false);
+            }
         }
     }
 
@@ -506,25 +512,6 @@ export default function TradeCycleDetailsModal({
         setExitQuantity(String(defaultPositionOrderQty(pos, intent)));
     }
 
-    function openChainOrder(req: ChainOrderRequest) {
-        setExitPosition({
-            id: 0,
-            instrument: req.instrument,
-            exchange: req.exchange,
-            lot_size: req.lot_size,
-            buy_quantity: 0,
-            sell_quantity: 0,
-            average_buy_price: 0,
-            average_sell_price: 0,
-            quantity: 0,
-            realised_total: 0,
-            unrealised_total: 0,
-            pnl: 0,
-        });
-        setExitIntent(req.intent);
-        setExitQuantity(String(req.lot_size > 0 ? req.lot_size : 1));
-    }
-
     function closeExitForm() {
         setExitPosition(null);
         setExitQuantity("");
@@ -536,11 +523,6 @@ export default function TradeCycleDetailsModal({
         if (!exitPosition) return;
 
         const opening = exitIntent === "buy" || exitIntent === "sell";
-        const byInstrument = !exitPosition.id;
-        if (byInstrument && !opening) {
-            alert.error("Option chain actions only support buy or sell");
-            return;
-        }
         if (exitPosition.quantity === 0 && !opening) {
             alert.error("Cannot adjust a flat position");
             return;
@@ -565,21 +547,11 @@ export default function TradeCycleDetailsModal({
 
         setExitingPosition(true);
         try {
-            const { ok, data } = await placePositionOrder(
-                tradeCycleId,
-                byInstrument
-                    ? {
-                          instrument: exitPosition.instrument,
-                          exchange: exitPosition.exchange || "NFO",
-                          intent: exitIntent,
-                          quantity: parsedQty,
-                      }
-                    : {
-                          position_id: exitPosition.id,
-                          intent: exitIntent,
-                          quantity: parsedQty,
-                      }
-            );
+            const { ok, data } = await placePositionOrder(tradeCycleId, {
+                position_id: exitPosition.id,
+                intent: exitIntent,
+                quantity: parsedQty,
+            });
             const detail =
                 typeof data.detail === "string" ? data.detail : "Failed to place position order";
             if (ok && data.status === "success") {
@@ -602,7 +574,7 @@ export default function TradeCycleDetailsModal({
         }
     }
 
-    async function refreshPositions() {
+    async function refreshLiveData() {
         try {
             setRefreshing(true);
             setError(null);
@@ -621,6 +593,67 @@ export default function TradeCycleDetailsModal({
             alert.error(err instanceof Error ? err.message : "Failed to refresh live positions");
         } finally {
             setRefreshing(false);
+        }
+    }
+
+    async function refreshStoredPnl(resolvedProfileId?: number) {
+        try {
+            setRefreshingStored(true);
+            setError(null);
+
+            const pid =
+                resolvedProfileId ??
+                tradeCycle?.profile_id ??
+                data?.trade_cycle?.profile_id;
+            if (!pid) {
+                throw new Error("Missing profile id for this trade cycle");
+            }
+
+            const res = await authFetch(`positions/pnl/refresh/trades/async/${pid}/`, {
+                method: "POST",
+            });
+            const startData = await res.json();
+
+            if (!res.ok) {
+                throw new Error(startData.detail || "Failed to refresh positions");
+            }
+
+            const taskId = startData.task_id as string | undefined;
+            if (!taskId) {
+                throw new Error("Refresh task not started");
+            }
+
+            const maxAttempts = 30;
+            let completed = false;
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                const statusRes = await authFetch(`tasks/status/${taskId}/`);
+                const statusData = await statusRes.json();
+
+                if (!statusRes.ok) {
+                    throw new Error(statusData.detail || "Failed to check refresh status");
+                }
+
+                if (statusData.status === "SUCCESS") {
+                    completed = true;
+                    break;
+                }
+                if (statusData.status === "FAILURE") {
+                    throw new Error(statusData.result || "Refresh failed");
+                }
+            }
+
+            if (!completed) {
+                alert.success("Refresh running in background");
+                return;
+            }
+
+            await fetchDetails({ silent: true });
+        } catch (err) {
+            console.error("Error refreshing positions:", err);
+            alert.error(err instanceof Error ? err.message : "Failed to refresh positions");
+        } finally {
+            setRefreshingStored(false);
         }
     }
 
@@ -706,6 +739,7 @@ export default function TradeCycleDetailsModal({
 
     useEffect(() => {
         setActiveTab("positions");
+        setData(null);
         setLoading(true);
         setLoadingLivePositions(true);
         setLivePositionsRaw([]);
@@ -719,10 +753,16 @@ export default function TradeCycleDetailsModal({
                 knownProfileId ? fetchLivePositions(knownProfileId) : Promise.resolve(),
             ]);
             if (cancelled) return;
+            const pid = next?.trade_cycle?.profile_id ?? knownProfileId;
             if (!knownProfileId) {
-                await fetchLivePositions(next?.trade_cycle?.profile_id);
+                await fetchLivePositions(pid);
             }
-            await fetchLiveOrders(next, next?.trade_cycle?.profile_id ?? knownProfileId);
+            await fetchLiveOrders(next, pid);
+            if (cancelled) return;
+            // Same as before: kick off broker→DB PnL refresh on open.
+            if (pid) {
+                void refreshStoredPnl(pid);
+            }
         })();
         return () => {
             cancelled = true;
@@ -825,9 +865,7 @@ export default function TradeCycleDetailsModal({
             </header>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                {(loading || (data && loadingLivePositions && displayPositions.length === 0)) && (
-                    <TradeCycleDetailsModalSkeleton />
-                )}
+                {loading && !data && <TradeCycleDetailsModalSkeleton />}
 
                 {error && (
                     <div className="alert alert-error mb-4">
@@ -835,7 +873,7 @@ export default function TradeCycleDetailsModal({
                     </div>
                 )}
 
-                {!loading && data && !(loadingLivePositions && displayPositions.length === 0) && (
+                {!loading && data && (
                     <>
                         <div className="mb-4">
                             <div
@@ -852,7 +890,7 @@ export default function TradeCycleDetailsModal({
                                               ? openLiveOrderCount > 0
                                                 ? openLiveOrderCount
                                                 : liveOrders.length
-                                              : underlyings.length;
+                                              : data.positions.length;
                                     return (
                                         <button
                                             key={id}
@@ -907,7 +945,7 @@ export default function TradeCycleDetailsModal({
                                             {displayPositions.length === 1 ? "position" : "positions"}
                                         </span>
                                         <button
-                                            onClick={() => void refreshPositions()}
+                                            onClick={() => void refreshLiveData()}
                                             disabled={
                                                 refreshing || loadingLivePositions || !profileId
                                             }
@@ -957,8 +995,6 @@ export default function TradeCycleDetailsModal({
                                             </div>
                                         </>
                                     )}
-
-                                    <UnmappedOrdersTable orders={data.unmapped_orders} variant="table" />
                                 </div>
                             )}
 
@@ -1119,13 +1155,50 @@ export default function TradeCycleDetailsModal({
                                 </div>
                             )}
 
-                            {activeTab === "optionchain" && (
-                                <TradeCycleOptionChainPanel
-                                    underlyings={underlyings}
-                                    exchange={data.trade_cycle.exchange}
-                                    brokerName={data.trade_cycle.broker_name}
-                                    onBuySell={openChainOrder}
-                                />
+                            {activeTab === "stored" && (
+                                <div>
+                                    <div className="mb-3 flex items-center justify-end gap-2">
+                                        <span className="badge badge-outline badge-sm">
+                                            {data.positions.length}{" "}
+                                            {data.positions.length === 1 ? "position" : "positions"}
+                                        </span>
+                                        <button
+                                            onClick={() => void refreshStoredPnl()}
+                                            disabled={refreshingStored || !profileId}
+                                            className="btn btn-sm btn-ghost"
+                                            title="Refresh stored positions / PnL"
+                                            type="button"
+                                        >
+                                            <RefreshCw
+                                                size={16}
+                                                className={refreshingStored ? "animate-spin" : ""}
+                                            />
+                                        </button>
+                                    </div>
+
+                                    <PositionsSummary
+                                        positions={data.positions}
+                                        totals={data.totals || null}
+                                        className="mb-4"
+                                    />
+
+                                    <div className="mb-4 rounded-lg border border-base-300">
+                                        <PositionsTable
+                                            positions={data.positions}
+                                            showAdminTradesAction={true}
+                                            showAdminExitAction={true}
+                                            showGreeks={true}
+                                            groupByExpiry={true}
+                                            onAdminViewTrades={openTradesForPosition}
+                                            onAdminPositionOrder={openExitForPosition}
+                                        />
+                                    </div>
+
+                                    <UnmappedOrdersTable
+                                        orders={data.unmapped_orders}
+                                        variant="table"
+                                    />
+                                </div>
                             )}
                         </div>
                     </>

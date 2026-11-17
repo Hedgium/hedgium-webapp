@@ -8,9 +8,10 @@ import useAlert from "@/hooks/useAlert";
 import { RotateCw, Plus, X, LayoutList, Zap, GitCompare, ExternalLink } from "lucide-react";
 // import Link from "next/link";
 
-// Lazy load the modal component
+// Lazy load + prefetch so first open is not blocked on the JS chunk.
+const loadTradeCycleDetailsModal = () => import("./TradeCycleDetailsModal");
 const TradeCycleDetailsModal = lazy(
-  () => import("./TradeCycleDetailsModal")
+  loadTradeCycleDetailsModal
 ) as LazyExoticComponent<
   ComponentType<{
     tradeCycleId: number;
@@ -149,6 +150,11 @@ export default function TradeCycles({
   const liveMarginFetchGen = useRef(0);
 
   const alert = useAlert();
+
+  // Warm the details-modal chunk as soon as the cycles table is on screen.
+  useEffect(() => {
+    void loadTradeCycleDetailsModal();
+  }, []);
 
   const fetchLiveMargins = useCallback(async (profileIds: number[]) => {
     const uniqueIds = [...new Set(profileIds)];
@@ -325,6 +331,7 @@ export default function TradeCycles({
 
   // Open modal for trade cycle details
   function handleShowMore(cycle: TradeCycle) {
+    void loadTradeCycleDetailsModal();
     setSelectedTradeCycle({
       id: cycle.id,
       profile_id: cycle.profile?.id,
@@ -982,6 +989,9 @@ export default function TradeCycles({
                       <div className="flex flex-row items-center gap-1">
                         <button
                           onClick={() => handleShowMore(cycle)}
+                          onPointerEnter={() => {
+                            void loadTradeCycleDetailsModal();
+                          }}
                           className="btn btn-ghost btn-xs btn-square"
                           title="View trade cycle positions"
                         >
@@ -1065,11 +1075,21 @@ export default function TradeCycles({
 
       {/* Trade Cycle Details Modal */}
       {showModal && selectedTradeCycleId && (
-        <Suspense fallback={<div className="modal modal-open"><div className="modal-box"><span className="loading loading-spinner loading-lg"></span></div></div>}>
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-[1000] flex min-h-0 flex-col bg-base-100 shadow-2xl">
+              <div className="flex shrink-0 items-center justify-between gap-4 border-b border-base-300 px-4 py-3">
+                <div className="h-5 w-40 animate-pulse rounded bg-base-300/70" />
+              </div>
+              <div className="flex flex-1 items-center justify-center p-4">
+                <span className="loading loading-spinner loading-lg" />
+              </div>
+            </div>
+          }
+        >
           <TradeCycleDetailsModal
             tradeCycleId={selectedTradeCycleId}
             tradeCycle={selectedTradeCycle}
-            
             onClose={handleCloseModal}
           />
         </Suspense>
