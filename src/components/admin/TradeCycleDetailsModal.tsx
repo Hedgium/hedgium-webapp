@@ -13,6 +13,7 @@ import {
     Wallet,
     ClipboardList,
     Database,
+    BarChart3,
 } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import PositionsTable, { Position } from "../positions/PositionsTable";
