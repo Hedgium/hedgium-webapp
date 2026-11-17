@@ -50,6 +50,16 @@ const StrategyUnderlyingPriceModal = dynamic(
   { ssr: false, loading: () => null }
 );
 
+const ExitTaskControl = dynamic(
+  () => import("@/components/admin/builder/ExitTaskControl"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-14 w-40 bg-base-300 rounded-xl animate-pulse" />
+    ),
+  }
+);
+
 const REFRESH_ACTIVE_STRATEGY_TASKS = [
   "refresh-pnl-active-strategies",
   "refresh-wpnl-active-strategies",
@@ -1301,6 +1311,7 @@ export default function Page() {
 
 
           <div className="flex items-center justify-end gap-1 shrink-0">
+            <ExitTaskControl compact />
             <button
               type="button"
               onClick={() => setStrategyReportOpen(true)}
