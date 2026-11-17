@@ -70,6 +70,12 @@ export interface BuilderLeg {
     quantity: number;
     lot_size: number;
     exchange?: string;
+    /** Live best bid from builder refresh (not persisted). */
+    bid?: number | null;
+    /** Live best ask from builder refresh (not persisted). */
+    ask?: number | null;
+    /** Live ask − bid from builder refresh (not persisted). */
+    spread?: number | null;
 }
 
 export interface StrategyBuilder {
