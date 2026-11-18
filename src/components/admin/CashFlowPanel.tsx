@@ -28,6 +28,7 @@ type CashFlowListResponse = {
   xirr?: number | null;
   xirr_gain?: number | null;
   xirr_as_of?: string | null;
+  current_value?: number | null;
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -62,6 +63,7 @@ export default function CashFlowPanel() {
   const [xirr, setXirr] = useState<number | null>(null);
   const [xirrGain, setXirrGain] = useState<number | null>(null);
   const [xirrAsOf, setXirrAsOf] = useState<string | null>(null);
+  const [currentValue, setCurrentValue] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
 
@@ -100,6 +102,7 @@ export default function CashFlowPanel() {
       setXirr(data.xirr ?? null);
       setXirrGain(data.xirr_gain ?? null);
       setXirrAsOf(data.xirr_as_of ?? null);
+      setCurrentValue(data.current_value ?? null);
     } catch {
       alert.error("Failed to load cash flows");
     } finally {
@@ -208,6 +211,12 @@ export default function CashFlowPanel() {
               <strong className={signedClass(xirr)}>{formatXirr(xirr)}</strong>
             </span>
             <span>
+              Current value{" "}
+              <strong className="font-medium tabular-nums">
+                {currentValue == null ? "—" : formatMoneyIN(currentValue)}
+              </strong>
+            </span>
+            <span>
               Gain{" "}
               <strong className={signedClass(xirrGain)}>
                 {xirrGain == null ? "—" : formatMoneyIN(xirrGain)}
@@ -218,13 +227,15 @@ export default function CashFlowPanel() {
             </span>
           </div>
           <p className="mt-1 text-xs text-base-content/50">
-            Cached from approved cash flows only. Approve adds a row; reject on
-            an approved row removes it and refreshes gain.
+            Current value is the latest total account value (holdings + cash),
+            the same figure used for XIRR. Gain is that value minus approved
+            cash in. Approve adds a row; reject on an approved row removes it
+            and refreshes gain.
           </p>
         </div>
       ) : (
         <p className="text-sm text-base-content/60">
-          Select a profile to see its approved XIRR.
+          Select a profile to see its current value and approved XIRR.
         </p>
       )}
 
