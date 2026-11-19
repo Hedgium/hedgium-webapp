@@ -14,7 +14,7 @@ export async function setSessionCookie(token: string, maxAge?: number) {
     value: token,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    sameSite: "lax",
     path: "/",
     maxAge: age,
   });

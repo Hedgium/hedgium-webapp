@@ -1,7 +1,6 @@
 // Edge runtime for low latency
 export const runtime = "edge";
 
-import { getSessionCookie } from '@/utils/sessions';
 import { getIncomingClientIp } from "@/lib/clientIp";
 import { NextResponse } from "next/server";
 
@@ -83,7 +82,7 @@ async function handleProxyRequest(request: Request) {
 
   const allowedOrigin = process.env.ALLOWED_ORIGIN;
   const origin = request.headers.get("origin");
-  if (allowedOrigin && origin !== allowedOrigin) {
+  if (allowedOrigin && origin && origin !== allowedOrigin) {
     return NextResponse.json(
       { error: "Forbidden - bad origin" },
       { status: 403 }
@@ -91,7 +90,10 @@ async function handleProxyRequest(request: Request) {
   }
 
   if (!isSessionExempt(normalizedPath, request.method)) {
-    const session = await getSessionCookie();
+    const session = request.headers
+      .get("cookie")
+      ?.split(";")
+      .some((part) => part.trim().startsWith("__app_session="));
     if (!session) {
       // 403 (not 401) so clients do not treat this as JWT expiry and refresh-loop.
       return NextResponse.json(

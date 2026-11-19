@@ -18,5 +18,7 @@ export async function GET(request: Request) {
   const token = crypto.randomUUID();
 
   await setSessionCookie(token, maxAge);
-  return NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  return response;
 }
