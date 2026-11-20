@@ -5,25 +5,17 @@ import type { ComponentType, LazyExoticComponent } from "react";
 import { authFetch } from "@/utils/api";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
-import { RotateCw, Eye, Plus, X, LayoutList, Zap, GitCompare, ExternalLink } from "lucide-react";
+import { RotateCw, Plus, X, LayoutList, Zap, GitCompare, ExternalLink } from "lucide-react";
 // import Link from "next/link";
 
-// Lazy load the modal component
+// Lazy load + prefetch so first open is not blocked on the JS chunk.
+const loadTradeCycleDetailsModal = () => import("./TradeCycleDetailsModal");
 const TradeCycleDetailsModal = lazy(
-  () => import("./TradeCycleDetailsModal")
+  loadTradeCycleDetailsModal
 ) as LazyExoticComponent<
   ComponentType<{
     tradeCycleId: number;
     tradeCycle?: { id: number; profile_id?: number } | null;
-    onClose: () => void;
-  }>
->;
-
-const ProfileLiveModal = lazy(
-  () => import("./ProfileLiveModal")
-) as LazyExoticComponent<
-  ComponentType<{
-    profileId: number | string;
     onClose: () => void;
   }>
 >;
@@ -154,11 +146,15 @@ export default function TradeCycles({
   const [isAddingCycles, setIsAddingCycles] = useState(false);
   const [selectedTradeCycleId, setSelectedTradeCycleId] = useState<number | null>(null);
   const [selectedTradeCycle, setSelectedTradeCycle] = useState<{ id: number; profile_id?: number } | null>(null);
-  const [liveModalProfileId, setLiveModalProfileId] = useState<number | null>(null);
   const [liveMargins, setLiveMargins] = useState<Record<number, number | null>>({});
   const liveMarginFetchGen = useRef(0);
 
   const alert = useAlert();
+
+  // Warm the details-modal chunk as soon as the cycles table is on screen.
+  useEffect(() => {
+    void loadTradeCycleDetailsModal();
+  }, []);
 
   const fetchLiveMargins = useCallback(async (profileIds: number[]) => {
     const uniqueIds = [...new Set(profileIds)];
@@ -287,7 +283,39 @@ export default function TradeCycles({
       setSelectedProfiles([]);
       setShowAddCyclesModal(false);
 
-      alert.success("Trade cycles created!", { duration: 3000 });
+      const skippedBlocked = Array.isArray(data?.skipped_blocked)
+        ? data.skipped_blocked
+        : [];
+      const skippedConflict = Array.isArray(data?.skipped_underlying_conflict)
+        ? data.skipped_underlying_conflict
+        : [];
+      const created = Number(data?.tradecycles_created || 0);
+      const formatSkip = (
+        rows: { profile_id?: number; symbol?: string }[],
+        emptyLabel: string
+      ) =>
+        rows
+          .map((row) => `HID ${row.profile_id}: ${row.symbol || emptyLabel}`)
+          .join("; ");
+      const notes: string[] = [];
+      if (skippedBlocked.length > 0) {
+        notes.push(`Blocked symbols — ${formatSkip(skippedBlocked, "blocked")}`);
+      }
+      if (skippedConflict.length > 0) {
+        notes.push(
+          `Already active on underlying — ${formatSkip(skippedConflict, "underlying")}`
+        );
+      }
+      if (notes.length > 0) {
+        const detail = notes.join(". ");
+        if (created === 0) {
+          alert.error(`No trade cycles created. ${detail}`, { duration: 6000 });
+        } else {
+          alert.success(`Created ${created}. ${detail}`, { duration: 6000 });
+        }
+      } else {
+        alert.success("Trade cycles created!", { duration: 3000 });
+      }
     } catch (error) {
       console.error("Create error:", error);
     } finally {
@@ -303,6 +331,7 @@ export default function TradeCycles({
 
   // Open modal for trade cycle details
   function handleShowMore(cycle: TradeCycle) {
+    void loadTradeCycleDetailsModal();
     setSelectedTradeCycle({
       id: cycle.id,
       profile_id: cycle.profile?.id,
@@ -315,10 +344,6 @@ export default function TradeCycles({
   function handleCloseModal() {
     setShowModal(false);
     setSelectedTradeCycleId(null);
-  }
-
-  function handleCloseLiveModal() {
-    setLiveModalProfileId(null);
   }
 
   // Validate and activate trade cycle
@@ -963,15 +988,10 @@ export default function TradeCycles({
                     <td className="whitespace-nowrap">
                       <div className="flex flex-row items-center gap-1">
                         <button
-                          type="button"
-                          className="btn btn-ghost btn-xs btn-square"
-                          title="View live positions & orders"
-                          onClick={() => setLiveModalProfileId(cycle.profile.id)}
-                        >
-                          <Eye className="size-3.5" />
-                        </button>
-                        <button
                           onClick={() => handleShowMore(cycle)}
+                          onPointerEnter={() => {
+                            void loadTradeCycleDetailsModal();
+                          }}
                           className="btn btn-ghost btn-xs btn-square"
                           title="View trade cycle positions"
                         >
@@ -1055,25 +1075,23 @@ export default function TradeCycles({
 
       {/* Trade Cycle Details Modal */}
       {showModal && selectedTradeCycleId && (
-        <Suspense fallback={<div className="modal modal-open"><div className="modal-box"><span className="loading loading-spinner loading-lg"></span></div></div>}>
-          <TradeCycleDetailsModal
-            tradeCycleId={selectedTradeCycleId}
-            tradeCycle={selectedTradeCycle}
-            
-            onClose={handleCloseModal}
-          />
-        </Suspense>
-      )}
-
-      {liveModalProfileId !== null && (
         <Suspense
           fallback={
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-base-100/80 backdrop-blur-sm">
-              <span className="loading loading-spinner loading-lg" />
+            <div className="fixed inset-0 z-[1000] flex min-h-0 flex-col bg-base-100 shadow-2xl">
+              <div className="flex shrink-0 items-center justify-between gap-4 border-b border-base-300 px-4 py-3">
+                <div className="h-5 w-40 animate-pulse rounded bg-base-300/70" />
+              </div>
+              <div className="flex flex-1 items-center justify-center p-4">
+                <span className="loading loading-spinner loading-lg" />
+              </div>
             </div>
           }
         >
-          <ProfileLiveModal profileId={liveModalProfileId} onClose={handleCloseLiveModal} />
+          <TradeCycleDetailsModal
+            tradeCycleId={selectedTradeCycleId}
+            tradeCycle={selectedTradeCycle}
+            onClose={handleCloseModal}
+          />
         </Suspense>
       )}
 

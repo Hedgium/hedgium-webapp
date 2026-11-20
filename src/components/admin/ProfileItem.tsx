@@ -5,7 +5,7 @@ import { authFetch } from '@/utils/api';
 import { brokerLoginWithPolling } from '@/utils/brokerLogin';
 import { formatMoneyIN } from '@/utils/formatNumber';
 import useAlert from '@/hooks/useAlert';
-import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut, FileText, Upload, Copy } from 'lucide-react';
+import { RotateCw, Edit2, TrendingUp, KeyRound, Plus, Calendar, ChevronDown, LogOut, FileText, Upload, Copy, X } from 'lucide-react';
 import Link from 'next/link';
 import { userRoleLabel } from '@/constants/userRoles';
 
@@ -14,6 +14,7 @@ interface ProfileItemProps {
     onEdit?: (profile: Profile) => void;
     onAddPlan?: (profile: Profile) => void;
     onModifyPlan?: (profile: Profile) => void;
+    onUpdated?: (profile: Profile) => void;
 }
 
 type DocumentKind = "image" | "pdf" | "other";
@@ -35,10 +36,13 @@ const getDocumentKind = (url?: string | null): DocumentKind => {
     return "other";
 };
 
-export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }: ProfileItemProps) {
+export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan, onUpdated }: ProfileItemProps) {
     const [refreshing, setRefreshing] = useState(false);
     const [sendingReminder, setSendingReminder] = useState(false);
     const [equityMargin, setEquityMargin] = useState(profile.margin_equity);
+    const [blockedSymbols, setBlockedSymbols] = useState<string[]>(profile.blocked_symbols ?? []);
+    const [blockedSymbolInput, setBlockedSymbolInput] = useState('');
+    const [savingBlockedSymbols, setSavingBlockedSymbols] = useState(false);
 
     // Broker Login State (generic for SHOONYA, ZERODHA, etc.)
     const [isBrokerLoginModalOpen, setIsBrokerLoginModalOpen] = useState(false);
@@ -66,6 +70,56 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
     useEffect(() => {
         setKycDocumentUrl(profile.user.kyc_document_url);
     }, [profile.user.kyc_document_url]);
+
+    useEffect(() => {
+        setBlockedSymbols(profile.blocked_symbols ?? []);
+    }, [profile.blocked_symbols]);
+
+    const persistBlockedSymbols = async (next: string[]) => {
+        const normalized = Array.from(
+            new Set(
+                next
+                    .map((s) => s.trim().toUpperCase())
+                    .filter(Boolean)
+            )
+        );
+        setSavingBlockedSymbols(true);
+        try {
+            const response = await authFetch(`profiles/${profile.id}/`, {
+                method: 'PUT',
+                body: JSON.stringify({ blocked_symbols: normalized }),
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                alert.error(errorData.detail || 'Failed to update blocked symbols');
+                return;
+            }
+            const updated = (await response.json()) as Profile;
+            setBlockedSymbols(updated.blocked_symbols ?? normalized);
+            onUpdated?.(updated);
+            alert.success('Blocked symbols updated');
+        } catch (error) {
+            console.error('Error updating blocked symbols:', error);
+            alert.error('Failed to update blocked symbols');
+        } finally {
+            setSavingBlockedSymbols(false);
+        }
+    };
+
+    const handleAddBlockedSymbol = async () => {
+        const symbol = blockedSymbolInput.trim().toUpperCase();
+        if (!symbol) return;
+        if (blockedSymbols.includes(symbol)) {
+            setBlockedSymbolInput('');
+            return;
+        }
+        setBlockedSymbolInput('');
+        await persistBlockedSymbols([...blockedSymbols, symbol]);
+    };
+
+    const handleRemoveBlockedSymbol = async (symbol: string) => {
+        await persistBlockedSymbols(blockedSymbols.filter((s) => s !== symbol));
+    };
 
     const handleRefreshMargin = async () => {
         setRefreshing(true);
@@ -391,6 +445,66 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan }
                         <span className={`px-2 py-0.5 rounded text-xs ${profile.user.verified ? "bg-success/20 text-success" : "bg-error/15 text-error"}`} title="User verified">
                             U {profile.user.verified ? "✓" : "✗"}
                         </span>
+                    </div>
+                    <div className="space-y-1.5 pt-1">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-base-content/45">
+                            Blocked symbols
+                        </p>
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                            {blockedSymbols.length === 0 ? (
+                                <span className="text-xs text-base-content/45">No blocked symbols</span>
+                            ) : (
+                                blockedSymbols.map((symbol) => (
+                                    <span
+                                        key={symbol}
+                                        className="inline-flex items-center gap-1 rounded-full bg-error/15 text-error px-2 py-0.5 text-xs font-mono"
+                                    >
+                                        {symbol}
+                                        <button
+                                            type="button"
+                                            className="btn btn-ghost btn-xs btn-circle min-h-0 h-4 w-4 p-0"
+                                            aria-label={`Remove ${symbol}`}
+                                            disabled={savingBlockedSymbols}
+                                            onClick={() => handleRemoveBlockedSymbol(symbol)}
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                ))
+                            )}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                            <input
+                                type="text"
+                                value={blockedSymbolInput}
+                                onChange={(e) => setBlockedSymbolInput(e.target.value.toUpperCase())}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        void handleAddBlockedSymbol();
+                                    }
+                                }}
+                                className="input input-bordered input-xs w-28 font-mono uppercase"
+                                placeholder="RELIANCE"
+                                disabled={savingBlockedSymbols}
+                                autoComplete="off"
+                            />
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-xs"
+                                disabled={savingBlockedSymbols || !blockedSymbolInput.trim()}
+                                onClick={() => void handleAddBlockedSymbol()}
+                            >
+                                {savingBlockedSymbols ? (
+                                    <span className="loading loading-spinner loading-xs" />
+                                ) : (
+                                    <>
+                                        <Plus size={12} />
+                                        Add
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
 

@@ -120,14 +120,28 @@ type E2PnlTile = {
   highlight?: boolean;
 };
 
+export type PnlHeadingStats = {
+  totalAccountValue: number | null;
+  margin: number | null;
+  availableCash: number | null;
+};
+
 export interface PnlSummarySectionProps {
   pnlSummary: E2PnlSummary;
   accountCreatedAt?: string | null;
+  headingStats?: PnlHeadingStats | null;
 }
+
+const HEADING_STATS: { key: keyof PnlHeadingStats; label: string }[] = [
+  { key: "totalAccountValue", label: "Total account value" },
+  { key: "margin", label: "Margin" },
+  { key: "availableCash", label: "Avl cash" },
+];
 
 export default function PnlSummarySection({
   pnlSummary,
   accountCreatedAt = null,
+  headingStats = null,
 }: PnlSummarySectionProps) {
   const e1JoinDate = pnlSummary.pnl_inception_date;
   const e2JoinDate =
@@ -270,30 +284,25 @@ export default function PnlSummarySection({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 shrink-0 text-primary" aria-hidden />
           <h2 className="text-xl font-semibold tracking-tight text-base-content md:text-2xl">
             PnL
           </h2>
         </div>
-        {(e1JoinDate || e2JoinDate) && (
-          <p className="text-xs text-base-content/60 tabular-nums">
-            {e1JoinDate ? (
-              <span>
-                E1 from <span className="text-base-content/80">{formatDate(e1JoinDate)}</span>
-              </span>
-            ) : null}
-            {e1JoinDate && e2JoinDate ? (
-              <span className="text-base-content/35"> · </span>
-            ) : null}
-            {e2JoinDate ? (
-              <span>
-                E2 from <span className="text-base-content/80">{formatDate(e2JoinDate)}</span>
-              </span>
-            ) : null}
-          </p>
-        )}
+        {headingStats ? (
+          <dl className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            {HEADING_STATS.map((stat) => (
+              <div key={stat.key} className="flex items-baseline gap-1.5">
+                <dt className="text-xs text-base-content/60">{stat.label}</dt>
+                <dd className="m-0 text-sm font-semibold tabular-nums text-base-content">
+                  {formatMoneyIN(headingStats[stat.key], { decimals: 0 })}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
       </div>
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {e2PnlTiles.map((tile) => (
@@ -377,17 +386,12 @@ export default function PnlSummarySection({
           </div>
         ))}
       </dl>
-      <p className="max-w-4xl text-xs leading-relaxed text-base-content/70">
-        E2 is net PnL from Hedgium trading strategies, booked on each trade cycle&apos;s
-        close date (open cycles count in the current period until they close; hover the
-        info icon for gross and other costs). E1 is CNC equity holdings
+      <p className="text-xs text-base-content/70">
+        {`E2 is strategy PnL, net of costs${e2JoinDate ? `, from ${formatDate(e2JoinDate)}` : ""}. E1 is CNC holdings`}
         {pnlSummary.e1_hedgium_managed === false ? (
-          <span className="text-warning">
-            {" "}
-            (self-managed — not managed by Hedgium)
-          </span>
+          <span className="text-warning"> (self-managed)</span>
         ) : null}
-        . Total is both combined, for the current month, quarter, financial year, and all time.
+        {`${e1JoinDate ? `, from ${formatDate(e1JoinDate)}` : ""}. Total is both, for the current month, quarter, FY, and all time.`}
       </p>
     </div>
   );

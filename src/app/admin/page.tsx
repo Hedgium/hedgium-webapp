@@ -5,7 +5,7 @@ import Link from "next/link";
 import React from "react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
-import { CheckCircle, Edit2, Info, LayoutList, LineChart, ListRestart, RefreshCw } from "lucide-react";
+import { CandlestickChart, Check, Edit2, Info, LayoutList, LineChart, ListRestart, RefreshCw, X } from "lucide-react";
 import { formatLakhsIN, formatMoneyIN } from "@/utils/formatNumber";
 import { waitForCeleryTaskComplete } from "@/utils/celeryTask";
 
@@ -43,6 +43,21 @@ const StrategyBuilderEditModal = dynamic(
 const BuilderSpreadChartsModal = dynamic(
   () => import("@/components/admin/builder/BuilderSpreadChartsModal"),
   { ssr: false, loading: () => null }
+);
+
+const StrategyUnderlyingPriceModal = dynamic(
+  () => import("@/components/admin/strategy/StrategyUnderlyingPriceModal"),
+  { ssr: false, loading: () => null }
+);
+
+const ExitTaskControl = dynamic(
+  () => import("@/components/admin/builder/ExitTaskControl"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-14 w-40 bg-base-300 rounded-xl animate-pulse" />
+    ),
+  }
 );
 
 const REFRESH_ACTIVE_STRATEGY_TASKS = [
@@ -95,8 +110,6 @@ interface StrategyCounts {
   pending_orders_count: number;
   open_orders_count: number;
   trade_cycle_count: number;
-  position_mismatch_count: number;
-  position_mismatch_details: PositionMismatchDetail[];
 }
 
 interface Strategy {
@@ -128,6 +141,9 @@ interface Strategy {
   spread_spot_by_underlying: SpotByUnderlying | null;
   underlying_names?: string[];
   builder_id: number | null;
+  builder_status?: string | null;
+  delta_band_min?: number | string | null;
+  delta_band_max?: number | string | null;
   completed: boolean;
   completed_at: string | null;
   auto_match_count: number;
@@ -137,6 +153,7 @@ interface Strategy {
   master_role?: string | null;
   last_version: number | null;
   last_approved: boolean | null;
+  last_completed: boolean | null;
   position_mismatch_count: number;
   position_mismatch_details: PositionMismatchDetail[];
   position_mismatch_at: string | null;
@@ -203,6 +220,9 @@ export default function Page() {
     Record<number, StrategyCounts>
   >({});
   const [loadingCounts, setLoadingCounts] = React.useState(false);
+  const [spotsByStrategy, setSpotsByStrategy] = React.useState<
+    Record<number, SpotByUnderlying>
+  >({});
   const [overallPnlRefreshKey, setOverallPnlRefreshKey] = React.useState(0);
   const [reportSymbols, setReportSymbols] = React.useState<Set<string>>(
     () => new Set()
@@ -213,6 +233,10 @@ export default function Page() {
   const [strategyReportOpen, setStrategyReportOpen] = React.useState(false);
   const [spreadCharts, setSpreadCharts] = React.useState<{
     builderId: number;
+    name: string;
+  } | null>(null);
+  const [underlyingPrice, setUnderlyingPrice] = React.useState<{
+    strategyId: number;
     name: string;
   } | null>(null);
   const [editingBuilderId, setEditingBuilderId] = React.useState<number | null>(
@@ -287,12 +311,48 @@ export default function Page() {
     }
   }, []);
 
+  const spotsFetchGenRef = React.useRef(0);
+
+  const fetchStrategySpots = React.useCallback(async (strategyList: Strategy[]) => {
+    const gen = ++spotsFetchGenRef.current;
+    if (strategyList.length === 0) {
+      if (gen === spotsFetchGenRef.current) setSpotsByStrategy({});
+      return;
+    }
+    const ids = strategyList.map((s) => s.id).join(",");
+    try {
+      const res = await authFetch(
+        `myadmin/strategies/spots/?strategy_ids=${encodeURIComponent(ids)}`
+      );
+      if (gen !== spotsFetchGenRef.current) return;
+      if (!res.ok) {
+        console.error("strategy spots fetch failed", res.status);
+        return;
+      }
+      const data = (await res.json()) as {
+        strategies?: { strategy_id: number; spots?: SpotByUnderlying }[];
+      };
+      if (gen !== spotsFetchGenRef.current) return;
+      const map: Record<number, SpotByUnderlying> = {};
+      for (const row of data.strategies ?? []) {
+        const sid = Number(row.strategy_id);
+        if (!Number.isFinite(sid)) continue;
+        map[sid] =
+          row.spots && typeof row.spots === "object" ? row.spots : {};
+      }
+      setSpotsByStrategy(map);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
   const fetchStrategies = React.useCallback(
     async (options?: { background?: boolean }) => {
       const background = options?.background ?? false;
       if (!background) {
         setLoading(true);
         setStrategies([]);
+        // Keep prior spots until the new spots response arrives (avoids blank first paint).
       }
       const url = buildStrategiesUrl({ completed, orderBy, startDate, endDate });
       try {
@@ -309,6 +369,7 @@ export default function Page() {
         setStrategies(results);
         void fetchPremiumNotional(results);
         void fetchStrategyCounts(results);
+        void fetchStrategySpots(results);
         setOverallPnlRefreshKey((k) => k + 1);
       } catch (e) {
         console.error(e);
@@ -317,7 +378,15 @@ export default function Page() {
         if (!background) setLoading(false);
       }
     },
-    [completed, orderBy, startDate, endDate, fetchPremiumNotional, fetchStrategyCounts]
+    [
+      completed,
+      orderBy,
+      startDate,
+      endDate,
+      fetchPremiumNotional,
+      fetchStrategyCounts,
+      fetchStrategySpots,
+    ]
   );
 
   React.useEffect(() => {
@@ -540,6 +609,7 @@ export default function Page() {
       const merged = [...prev, ...added];
       void fetchPremiumNotional(merged);
       void fetchStrategyCounts(merged);
+      void fetchStrategySpots(merged);
       return merged;
     });
     setLoading(false);
@@ -585,7 +655,7 @@ export default function Page() {
           type="button"
           className="btn btn-ghost btn-xs btn-square text-warning"
           aria-label="Position mismatches versus master"
-          title="Follower cycles that do not match the master book"
+          title="Follower cycles that did not match the master on the last auto-match check"
           aria-expanded={open}
           onClick={toggle}
         >
@@ -659,7 +729,7 @@ export default function Page() {
     }
   };
 
-  /** Display net Greeks (backend stores Δ / Γ to 4 dp). */
+  /** Display net Greeks (backend stores Δ to 4 dp). */
   const formatGreek = (v: number | string | null | undefined) => {
     const n = toNum(v);
     if (n == null) return "—";
@@ -667,6 +737,21 @@ export default function Page() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
     });
+  };
+
+  /** Builder absolute-delta band in lakhs (e.g. 2 = ₹2L). Avoid en-dash — looks like minus. */
+  const formatDeltaBandLakhs = (
+    min: number | string | null | undefined,
+    max: number | string | null | undefined
+  ) => {
+    const lo = toNum(min);
+    const hi = toNum(max);
+    if (lo == null && hi == null) return "—";
+    const fmt = (n: number) =>
+      `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}L`;
+    if (lo != null && hi != null) return `${fmt(lo)} to ${fmt(hi)}`;
+    if (lo != null) return `≥ ${fmt(lo)}`;
+    return `≤ ${fmt(hi!)}`;
   };
 
   /** Combined absolute delta = Σ (Δ × spot) across underlyings. */
@@ -1226,6 +1311,7 @@ export default function Page() {
 
 
           <div className="flex items-center justify-end gap-1 shrink-0">
+            <ExitTaskControl compact />
             <button
               type="button"
               onClick={() => setStrategyReportOpen(true)}
@@ -1278,11 +1364,14 @@ export default function Page() {
                     Name
                   </th>
                   <th className="font-medium text-base-content/70">Status</th>
-                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[6.5rem]">
+                  <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7.5rem]">
                     Orders
                   </th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7.5rem]">
-                    Greeks [Δ / Γ]
+                    <span className="block whitespace-nowrap">Greeks</span>
+                    <span className="block text-[10px] font-normal leading-tight text-base-content/50">
+                      Abs Δ / Δ band
+                    </span>
                   </th>
                   <th className="font-medium text-base-content/70 text-right whitespace-nowrap min-w-[7rem]">
                     Total PnL
@@ -1327,14 +1416,8 @@ export default function Page() {
                   const pendingOrders = counts?.pending_orders_count;
                   const openOrders = counts?.open_orders_count;
                   const allocated = counts?.trade_cycle_count;
-                  const mismatchCount =
-                    counts?.position_mismatch_count ??
-                    strategy.position_mismatch_count ??
-                    0;
-                  const mismatchDetails =
-                    counts?.position_mismatch_details ??
-                    strategy.position_mismatch_details ??
-                    [];
+                  const mismatchCount = strategy.position_mismatch_count ?? 0;
+                  const mismatchDetails = strategy.position_mismatch_details ?? [];
                   const matchingReportSymbols = (strategy.underlying_names ?? [])
                     .map((s) => s.trim().toUpperCase())
                     .filter((s) => s && reportSymbols.has(s))
@@ -1353,12 +1436,48 @@ export default function Page() {
                     >
                       <td className="align-top font-mono text-sm text-base-content/70">
                         <div className="flex flex-col items-start gap-0.5">
-                          <Link
-                            href={`/admin/strategy/${strategy.id}`}
-                            className="link link-hover link-primary font-medium"
-                          >
-                            {strategy.id}
-                          </Link>
+                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                            <Link
+                              href={`/admin/strategy/${strategy.id}`}
+                              className="link link-hover link-primary font-medium"
+                            >
+                              {strategy.id}
+                            </Link>
+                            {strategy.master_role ? (
+                              <span
+                                className={`badge badge-xs badge-soft w-fit ${
+                                  strategy.master_role === "client"
+                                    ? "badge-success"
+                                    : "badge-info"
+                                }`}
+                              >
+                                {strategy.master_role === "client"
+                                  ? "Client"
+                                  : "Internal"}
+                              </span>
+                            ) : null}
+                          </div>
+                          {formatSpotByUnderlying(
+                            (() => {
+                              const live = spotsByStrategy[strategy.id];
+                              if (live && Object.keys(live).length > 0) return live;
+                              return strategy.greek_spot_by_underlying;
+                            })()
+                          ).map((line) => (
+                            <span
+                              key={line}
+                              className="text-[11px] text-base-content/65 tabular-nums whitespace-nowrap"
+                              title={
+                                spotsByStrategy[strategy.id] &&
+                                Object.keys(spotsByStrategy[strategy.id])
+                                  .length > 0
+                                  ? "Live underlying spot"
+                                  : "Spot at last Greeks calc (live pending)"
+                              }
+                            >
+                              {line}
+                            </span>
+                          ))}
                           <div className="flex items-center">
                             <button
                               type="button"
@@ -1430,29 +1549,45 @@ export default function Page() {
                               <Edit2 className="size-3.5" />
                             </button>
                           </div>
-                          {strategy.master_role ? (
-                            <span
-                              className={`badge badge-xs badge-soft w-fit ${
-                                strategy.master_role === "client"
-                                  ? "badge-success"
-                                  : "badge-info"
-                              }`}
-                            >
-                              {strategy.master_role === "client"
-                                ? "Client"
-                                : "Internal"}
-                            </span>
-                          ) : null}
                         </div>
                       </td>
                       <td className="align-top min-w-[10rem] w-[10rem] max-w-[10rem] overflow-hidden">
                         <div className="flex flex-col items-start gap-0.5 min-w-0 w-full">
-                          <Link
-                            href={`/admin/strategy/${strategy.id}`}
-                            className="link link-hover link-primary font-medium wrap-anywhere whitespace-normal leading-snug min-w-0"
-                          >
-                            {strategy.name}
-                          </Link>
+                          <div className="flex items-start gap-0.5 min-w-0 w-full">
+                            <Link
+                              href={`/admin/strategy/${strategy.id}`}
+                              className="link link-hover link-primary font-medium wrap-anywhere whitespace-normal leading-snug min-w-0"
+                            >
+                              {strategy.name}
+                            </Link>
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-xs btn-square shrink-0 relative z-10 mt-0.5"
+                              disabled={(strategy.underlying_names ?? []).length === 0}
+                              title={
+                                (strategy.underlying_names ?? []).length > 0
+                                  ? "Underlying price (last 30 min)"
+                                  : "No underlyings"
+                              }
+                              aria-label={
+                                (strategy.underlying_names ?? []).length > 0
+                                  ? `Underlying price chart for ${strategy.name}`
+                                  : "No underlyings"
+                              }
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if ((strategy.underlying_names ?? []).length > 0) {
+                                  setUnderlyingPrice({
+                                    strategyId: strategy.id,
+                                    name: strategy.name,
+                                  });
+                                }
+                              }}
+                            >
+                              <CandlestickChart className="size-3.5" />
+                            </button>
+                          </div>
                           <ResearchReportNameAffordance
                             symbols={matchingReportSymbols}
                             onOpen={setReportModalSymbols}
@@ -1461,14 +1596,26 @@ export default function Page() {
                       </td>
                       <td className="align-top">
                         <div className="flex flex-col items-start gap-1">
-                          {strategy.completed ? (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
-                              <CheckCircle className="size-3.5" />
-                              Completed
+                          {strategy.builder_status ? (
+                            <span
+                              title="Builder status"
+                              className={`inline-flex px-1 py-0 rounded-md text-xs font-medium border ${
+                                strategy.builder_status === "ACTIVE"
+                                  ? "border-success/40 bg-success/10 text-success"
+                                  : strategy.builder_status === "INACTIVE"
+                                    ? "border-error/40 bg-error/10 text-error"
+                                    : strategy.builder_status === "EXITED"
+                                      ? "border-base-content/25 bg-base-300/40 text-base-content/70"
+                                      : strategy.builder_status.startsWith("EXIT")
+                                        ? "border-warning/40 bg-warning/10 text-warning"
+                                        : "border-base-content/25 bg-base-300/40 text-base-content/80"
+                              }`}
+                            >
+                              {strategy.builder_status}
                             </span>
                           ) : (
-                            <span className="inline-flex px-2 py-0.5 rounded-md bg-base-300/50 text-base-content/80 text-xs font-medium">
-                              Active
+                            <span className="inline-flex px-2 py-0.5 rounded-md bg-base-300/50 text-base-content/60 text-xs font-medium">
+                              No builder
                             </span>
                           )}
                           <span
@@ -1504,7 +1651,7 @@ export default function Page() {
                           </span>
                         </div>
                       </td>
-                      <td className="text-right align-top min-w-[6.5rem]">
+                      <td className="text-right align-top min-w-[7.5rem]">
                         <div className="flex flex-col items-end gap-0.5 tabular-nums text-sm whitespace-nowrap">
                           <span
                             title={
@@ -1530,19 +1677,32 @@ export default function Page() {
                           >
                             Open - {openOrders == null ? "—" : openOrders}
                           </span>
+                          {strategy.last_version != null && (
+                            <span
+                              title={
+                                strategy.last_completed
+                                  ? "Latest adjustment complete"
+                                  : "Latest adjustment not complete"
+                              }
+                              className="inline-flex items-center justify-end gap-1 font-medium text-[13px] text-base-content/70"
+                            >
+                              Last Adj
+                              {strategy.last_completed ? (
+                                <Check className="size-3.5 text-success" aria-hidden />
+                              ) : (
+                                <X className="size-3.5 text-error" aria-hidden />
+                              )}
+                            </span>
+                          )}
                           {mismatchCount > 0 ? (
                             <span className="inline-flex items-center justify-end gap-0.5 font-medium text-warning">
-                              <span title="Follower cycles whose stored positions do not match the master">
+                              <span title="Follower cycles that did not match the master on the last auto-match check">
                                 Mismatch - {mismatchCount}
                               </span>
                               <MismatchInfo
                                 strategyId={strategy.id}
                                 details={mismatchDetails}
-                                checkedAt={
-                                  counts
-                                    ? null
-                                    : strategy.position_mismatch_at
-                                }
+                                checkedAt={strategy.position_mismatch_at}
                               />
                             </span>
                           ) : null}
@@ -1562,10 +1722,13 @@ export default function Page() {
                             <AbsoluteDeltaInfo strategy={strategy} />
                           </span>
                           <span
-                            title="Net gamma"
+                            title="Builder absolute-delta band (lakhs)"
                             className="font-medium text-base-content/70 text-[13px]"
                           >
-                            {formatGreek(strategy.greek_gamma)}
+                            {formatDeltaBandLakhs(
+                              strategy.delta_band_min,
+                              strategy.delta_band_max
+                            )}
                           </span>
                           <span className="text-[10px] text-base-content/60 tabular-nums leading-tight whitespace-nowrap">
                             {formatSnapshotAt(strategy.greek_updated_at) ?? "—"}
@@ -1782,6 +1945,14 @@ export default function Page() {
           builderId={spreadCharts.builderId}
           builderName={spreadCharts.name}
           onClose={() => setSpreadCharts(null)}
+        />
+      )}
+
+      {underlyingPrice != null && (
+        <StrategyUnderlyingPriceModal
+          strategyId={underlyingPrice.strategyId}
+          name={underlyingPrice.name}
+          onClose={() => setUnderlyingPrice(null)}
         />
       )}
     </div>

@@ -6,11 +6,13 @@ import { useAuthStore } from "@/store/authStore";
 import { backendWsAuthority } from "@/lib/backendHost";
 import { useNotificationStore } from "@/store/notificationStore";
 import useAlertStore from "@/store/alertStore";
+import useAdminAlertPopupStore from "@/store/adminAlertPopupStore";
 import { isDemoUser } from "@/lib/demo";
 
 export default function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { accessToken, user } = useAuthStore();
   const { addNotification, fetchNotifications } = useNotificationStore();
+  const hydrateAlertPopups = useAdminAlertPopupStore((s) => s.hydrate);
 
   const wsRef = useRef<WebSocket | null>(null);
   const retryCountRef = useRef(0);
@@ -19,6 +21,11 @@ export default function NotificationProvider({ children }: { children: React.Rea
   /** True after the first HTTP notifications fetch for this login; reset on logout. */
   const hasFetchedNotificationsRef = useRef(false);
   const maxRetries = 5;
+
+  // Hydrate personal admin toast preference once on the client.
+  useEffect(() => {
+    hydrateAlertPopups();
+  }, [hydrateAlertPopups]);
 
   // Reset fetch-once gate when the user logs out.
   useEffect(() => {
@@ -73,6 +80,14 @@ export default function NotificationProvider({ children }: { children: React.Rea
           | "WARNING"
           | "ERROR"
           | undefined;
+
+        // Admin preference: suppress non-error notification toasts. ERROR always shows.
+        // Preference applies only under /admin; client/simulation keep current toasts.
+        const onAdmin =
+          typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+        if (onAdmin && type !== "ERROR" && !useAdminAlertPopupStore.getState().enabled) {
+          return;
+        }
 
         const message = newNotification?.message || "";
         const title = newNotification?.title || "Alert";

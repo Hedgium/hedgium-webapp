@@ -246,6 +246,23 @@ export default function MarketDepthModal({
       setSeeding(true);
       setError(null);
       try {
+        const resolveParams = new URLSearchParams({ symbol });
+        if (exchange) resolveParams.set("exchange", exchange);
+        const resolved = await authFetch(
+          `market/instruments/resolve/?${resolveParams.toString()}`
+        );
+        if (resolved.ok) {
+          const item = (await resolved.json()) as InstrumentSearchResult;
+          const pick = toInstrumentOption(item);
+          if (pick.instrumentType) setInstrumentType(pick.instrumentType);
+          setSelected(pick);
+          return;
+        }
+        if (resolved.status !== 404) {
+          setError("Failed to look up instrument");
+          return;
+        }
+
         const response = await authFetch(
           `market/instruments/search/?q=${encodeURIComponent(symbol)}`
         );

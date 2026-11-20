@@ -12,6 +12,7 @@ export const ADMIN_SECTIONS = [
   "alerts",
   "tasks",
   "settings",
+  "security",
   "billing",
 ] as const;
 
@@ -34,6 +35,7 @@ export function adminSectionForPath(pathname: string): AdminSection | null {
   if (pathname.startsWith("/admin/alerts")) return "alerts";
   if (pathname.startsWith("/admin/tasks")) return "tasks";
   if (pathname.startsWith("/admin/settings")) return "settings";
+  if (pathname.startsWith("/admin/security")) return "security";
   if (pathname.startsWith("/admin/billing")) return "billing";
   if (pathname.startsWith("/admin/payments")) return "billing";
   if (pathname.startsWith("/admin/research")) return "market";

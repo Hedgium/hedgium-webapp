@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { StrategyBuilder, BuilderLeg } from '@/types/builder';
-import { ChevronDown, Edit2, Trash2, RotateCw, Plus, Mail, MessageCircle, LineChart } from 'lucide-react';
+import { CandlestickChart, ChevronDown, Edit2, Trash2, RotateCw, Plus, Mail, MessageCircle, LineChart } from 'lucide-react';
 import BuilderLegItem from './BuilderLegItem';
 import { formatDateTimeMinutes } from '@/utils/formatDate';
 
 const BuilderSpreadChartsModal = dynamic(
     () => import('./BuilderSpreadChartsModal'),
+    { ssr: false, loading: () => null },
+);
+
+const StrategyUnderlyingPriceModal = dynamic(
+    () => import('@/components/admin/strategy/StrategyUnderlyingPriceModal'),
     { ssr: false, loading: () => null },
 );
 
@@ -47,6 +52,7 @@ export default function BuilderItem({
     const isClient = variant === "client";
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showSpreadCharts, setShowSpreadCharts] = useState(false);
+    const [showUnderlyingPrice, setShowUnderlyingPrice] = useState(false);
     const [legsOpen, setLegsOpen] = useState(true);
     const [isSendingPnlEmails, setIsSendingPnlEmails] = useState(false);
     const [isSendingPnlWhatsapp, setIsSendingPnlWhatsapp] = useState(false);
@@ -86,6 +92,9 @@ export default function BuilderItem({
     const legs = [...(builder.builder_legs ?? [])].sort(
         (a, b) => a.leg_index - b.leg_index,
     );
+    const hasUnderlyingTokens = legs.some(
+        (leg) => String(leg.token || '').trim() || String(leg.symbol || '').trim(),
+    );
     const spotLabel = formatSpotMap(builder.spot_by_underlying);
 
     return (
@@ -94,6 +103,9 @@ export default function BuilderItem({
                 <div>
                     <h3 className="text-xl font-semibold text-primary flex items-center gap-2">
                         {builder.name}
+                        <span className="text-sm font-mono font-normal text-base-content/50">
+                            #{builder.id}
+                        </span>
                         <span className={`text-sm px-2 py-0.5 rounded-full border ${builder.status === 'ACTIVE' ? 'border-success text-success' :
                             builder.status === 'INACTIVE' ? 'border-error text-error' : 'border-base-content/40 text-base-content/60'
                             }`}>
@@ -125,6 +137,22 @@ export default function BuilderItem({
                 </div>
 
                 <div className="flex items-center space-x-2 mt-4 md:mt-0">
+                    {!isClient && (
+                        <button
+                            type="button"
+                            onClick={() => setShowUnderlyingPrice(true)}
+                            className="btn btn-ghost btn-sm"
+                            title={
+                                hasUnderlyingTokens
+                                    ? 'Underlying price (last 30 min)'
+                                    : 'No underlying tokens'
+                            }
+                            disabled={!hasUnderlyingTokens}
+                            aria-label={`Underlying price chart for ${builder.name}`}
+                        >
+                            <CandlestickChart size={18} />
+                        </button>
+                    )}
                     {!isClient && (
                         <button
                             type="button"
@@ -234,6 +262,13 @@ export default function BuilderItem({
                     builderName={builder.name}
                     triggerWs={builder.trigger_ws}
                     onClose={() => setShowSpreadCharts(false)}
+                />
+            )}
+            {showUnderlyingPrice && (
+                <StrategyUnderlyingPriceModal
+                    builderId={builder.id}
+                    name={builder.name}
+                    onClose={() => setShowUnderlyingPrice(false)}
                 />
             )}
         </div>

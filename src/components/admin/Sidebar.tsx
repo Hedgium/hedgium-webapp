@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
-import { Bell, Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Phone, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network, CandlestickChart, IndianRupee, FlaskConical, Settings2, PieChart, Receipt } from "lucide-react";
+import { Bell, Layers, LineChart, Users, ListTodo, CreditCard, MessageCircle, Phone, Sun, Moon, LogOut, ChevronLeft, ChevronRight, Network, CandlestickChart, IndianRupee, FlaskConical, Settings2, PieChart, Receipt, Shield } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
@@ -25,6 +25,7 @@ const tabs = [
   { name: "Alerts", href: "/admin/alerts", icon: <Bell className="h-5 w-5" /> },
   { name: "Tasks", href: "/admin/tasks", icon: <ListTodo className="h-5 w-5" /> },
   { name: "Settings", href: "/admin/settings", icon: <Settings2 className="h-5 w-5" /> },
+  { name: "Security", href: "/admin/security", icon: <Shield className="h-5 w-5" /> },
   { name: "Billing", href: "/admin/billing", icon: <Receipt className="h-5 w-5" /> },
   // { name: "Payments", href: "/admin/payments", icon: <CreditCard className="h-5 w-5" /> },
 ];
@@ -75,15 +76,38 @@ export default function AdminSidebar() {
     setIsCollapsed(!isCollapsed);
   };
 
+  const firstName = user?.first_name?.trim() || "";
+  const initial = firstName.charAt(0).toUpperCase();
+
   return (
     <div className={`flex flex-col h-full bg-base-200/50 border border-base-300 transition-all duration-300 ${
       isCollapsed ? "w-16" : "w-56"
     }`}>
-      {/* Toggle button */}
-      <div className="flex justify-end p-2 border-b border-base-300">
+      <div
+        className={`flex border-b border-base-300 p-2 ${
+          isCollapsed ? "flex-col items-center gap-1" : "items-center gap-2"
+        }`}
+      >
+        {firstName ? (
+          isCollapsed ? (
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-content"
+              title={firstName}
+              aria-label={firstName}
+            >
+              {initial}
+            </span>
+          ) : (
+            <p className="min-w-0 flex-1 truncate px-1 text-sm font-semibold text-base-content" title={firstName}>
+              {firstName}
+            </p>
+          )
+        ) : isCollapsed ? null : (
+          <span className="flex-1" />
+        )}
         <button
           onClick={toggleSidebar}
-          className="btn btn-ghost btn-sm btn-circle"
+          className="btn btn-ghost btn-sm btn-circle shrink-0"
           title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           aria-label={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >

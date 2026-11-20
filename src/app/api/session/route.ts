@@ -11,9 +11,12 @@ export async function GET(request: Request) {
     }
   }
 
-  // Generate a dummy short-lived token for testing
+  const url = new URL(request.url);
+  const maxAgeRaw = url.searchParams.get("maxAge");
+  const maxAge = maxAgeRaw != null ? Number(maxAgeRaw) : undefined;
+
   const token = crypto.randomUUID();
 
-  await setSessionCookie(token); // ✅ await this
+  await setSessionCookie(token, maxAge);
   return NextResponse.json({ ok: true });
 }

@@ -74,6 +74,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         verified: false,
         auto_trade_allowed: false,
         strategies_paused: false,
+        blocked_symbols_text: '',
         mobile: '',
         signup_step: 'initiated',
         user_verified: false,
@@ -178,6 +179,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             verified: initialData.verified,
             auto_trade_allowed: initialData.auto_trade_allowed ?? false,
             strategies_paused: initialData.strategies_paused ?? false,
+            blocked_symbols_text: (initialData.blocked_symbols ?? []).join(', '),
             mobile: u?.mobile ?? '',
             signup_step: u?.signup_step ?? 'initiated',
             user_verified: u?.verified ?? false,
@@ -245,6 +247,11 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             verified: formData.verified,
             auto_trade_allowed: formData.auto_trade_allowed,
             strategies_paused: formData.strategies_paused,
+            blocked_symbols: formData.blocked_symbols_text
+                .split(/[,\s]+/)
+                .map((s) => s.trim().toUpperCase())
+                .filter(Boolean)
+                .filter((s, i, arr) => arr.indexOf(s) === i),
             mobile: formData.mobile || null,
             signup_step: formData.signup_step || null,
             user_verified: formData.user_verified,
@@ -557,6 +564,23 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                         </label>
                         <p className="text-xs text-base-content/60 mt-1">
                             When paused, this client is skipped for new automatic strategy assignment. Existing live cycles keep running.
+                        </p>
+                    </div>
+                    <div className="form-control md:col-span-2">
+                        <label className="label">
+                            <span className="label-text">Blocked symbols</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="blocked_symbols_text"
+                            value={formData.blocked_symbols_text}
+                            onChange={handleChange}
+                            className="input input-bordered w-full font-mono text-sm uppercase"
+                            placeholder="e.g. RELIANCE, TCS"
+                            autoComplete="off"
+                        />
+                        <p className="text-xs text-base-content/60 mt-1">
+                            Comma-separated underlyings this profile must not newly trade. New strategy assignment and new manual orders are blocked; existing cycles keep running.
                         </p>
                     </div>
                 </div>
