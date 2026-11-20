@@ -52,9 +52,11 @@ export async function activateTradeCycle(cycleId: number): Promise<void> {
 export type PositionOrderIntent = "exit" | "increase" | "decrease" | "buy" | "sell";
 
 export type PlacePositionOrderPayload = {
-  position_id: number;
   intent: PositionOrderIntent;
   quantity: number;
+  position_id?: number;
+  instrument?: string;
+  exchange?: string;
 };
 
 export async function placePositionOrder(

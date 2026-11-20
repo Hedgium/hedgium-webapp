@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Pencil, RefreshCw, X } from "lucide-react";
+import { Check, RefreshCw, X } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import useAlert from "@/hooks/useAlert";
 import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
 
 const TICK_BATCH = 500;
 const OPTION_CHAIN_LIVE_POLL_MS = 90_000;
+const STRIKE_WINDOW = 5;
 
 interface OptionChainRow {
   id: number;
@@ -24,6 +25,80 @@ interface OptionChainRow {
   greeks_calculated_by: string | null;
   manual_delta_spot: number | null;
   manual_delta_updated_at: string | null;
+  atm_strike?: number | null;
+}
+
+type StrikeBoardRow = {
+  strike: number;
+  isAtm: boolean;
+  ce: OptionChainRow | null;
+  pe: OptionChainRow | null;
+};
+
+function buildStrikeBoard(
+  rows: OptionChainRow[],
+  atmHint: number | null
+): StrikeBoardRow[] {
+  const byStrike = new Map<number, { ce: OptionChainRow | null; pe: OptionChainRow | null }>();
+  for (const row of rows) {
+    const strike = Number(row.strike);
+    if (!Number.isFinite(strike)) continue;
+    const bucket = byStrike.get(strike) ?? { ce: null, pe: null };
+    const ot = (row.option_type || "").toUpperCase();
+    if (ot === "CE" || ot === "CALL") bucket.ce = row;
+    else if (ot === "PE" || ot === "PUT") bucket.pe = row;
+    byStrike.set(strike, bucket);
+  }
+
+  const strikes = [...byStrike.keys()].sort((a, b) => a - b);
+  if (strikes.length === 0) return [];
+
+  const stepFromRows =
+    strikes.length >= 2
+      ? Math.min(
+          ...strikes
+            .slice(1)
+            .map((s, i) => Math.abs(s - strikes[i]))
+            .filter((d) => d > 0)
+        )
+      : null;
+  const step = stepFromRows && stepFromRows > 0 ? stepFromRows : null;
+
+  let centerAtm = atmHint != null && Number.isFinite(atmHint) ? atmHint : null;
+  if (centerAtm == null) {
+    const fromRow = rows.find((r) => r.atm_strike != null)?.atm_strike;
+    centerAtm = fromRow != null && Number.isFinite(Number(fromRow)) ? Number(fromRow) : null;
+  }
+  if (centerAtm == null) {
+    centerAtm = strikes[Math.floor(strikes.length / 2)];
+  }
+
+  const atmStrike = strikes.reduce((best, s) =>
+    Math.abs(s - centerAtm!) < Math.abs(best - centerAtm!) ? s : best
+  );
+
+  let filtered = strikes;
+  if (step && step > 0) {
+    const lo = atmStrike - STRIKE_WINDOW * step;
+    const hi = atmStrike + STRIKE_WINDOW * step;
+    filtered = strikes.filter((s) => s >= lo - 1e-9 && s <= hi + 1e-9);
+    if (filtered.length === 0) filtered = strikes;
+  } else {
+    const idx = strikes.indexOf(atmStrike);
+    const start = Math.max(0, idx - STRIKE_WINDOW);
+    const end = Math.min(strikes.length, idx + STRIKE_WINDOW + 1);
+    filtered = strikes.slice(start, end);
+  }
+
+  return filtered.map((strike) => {
+    const bucket = byStrike.get(strike)!;
+    return {
+      strike,
+      isAtm: Math.abs(strike - atmStrike) < 1e-9,
+      ce: bucket.ce,
+      pe: bucket.pe,
+    };
+  });
 }
 
 const REFRESH_CHAINS_GREEKS_TASK =
@@ -88,17 +163,6 @@ function lastPriceFromQuoteData(
   return null;
 }
 
-/** Short local datetime + ISO for tooltips when the table cell is narrow. */
-function formatChainDateTime(iso: string | null | undefined): { label: string; title: string } {
-  if (!iso) return { label: "—", title: "No value" };
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return { label: "—", title: "Invalid date" };
-  return {
-    label: d.toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }),
-    title: d.toISOString(),
-  };
-}
-
 export default function StrategyOptionChainModal({
   strategyId,
   strategyName,
@@ -124,10 +188,9 @@ export default function StrategyOptionChainModal({
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [draftDelta, setDraftDelta] = useState<Record<number, string>>({});
-  const [draftGamma, setDraftGamma] = useState<Record<number, string>>({});
   const [draftSource, setDraftSource] = useState<Record<number, string>>({});
   const [draftManualSpot, setDraftManualSpot] = useState<Record<number, string>>({});
-  const [editingRowId, setEditingRowId] = useState<number | null>(null);
+  const [editingRow, setEditingRow] = useState<OptionChainRow | null>(null);
   const [refreshingChains, setRefreshingChains] = useState(false);
   const [greeksTaskLoading, setGreeksTaskLoading] = useState(false);
   /** ``auto`` = same subset as ``run_mystream --mode auto`` (book expiries + strike_distance window); ``full`` = all DB rows. */
@@ -156,11 +219,6 @@ export default function StrategyOptionChainModal({
       delete next[rowId];
       return next;
     });
-    setDraftGamma((d) => {
-      const next = { ...d };
-      delete next[rowId];
-      return next;
-    });
     setDraftSource((d) => {
       const next = { ...d };
       delete next[rowId];
@@ -173,20 +231,37 @@ export default function StrategyOptionChainModal({
     });
   }, []);
 
+  const board = useMemo(
+    () => buildStrikeBoard(rows, underlyingLtp),
+    [rows, underlyingLtp]
+  );
+
   const startEditRow = useCallback(
-    (rowId: number) => {
-      setEditingRowId((prev) => {
-        if (prev !== null && prev !== rowId) clearRowDrafts(prev);
-        return rowId;
+    (row: OptionChainRow) => {
+      setEditingRow((prev) => {
+        if (prev !== null && prev.id !== row.id) clearRowDrafts(prev.id);
+        return row;
       });
+      setDraftDelta((d) => ({
+        ...d,
+        [row.id]: row.greeks_delta != null ? String(row.greeks_delta) : "",
+      }));
+      setDraftSource((d) => ({
+        ...d,
+        [row.id]: row.greeks_calculated_by ?? "MANUAL",
+      }));
+      setDraftManualSpot((d) => ({
+        ...d,
+        [row.id]: row.manual_delta_spot != null ? String(row.manual_delta_spot) : "",
+      }));
     },
     [clearRowDrafts]
   );
 
   const cancelEditRow = useCallback(() => {
-    if (editingRowId != null) clearRowDrafts(editingRowId);
-    setEditingRowId(null);
-  }, [editingRowId, clearRowDrafts]);
+    if (editingRow != null) clearRowDrafts(editingRow.id);
+    setEditingRow(null);
+  }, [editingRow, clearRowDrafts]);
 
   /**
    * Fetch one option chain for the current `underlying` and optional `expiry`.
@@ -238,9 +313,8 @@ export default function StrategyOptionChainModal({
     if (!underlying) {
       return;
     }
-    setEditingRowId(null);
+    setEditingRow(null);
     setDraftDelta({});
-    setDraftGamma({});
     setDraftSource({});
     setDraftManualSpot({});
     setRefreshingChains(true);
@@ -465,9 +539,8 @@ export default function StrategyOptionChainModal({
   }, [underlying, exchange, tab, loadChain, chainViewMode, strategyId]);
 
   useEffect(() => {
-    setEditingRowId(null);
+    setEditingRow(null);
     setDraftDelta({});
-    setDraftGamma({});
     setDraftSource({});
     setDraftManualSpot({});
   }, [underlying, selectedExpiry, tab, chainViewMode]);
@@ -522,19 +595,6 @@ export default function StrategyOptionChainModal({
       return;
     }
 
-    const rawG = draftGamma[row.id] ?? (row.greeks_gamma != null ? String(row.greeks_gamma) : "");
-    let gammaPayload: number | null;
-    if (rawG.trim() === "") {
-      gammaPayload = null;
-    } else {
-      const g = Number(rawG);
-      if (!Number.isFinite(g)) {
-        alert.error("Invalid gamma");
-        return;
-      }
-      gammaPayload = g;
-    }
-
     const src =
       (draftSource[row.id] ?? row.greeks_calculated_by ?? "MANUAL").trim().toUpperCase();
     if (src !== "AUTO" && src !== "MANUAL") {
@@ -564,7 +624,8 @@ export default function StrategyOptionChainModal({
     try {
       const body: Record<string, unknown> = {
         greeks_delta: deltaVal,
-        greeks_gamma: gammaPayload,
+        // Preserve stored gamma; this UI no longer edits γ/ν/θ.
+        greeks_gamma: row.greeks_gamma,
         greeks_calculated_by: src,
         manual_delta_spot_set: true,
         manual_delta_spot: spotPayload,
@@ -577,7 +638,7 @@ export default function StrategyOptionChainModal({
       if (res.ok && data.status === "success") {
         alert.success("Greeks saved");
         clearRowDrafts(row.id);
-        setEditingRowId(null);
+        setEditingRow(null);
         void loadChain({
           silent: true,
           expiryOverride: selectedExpiryRef.current,
@@ -698,230 +759,305 @@ export default function StrategyOptionChainModal({
         </div>
       </header>
 
-      <div className="flex-1 overflow-auto p-4">
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <span className="loading loading-spinner loading-lg" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-lg border border-base-300">
-            <table className="table table-sm table-zebra">
-              <thead>
-                <tr>
-                  <th>Strike</th>
-                  <th>Type</th>
-                  <th>LTP</th>
-                  <th title="net ÷ qty (per 1 instrument quantity)">Delta</th>
-                  <th title="net ÷ qty (per 1 instrument quantity)">Gamma</th>
-                  <th title="net ÷ qty (per 1 instrument quantity)">Vega</th>
-                  <th title="net ÷ qty (per 1 instrument quantity)">Theta</th>
-                  <th>Source</th>
-                  <th title="Recorded underlying spot for manual δ; editable in row edit mode">δ spot</th>
-                  <th title="Last staff manual greeks/spot save (hover for UTC ISO)">δ saved at</th>
-                  <th title="When Greeks on this row were last written (AUTO or manual)">Greeks updated</th>
-                  <th className="w-24">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => {
-                  const tok = String(r.zerodha_instrument_token);
-                  const ltp = ticks[tok]?.last_price;
-                  const isEditing = editingRowId === r.id;
-                  const displayDelta =
-                    draftDelta[r.id] !== undefined
-                      ? draftDelta[r.id]
-                      : r.greeks_delta != null
-                        ? String(r.greeks_delta)
-                        : "";
-                  const displayGamma =
-                    draftGamma[r.id] !== undefined
-                      ? draftGamma[r.id]
-                      : r.greeks_gamma != null
-                        ? String(r.greeks_gamma)
-                        : "";
-                  const displaySource =
-                    draftSource[r.id] !== undefined
-                      ? draftSource[r.id]
-                      : r.greeks_calculated_by ?? "MANUAL";
-                  const displaySpot =
-                    draftManualSpot[r.id] !== undefined
-                      ? draftManualSpot[r.id]
-                      : r.manual_delta_spot != null
-                        ? String(r.manual_delta_spot)
-                        : "";
-                  const manualDeltaSaved = formatChainDateTime(r.manual_delta_updated_at);
-                  const greeksUpdated = formatChainDateTime(r.greeks_updated_at);
-                  return (
-                    <tr key={`${r.id}-${r.option_type}`}>
-                      <td className="font-mono tabular-nums">{r.strike}</td>
-                      <td>{r.option_type}</td>
-                      <td className="tabular-nums">{ltp != null ? ltp.toFixed(2) : "—"}</td>
-                      <td className="tabular-nums text-sm">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            step={0.000001}
-                            className="input input-bordered input-xs w-28 font-mono"
-                            placeholder="δ"
-                            title="Delta per 1 qty (net_delta ÷ quantity)"
-                            value={displayDelta}
-                            onChange={(e) =>
-                              setDraftDelta((d) => ({ ...d, [r.id]: e.target.value }))
-                            }
-                          />
+      <div className="flex min-h-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-auto p-4">
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <span className="loading loading-spinner loading-lg" />
+            </div>
+          ) : board.length === 0 ? (
+            <p className="p-6 text-center text-base-content/60">
+              No option chain rows for this selection.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-base-300">
+              <table className="table table-sm w-full">
+                <thead>
+                  <tr className="bg-base-200/60 text-[10px] uppercase tracking-wide text-base-content/55">
+                    <th className="text-right font-semibold text-success/80" colSpan={5}>
+                      CALLS
+                    </th>
+                    <th className="text-center" />
+                    <th className="text-left font-semibold text-error/80" colSpan={5}>
+                      PUTS
+                    </th>
+                  </tr>
+                  <tr className="text-[10px] uppercase text-base-content/55">
+                    <th className="text-right">Theta</th>
+                    <th className="text-right">Vega</th>
+                    <th className="text-right">Gamma</th>
+                    <th className="text-right">Delta</th>
+                    <th className="text-right">LTP</th>
+                    <th className="text-center">Strike</th>
+                    <th className="text-left">LTP</th>
+                    <th className="text-left">Delta</th>
+                    <th className="text-left">Gamma</th>
+                    <th className="text-left">Vega</th>
+                    <th className="text-left">Theta</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {board.map((row) => {
+                    const fmt = (v: number | null | undefined) =>
+                      v == null || !Number.isFinite(Number(v)) ? "—" : String(v);
+                    const sideCells = (side: OptionChainRow | null, mirror: boolean) => {
+                      if (!side) {
+                        return mirror ? (
+                          <>
+                            <td className="text-left text-base-content/35">—</td>
+                            <td className="text-left text-base-content/35">—</td>
+                            <td className="text-left text-base-content/35">—</td>
+                            <td className="text-left text-base-content/35">—</td>
+                            <td className="text-left text-base-content/35">—</td>
+                          </>
                         ) : (
-                          <span className="font-mono">{r.greeks_delta != null ? r.greeks_delta : "—"}</span>
-                        )}
-                      </td>
-                      <td className="tabular-nums text-sm">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            step={0.000001}
-                            className="input input-bordered input-xs w-24 font-mono"
-                            placeholder="γ"
-                            title="Gamma per 1 qty; leave empty to clear"
-                            value={displayGamma}
-                            onChange={(e) =>
-                              setDraftGamma((d) => ({ ...d, [r.id]: e.target.value }))
-                            }
-                          />
-                        ) : (
-                          <span className="font-mono">{r.greeks_gamma != null ? r.greeks_gamma : "—"}</span>
-                        )}
-                      </td>
-                      <td className="tabular-nums text-sm">{r.greeks_vega ?? "—"}</td>
-                      <td className="tabular-nums text-sm">{r.greeks_theta ?? "—"}</td>
-                      <td className="text-xs">
-                        {isEditing ? (
-                          <select
-                            className="select select-bordered select-xs max-w-[6.5rem] font-mono text-xs"
-                            title="AUTO or MANUAL"
-                            value={displaySource}
-                            onChange={(e) =>
-                              setDraftSource((d) => ({ ...d, [r.id]: e.target.value }))
-                            }
-                          >
-                            <option value="MANUAL">MANUAL</option>
-                            <option value="AUTO">AUTO</option>
-                          </select>
-                        ) : (
-                          <span>{r.greeks_calculated_by ?? "—"}</span>
-                        )}
-                      </td>
-                      <td className="tabular-nums text-xs font-mono">
-                        {isEditing ? (
-                          <div className="flex flex-wrap items-center gap-1 max-w-[11rem]">
-                            <input
-                              type="number"
-                              inputMode="decimal"
-                              step={0.01}
-                              className="input input-bordered input-xs w-24 font-mono"
-                              placeholder="Spot"
-                              title="Underlying spot for manual δ; empty clears stored value"
-                              value={displaySpot}
-                              onChange={(e) =>
-                                setDraftManualSpot((d) => ({ ...d, [r.id]: e.target.value }))
-                              }
-                            />
-                            {underlyingLtp != null && underlyingLtp > 0 && (
-                              <button
-                                type="button"
-                                className="btn btn-ghost btn-xs whitespace-nowrap"
-                                title="Fill with live underlying LTP"
-                                onClick={() =>
-                                  setDraftManualSpot((d) => ({
-                                    ...d,
-                                    [r.id]: String(underlyingLtp),
-                                  }))
-                                }
-                              >
-                                LTP
-                              </button>
-                            )}
-                          </div>
-                        ) : r.manual_delta_spot != null ? (
-                          r.manual_delta_spot.toFixed(2)
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="text-xs align-top min-w-[5.5rem] max-w-[9rem]">
-                        <span
-                          className={
-                            r.manual_delta_updated_at
-                              ? "whitespace-normal break-words leading-tight block"
-                              : "text-base-content/50"
-                          }
-                          title={manualDeltaSaved.title}
+                          <>
+                            <td className="text-right text-base-content/35">—</td>
+                            <td className="text-right text-base-content/35">—</td>
+                            <td className="text-right text-base-content/35">—</td>
+                            <td className="text-right text-base-content/35">—</td>
+                            <td className="text-right text-base-content/35">—</td>
+                          </>
+                        );
+                      }
+                      const tok = String(side.zerodha_instrument_token);
+                      const ltp = ticks[tok]?.last_price;
+                      const selected = editingRow?.id === side.id;
+                      const cellClass = `tabular-nums font-mono text-xs cursor-pointer hover:bg-base-200/80 ${
+                        selected ? "bg-primary/15 ring-1 ring-inset ring-primary/30" : ""
+                      }`;
+                      const open = () => startEditRow(side);
+                      const ltpTd = (
+                        <td
+                          className={`${cellClass} ${mirror ? "text-left" : "text-right"} font-semibold`}
+                          onClick={open}
+                          title={`${side.option_type} ${side.strike} — click to edit`}
                         >
-                          {manualDeltaSaved.label}
-                        </span>
-                      </td>
-                      <td className="text-xs align-top min-w-[5.5rem] max-w-[9rem]">
-                        <span
-                          className={
-                            r.greeks_updated_at
-                              ? "whitespace-normal break-words leading-tight block"
-                              : "text-base-content/50"
-                          }
-                          title={greeksUpdated.title}
-                        >
-                          {greeksUpdated.label}
-                        </span>
-                      </td>
-                      <td className="p-1">
-                        {isEditing ? (
-                          <div className="flex items-center gap-0.5">
-                            <button
-                              type="button"
-                              className="btn btn-primary btn-xs btn-square"
-                              disabled={savingId === r.id}
-                              title="Save"
-                              aria-label="Save row"
-                              onClick={() => saveGreeksRow(r)}
-                            >
-                              {savingId === r.id ? (
-                                <span className="loading loading-spinner loading-xs" />
-                              ) : (
-                                <Check className="size-3.5" />
-                              )}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-ghost btn-xs btn-square"
-                              disabled={savingId === r.id}
-                              title="Cancel"
-                              aria-label="Cancel edit"
-                              onClick={cancelEditRow}
-                            >
-                              <X className="size-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-xs btn-square"
-                            title="Edit Greeks"
-                            aria-label="Edit row"
-                            onClick={() => startEditRow(r.id)}
+                          {ltp != null ? ltp.toFixed(2) : "—"}
+                        </td>
+                      );
+                      const greeks = (
+                        <>
+                          <td
+                            className={`${cellClass} ${mirror ? "text-left" : "text-right"}`}
+                            onClick={open}
                           >
-                            <Pencil className="size-3.5" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {rows.length === 0 && !loading && (
-              <p className="p-6 text-center text-base-content/60">No option chain rows for this selection.</p>
-            )}
-          </div>
-        )}
+                            {fmt(side.greeks_delta)}
+                          </td>
+                          <td
+                            className={`${cellClass} ${mirror ? "text-left" : "text-right"}`}
+                            onClick={open}
+                          >
+                            {fmt(side.greeks_gamma)}
+                          </td>
+                          <td
+                            className={`${cellClass} ${mirror ? "text-left" : "text-right"}`}
+                            onClick={open}
+                          >
+                            {fmt(side.greeks_vega)}
+                          </td>
+                          <td
+                            className={`${cellClass} ${mirror ? "text-left" : "text-right"}`}
+                            onClick={open}
+                          >
+                            {fmt(side.greeks_theta)}
+                          </td>
+                        </>
+                      );
+                      return mirror ? (
+                        <>
+                          {ltpTd}
+                          {greeks}
+                        </>
+                      ) : (
+                        <>
+                          <td className={`${cellClass} text-right`} onClick={open}>
+                            {fmt(side.greeks_theta)}
+                          </td>
+                          <td className={`${cellClass} text-right`} onClick={open}>
+                            {fmt(side.greeks_vega)}
+                          </td>
+                          <td className={`${cellClass} text-right`} onClick={open}>
+                            {fmt(side.greeks_gamma)}
+                          </td>
+                          <td className={`${cellClass} text-right`} onClick={open}>
+                            {fmt(side.greeks_delta)}
+                          </td>
+                          {ltpTd}
+                        </>
+                      );
+                    };
+
+                    return (
+                      <tr
+                        key={row.strike}
+                        className={row.isAtm ? "bg-warning/15" : "odd:bg-base-200/20"}
+                      >
+                        {sideCells(row.ce, false)}
+                        <td
+                          className={`text-center tabular-nums text-sm ${
+                            row.isAtm
+                              ? "bg-warning/25 font-bold text-base-content"
+                              : "font-semibold text-base-content/80"
+                          }`}
+                        >
+                          {row.strike}
+                        </td>
+                        {sideCells(row.pe, true)}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {editingRow ? (
+          <aside
+            className="flex w-full max-w-sm shrink-0 flex-col border-l border-base-300 bg-base-100"
+            aria-label="Edit option greeks"
+          >
+            <div className="flex items-start justify-between gap-2 border-b border-base-300 px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">
+                  {editingRow.option_type} {editingRow.strike}
+                </p>
+                <p className="truncate font-mono text-xs text-base-content/60">
+                  {editingRow.zerodha_tradingsymbol}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs btn-square"
+                onClick={cancelEditRow}
+                aria-label="Close editor"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              <div className="grid grid-cols-2 gap-2 text-xs tabular-nums text-base-content/70">
+                <div>
+                  Gamma{" "}
+                  <span className="font-mono text-base-content">{editingRow.greeks_gamma ?? "—"}</span>
+                </div>
+                <div>
+                  Vega{" "}
+                  <span className="font-mono text-base-content">{editingRow.greeks_vega ?? "—"}</span>
+                </div>
+                <div>
+                  Theta{" "}
+                  <span className="font-mono text-base-content">{editingRow.greeks_theta ?? "—"}</span>
+                </div>
+                <div>
+                  LTP{" "}
+                  <span className="font-mono text-base-content">
+                    {ticks[String(editingRow.zerodha_instrument_token)]?.last_price != null
+                      ? ticks[String(editingRow.zerodha_instrument_token)]!.last_price!.toFixed(2)
+                      : "—"}
+                  </span>
+                </div>
+              </div>
+
+              <label className="form-control w-full">
+                <span className="label-text text-xs">Delta (per 1 qty)</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step={0.000001}
+                  className="input input-bordered input-sm w-full font-mono"
+                  value={
+                    draftDelta[editingRow.id] !== undefined
+                      ? draftDelta[editingRow.id]
+                      : editingRow.greeks_delta != null
+                        ? String(editingRow.greeks_delta)
+                        : ""
+                  }
+                  onChange={(e) =>
+                    setDraftDelta((d) => ({ ...d, [editingRow.id]: e.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="form-control w-full">
+                <span className="label-text text-xs">Source</span>
+                <select
+                  className="select select-bordered select-sm w-full"
+                  value={
+                    draftSource[editingRow.id] !== undefined
+                      ? draftSource[editingRow.id]
+                      : editingRow.greeks_calculated_by ?? "MANUAL"
+                  }
+                  onChange={(e) =>
+                    setDraftSource((d) => ({ ...d, [editingRow.id]: e.target.value }))
+                  }
+                >
+                  <option value="MANUAL">MANUAL</option>
+                  <option value="AUTO">AUTO</option>
+                </select>
+              </label>
+
+              <label className="form-control w-full">
+                <span className="label-text text-xs">Delta spot</span>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step={0.01}
+                    className="input input-bordered input-sm w-full font-mono"
+                    value={
+                      draftManualSpot[editingRow.id] !== undefined
+                        ? draftManualSpot[editingRow.id]
+                        : editingRow.manual_delta_spot != null
+                          ? String(editingRow.manual_delta_spot)
+                          : ""
+                    }
+                    onChange={(e) =>
+                      setDraftManualSpot((d) => ({
+                        ...d,
+                        [editingRow.id]: e.target.value,
+                      }))
+                    }
+                  />
+                  {underlyingLtp != null && underlyingLtp > 0 && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      title="Fill with live underlying LTP"
+                      onClick={() =>
+                        setDraftManualSpot((d) => ({
+                          ...d,
+                          [editingRow.id]: String(underlyingLtp),
+                        }))
+                      }
+                    >
+                      LTP
+                    </button>
+                  )}
+                </div>
+              </label>
+            </div>
+            <div className="flex gap-2 border-t border-base-300 p-4">
+              <button type="button" className="btn btn-ghost flex-1" onClick={cancelEditRow}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary flex-1 gap-1"
+                disabled={savingId === editingRow.id}
+                onClick={() => void saveGreeksRow(editingRow)}
+              >
+                {savingId === editingRow.id ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <Check className="size-4" />
+                )}
+                Save
+              </button>
+            </div>
+          </aside>
+        ) : null}
       </div>
     </div>
   );

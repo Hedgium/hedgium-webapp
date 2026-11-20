@@ -49,6 +49,8 @@ export interface StrategyTemplate {
     name: string;
     description: string;
     minimum_capital: number;
+    adjustment_required?: boolean;
+    market_view?: string;
     leg_preset_config?: LegPresetConfig | null;
 }
 
