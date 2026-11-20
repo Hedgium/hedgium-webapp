@@ -21,7 +21,7 @@ type TaskData = {
 
 const TASK_NAME = "builder.run_strategy_exit";
 
-export default function ExitTaskControl() {
+export default function ExitTaskControl({ compact = false }: { compact?: boolean }) {
     const [taskStatus, setTaskStatus] = useState<TaskState>({
         is_running: false,
         task_id: null,
@@ -105,6 +105,41 @@ export default function ExitTaskControl() {
     useVisibilityAwareInterval(fetchTaskStatus, TASK_POLL_MS, {
         runImmediately: true,
     });
+
+    if (compact) {
+        return (
+            <div className="flex items-center gap-2 rounded-lg border border-base-300 bg-base-100/70 px-3 ">
+                <span className="text-sm font-medium whitespace-nowrap">Exit</span>
+                <span
+                    className={`badge badge-sm gap-1 ${taskStatus.is_running ? "badge-success" : "badge-error"}`}
+                    title={taskStatus.task_id ? `Task ${taskStatus.task_id}` : "Exit task"}
+                >
+                    <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                            taskStatus.is_running ? "bg-green-300 animate-pulse" : "bg-red-300"
+                        }`}
+                    />
+                    {taskStatus.is_running ? "Running" : "Stopped"}
+                </span>
+                <button
+                    type="button"
+                    onClick={handleStartTask}
+                    disabled={taskStatus.is_running || taskLoading}
+                    className="btn btn-success btn-sm btn-ghost"
+                >
+                    {taskLoading ? <span className="loading loading-spinner loading-xs"></span> : "Start"}
+                </button>
+                <button
+                    type="button"
+                    onClick={handleStopTask}
+                    disabled={!taskStatus.is_running || taskLoading}
+                    className="btn btn-error btn-sm btn-ghost"
+                >
+                    {taskLoading ? <span className="loading loading-spinner loading-xs"></span> : "Stop"}
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-base-100/70 rounded-xl border border-base-300 py-3 px-4 flex-1 min-w-[200px]">

@@ -9,11 +9,16 @@ interface BuilderLegItemProps {
     onDelete: (legId: number) => void;
 }
 
+function formatQuote(value: number | null | undefined): string {
+    if (value == null || Number.isNaN(Number(value))) return "—";
+    return Number(value).toFixed(2);
+}
+
 export default function BuilderLegItem({ leg, onEdit, onDelete }: BuilderLegItemProps) {
 
     return (
         <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg mb-2 border border-base-300">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 flex-1">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 flex-1">
                 <div>
                     <p className="text-sm text-base-content/60">Leg Index</p>
                     <p className="font-medium">{leg.leg_index}</p>
@@ -50,6 +55,12 @@ export default function BuilderLegItem({ leg, onEdit, onDelete }: BuilderLegItem
                                 Adjustment
                             </span>
                         )}
+                    </p>
+                </div>
+                <div>
+                    <p className="text-sm text-base-content/60">Bid / Ask / Spread</p>
+                    <p className="font-medium tabular-nums">
+                        {formatQuote(leg.bid)} / {formatQuote(leg.ask)} / {formatQuote(leg.spread)}
                     </p>
                 </div>
             </div>
