@@ -62,6 +62,12 @@ export interface Profile {
     pnl_inception_value?: number | null;
     /** If false, the client manages CNC/E1 themselves. Default true. */
     e1_hedgium_managed?: boolean;
+    /** Cached annualized XIRR from approved cash flows (fraction). */
+    xirr?: number | null;
+    /** Cached rupee gain vs approved capital inflows. */
+    xirr_gain?: number | null;
+    /** Snapshot date used as terminal value for cached XIRR. */
+    xirr_as_of?: string | null;
     /** Calendar days since last NFO/BFO/MCX Trade fill. */
     last_trade_days?: number | null;
     order_value_factor: number;
