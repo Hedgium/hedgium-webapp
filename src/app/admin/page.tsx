@@ -12,6 +12,7 @@ import { waitForCeleryTaskComplete } from "@/utils/celeryTask";
 import useAlert from "@/hooks/useAlert";
 import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
 import ResearchReportNameAffordance from "@/components/admin/ResearchReportNameAffordance";
+import ExitTaskControl from "@/components/admin/builder/ExitTaskControl";
 
 const OverallPnlSummary = dynamic(
   () => import("@/components/admin/OverallPnlSummary"),
@@ -48,16 +49,6 @@ const BuilderSpreadChartsModal = dynamic(
 const StrategyUnderlyingPriceModal = dynamic(
   () => import("@/components/admin/strategy/StrategyUnderlyingPriceModal"),
   { ssr: false, loading: () => null }
-);
-
-const ExitTaskControl = dynamic(
-  () => import("@/components/admin/builder/ExitTaskControl"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-14 w-40 bg-base-300 rounded-xl animate-pulse" />
-    ),
-  }
 );
 
 const REFRESH_ACTIVE_STRATEGY_TASKS = [

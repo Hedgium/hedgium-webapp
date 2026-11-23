@@ -29,6 +29,9 @@ type CashFlowListResponse = {
   xirr_gain?: number | null;
   xirr_as_of?: string | null;
   current_value?: number | null;
+  e2_xirr?: number | null;
+  e2_xirr_gain?: number | null;
+  e2_xirr_as_of?: string | null;
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -64,6 +67,9 @@ export default function CashFlowPanel() {
   const [xirrGain, setXirrGain] = useState<number | null>(null);
   const [xirrAsOf, setXirrAsOf] = useState<string | null>(null);
   const [currentValue, setCurrentValue] = useState<number | null>(null);
+  const [e2Xirr, setE2Xirr] = useState<number | null>(null);
+  const [e2XirrGain, setE2XirrGain] = useState<number | null>(null);
+  const [e2XirrAsOf, setE2XirrAsOf] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
 
@@ -103,6 +109,9 @@ export default function CashFlowPanel() {
       setXirrGain(data.xirr_gain ?? null);
       setXirrAsOf(data.xirr_as_of ?? null);
       setCurrentValue(data.current_value ?? null);
+      setE2Xirr(data.e2_xirr ?? null);
+      setE2XirrGain(data.e2_xirr_gain ?? null);
+      setE2XirrAsOf(data.e2_xirr_as_of ?? null);
     } catch {
       alert.error("Failed to load cash flows");
     } finally {
@@ -207,8 +216,12 @@ export default function CashFlowPanel() {
         <div className="rounded-xl border border-base-300 bg-base-100 px-4 py-3 text-sm shadow-sm">
           <div className="flex flex-wrap gap-x-6 gap-y-1">
             <span>
-              XIRR{" "}
+              Total XIRR{" "}
               <strong className={signedClass(xirr)}>{formatXirr(xirr)}</strong>
+            </span>
+            <span>
+              E2 XIRR{" "}
+              <strong className={signedClass(e2Xirr)}>{formatXirr(e2Xirr)}</strong>
             </span>
             <span>
               Current value{" "}
@@ -222,20 +235,28 @@ export default function CashFlowPanel() {
                 {xirrGain == null ? "—" : formatMoneyIN(xirrGain)}
               </strong>
             </span>
+            <span>
+              E2 gain{" "}
+              <strong className={signedClass(e2XirrGain)}>
+                {e2XirrGain == null ? "—" : formatMoneyIN(e2XirrGain)}
+              </strong>
+            </span>
             <span className="text-base-content/60">
               As of {formatDate(xirrAsOf)}
+              {e2XirrAsOf ? ` · E2 ${formatDate(e2XirrAsOf)}` : ""}
             </span>
           </div>
           <p className="mt-1 text-xs text-base-content/50">
-            Current value is the latest total account value (holdings + cash),
-            the same figure used for XIRR. Gain is that value minus approved
-            cash in. Approve adds a row; reject on an approved row removes it
-            and refreshes gain.
+            Total XIRR uses approved cash flows and the latest total account
+            value (holdings + cash). Gain is that value minus approved cash in.
+            E2 XIRR uses those same cash flows as capital, held through the same
+            as-of date. E2 gain is trade-cycle net PnL after charges, including
+            cycles still open.
           </p>
         </div>
       ) : (
         <p className="text-sm text-base-content/60">
-          Select a profile to see its current value and approved XIRR.
+          Select a profile to see total XIRR, E2 XIRR, and current value.
         </p>
       )}
 
