@@ -47,6 +47,8 @@ type FirmRoiAccount = {
   e2_return: number | null;
   e2_base: number | null;
   e2_base_kind: "account_value" | "margin";
+  xirr?: number | null;
+  e2_xirr?: number | null;
   periods?: Partial<Record<FirmRoiPeriodKey, FirmRoiAccountPeriod>>;
 };
 
@@ -58,12 +60,18 @@ type FirmRoiResponse = {
   month: string | null;
   quarter: string | null;
   fy: string | null;
+  xirr?: number | null;
+  xirr_gain?: number | null;
+  e2_xirr?: number | null;
+  e2_xirr_gain?: number | null;
+  xirr_as_of?: string | null;
+  xirr_accounts?: number;
 };
 
 const PAGE_SIZE = 25;
 
 const METHODOLOGY_TIP =
-  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception (never margin). E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
+  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception (never margin). E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. XIRR uses only accounts with an approved cash flow: total ends at the latest account value, E2 ends at cash in plus trade-cycle net PnL. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
 
 type FirmRoiMonthlyResponse = {
   months: FirmRoiMonthPoint[];
@@ -83,6 +91,22 @@ function formatPct(pct: number | null | undefined): string {
   if (pct == null || Number.isNaN(pct)) return "—";
   const sign = pct > 0 ? "+" : "";
   return `${sign}${pct.toFixed(2)}%`;
+}
+
+function formatXirr(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return formatPct(value * 100);
+}
+
+function formatAsOf(value: string | null | undefined): string {
+  if (!value) return "";
+  const [y, m, d] = value.slice(0, 10).split("-").map(Number);
+  if (!y || !m || !d) return "";
+  return new Date(y, m - 1, d).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function formatAmt(value: number | null | undefined): string {
@@ -377,6 +401,46 @@ export default function FirmRoiPanel() {
           </div>
       ) : null}
 
+      {data ? (
+        <div className="rounded-2xl border border-base-300/60 bg-base-200/35 px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-lg font-semibold uppercase tracking-wider text-base-content">
+                XIRR
+              </div>
+              <p className="text-[11px] text-base-content/60">
+                {data.xirr_accounts ?? 0} accounts
+                {data.xirr_as_of ? ` · as of ${formatAsOf(data.xirr_as_of)}` : ""}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-x-8 gap-y-2">
+              <div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-base-content/55">
+                  Total
+                </div>
+                <div className={`text-lg font-bold tabular-nums ${signedClass(data.xirr)}`}>
+                  {formatXirr(data.xirr)}
+                </div>
+                <div className={`text-xs tabular-nums ${signedClass(data.xirr_gain)}`}>
+                  {formatAmt(data.xirr_gain)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-base-content/55">
+                  E2
+                </div>
+                <div className={`text-lg font-bold tabular-nums ${signedClass(data.e2_xirr)}`}>
+                  {formatXirr(data.e2_xirr)}
+                </div>
+                <div className={`text-xs tabular-nums ${signedClass(data.e2_xirr_gain)}`}>
+                  {formatAmt(data.e2_xirr_gain)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
           <div className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
             <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
               <h3 className="text-sm font-semibold">Monthly ROI</h3>
@@ -483,12 +547,14 @@ export default function FirmRoiPanel() {
                         <th className="text-right">E2 return</th>
                         <th className="text-right">E2 base</th>
                         <th className="text-right">E2 base kind</th>
+                        <th className="text-right">XIRR</th>
+                        <th className="text-right">E2 XIRR</th>
                       </tr>
                     </thead>
                     <tbody>
                       {!data ? (
                         <tr>
-                          <td colSpan={7} className="py-10 text-center text-base-content/55">
+                          <td colSpan={9} className="py-10 text-center text-base-content/55">
                             {summaryLoading ? (
                               <span className="loading loading-dots loading-sm" />
                             ) : (
@@ -499,7 +565,7 @@ export default function FirmRoiPanel() {
                       ) : pageRows.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={7}
+                            colSpan={9}
                             className="py-10 text-center text-base-content/55"
                           >
                             {data.accounts.length === 0
@@ -546,6 +612,12 @@ export default function FirmRoiPanel() {
                               {row.e2_base_kind === "margin"
                                 ? "Margin"
                                 : "Account value"}
+                            </td>
+                            <td className={`text-right tabular-nums ${signedClass(row.xirr)}`}>
+                              {formatXirr(row.xirr)}
+                            </td>
+                            <td className={`text-right tabular-nums ${signedClass(row.e2_xirr)}`}>
+                              {formatXirr(row.e2_xirr)}
                             </td>
                           </tr>
                           );

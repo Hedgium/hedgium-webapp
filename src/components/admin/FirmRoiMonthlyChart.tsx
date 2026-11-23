@@ -39,10 +39,10 @@ type Row = FirmRoiMonthPoint & {
 
 const axisTick = { fontSize: 11, fill: "var(--color-base-content)" };
 
-/** Distinct DaisyUI semantic colors (same pattern as margin / spread charts). */
-const E1_FILL = "var(--color-primary)";
-const E2_FILL = "var(--color-warning)";
-const TOTAL_FILL = "var(--color-success)";
+/** Blue, teal, and indigo. Hue separates the series; lightness stays readable on light and dark. */
+const E1_FILL = "oklch(0.58 0.14 255)";
+const E2_FILL = "oklch(0.60 0.12 190)";
+const TOTAL_FILL = "oklch(0.55 0.13 290)";
 
 function formatPct(pct: number | null | undefined): string {
   if (pct == null || Number.isNaN(pct)) return "—";
