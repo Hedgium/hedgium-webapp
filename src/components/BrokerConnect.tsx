@@ -59,13 +59,22 @@ function parseTotalAccountCash(
   return availableCash;
 }
 
+function isMutualFundHolding(holding: LiveHolding): boolean {
+  return (
+    String(holding.instrument_type || "")
+      .trim()
+      .toLowerCase() === "mutual fund"
+  );
+}
+
 function sumHoldingsMetrics(holdings: LiveHolding[]): {
   engine1Total: number;
   engine1Pnl: number;
 } {
+  const equity = holdings.filter((h) => !isMutualFundHolding(h));
   return {
-    engine1Total: holdings.reduce((sum, h) => sum + (h.current_value ?? 0), 0),
-    engine1Pnl: holdings.reduce((sum, h) => sum + (h.pnl ?? 0), 0),
+    engine1Total: equity.reduce((sum, h) => sum + (h.current_value ?? 0), 0),
+    engine1Pnl: equity.reduce((sum, h) => sum + (h.pnl ?? 0), 0),
   };
 }
 

@@ -12,6 +12,7 @@ import { waitForCeleryTaskComplete } from "@/utils/celeryTask";
 import useAlert from "@/hooks/useAlert";
 import { useVisibilityAwareInterval } from "@/hooks/useVisibilityAwareInterval";
 import ResearchReportNameAffordance from "@/components/admin/ResearchReportNameAffordance";
+import ExitTaskControl from "@/components/admin/builder/ExitTaskControl";
 
 const OverallPnlSummary = dynamic(
   () => import("@/components/admin/OverallPnlSummary"),
@@ -50,16 +51,6 @@ const StrategyUnderlyingPriceModal = dynamic(
   { ssr: false, loading: () => null }
 );
 
-const ExitTaskControl = dynamic(
-  () => import("@/components/admin/builder/ExitTaskControl"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-14 w-40 bg-base-300 rounded-xl animate-pulse" />
-    ),
-  }
-);
-
 const REFRESH_ACTIVE_STRATEGY_TASKS = [
   "refresh-pnl-active-strategies",
   "refresh-wpnl-active-strategies",
@@ -75,12 +66,24 @@ interface Version {
 /** Symbol -> LTP at last metric cache update (from backend JSON fields). */
 type SpotByUnderlying = Record<string, number>;
 
-interface ExpiryPremiumNotional {
-  expiry: string;
+interface PremiumNotionalAmounts {
   call_premium: number;
   put_premium: number;
   call_notional: number;
   put_notional: number;
+  /** qty > 0. Short fields are signed (qty < 0), so buy + short = net. */
+  buy_call_premium?: number;
+  buy_put_premium?: number;
+  buy_call_notional?: number;
+  buy_put_notional?: number;
+  short_call_premium?: number;
+  short_put_premium?: number;
+  short_call_notional?: number;
+  short_put_notional?: number;
+}
+
+interface ExpiryPremiumNotional extends PremiumNotionalAmounts {
+  expiry: string;
 }
 
 interface StrategyPremiumNotional {
@@ -88,12 +91,7 @@ interface StrategyPremiumNotional {
   master_trade_cycle_id: number | null;
   spot_by_underlying: SpotByUnderlying;
   by_expiry: ExpiryPremiumNotional[];
-  totals: {
-    call_premium: number;
-    put_premium: number;
-    call_notional: number;
-    put_notional: number;
-  };
+  totals: PremiumNotionalAmounts;
 }
 
 interface PositionMismatchDetail {
@@ -818,6 +816,36 @@ export default function Page() {
     );
   };
 
+  const PremiumSplitCell = ({
+    net,
+    buy,
+    short,
+    last,
+    emphasize,
+  }: {
+    net: number;
+    buy?: number;
+    short?: number;
+    last?: boolean;
+    emphasize?: boolean;
+  }) => (
+    <td
+      className={`text-right py-0.5 align-top bg-base-100 leading-tight ${
+        last ? "" : "pr-1"
+      } ${emphasize ? "font-medium" : ""}`}
+    >
+      <div className={pnlColor(net)}>{formatLakhsIN(net)}</div>
+      <div className={`text-[9px] font-normal ${pnlColor(buy ?? null)}`}>
+        <span className="text-base-content/40">B </span>
+        {formatLakhsIN(buy)}
+      </div>
+      <div className={`text-[9px] font-normal ${pnlColor(short ?? null)}`}>
+        <span className="text-base-content/40">S </span>
+        {formatLakhsIN(short)}
+      </div>
+    </td>
+  );
+
   const formatExpiryLabel = (iso: string) => {
     try {
       const d = new Date(`${iso}T00:00:00`);
@@ -841,18 +869,24 @@ export default function Page() {
     );
 
     const show = React.useCallback(() => {
-      if (!hasData) return;
+      if (!hasData || !row) return;
       const el = btnRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      const width = 384; // 24rem
+      const width = 448; // 28rem
       const left = Math.min(
         Math.max(8, r.right - width),
         window.innerWidth - width - 8
       );
-      setPos({ top: r.bottom + 4, left });
+      const height = 88 + (row.by_expiry.length + 1) * 52;
+      const below = r.bottom + 4;
+      const top =
+        below + height <= window.innerHeight - 8
+          ? below
+          : Math.max(8, r.top - height - 4);
+      setPos({ top, left });
       setOpen(true);
-    }, [hasData]);
+    }, [hasData, row]);
 
     const hide = React.useCallback(() => setOpen(false), []);
 
@@ -864,12 +898,12 @@ export default function Page() {
           className={`btn btn-ghost btn-xs btn-square ${
             hasData ? "text-base-content/60" : "text-base-content/30"
           }`}
-          aria-label="Premium and notional by expiry"
+          aria-label="Premium and notional by expiry, split into buy and short"
           title={
             loadingPremiumNotional && !row
               ? "Loading premium / notional…"
               : hasData
-                ? "Premium & notional by expiry"
+                ? "Premium & notional by expiry, buy and short"
                 : "No premium / notional data"
           }
           onMouseEnter={show}
@@ -889,12 +923,12 @@ export default function Page() {
           pos &&
           createPortal(
             <div
-              className="pointer-events-none fixed z-[100] w-[24rem] rounded-lg border border-base-300 bg-base-100 p-2 shadow-xl text-left"
+              className="pointer-events-none fixed z-[100] w-[28rem] rounded-lg border border-base-300 bg-base-100 p-2 shadow-xl text-left"
               style={{ top: pos.top, left: pos.left }}
               role="tooltip"
             >
-              <div className="text-[10px] font-medium text-base-content/60 mb-1.5">
-                Premium (qty×LTP / quote unit) · Notional (qty×spot / quote unit)
+              <div className="text-[10px] font-medium text-base-content/60 mb-1.5 leading-snug">
+                Net, then B (long) and S (short). Premium = qty×LTP, notional = qty×spot.
               </div>
               <table className="w-full text-[11px] tabular-nums leading-tight bg-base-100">
                 <thead>
@@ -920,51 +954,63 @@ export default function Page() {
                       key={exp.expiry}
                       className="border-t border-base-300/40 bg-base-100"
                     >
-                      <td className="pr-1 py-0.5 whitespace-nowrap text-base-content/70 bg-base-100">
+                      <td className="pr-1 py-0.5 whitespace-nowrap text-base-content/70 bg-base-100 align-top">
                         {formatExpiryLabel(exp.expiry)}
                       </td>
-                      <td
-                        className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(exp.call_premium)}`}
-                      >
-                        {formatLakhsIN(exp.call_premium)}
-                      </td>
-                      <td
-                        className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(exp.put_premium)}`}
-                      >
-                        {formatLakhsIN(exp.put_premium)}
-                      </td>
-                      <td
-                        className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(exp.call_notional)}`}
-                      >
-                        {formatLakhsIN(exp.call_notional)}
-                      </td>
-                      <td
-                        className={`text-right py-0.5 bg-base-100 ${pnlColor(exp.put_notional)}`}
-                      >
-                        {formatLakhsIN(exp.put_notional)}
-                      </td>
+                      <PremiumSplitCell
+                        net={exp.call_premium}
+                        buy={exp.buy_call_premium}
+                        short={exp.short_call_premium}
+                      />
+                      <PremiumSplitCell
+                        net={exp.put_premium}
+                        buy={exp.buy_put_premium}
+                        short={exp.short_put_premium}
+                      />
+                      <PremiumSplitCell
+                        net={exp.call_notional}
+                        buy={exp.buy_call_notional}
+                        short={exp.short_call_notional}
+                      />
+                      <PremiumSplitCell
+                        net={exp.put_notional}
+                        buy={exp.buy_put_notional}
+                        short={exp.short_put_notional}
+                        last
+                      />
                     </tr>
                   ))}
 
-                  <tr className="border-t border-base-300 bg-base-100 font-medium">
-                      <td className="pr-1 py-0.5 whitespace-nowrap text-base-content/70 bg-base-100">
-                        Net
-                      </td>
-                      <td className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(row.totals.call_premium)}`}>
-                        {formatLakhsIN(row.totals.call_premium)}
-                      </td>
-                      <td className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(row.totals.put_premium)}`}>
-                        {formatLakhsIN(row.totals.put_premium)}
-                      </td>
-                      <td className={`text-right pr-1 py-0.5 bg-base-100 ${pnlColor(row.totals.call_notional)}`}>
-                        {formatLakhsIN(row.totals.call_notional)}
-                      </td>
-                      <td className={`text-right py-0.5 bg-base-100 ${pnlColor(row.totals.put_notional)}`}>
-                        {formatLakhsIN(row.totals.put_notional)}
-                      </td>
-                    </tr>
-
-                 
+                  <tr className="border-t border-base-300 bg-base-100">
+                    <td className="pr-1 py-0.5 whitespace-nowrap text-base-content/70 bg-base-100 align-top font-medium">
+                      Net
+                    </td>
+                    <PremiumSplitCell
+                      net={row.totals.call_premium}
+                      buy={row.totals.buy_call_premium}
+                      short={row.totals.short_call_premium}
+                      emphasize
+                    />
+                    <PremiumSplitCell
+                      net={row.totals.put_premium}
+                      buy={row.totals.buy_put_premium}
+                      short={row.totals.short_put_premium}
+                      emphasize
+                    />
+                    <PremiumSplitCell
+                      net={row.totals.call_notional}
+                      buy={row.totals.buy_call_notional}
+                      short={row.totals.short_call_notional}
+                      emphasize
+                    />
+                    <PremiumSplitCell
+                      net={row.totals.put_notional}
+                      buy={row.totals.buy_put_notional}
+                      short={row.totals.short_put_notional}
+                      emphasize
+                      last
+                    />
+                  </tr>
                 </tbody>
               </table>
             </div>,

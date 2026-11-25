@@ -37,6 +37,7 @@ export interface LivePositionsData {
 export interface LiveHolding {
   tradingsymbol: string;
   exchange?: string;
+  instrument_type?: string;
   quantity: number;
   available_quantity?: number;
   average_price?: number;
@@ -44,4 +45,7 @@ export interface LiveHolding {
   close_price?: number;
   pnl?: number;
   current_value?: number;
+  /** Coin NAV date for mutual fund rows */
+  nav_date?: string | null;
+  isin?: string;
 }
