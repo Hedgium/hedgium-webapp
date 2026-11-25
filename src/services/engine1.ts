@@ -10,6 +10,8 @@ import type {
   Engine1Preview,
   Engine1PreviewPayload,
   Engine1ExecutePayload,
+  Engine1SitePage,
+  Engine1SiteTicket,
 } from "@/types/engine1";
 
 async function readError(res: Response, fallback: string): Promise<string> {
@@ -147,4 +149,16 @@ export async function sellCashPark(profileId: string | number): Promise<CashPark
   });
   if (!res.ok) throw new Error(await readError(res, "Failed to queue sell"));
   return res.json() as Promise<CashParkRow>;
+}
+
+export async function fetchEngine1SitePages(): Promise<Engine1SitePage[]> {
+  const res = await authFetch("engine1/site/pages/");
+  if (!res.ok) throw new Error(await readError(res, "Failed to load the Engine 1 site pages"));
+  return res.json() as Promise<Engine1SitePage[]>;
+}
+
+export async function fetchEngine1SiteTicket(): Promise<Engine1SiteTicket> {
+  const res = await authFetch("engine1/site/ticket/", { method: "POST" });
+  if (!res.ok) throw new Error(await readError(res, "Failed to open the Engine 1 site"));
+  return res.json() as Promise<Engine1SiteTicket>;
 }
