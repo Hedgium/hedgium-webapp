@@ -7,7 +7,7 @@ import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { Profile } from "@/types/profile";
 import { LiveHolding } from "@/types/positions";
-import { IndianRupee, RefreshCw, Search, BarChart3, Info, Users, TrendingUp, Wallet, ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { IndianRupee, RefreshCw, Search, BarChart3, Info, Users, TrendingUp, Wallet, ArrowDown, ArrowUp, ArrowUpDown, Check } from "lucide-react";
 import { USER_ROLE_FILTER_OPTIONS, userRoleLabel } from "@/constants/userRoles";
 import NetPnlWithCosts from "@/components/reports/NetPnlWithCosts";
 import FirmRoiPanel from "@/components/admin/FirmRoiPanel";
@@ -57,6 +57,7 @@ type ClientPnlRow = {
   userRole?: string | null;
   brokerName: string;
   brokerLoggedIn: boolean;
+  readyForTrade: boolean;
   riskProfile: string | null;
   pnlInceptionDate: string | null;
   e2PnlInceptionDate: string | null;
@@ -292,13 +293,22 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
+function isMutualFundHolding(holding: LiveHolding): boolean {
+  return (
+    String(holding.instrument_type || "")
+      .trim()
+      .toLowerCase() === "mutual fund"
+  );
+}
+
 function sumHoldingsMetrics(holdings: LiveHolding[]): {
   engine1Total: number;
   engine1Pnl: number;
 } {
+  const equity = holdings.filter((h) => !isMutualFundHolding(h));
   return {
-    engine1Total: holdings.reduce((sum, h) => sum + (h.current_value ?? 0), 0),
-    engine1Pnl: holdings.reduce((sum, h) => sum + (h.pnl ?? 0), 0),
+    engine1Total: equity.reduce((sum, h) => sum + (h.current_value ?? 0), 0),
+    engine1Pnl: equity.reduce((sum, h) => sum + (h.pnl ?? 0), 0),
   };
 }
 
@@ -472,6 +482,7 @@ function profileToRow(profile: Profile, partial?: Partial<ClientPnlRow>): Client
     userRole: profile.user?.role ?? null,
     brokerName: profile.broker_name,
     brokerLoggedIn: profile.broker_logged_in,
+    readyForTrade: profile.ready_for_trade ?? false,
     riskProfile: profile.risk_profile ?? null,
     pnlInceptionDate: profile.pnl_inception_date ?? null,
     e2PnlInceptionDate: profile.e2_pnl_inception_date ?? null,
@@ -985,6 +996,9 @@ export default function AdminClientPnlPage() {
                   <td className="min-w-[12rem] max-w-[18rem]">
                     <div className="flex flex-col gap-0.5">
                       <div className="flex flex-wrap items-center gap-1.5">
+                        {row.readyForTrade ? (
+                          <Check className="h-3.5 w-3.5 shrink-0 text-success" aria-label="Ready for trade" />
+                        ) : null}
                         <Link
                           href={`/admin/profiles/${row.profileId}/live`}
                           className="link link-primary font-mono text-sm font-medium"

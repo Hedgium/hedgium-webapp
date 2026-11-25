@@ -78,6 +78,8 @@ export interface Profile {
     auto_trade_allowed?: boolean;
     /** If true, client is skipped when auto-assigning new strategies. */
     strategies_paused?: boolean;
+    /** If false, new strategy assignment and activation checks are blocked. */
+    ready_for_trade?: boolean;
     /** Underlyings this profile must not newly trade (employer / compliance). */
     blocked_symbols?: string[];
     /** LOW | MEDIUM | HIGH — used by Engine 1 allocation. */

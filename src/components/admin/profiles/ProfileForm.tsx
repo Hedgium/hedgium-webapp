@@ -74,6 +74,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
         verified: false,
         auto_trade_allowed: false,
         strategies_paused: false,
+        ready_for_trade: false,
         blocked_symbols_text: '',
         mobile: '',
         signup_step: 'initiated',
@@ -179,6 +180,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             verified: initialData.verified,
             auto_trade_allowed: initialData.auto_trade_allowed ?? false,
             strategies_paused: initialData.strategies_paused ?? false,
+            ready_for_trade: initialData.ready_for_trade ?? false,
             blocked_symbols_text: (initialData.blocked_symbols ?? []).join(', '),
             mobile: u?.mobile ?? '',
             signup_step: u?.signup_step ?? 'initiated',
@@ -247,6 +249,7 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
             verified: formData.verified,
             auto_trade_allowed: formData.auto_trade_allowed,
             strategies_paused: formData.strategies_paused,
+            ready_for_trade: formData.ready_for_trade,
             blocked_symbols: formData.blocked_symbols_text
                 .split(/[,\s]+/)
                 .map((s) => s.trim().toUpperCase())
@@ -564,6 +567,21 @@ export default function ProfileForm({ initialData, onSubmit, onCancel }: Profile
                         </label>
                         <p className="text-xs text-base-content/60 mt-1">
                             When paused, this client is skipped for new automatic strategy assignment. Existing live cycles keep running.
+                        </p>
+                    </div>
+                    <div className="form-control md:col-span-2">
+                        <label className="label cursor-pointer justify-start gap-4">
+                            <span className="label-text">Ready for trade</span>
+                            <input
+                                type="checkbox"
+                                name="ready_for_trade"
+                                checked={formData.ready_for_trade}
+                                onChange={handleChange}
+                                className="checkbox checkbox-success"
+                            />
+                        </label>
+                        <p className="text-xs text-base-content/60 mt-1">
+                            When off, this profile is skipped for new strategy assignment, and the activation check keeps the cycle locked.
                         </p>
                     </div>
                     <div className="form-control md:col-span-2">
