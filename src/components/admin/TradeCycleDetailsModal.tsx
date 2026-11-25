@@ -22,6 +22,7 @@ import PositionsSummary from "../positions/PositionsSummary";
 import TradeCycleDetailsModalSkeleton from "@/components/skeletons/TradeCycleDetailsModalSkeleton";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import {
+    exitAllPositions,
     placePositionOrder,
     type PositionOrderIntent,
 } from "@/services/tradeCycles";
@@ -316,6 +317,7 @@ export default function TradeCycleDetailsModal({
     const [exitIntent, setExitIntent] = useState<PositionOrderIntent>("exit");
     const [exitQuantity, setExitQuantity] = useState("");
     const [exitingPosition, setExitingPosition] = useState(false);
+    const [exitingAll, setExitingAll] = useState(false);
 
     const [livePositionsRaw, setLivePositionsRaw] = useState<LivePosition[]>([]);
     /** True until the first live-positions fetch for this open finishes (avoids empty-table flash). */
@@ -516,6 +518,41 @@ export default function TradeCycleDetailsModal({
         setExitPosition(null);
         setExitQuantity("");
         setExitIntent("exit");
+    }
+
+    async function handleExitAll() {
+        const openCount = displayPositions.filter((pos) => pos.quantity !== 0).length;
+        if (openCount < 1) {
+            alert.error("No open live positions to exit");
+            return;
+        }
+        const label = openCount === 1 ? "1 open live position" : `${openCount} open live positions`;
+        if (
+            !window.confirm(
+                `Exit ${label}? This sends LIMIT orders split into value batches.`
+            )
+        ) {
+            return;
+        }
+
+        setExitingAll(true);
+        try {
+            const { ok, data: body } = await exitAllPositions(tradeCycleId);
+            const detail =
+                typeof body.detail === "string" ? body.detail : "Failed to exit positions";
+            if (ok && body.status === "success") {
+                alert.success(detail);
+                const next = await fetchDetails();
+                const pid = profileId ?? next?.trade_cycle?.profile_id;
+                await Promise.all([fetchLivePositions(pid), fetchLiveOrders(next, pid)]);
+            } else {
+                alert.error(detail);
+            }
+        } catch (err) {
+            alert.error(err instanceof Error ? err.message : "Failed to exit positions");
+        } finally {
+            setExitingAll(false);
+        }
     }
 
     async function handleExitPosition(e: FormEvent) {
@@ -802,17 +839,8 @@ export default function TradeCycleDetailsModal({
             ),
         [livePositionsRaw, data?.positions, underlyingsSorted]
     );
-    const livePositionTotals = useMemo(
-        () => ({
-            pnl_total: displayPositions.reduce((sum, p) => sum + (p.pnl || 0), 0),
-            realised_total: displayPositions.reduce((sum, p) => sum + (p.realised_total || 0), 0),
-            unrealised_total: displayPositions.reduce(
-                (sum, p) => sum + (p.unrealised_total || 0),
-                0
-            ),
-            total_buy_qty: displayPositions.reduce((sum, p) => sum + (p.buy_quantity || 0), 0),
-            total_sell_qty: displayPositions.reduce((sum, p) => sum + (p.sell_quantity || 0), 0),
-        }),
+    const openLivePositionCount = useMemo(
+        () => displayPositions.filter((pos) => pos.quantity !== 0).length,
         [displayPositions]
     );
     const openLiveOrderCount = useMemo(
@@ -945,6 +973,23 @@ export default function TradeCycleDetailsModal({
                                             {displayPositions.length === 1 ? "position" : "positions"}
                                         </span>
                                         <button
+                                            type="button"
+                                            className="btn btn-sm btn-outline btn-error"
+                                            title="Exit every open live position in value batches"
+                                            disabled={
+                                                exitingAll ||
+                                                loadingLivePositions ||
+                                                openLivePositionCount < 1
+                                            }
+                                            onClick={() => void handleExitAll()}
+                                        >
+                                            {exitingAll ? (
+                                                <span className="loading loading-spinner loading-xs" />
+                                            ) : (
+                                                "Exit all"
+                                            )}
+                                        </button>
+                                        <button
                                             onClick={() => void refreshLiveData()}
                                             disabled={
                                                 refreshing || loadingLivePositions || !profileId
@@ -975,25 +1020,18 @@ export default function TradeCycleDetailsModal({
                                             <span className="loading loading-spinner loading-md" />
                                         </div>
                                     ) : (
-                                        <>
-                                            <PositionsSummary
+                                        <div className="mb-4 rounded-lg border border-base-300">
+                                            <PositionsTable
                                                 positions={displayPositions}
-                                                totals={livePositionTotals}
-                                                className="mb-4"
+                                                showAdminTradesAction={true}
+                                                showAdminExitAction={true}
+                                                showGreeks={true}
+                                                groupByExpiry={true}
+                                                showPnl={false}
+                                                onAdminViewTrades={openTradesForPosition}
+                                                onAdminPositionOrder={openExitForPosition}
                                             />
-
-                                            <div className="mb-4 rounded-lg border border-base-300">
-                                                <PositionsTable
-                                                    positions={displayPositions}
-                                                    showAdminTradesAction={true}
-                                                    showAdminExitAction={true}
-                                                    showGreeks={true}
-                                                    groupByExpiry={true}
-                                                    onAdminViewTrades={openTradesForPosition}
-                                                    onAdminPositionOrder={openExitForPosition}
-                                                />
-                                            </div>
-                                        </>
+                                        </div>
                                     )}
                                 </div>
                             )}

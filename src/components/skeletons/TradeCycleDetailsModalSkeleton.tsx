@@ -24,16 +24,8 @@ export default function TradeCycleDetailsModalSkeleton() {
       <section>
         <div className="mb-3 flex items-center justify-end gap-2">
           <div className="h-6 w-20 rounded-full bg-base-200" />
+          <div className="h-8 w-20 rounded-lg bg-base-200" />
           <div className="h-9 w-9 rounded-lg bg-base-200" />
-        </div>
-
-        <div className="mb-4 grid grid-cols-3 gap-3 rounded-lg bg-base-200 p-3 md:grid-cols-5">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="space-y-2 text-center">
-              <div className="mx-auto h-3 w-14 rounded bg-base-300/70" />
-              <div className="mx-auto h-5 w-16 rounded bg-base-300/80" />
-            </div>
-          ))}
         </div>
 
         <div className="overflow-hidden rounded-lg border border-base-300">

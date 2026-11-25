@@ -49,6 +49,8 @@ interface PositionsTableProps {
   showGreeks?: boolean;
   /** Staff-only: section by expiry with a strike sort control. */
   groupByExpiry?: boolean;
+  /** Broker live rows omit PnL; stored positions keep it. */
+  showPnl?: boolean;
   className?: string;
 }
 
@@ -144,6 +146,7 @@ function PositionRow({
     showActions: boolean;
     showAdminTradesAction: boolean;
     showAdminExitAction: boolean;
+    showPnl: boolean;
   };
   onAdminViewTrades?: (position: Position) => void;
   onAdminPositionOrder?: (position: Position, intent: PositionOrderIntent) => void;
@@ -171,18 +174,22 @@ function PositionRow({
       <td className="tabular-nums">
         {pos.last_price ? formatMoneyIN(pos.last_price) : "-"}
       </td>
-      <td>{formatMoneyIN(unrealisedValue)}</td>
-      <td>{formatMoneyIN(realisedValue)}</td>
-      <td className={pnlColor}>
-        <div className="flex items-center gap-1 font-semibold">
-          {pos.pnl >= 0 ? (
-            <TrendingUp width={12} aria-hidden="true" />
-          ) : (
-            <TrendingDown width={12} aria-hidden="true" />
-          )}
-          {formatMoneyIN(pos.pnl)}
-        </div>
-      </td>
+      {colSpanFlags.showPnl ? (
+        <>
+          <td>{formatMoneyIN(unrealisedValue)}</td>
+          <td>{formatMoneyIN(realisedValue)}</td>
+          <td className={pnlColor}>
+            <div className="flex items-center gap-1 font-semibold">
+              {pos.pnl >= 0 ? (
+                <TrendingUp width={12} aria-hidden="true" />
+              ) : (
+                <TrendingDown width={12} aria-hidden="true" />
+              )}
+              {formatMoneyIN(pos.pnl)}
+            </div>
+          </td>
+        </>
+      ) : null}
       {colSpanFlags.showGreeks && (
         <td>
           <PositionGreeksCell greeks={pos} compact />
@@ -281,6 +288,7 @@ export default function PositionsTable({
   onAdminPositionOrder,
   showGreeks = false,
   groupByExpiry = false,
+  showPnl = true,
   className = "",
 }: PositionsTableProps) {
   const showActions = showAdminTradesAction || showAdminExitAction;
@@ -303,10 +311,12 @@ export default function PositionsTable({
     showActions,
     showAdminTradesAction,
     showAdminExitAction,
+    showPnl,
   };
 
   const columnCount =
-    8 +
+    5 +
+    (showPnl ? 3 : 0) +
     (colSpanFlags.showStrike ? 1 : 0) +
     (showGreeks ? 1 : 0) +
     (showActions ? 1 : 0);
@@ -361,9 +371,11 @@ export default function PositionsTable({
                   {group.positions.length}{" "}
                   {group.positions.length === 1 ? "leg" : "legs"}
                 </span>
-                <span className={`tabular-nums font-medium ${getPnLColor(groupPnl)}`}>
-                  {formatMoneyIN(groupPnl)}
-                </span>
+                {showPnl ? (
+                  <span className={`tabular-nums font-medium ${getPnLColor(groupPnl)}`}>
+                    {formatMoneyIN(groupPnl)}
+                  </span>
+                ) : null}
               </button>
             </th>
           </tr>,
@@ -428,9 +440,13 @@ export default function PositionsTable({
             <th scope="col">Buy Avg</th>
             <th scope="col">Sell Avg</th>
             <th scope="col">LTP</th>
-            <th scope="col">Unrealised</th>
-            <th scope="col">Realised</th>
-            <th scope="col">PnL</th>
+            {showPnl ? (
+              <>
+                <th scope="col">Unrealised</th>
+                <th scope="col">Realised</th>
+                <th scope="col">PnL</th>
+              </>
+            ) : null}
             {showGreeks && <th scope="col">Greeks</th>}
             {showActions ? (
               <th scope="col" className="whitespace-nowrap">
