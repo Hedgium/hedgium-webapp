@@ -529,7 +529,7 @@ export default function TradeCycleDetailsModal({
         const label = openCount === 1 ? "1 open live position" : `${openCount} open live positions`;
         if (
             !window.confirm(
-                `Exit ${label}? This sends LIMIT orders split into value batches.`
+                `Exit ${label}? Orders are created from live positions in batches. The cycle closes when nothing is left open.`
             )
         ) {
             return;
@@ -975,7 +975,7 @@ export default function TradeCycleDetailsModal({
                                         <button
                                             type="button"
                                             className="btn btn-sm btn-outline btn-error"
-                                            title="Exit every open live position in value batches"
+                                            title="Exit live positions in waves, then close the cycle when flat"
                                             disabled={
                                                 exitingAll ||
                                                 loadingLivePositions ||
