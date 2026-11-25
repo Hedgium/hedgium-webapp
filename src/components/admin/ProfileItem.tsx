@@ -43,6 +43,8 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan, 
     const [blockedSymbols, setBlockedSymbols] = useState<string[]>(profile.blocked_symbols ?? []);
     const [blockedSymbolInput, setBlockedSymbolInput] = useState('');
     const [savingBlockedSymbols, setSavingBlockedSymbols] = useState(false);
+    const [readyForTrade, setReadyForTrade] = useState(profile.ready_for_trade ?? false);
+    const [savingReadyForTrade, setSavingReadyForTrade] = useState(false);
 
     // Broker Login State (generic for SHOONYA, ZERODHA, etc.)
     const [isBrokerLoginModalOpen, setIsBrokerLoginModalOpen] = useState(false);
@@ -74,6 +76,35 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan, 
     useEffect(() => {
         setBlockedSymbols(profile.blocked_symbols ?? []);
     }, [profile.blocked_symbols]);
+
+    useEffect(() => {
+        setReadyForTrade(profile.ready_for_trade ?? false);
+    }, [profile.ready_for_trade]);
+
+    const handleToggleReadyForTrade = async () => {
+        const next = !readyForTrade;
+        setSavingReadyForTrade(true);
+        try {
+            const response = await authFetch(`profiles/${profile.id}/`, {
+                method: 'PUT',
+                body: JSON.stringify({ ready_for_trade: next }),
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                alert.error(errorData.detail || 'Failed to update ready for trade');
+                return;
+            }
+            const updated = (await response.json()) as Profile;
+            setReadyForTrade(updated.ready_for_trade ?? next);
+            onUpdated?.(updated);
+            alert.success(next ? 'Ready for trade turned on' : 'Ready for trade turned off');
+        } catch (error) {
+            console.error('Error updating ready for trade:', error);
+            alert.error('Failed to update ready for trade');
+        } finally {
+            setSavingReadyForTrade(false);
+        }
+    };
 
     const persistBlockedSymbols = async (next: string[]) => {
         const normalized = Array.from(
@@ -404,7 +435,7 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan, 
                         {brokerLoggedIn ? (
                             <span className="badge badge-success badge-xs whitespace-nowrap">Broker in</span>
                         ) : (
-                            <span className="badge badge-ghost badge-xs whitespace-nowrap">Broker out</span>
+                            <span className="badge badge-error badge-xs whitespace-nowrap">Broker out</span>
                         )}
                     </div>
                     <p className="text-xs text-base-content/55">
@@ -439,6 +470,15 @@ export default function ProfileItem({ profile, onEdit, onAddPlan, onModifyPlan, 
                                 Paused
                             </span>
                         ) : null}
+                        <button
+                            type="button"
+                            className={`px-2 py-0.5 rounded text-xs ${readyForTrade ? "bg-success/20 text-success" : "bg-error/15 text-error"}`}
+                            title={readyForTrade ? "Ready for trade. Click to turn off." : "Not ready for trade. Click to turn on."}
+                            disabled={savingReadyForTrade}
+                            onClick={() => void handleToggleReadyForTrade()}
+                        >
+                            {savingReadyForTrade ? "Saving…" : readyForTrade ? "Ready" : "Not ready"}
+                        </button>
                         <span className={`px-2 py-0.5 rounded text-xs ${profile.verified ? "bg-success/20 text-success" : "bg-error/15 text-error"}`} title="Profile verified">
                             P {profile.verified ? "✓" : "✗"}
                         </span>

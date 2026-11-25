@@ -71,3 +71,13 @@ export async function placePositionOrder(
   const data = (await res.json()) as Record<string, unknown>;
   return { ok: res.ok, data };
 }
+
+export async function exitAllPositions(
+  tradeCycleId: number
+): Promise<{ ok: boolean; data: Record<string, unknown> }> {
+  const res = await authFetch(`trade-cycles/${tradeCycleId}/exit-all/`, {
+    method: "POST",
+  });
+  const data = (await res.json()) as Record<string, unknown>;
+  return { ok: res.ok, data };
+}

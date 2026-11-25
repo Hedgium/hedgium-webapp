@@ -42,6 +42,10 @@ const OrderHistoryModal = dynamic(
   () => import("@/components/admin/profiles/OrderHistoryModal"),
   { ssr: false }
 );
+const ManualMutualFundLotsPanel = dynamic(
+  () => import("@/components/admin/profiles/ManualMutualFundLotsPanel"),
+  { ssr: false }
+);
 
 function formatDateTimeCell(value: string | Date | null | undefined): string {
   if (value == null || value === "") return "—";
@@ -174,8 +178,13 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   /** When live trades were last fetched (fallback when trade has no fill time). */
   const [tradesFetchedAt, setTradesFetchedAt] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const canManageManualMutualFunds =
+    canViewHoldings &&
+    Boolean(profile?.broker_name) &&
+    profile?.broker_name !== "KOTAKNEO";
 
   const [showPlaceOrderForm, setShowPlaceOrderForm] = useState(false);
+  const [showMutualFundModal, setShowMutualFundModal] = useState(false);
   const [showEngine1Modal, setShowEngine1Modal] = useState(false);
   const [showDepthModal, setShowDepthModal] = useState(false);
   const [depthSymbol, setDepthSymbol] = useState("");
@@ -975,6 +984,16 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                 <span className="badge badge-md badge-outline">
                   {holdings.length} {holdings.length === 1 ? "holding" : "holdings"}
                 </span>
+                {canManageManualMutualFunds ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowMutualFundModal(true)}
+                    className="btn btn-ghost btn-sm"
+                    title="Add mutual fund lots"
+                  >
+                    <Plus size={16} />
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={fetchHoldings}
@@ -1037,27 +1056,61 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
                       </tr>
                     </thead>
                     <tbody>
-                      {holdings.map((holding: LiveHolding, index: number) => (
-                        <tr key={`${holding.exchange ?? "NA"}-${holding.tradingsymbol}-${index}`}>
-                          <td className="font-medium">{holding.tradingsymbol}</td>
-                          <td className="whitespace-nowrap text-xs text-base-content/80">
-                            {formatDateTimeCell(holdingsFetchedAt)}
-                          </td>
-                          <td>{holding.quantity ?? "-"}</td>
-                          <td>{holding.available_quantity ?? "-"}</td>
-                          <td>
-                            {holding.average_price != null ? formatMoneyIN(holding.average_price) : "-"}
-                          </td>
-                          <td>{holding.last_price != null ? formatMoneyIN(holding.last_price) : "-"}</td>
-                          <td>{holding.close_price != null ? formatMoneyIN(holding.close_price) : "-"}</td>
-                          <td>
-                            {holding.current_value != null ? formatMoneyIN(holding.current_value) : "-"}
-                          </td>
-                          <td className={holding.pnl != null && holding.pnl >= 0 ? "text-green-400" : "text-red-400"}>
-                            {holding.pnl != null ? formatMoneyIN(holding.pnl) : "-"}
-                          </td>
-                        </tr>
-                      ))}
+                      {holdings.map((holding: LiveHolding, index: number) => {
+                        const isMutualFund =
+                          String(holding.instrument_type || "")
+                            .trim()
+                            .toLowerCase() === "mutual fund";
+                        const dateCell = isMutualFund
+                          ? holding.nav_date || "—"
+                          : formatDateTimeCell(holdingsFetchedAt);
+                        return (
+                          <tr
+                            key={`${holding.exchange ?? "NA"}-${holding.isin ?? holding.tradingsymbol}-${index}`}
+                          >
+                            <td className="font-medium">
+                              {holding.tradingsymbol}
+                              {isMutualFund ? (
+                                <span className="ml-2 badge badge-ghost badge-xs">MF</span>
+                              ) : null}
+                            </td>
+                            <td className="whitespace-nowrap text-xs text-base-content/80">
+                              {dateCell}
+                            </td>
+                            <td>{holding.quantity ?? "-"}</td>
+                            <td>{holding.available_quantity ?? "-"}</td>
+                            <td>
+                              {holding.average_price != null
+                                ? formatMoneyIN(holding.average_price)
+                                : "-"}
+                            </td>
+                            <td>
+                              {holding.last_price != null
+                                ? formatMoneyIN(holding.last_price)
+                                : "-"}
+                            </td>
+                            <td>
+                              {holding.close_price != null
+                                ? formatMoneyIN(holding.close_price)
+                                : "-"}
+                            </td>
+                            <td>
+                              {holding.current_value != null
+                                ? formatMoneyIN(holding.current_value)
+                                : "-"}
+                            </td>
+                            <td
+                              className={
+                                holding.pnl != null && holding.pnl >= 0
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }
+                            >
+                              {holding.pnl != null ? formatMoneyIN(holding.pnl) : "-"}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1561,6 +1614,37 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
           }}
         />
       )}
+
+      {showMutualFundModal && canManageManualMutualFunds ? (
+        <div className="modal modal-open z-[1100]" role="dialog" aria-modal="true">
+          <div className="modal-box w-11/12 max-w-5xl max-h-[90vh] overflow-y-auto rounded-xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold">Mutual fund lots</h3>
+                <p className="text-sm text-base-content/70">
+                  Add purchase lots for schemes this broker does not return in holdings.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm btn-circle"
+                aria-label="Close"
+                onClick={() => setShowMutualFundModal(false)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <ManualMutualFundLotsPanel
+              profileId={profileId}
+              onLotsChanged={fetchHoldings}
+            />
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => setShowMutualFundModal(false)}
+          />
+        </div>
+      ) : null}
     </>
   );
 }
