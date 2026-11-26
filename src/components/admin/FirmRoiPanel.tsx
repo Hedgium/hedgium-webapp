@@ -185,7 +185,7 @@ const XIRR_COLUMNS = [
   { key: "month", label: "Month", detailKey: "month" },
   { key: "quarter", label: "Quarter", detailKey: "quarter" },
   { key: "ytd", label: "YTD", detailKey: "fy" },
-  { key: "all", label: "All (annual)", detailKey: null },
+  { key: "all", label: "All (annualised)", detailKey: null },
 ] as const;
 
 function FirmXirrSkeleton() {
