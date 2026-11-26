@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncSelect from "react-select/async";
 import type { StylesConfig } from "react-select";
 import dynamic from "next/dynamic";
-import { Check, Pencil, PieChart, Plus, Save, Trash2, Wallet, X } from "lucide-react";
+import Link from "next/link";
+import { Check, Globe, Pencil, PieChart, Plus, Save, Trash2, Wallet, X } from "lucide-react";
 import useAlert from "@/hooks/useAlert";
 import { authFetch } from "@/utils/api";
 import {
@@ -406,7 +407,7 @@ export default function AdminEngine1Page() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto lg:px-8">
-      <header className="mb-6">
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-xl bg-primary/10 p-2.5">
             <PieChart className="size-6 text-primary" aria-hidden />
@@ -422,6 +423,9 @@ export default function AdminEngine1Page() {
             </p>
           </div>
         </div>
+        <Link href="/admin/engine1/site" className="btn btn-sm shrink-0">
+          <Globe className="size-4" /> Fund site
+        </Link>
       </header>
 
       <div

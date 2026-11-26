@@ -65,5 +65,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin', '/admin/:path*'],
+  // /admin-site serves the Engine 1 fund-site pages shown under /admin/engine1/site;
+  // it gets the same session + admin-IP checks as /admin itself.
+  matcher: ['/admin', '/admin/:path*', '/admin-site/:path*'],
 };

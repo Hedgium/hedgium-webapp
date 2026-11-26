@@ -39,6 +39,7 @@ export default function ProfilesPage() {
   const [verifiedFilter, setVerifiedFilter] = useState<string>("");
   const [loggedInFilter, setLoggedInFilter] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("");
+  const [e1ManagedFilter, setE1ManagedFilter] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"profiles" | "no-profiles">("profiles");
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -68,6 +69,7 @@ export default function ProfilesPage() {
       if (verifiedFilter) params.append("verified", verifiedFilter);
       if (loggedInFilter) params.append("logged_in", loggedInFilter);
       if (roleFilter) params.append("user_role", roleFilter);
+      if (e1ManagedFilter) params.append("e1_hedgium_managed", e1ManagedFilter);
 
       params.append("include_users_without_profiles", "true");
       const response = await authFetch(`profiles/?${params.toString()}`);
@@ -85,7 +87,7 @@ export default function ProfilesPage() {
 
   useEffect(() => {
     fetchProfiles();
-  }, [debouncedSearch, brokerFilter, subscriptionFilter, verifiedFilter, loggedInFilter, roleFilter]);
+  }, [debouncedSearch, brokerFilter, subscriptionFilter, verifiedFilter, loggedInFilter, roleFilter, e1ManagedFilter]);
 
   const fetchNextPage = async () => {
     if (!nextPage) return;
@@ -204,6 +206,7 @@ export default function ProfilesPage() {
     setVerifiedFilter("");
     setLoggedInFilter("");
     setRoleFilter("");
+    setE1ManagedFilter("");
     setSearchQuery("");
   };
 
@@ -213,6 +216,7 @@ export default function ProfilesPage() {
     verifiedFilter ||
     loggedInFilter ||
     roleFilter ||
+    e1ManagedFilter ||
     searchQuery;
 
   return (
@@ -300,6 +304,16 @@ export default function ProfilesPage() {
                   {opt.label}
                 </option>
               ))}
+            </select>
+            <select
+              value={e1ManagedFilter}
+              onChange={(e) => setE1ManagedFilter(e.target.value)}
+              className="select select-bordered select-sm h-9 w-48"
+              aria-label="Filter by E1 Hedgium managed"
+            >
+              <option value="">All E1</option>
+              <option value="true">E1 Hedgium managed</option>
+              <option value="false">E1 self managed</option>
             </select>
             {hasActiveFilters && (
               <button

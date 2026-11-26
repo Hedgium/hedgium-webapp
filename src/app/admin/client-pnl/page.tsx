@@ -7,11 +7,14 @@ import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
 import { Profile } from "@/types/profile";
 import { LiveHolding } from "@/types/positions";
-import { IndianRupee, RefreshCw, Search, BarChart3, Info, Users, TrendingUp, Wallet, ArrowDown, ArrowUp, ArrowUpDown, Check } from "lucide-react";
+import { IndianRupee, RefreshCw, Search, BarChart3, Info, Users, TrendingUp, Wallet, ArrowDown, ArrowUp, ArrowUpDown, Check, Plus } from "lucide-react";
 import { USER_ROLE_FILTER_OPTIONS, userRoleLabel } from "@/constants/userRoles";
 import NetPnlWithCosts from "@/components/reports/NetPnlWithCosts";
 import FirmRoiPanel from "@/components/admin/FirmRoiPanel";
 import CashFlowPanel from "@/components/admin/CashFlowPanel";
+import AddToStrategyModal, {
+  type AddToStrategyTarget,
+} from "@/components/admin/AddToStrategyModal";
 import { ENGINE1_RISKS, ENGINE1_RISK_LABELS, type Engine1Risk } from "@/types/engine1";
 
 type ClientPnlTab = "clients" | "performance" | "cashflow";
@@ -62,6 +65,10 @@ type ClientPnlRow = {
   pnlInceptionDate: string | null;
   e2PnlInceptionDate: string | null;
   lastTradeDays: number | null;
+  marginEquity: number | null;
+  strategiesRunning: number;
+  strategiesTotal: number;
+  lastStrategyReceivedDays: number | null;
   status: "idle" | "loading" | "done" | "error";
   error?: string;
   engine1Total: number | null;
@@ -70,10 +77,32 @@ type ClientPnlRow = {
   margin: LiveMargin | null;
 };
 
+type MarginFilter = "" | "25L" | "50L" | "75L";
+type ReadyForTradeFilter = "" | "true" | "false";
+
+const MARGIN_FILTER_THRESHOLDS: Record<Exclude<MarginFilter, "">, number> = {
+  "25L": 2_500_000,
+  "50L": 5_000_000,
+  "75L": 7_500_000,
+};
+
+const BROKER_FILTER_OPTIONS = [
+  { value: "", label: "All brokers" },
+  { value: "SHOONYA", label: "Shoonya" },
+  { value: "ZERODHA", label: "Zerodha" },
+  { value: "KOTAKNEO", label: "Kotak Neo" },
+  { value: "IIFLCAPITAL", label: "IIFL Capital" },
+  { value: "PROSTOCKS", label: "ProStocks" },
+  { value: "SHAREINDIA", label: "Share India" },
+  { value: "PAPER", label: "Paper" },
+] as const;
+
 type SortKey =
   | "clientId"
   | "risk"
   | "lastTradeDays"
+  | "strategiesRunning"
+  | "lastStrategyReceivedDays"
   | "utilisedMargin"
   | "engine1Total"
   | "availableCash"
@@ -117,6 +146,10 @@ function sortValue(row: ClientPnlRow, key: SortKey): number | string | null {
     }
     case "lastTradeDays":
       return row.lastTradeDays;
+    case "strategiesRunning":
+      return row.strategiesRunning;
+    case "lastStrategyReceivedDays":
+      return row.lastStrategyReceivedDays;
     case "utilisedMargin":
       return row.margin?.utilised_total ?? null;
     case "engine1Total":
@@ -487,6 +520,13 @@ function profileToRow(profile: Profile, partial?: Partial<ClientPnlRow>): Client
     pnlInceptionDate: profile.pnl_inception_date ?? null,
     e2PnlInceptionDate: profile.e2_pnl_inception_date ?? null,
     lastTradeDays: profile.last_trade_days ?? null,
+    marginEquity:
+      profile.margin_equity != null && !Number.isNaN(Number(profile.margin_equity))
+        ? Number(profile.margin_equity)
+        : null,
+    strategiesRunning: profile.strategies_running ?? 0,
+    strategiesTotal: profile.strategies_total ?? 0,
+    lastStrategyReceivedDays: profile.last_strategy_received_days ?? null,
     status: "idle",
     engine1Total: null,
     engine1Pnl: null,
@@ -542,11 +582,18 @@ export default function AdminClientPnlPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("client");
+  const [brokerFilter, setBrokerFilter] = useState<string>("");
+  const [readyForTradeFilter, setReadyForTradeFilter] = useState<ReadyForTradeFilter>("");
   const [riskFilters, setRiskFilters] = useState<Set<Engine1Risk>>(() => new Set(ALL_RISKS));
+  const [marginFilter, setMarginFilter] = useState<MarginFilter>("");
+  const [zeroRunningOnly, setZeroRunningOnly] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [activeTab, setActiveTab] = useState<ClientPnlTab>("clients");
   const [engine2Period, setEngine2Period] = useState<{ month: string; quarter: string } | null>(
+    null
+  );
+  const [addToStrategyTarget, setAddToStrategyTarget] = useState<AddToStrategyTarget | null>(
     null
   );
   const refreshGen = useRef(0);
@@ -615,6 +662,7 @@ export default function AdminClientPnlPage() {
       params.set("page_size", "200");
       if (debouncedSearch) params.set("search", debouncedSearch);
       if (roleFilter) params.set("user_role", roleFilter);
+      if (brokerFilter) params.set("broker_name", brokerFilter);
 
       const res = await authFetch(`profiles/?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to load profiles");
@@ -631,7 +679,7 @@ export default function AdminClientPnlPage() {
       setRows([]);
       setLoadingProfiles(false);
     }
-  }, [debouncedSearch, roleFilter, refreshRows]);
+  }, [debouncedSearch, roleFilter, brokerFilter, refreshRows]);
 
   useEffect(() => {
     void loadProfilesAndMetrics();
@@ -645,6 +693,20 @@ export default function AdminClientPnlPage() {
     const profile = profiles.find((p) => p.id === profileId);
     if (!profile) return;
     await refreshRows([profile]);
+  };
+
+  const handleAddedToStrategy = (profileId: number) => {
+    setRows((prev) =>
+      prev.map((r) =>
+        r.profileId === profileId
+          ? {
+              ...r,
+              strategiesTotal: r.strategiesTotal + 1,
+              lastStrategyReceivedDays: 0,
+            }
+          : r
+      )
+    );
   };
 
   const anyLoading = rows.some((r) => r.status === "loading");
@@ -670,12 +732,23 @@ export default function AdminClientPnlPage() {
   const visibleRows = useMemo(() => {
     const filtered = rows.filter((row) => {
       const risk = asRisk(row.riskProfile);
-      if (risk == null) return riskFilters.size === ALL_RISKS.size;
-      return riskFilters.has(risk);
+      if (risk == null) {
+        if (riskFilters.size !== ALL_RISKS.size) return false;
+      } else if (!riskFilters.has(risk)) {
+        return false;
+      }
+      if (marginFilter) {
+        const threshold = MARGIN_FILTER_THRESHOLDS[marginFilter];
+        if (row.marginEquity == null || row.marginEquity <= threshold) return false;
+      }
+      if (zeroRunningOnly && row.strategiesRunning > 0) return false;
+      if (readyForTradeFilter === "true" && !row.readyForTrade) return false;
+      if (readyForTradeFilter === "false" && row.readyForTrade) return false;
+      return true;
     });
     if (!sortKey) return filtered;
     return [...filtered].sort((a, b) => compareRows(a, b, sortKey, sortDir));
-  }, [rows, riskFilters, sortKey, sortDir]);
+  }, [rows, riskFilters, marginFilter, zeroRunningOnly, readyForTradeFilter, sortKey, sortDir]);
 
   const totals = useMemo(() => computeTotals(visibleRows), [visibleRows]);
   const showTotals = !loadingProfiles && visibleRows.length > 0;
@@ -767,6 +840,30 @@ export default function AdminClientPnlPage() {
           ))}
         </select>
 
+        <select
+          value={brokerFilter}
+          onChange={(e) => setBrokerFilter(e.target.value)}
+          className="select select-bordered select-sm h-9 w-36"
+          aria-label="Filter by broker"
+        >
+          {BROKER_FILTER_OPTIONS.map((opt) => (
+            <option key={opt.value || "all"} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={readyForTradeFilter}
+          onChange={(e) => setReadyForTradeFilter(e.target.value as ReadyForTradeFilter)}
+          className="select select-bordered select-sm h-9 w-40"
+          aria-label="Filter by ready for trade"
+        >
+          <option value="">Ready: Any</option>
+          <option value="true">Ready for trade</option>
+          <option value="false">Not ready</option>
+        </select>
+
         <fieldset className="flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 px-2.5 py-1">
           <legend className="sr-only">Filter by risk category</legend>
           <span className="text-xs font-medium text-base-content/55">Risk</span>
@@ -782,6 +879,28 @@ export default function AdminClientPnlPage() {
             </label>
           ))}
         </fieldset>
+
+        <select
+          value={marginFilter}
+          onChange={(e) => setMarginFilter(e.target.value as MarginFilter)}
+          className="select select-bordered select-sm h-9 w-36"
+          aria-label="Filter by stored margin available"
+        >
+          <option value="">Margin: Any</option>
+          <option value="25L">Margin &gt;25L</option>
+          <option value="50L">Margin &gt;50L</option>
+          <option value="75L">Margin &gt;75L</option>
+        </select>
+
+        <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-base-300 bg-base-100 px-2.5 py-1 text-xs">
+          <input
+            type="checkbox"
+            className="checkbox checkbox-xs"
+            checked={zeroRunningOnly}
+            onChange={(e) => setZeroRunningOnly(e.target.checked)}
+          />
+          Zero running
+        </label>
 
         <button
           type="button"
@@ -814,6 +933,8 @@ export default function AdminClientPnlPage() {
                 </th>
                 <th className="text-right align-middle" aria-label="Risk" />
                 <th className="text-right align-middle" aria-label="Last trade days" />
+                <th className="text-right align-middle" aria-label="Strategies" />
+                <th className="text-right align-middle" aria-label="Last strategy received" />
                 <th className="text-right align-middle tabular-nums font-semibold text-base-content">
                   {anyLoading && totals.clientsIncluded === 0 ? "…" : formatTotalCell(totals.availableMargin)}
                 </th>
@@ -906,6 +1027,20 @@ export default function AdminClientPnlPage() {
                 onSort={handleSort}
               />
               <SortableTh
+                label="Strategies"
+                sortKey="strategiesRunning"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
+                label="Last recv"
+                sortKey="lastStrategyReceivedDays"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableTh
                 label="Avl margin"
                 sortKey="availableMargin"
                 activeKey={sortKey}
@@ -975,17 +1110,17 @@ export default function AdminClientPnlPage() {
             {loadingProfiles ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={13}>
+                  <td colSpan={15}>
                     <div className="h-8 animate-pulse rounded bg-base-300/40" />
                   </td>
                 </tr>
               ))
             ) : visibleRows.length === 0 ? (
               <tr>
-                <td colSpan={13} className="py-12 text-center text-base-content/55">
+                <td colSpan={15} className="py-12 text-center text-base-content/55">
                   {rows.length === 0
                     ? "No active profiles found."
-                    : "No clients match the selected risk filters."}
+                    : "No clients match the selected filters."}
                 </td>
               </tr>
             ) : (
@@ -1042,6 +1177,34 @@ export default function AdminClientPnlPage() {
                     {row.lastTradeDays == null || Number.isNaN(row.lastTradeDays)
                       ? "—"
                       : row.lastTradeDays}
+                  </td>
+                  <td className="text-right tabular-nums">
+                    {row.strategiesRunning}/{row.strategiesTotal}
+                  </td>
+                  <td className={`text-right ${lastTradeDaysClass(row.lastStrategyReceivedDays)}`}>
+                    <span className="inline-flex items-center justify-end gap-0.5">
+                      {row.lastStrategyReceivedDays == null ||
+                      Number.isNaN(row.lastStrategyReceivedDays)
+                        ? "—"
+                        : row.lastStrategyReceivedDays}
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-xs btn-square"
+                        title="Add to strategy"
+                        aria-label={`Add ${row.clientId} to strategy`}
+                        onClick={() =>
+                          setAddToStrategyTarget({
+                            profileId: row.profileId,
+                            clientId: row.clientId,
+                            userEmail: row.userEmail,
+                            marginEquity: row.marginEquity,
+                            readyForTrade: row.readyForTrade,
+                          })
+                        }
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
                   </td>
                   <td className="text-right tabular-nums">
                     {row.status === "loading" ? "…" : formatCell(row.margin?.available_total ?? null)}
@@ -1135,6 +1298,14 @@ export default function AdminClientPnlPage() {
         <p className="mt-2 text-xs text-warning">
           Some rows could not load all metrics (broker session, API limits, or missing data). Use per-row refresh to retry.
         </p>
+      ) : null}
+
+      {addToStrategyTarget ? (
+        <AddToStrategyModal
+          target={addToStrategyTarget}
+          onClose={() => setAddToStrategyTarget(null)}
+          onSuccess={handleAddedToStrategy}
+        />
       ) : null}
       </section>
       )}

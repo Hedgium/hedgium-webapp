@@ -144,3 +144,17 @@ export interface CashParkRow {
   last_sell_order_id: string | null;
   operation_running: boolean;
 }
+
+/** One page of the Engine 1 fund-screener site (uploaded by Engine 1's publish/daily runs). */
+export interface Engine1SitePage {
+  filename: string;
+  size_bytes: number;
+  published_at: string | null;
+  uploaded_at: string;
+}
+
+/** Short-lived ticket used in `/admin-site/<ticket>/<file>` page URLs. */
+export interface Engine1SiteTicket {
+  ticket: string;
+  expires_at: string;
+}
