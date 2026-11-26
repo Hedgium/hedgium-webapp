@@ -56,10 +56,13 @@ type FirmRoiAccount = {
 type FirmXirrPeriod = {
   e1_xirr?: number | null;
   e1_gain?: number | null;
+  e1_return?: number | null;
   e2_xirr?: number | null;
   e2_gain?: number | null;
+  e2_return?: number | null;
   xirr?: number | null;
   gain?: number | null;
+  total_return?: number | null;
   start?: string | null;
   as_of?: string | null;
   e1_accounts?: number;
@@ -96,7 +99,7 @@ type FirmRoiResponse = {
 const PAGE_SIZE = 25;
 
 const METHODOLOGY_TIP =
-  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception (never margin). E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. XIRR needs an approved cash flow and a latest account value. Period XIRR (Month, FY quarter, FY YTD) counts every account with an approved cash flow, same as All. Capital starts at the later of the opening cash flow and the total account value before the window, plus approved external flows after that. E1 ends at that capital plus the period's E1 pnl (Hedgium-managed). E2 ends at that capital plus the period's trade-cycle net PnL, the same figures as the ROI cards. Total is E1 + E2. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
+  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception (never margin). E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. XIRR needs an approved cash flow and a latest account value. Period XIRR (Month, FY quarter, FY YTD) counts every account with an approved cash flow, same as All. Capital starts at the later of the opening cash flow and the total account value before the window, plus approved external flows after that. E1 ends at that capital plus the period's E1 pnl (Hedgium-managed). E2 ends at that capital plus the period's trade-cycle net PnL, the same figures as the ROI cards. Total is E1 + E2. Month, quarter, and YTD show the return over that period: (1 + XIRR)^(days/365) − 1, days from capital start to as-of. All is the annual XIRR. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
 
 type FirmRoiMonthlyResponse = {
   months: FirmRoiMonthPoint[];
@@ -182,7 +185,7 @@ const XIRR_COLUMNS = [
   { key: "month", label: "Month", detailKey: "month" },
   { key: "quarter", label: "Quarter", detailKey: "quarter" },
   { key: "ytd", label: "YTD", detailKey: "fy" },
-  { key: "all", label: "All", detailKey: null },
+  { key: "all", label: "All (annual)", detailKey: null },
 ] as const;
 
 function FirmXirrSkeleton() {
@@ -361,6 +364,7 @@ export default function FirmRoiPanel() {
                     {
                       label: "E1",
                       rateKey: "e1_xirr" as const,
+                      returnKey: "e1_return" as const,
                       gainKey: "e1_gain" as const,
                       fallbackRate: data.e1_xirr,
                       fallbackGain: data.e1_xirr_gain,
@@ -369,6 +373,7 @@ export default function FirmRoiPanel() {
                     {
                       label: "E2",
                       rateKey: "e2_xirr" as const,
+                      returnKey: "e2_return" as const,
                       gainKey: "e2_gain" as const,
                       fallbackRate: data.e2_xirr,
                       fallbackGain: data.e2_xirr_gain,
@@ -377,6 +382,7 @@ export default function FirmRoiPanel() {
                     {
                       label: "Total",
                       rateKey: "xirr" as const,
+                      returnKey: "total_return" as const,
                       gainKey: "gain" as const,
                       fallbackRate: addNullable(data.e1_xirr, data.e2_xirr),
                       fallbackGain: addNullable(data.e1_xirr_gain, data.e2_xirr_gain),
@@ -392,9 +398,9 @@ export default function FirmRoiPanel() {
                     {XIRR_COLUMNS.map(({ key }) => {
                       const period = data.xirr_periods?.[key];
                       const rate =
-                        key === "all" && period?.[leg.rateKey] == null
-                          ? leg.fallbackRate
-                          : period?.[leg.rateKey];
+                        key === "all"
+                          ? (period?.[leg.rateKey] ?? leg.fallbackRate)
+                          : period?.[leg.returnKey];
                       const gain =
                         key === "all" && period?.[leg.gainKey] == null
                           ? leg.fallbackGain

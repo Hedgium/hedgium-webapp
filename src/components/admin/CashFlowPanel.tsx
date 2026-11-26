@@ -25,10 +25,13 @@ type CashFlowRow = {
 type PeriodXirr = {
   e1_xirr?: number | null;
   e1_gain?: number | null;
+  e1_return?: number | null;
   e2_xirr?: number | null;
   e2_gain?: number | null;
+  e2_return?: number | null;
   xirr?: number | null;
   gain?: number | null;
+  total_return?: number | null;
   start?: string | null;
   as_of?: string | null;
 };
@@ -504,7 +507,7 @@ export default function CashFlowPanel() {
                       { key: "month", label: "Month" },
                       { key: "quarter", label: "Quarter" },
                       { key: "ytd", label: "YTD" },
-                      { key: "all", label: "All" },
+                      { key: "all", label: "All (annual)" },
                     ] as const
                   ).map(({ key, label }) => (
                     <th key={key} className="pb-2 px-2 text-right font-medium">
@@ -519,11 +522,13 @@ export default function CashFlowPanel() {
                     {
                       label: "E1",
                       rateKey: "e1_xirr" as const,
+                      returnKey: "e1_return" as const,
                       gainKey: "e1_gain" as const,
                     },
                     {
                       label: "E2",
                       rateKey: "e2_xirr" as const,
+                      returnKey: "e2_return" as const,
                       gainKey: "e2_gain" as const,
                       fallbackRate: e2Xirr,
                       fallbackGain: e2XirrGain,
@@ -531,6 +536,7 @@ export default function CashFlowPanel() {
                     {
                       label: "Total",
                       rateKey: "xirr" as const,
+                      returnKey: "total_return" as const,
                       gainKey: "gain" as const,
                     },
                   ] as const
@@ -549,11 +555,11 @@ export default function CashFlowPanel() {
                     ).map(({ key }) => {
                       const period = xirrPeriods[key];
                       const rate =
-                        key === "all" &&
-                        period[leg.rateKey] == null &&
-                        "fallbackRate" in leg
-                          ? leg.fallbackRate
-                          : period[leg.rateKey];
+                        key !== "all"
+                          ? period[leg.returnKey]
+                          : period[leg.rateKey] == null && "fallbackRate" in leg
+                            ? leg.fallbackRate
+                            : period[leg.rateKey];
                       const gain =
                         key === "all" &&
                         period[leg.gainKey] == null &&
@@ -592,8 +598,9 @@ export default function CashFlowPanel() {
             opening cash flow and the total account value before the window,
             plus approved external flows after that. E1 ends at capital plus
             the period&apos;s E1 pnl. E2 ends at capital plus the period&apos;s
-            trade-cycle net PnL. Total is E1 + E2. No approved cash flow means
-            no XIRR.
+            trade-cycle net PnL. Total is E1 + E2. Month, quarter, and YTD show
+            the return over that period (XIRR converted back from annual); All
+            is the annual XIRR. No approved cash flow means no XIRR.
           </p>
         </div>
       ) : (
