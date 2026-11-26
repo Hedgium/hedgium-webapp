@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, RefreshCw, Search, X } from "lucide-react";
+import { Check, Pencil, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
 import useAlert from "@/hooks/useAlert";
@@ -50,6 +50,34 @@ function formatXirr(value: number | null | undefined): string {
   return `${(value * 100).toFixed(2)}%`;
 }
 
+type CashFlowForm = {
+  profileId: string;
+  flowDate: string;
+  amount: string;
+  kind: "opening" | "external";
+  note: string;
+  status: CashFlowStatus;
+};
+
+function emptyCashFlowForm(profileId: string): CashFlowForm {
+  return {
+    profileId,
+    flowDate: "",
+    amount: "",
+    kind: "external",
+    note: "",
+    status: "approved",
+  };
+}
+
+function apiDetail(data: unknown, fallback: string): string {
+  if (data && typeof data === "object" && "detail" in data) {
+    const detail = (data as { detail?: unknown }).detail;
+    if (typeof detail === "string" && detail.trim()) return detail;
+  }
+  return fallback;
+}
+
 function signedClass(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "text-base-content/60";
   if (value > 0) return "text-success font-medium tabular-nums";
@@ -61,7 +89,7 @@ export default function CashFlowPanel() {
   const alert = useAlert();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [profileId, setProfileId] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("pending");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [rows, setRows] = useState<CashFlowRow[]>([]);
   const [xirr, setXirr] = useState<number | null>(null);
   const [xirrGain, setXirrGain] = useState<number | null>(null);
@@ -72,6 +100,10 @@ export default function CashFlowPanel() {
   const [e2XirrAsOf, setE2XirrAsOf] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<CashFlowForm>(() => emptyCashFlowForm(""));
+  const [saving, setSaving] = useState(false);
 
   const loadProfiles = useCallback(async () => {
     try {
@@ -135,6 +167,111 @@ export default function CashFlowPanel() {
       return { id: p.id, label: `${label} · ${p.broker_name} · HID ${p.id}` };
     });
   }, [profiles]);
+
+  function openAdd() {
+    setEditingId(null);
+    setForm(emptyCashFlowForm(profileId));
+    setFormOpen(true);
+  }
+
+  function openEdit(row: CashFlowRow) {
+    setEditingId(row.id);
+    setForm({
+      profileId: String(row.profile_id),
+      flowDate: row.flow_date.slice(0, 10),
+      amount: String(row.amount),
+      kind: row.kind === "opening" ? "opening" : "external",
+      note: row.note || "",
+      status: row.status,
+    });
+    setFormOpen(true);
+  }
+
+  function closeForm() {
+    setFormOpen(false);
+    setEditingId(null);
+    setForm(emptyCashFlowForm(profileId));
+  }
+
+  async function saveFlow() {
+    const amount = Number(form.amount);
+    if (!form.profileId) {
+      alert.error("Choose a profile");
+      return;
+    }
+    if (!form.flowDate) {
+      alert.error("Choose a date");
+      return;
+    }
+    if (!Number.isFinite(amount) || amount === 0) {
+      alert.error("Amount must be non-zero. Positive is cash in, negative is cash out.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const isEdit = editingId != null;
+      const res = await authFetch(
+        isEdit ? `profiles/cash-flows/${editingId}/` : "profiles/cash-flows/",
+        {
+          method: isEdit ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            isEdit
+              ? {
+                  flow_date: form.flowDate,
+                  amount,
+                  kind: form.kind,
+                  note: form.note,
+                  status: form.status,
+                }
+              : {
+                  profile_id: Number(form.profileId),
+                  flow_date: form.flowDate,
+                  amount,
+                  kind: form.kind,
+                  note: form.note,
+                  status: form.status,
+                }
+          ),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert.error(apiDetail(data, isEdit ? "Failed to update cash flow" : "Failed to add cash flow"));
+        return;
+      }
+      alert.success(isEdit ? "Cash flow updated" : "Cash flow added");
+      closeForm();
+      await loadFlows();
+    } catch {
+      alert.error(editingId != null ? "Failed to update cash flow" : "Failed to add cash flow");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeFlow(row: CashFlowRow) {
+    const label = row.profile_label || `profile ${row.profile_id}`;
+    if (!window.confirm(`Delete the ${formatDate(row.flow_date)} cash flow for ${label}?`)) {
+      return;
+    }
+    setActingId(row.id);
+    try {
+      const res = await authFetch(`profiles/cash-flows/${row.id}/`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert.error(apiDetail(data, "Failed to delete cash flow"));
+        return;
+      }
+      if (editingId === row.id) closeForm();
+      alert.success("Cash flow deleted");
+      await loadFlows();
+    } catch {
+      alert.error("Failed to delete cash flow");
+    } finally {
+      setActingId(null);
+    }
+  }
 
   async function review(id: number, action: "approve" | "reject") {
     setActingId(id);
@@ -210,7 +347,111 @@ export default function CashFlowPanel() {
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </button>
+        <button type="button" className="btn btn-outline btn-sm gap-2" onClick={openAdd}>
+          <Plus className="h-4 w-4" />
+          Add
+        </button>
       </div>
+
+      {formOpen ? (
+        <form
+          className="grid gap-3 rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void saveFlow();
+          }}
+        >
+          <label className="form-control">
+            <span className="label-text text-xs">Profile</span>
+            <select
+              className="select select-bordered select-sm"
+              value={form.profileId}
+              disabled={editingId != null}
+              onChange={(e) => setForm((prev) => ({ ...prev, profileId: e.target.value }))}
+            >
+              <option value="">Select profile</option>
+              {profileOptions.map((p) => (
+                <option key={p.id} value={String(p.id)}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="form-control">
+            <span className="label-text text-xs">Date</span>
+            <input
+              type="date"
+              className="input input-bordered input-sm"
+              value={form.flowDate}
+              onChange={(e) => setForm((prev) => ({ ...prev, flowDate: e.target.value }))}
+              required
+            />
+          </label>
+          <label className="form-control">
+            <span className="label-text text-xs">Amount</span>
+            <input
+              type="number"
+              step="0.01"
+              className="input input-bordered input-sm"
+              value={form.amount}
+              onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))}
+              placeholder="Positive in, negative out"
+              required
+            />
+          </label>
+          <label className="form-control">
+            <span className="label-text text-xs">Kind</span>
+            <select
+              className="select select-bordered select-sm"
+              value={form.kind}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  kind: e.target.value === "opening" ? "opening" : "external",
+                }))
+              }
+            >
+              <option value="external">External</option>
+              <option value="opening">Opening</option>
+            </select>
+          </label>
+          <label className="form-control">
+            <span className="label-text text-xs">Status</span>
+            <select
+              className="select select-bordered select-sm"
+              value={form.status}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, status: e.target.value as CashFlowStatus }))
+              }
+            >
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </label>
+          <label className="form-control sm:col-span-2 lg:col-span-3">
+            <span className="label-text text-xs">Note</span>
+            <input
+              type="text"
+              className="input input-bordered input-sm"
+              value={form.note}
+              maxLength={500}
+              onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
+            />
+          </label>
+          <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-3">
+            <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+              {saving ? "Saving…" : editingId != null ? "Save" : "Add cash flow"}
+            </button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={closeForm} disabled={saving}>
+              Cancel
+            </button>
+            <span className="text-xs text-base-content/50">
+              One row per profile per date. Approved rows are included in XIRR.
+            </span>
+          </div>
+        </form>
+      ) : null}
 
       {profileId ? (
         <div className="rounded-xl border border-base-300 bg-base-100 px-4 py-3 text-sm shadow-sm">
@@ -325,6 +566,24 @@ export default function CashFlowPanel() {
                 </td>
                 <td className="text-right">
                   <div className="inline-flex gap-1">
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs gap-1"
+                      disabled={actingId === row.id}
+                      onClick={() => openEdit(row)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs gap-1 text-error"
+                      disabled={actingId === row.id}
+                      onClick={() => void removeFlow(row)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Delete
+                    </button>
                     {row.status !== "approved" ? (
                       <button
                         type="button"
