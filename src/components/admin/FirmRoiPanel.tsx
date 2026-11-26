@@ -76,7 +76,7 @@ type FirmRoiResponse = {
 const PAGE_SIZE = 25;
 
 const METHODOLOGY_TIP =
-  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception (never margin). E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. XIRR needs an approved cash flow and a latest account value. E1 and Total are Hedgium-managed accounts. E2 is every such account. E1 ends at cash in plus all-time E1 pnl. E2 ends at cash in plus trade-cycle net PnL. Total ends at the latest account value. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
+  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception (never margin). E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. XIRR needs an approved cash flow and a latest account value. E1 is Hedgium-managed accounts. E2 is every such account. E1 ends at cash in plus all-time E1 pnl. E2 ends at cash in plus trade-cycle net PnL. Total is E1 + E2. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
 
 type FirmRoiMonthlyResponse = {
   months: FirmRoiMonthPoint[];
@@ -112,6 +112,16 @@ function formatAsOf(value: string | null | undefined): string {
     month: "short",
     year: "numeric",
   });
+}
+
+function addNullable(
+  left: number | null | undefined,
+  right: number | null | undefined
+): number | null {
+  const a = left == null || Number.isNaN(left) ? null : left;
+  const b = right == null || Number.isNaN(right) ? null : right;
+  if (a == null && b == null) return null;
+  return (a ?? 0) + (b ?? 0);
 }
 
 function formatAmt(value: number | null | undefined): string {
@@ -406,8 +416,10 @@ export default function FirmRoiPanel() {
           </div>
       ) : null}
 
-      {data ? (
-        <div className="rounded-2xl border border-base-300/60 bg-base-200/35 px-4 py-3">
+      {summaryLoading && !data ? (
+        <div className="h-24 animate-pulse rounded-2xl bg-base-300/40" />
+      ) : data ? (
+        <div className={`rounded-2xl border border-base-300/60 bg-base-200/35 px-4 py-3 ${summaryLoading ? "opacity-60" : ""}`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="text-lg font-semibold uppercase tracking-wider text-base-content">
@@ -437,10 +449,10 @@ export default function FirmRoiPanel() {
                   },
                   {
                     label: "Total",
-                    rate: data.xirr,
-                    gain: data.xirr_gain,
-                    accounts: data.xirr_accounts,
-                    scope: "Hedgium managed",
+                    rate: addNullable(data.e1_xirr, data.e2_xirr),
+                    gain: addNullable(data.e1_xirr_gain, data.e2_xirr_gain),
+                    accounts: null,
+                    scope: "E1 + E2",
                   },
                 ] as const
               ).map((item) => (
@@ -455,7 +467,9 @@ export default function FirmRoiPanel() {
                     {formatAmt(item.gain)}
                   </div>
                   <div className="text-[10px] text-base-content/50">
-                    {item.accounts ?? 0} · {item.scope}
+                    {item.accounts == null
+                      ? item.scope
+                      : `${item.accounts} · ${item.scope}`}
                   </div>
                 </div>
               ))}
@@ -600,6 +614,7 @@ export default function FirmRoiPanel() {
                       ) : (
                         pageRows.map((row) => {
                           const figures = accountPeriodFigures(row, breakdownPeriod);
+                          const totalXirr = addNullable(row.e1_xirr, row.e2_xirr);
                           return (
                           <tr key={row.profile_id}>
                             <td className="min-w-[12rem]">
@@ -643,8 +658,8 @@ export default function FirmRoiPanel() {
                             <td className={`text-right tabular-nums ${signedClass(row.e2_xirr)}`}>
                               {formatXirr(row.e2_xirr)}
                             </td>
-                            <td className={`text-right tabular-nums ${signedClass(row.xirr)}`}>
-                              {formatXirr(row.xirr)}
+                            <td className={`text-right tabular-nums ${signedClass(totalXirr)}`}>
+                              {formatXirr(totalXirr)}
                             </td>
                           </tr>
                           );

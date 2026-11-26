@@ -70,6 +70,12 @@ export interface Profile {
     xirr_as_of?: string | null;
     /** Calendar days since last NFO/BFO/MCX Trade fill. */
     last_trade_days?: number | null;
+    /** ACTIVATED + ADJUSTED trade cycles on this profile. */
+    strategies_running?: number;
+    /** All trade cycles on this profile (any state). */
+    strategies_total?: number;
+    /** Calendar days since newest trade cycle created_at. */
+    last_strategy_received_days?: number | null;
     order_value_factor: number;
     quantity_multiplier: number;
     verified: boolean;
