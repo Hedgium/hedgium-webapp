@@ -831,15 +831,29 @@ export default function Page() {
   }) => (
     <td
       className={`text-right py-0.5 align-top bg-base-100 leading-tight ${
-        last ? "" : "pr-1"
-      } ${emphasize ? "font-medium" : ""}`}
+        emphasize ? "font-medium" : ""
+      }`}
     >
-      <div className={pnlColor(net)}>{formatLakhsIN(net)}</div>
-      <div className={`text-[9px] font-normal ${pnlColor(buy ?? null)}`}>
+      <div
+        className={`block w-full font-semibold px-1 ${
+          net > 0
+            ? "bg-emerald-500/15"
+            : net < 0
+              ? "bg-red-500/15"
+              : "bg-base-content/10"
+        } ${pnlColor(net)}`}
+      >
+        {formatLakhsIN(net)}
+      </div>
+      <div
+        className={`text-[9px] font-normal ${last ? "" : "pr-1"} ${pnlColor(buy ?? null)}`}
+      >
         <span className="text-base-content/40">B </span>
         {formatLakhsIN(buy)}
       </div>
-      <div className={`text-[9px] font-normal ${pnlColor(short ?? null)}`}>
+      <div
+        className={`text-[9px] font-normal ${last ? "" : "pr-1"} ${pnlColor(short ?? null)}`}
+      >
         <span className="text-base-content/40">S </span>
         {formatLakhsIN(short)}
       </div>

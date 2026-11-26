@@ -53,6 +53,20 @@ type FirmRoiAccount = {
   periods?: Partial<Record<FirmRoiPeriodKey, FirmRoiAccountPeriod>>;
 };
 
+type FirmXirrPeriod = {
+  e1_xirr?: number | null;
+  e1_gain?: number | null;
+  e2_xirr?: number | null;
+  e2_gain?: number | null;
+  xirr?: number | null;
+  gain?: number | null;
+  start?: string | null;
+  as_of?: string | null;
+  e1_accounts?: number;
+  e2_accounts?: number;
+  accounts?: number;
+};
+
 type FirmRoiResponse = {
   profiles_considered: number;
   profiles_included: number;
@@ -71,12 +85,18 @@ type FirmRoiResponse = {
   e2_xirr_accounts?: number;
   xirr_as_of?: string | null;
   xirr_accounts?: number;
+  xirr_periods?: {
+    month: FirmXirrPeriod;
+    quarter: FirmXirrPeriod;
+    ytd: FirmXirrPeriod;
+    all: FirmXirrPeriod;
+  } | null;
 };
 
 const PAGE_SIZE = 25;
 
 const METHODOLOGY_TIP =
-  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception (never margin). E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. XIRR needs an approved cash flow and a latest account value. E1 is Hedgium-managed accounts. E2 is every such account. E1 ends at cash in plus all-time E1 pnl. E2 ends at cash in plus trade-cycle net PnL. Total is E1 + E2. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
+  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception (never margin). E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. XIRR needs an approved cash flow and a latest account value. Period XIRR (Month, FY quarter, FY YTD) counts every account with an approved cash flow, same as All. Capital starts at the later of the opening cash flow and the total account value before the window, plus approved external flows after that. E1 ends at that capital plus the period's E1 pnl (Hedgium-managed). E2 ends at that capital plus the period's trade-cycle net PnL, the same figures as the ROI cards. Total is E1 + E2. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
 
 type FirmRoiMonthlyResponse = {
   months: FirmRoiMonthPoint[];
@@ -129,11 +149,6 @@ function formatAmt(value: number | null | undefined): string {
   return formatMoneyIN(value);
 }
 
-function davTip(base: number | null | undefined): string | undefined {
-  if (base == null || Number.isNaN(base)) return undefined;
-  return `DAV: ₹${formatMoneyIN(base)}`;
-}
-
 const BREAKDOWN_PERIODS: { key: FirmRoiPeriodKey; label: string }[] = [
   { key: "month", label: "Monthly" },
   { key: "quarter", label: "Quarterly" },
@@ -163,17 +178,61 @@ function accountPeriodFigures(
   };
 }
 
-const PERIOD_META: {
-  key: FirmRoiPeriodKey;
-  label: string;
-  detailKey: "month" | "quarter" | "fy" | null;
-  highlight?: boolean;
-}[] = [
-  { key: "month", label: "Monthly (Current)", detailKey: "month" },
-  { key: "quarter", label: "Quarterly (Current)", detailKey: "quarter" },
-  { key: "ytd", label: "YTD (Current)", detailKey: "fy", highlight: true },
-  { key: "all_time", label: "All time", detailKey: null },
-];
+const XIRR_COLUMNS = [
+  { key: "month", label: "Month", detailKey: "month" },
+  { key: "quarter", label: "Quarter", detailKey: "quarter" },
+  { key: "ytd", label: "YTD", detailKey: "fy" },
+  { key: "all", label: "All", detailKey: null },
+] as const;
+
+function FirmXirrSkeleton() {
+  const bar = "rounded bg-base-300/60";
+  return (
+    <div
+      className="animate-pulse space-y-3 rounded-2xl border border-base-300/60 bg-base-200/35 px-4 py-3"
+      aria-busy="true"
+      aria-label="Loading firm ROI"
+    >
+      <div className="space-y-1.5">
+        <div className={`h-5 w-40 ${bar}`} />
+        <div className={`h-3 w-48 ${bar}`} />
+      </div>
+      <div className="overflow-x-auto">
+        <div className="min-w-[36rem]">
+          <div className="grid grid-cols-5 gap-2 pb-2">
+            <div className={`h-3 w-10 ${bar}`} />
+            {XIRR_COLUMNS.map(({ key }) => (
+              <div key={key} className={`ml-auto h-3 w-12 ${bar}`} />
+            ))}
+          </div>
+          {["E1", "E2", "Total"].map((leg) => (
+            <div
+              key={leg}
+              className="grid grid-cols-5 gap-2 border-t border-base-300/40 py-2.5"
+            >
+              <div className="space-y-1.5">
+                <div className={`h-4 w-10 ${bar}`} />
+                <div className={`h-2.5 w-20 ${bar}`} />
+              </div>
+              {XIRR_COLUMNS.map(({ key }) => (
+                <div key={key} className="flex flex-col items-end gap-1.5">
+                  <div className={`h-4 w-16 ${bar}`} />
+                  <div className={`h-3 w-20 ${bar}`} />
+                </div>
+              ))}
+            </div>
+          ))}
+          <div className="grid grid-cols-5 gap-2 border-t border-base-300/40 pt-2">
+            <div />
+            {XIRR_COLUMNS.map(({ key }) => (
+              <div key={key} className={`ml-auto h-2.5 w-28 ${bar}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function FirmRoiPanel() {
   const alert = useAlert();
@@ -263,217 +322,127 @@ export default function FirmRoiPanel() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
-            <h2 className="text-lg font-semibold tracking-tight">Firm ROI</h2>
-            <button
-              type="button"
-              className="tooltip tooltip-right cursor-pointer inline-flex text-base-content/45 hover:text-base-content/70 before:z-30 before:max-w-[18rem] before:text-left before:whitespace-normal before:px-3 before:py-2 before:normal-case before:tracking-normal after:z-30"
-              data-tip={METHODOLOGY_TIP}
-              aria-label={METHODOLOGY_TIP}
-            >
-              <Info className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-            </button>
-          </div>
-          {data ? (
-            <p className="text-xs text-base-content/55">
-              {data.profiles_included} of {data.profiles_considered} active client
-              profiles included
-              {data.month || data.quarter || data.fy
-                ? ` · ${[data.month, data.quarter, data.fy].filter(Boolean).join(" / ")}`
-                : null}
-            </p>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm gap-2 self-start"
-          onClick={load}
-          disabled={summaryLoading || monthlyLoading}
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${summaryLoading || monthlyLoading ? "animate-spin" : ""}`}
-            aria-hidden
-          />
-          Refresh
-        </button>
-      </div>
+    
 
-      {summaryLoading && !data ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-40 animate-pulse rounded-2xl bg-base-300/40" />
-          ))}
-        </div>
-      ) : summaryError && !data ? (
+      {summaryError && !data ? (
         <p className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
           {summaryError}
         </p>
-      ) : data ? (
-          <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 ${summaryLoading ? "opacity-60" : ""}`}>
-            {PERIOD_META.map((meta) => {
-              const period = data.periods[meta.key];
-              const detail =
-                meta.detailKey && data[meta.detailKey]
-                  ? `(${data[meta.detailKey]})`
-                  : meta.key === "all_time"
-                    ? "(Inception → Till date)"
-                    : null;
-              const tipSide =
-                meta.key === "month" || meta.key === "ytd"
-                  ? "tooltip-right"
-                  : "tooltip-left";
-              const e1Dav = davTip(period.e1_base);
-              const e2Dav = davTip(period.e2_base);
-              return (
-                <div
-                  key={meta.key}
-                  className={
-                    meta.highlight
-                      ? "relative z-0 hover:z-20 focus-within:z-20 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-base-100/80 p-4"
-                      : "relative z-0 hover:z-20 focus-within:z-20 rounded-2xl border border-base-300/60 bg-base-200/35 p-4"
-                  }
-                >
-                  <div className="mb-2 text-xs font-medium uppercase tracking-wider text-base-content">
-                    {meta.label}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="inline-flex items-center gap-0.5 shrink-0 text-[11px] font-medium uppercase tracking-wide text-base-content/55">
-                        E1
-                        {e1Dav ? (
-                          <button
-                            type="button"
-                            className={`tooltip z-30 cursor-pointer inline-flex text-base-content/45 hover:text-base-content/70 before:z-30 before:max-w-[14rem] before:text-left before:whitespace-normal before:px-3 before:py-2 before:normal-case before:tracking-normal after:z-30 ${tipSide}`}
-                            data-tip={e1Dav}
-                            aria-label={e1Dav}
-                          >
-                            <Info className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-                          </button>
-                        ) : null}
-                      </span>
-                      <div className="min-w-0 text-right">
-                        <div
-                          className={`text-sm font-semibold tabular-nums ${signedClass(period.e1_return)}`}
-                        >
-                          {formatAmt(period.e1_return)}
-                        </div>
-                        <div
-                          className={`text-[11px] font-semibold tabular-nums ${signedClass(period.e1_pct)}`}
-                        >
-                          {formatPct(period.e1_pct)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="inline-flex items-center gap-0.5 shrink-0 text-[11px] font-medium uppercase tracking-wide text-base-content/55">
-                        E2
-                        {e2Dav ? (
-                          <button
-                            type="button"
-                            className={`tooltip z-30 cursor-pointer inline-flex text-base-content/45 hover:text-base-content/70 before:z-30 before:max-w-[14rem] before:text-left before:whitespace-normal before:px-3 before:py-2 before:normal-case before:tracking-normal after:z-30 ${tipSide}`}
-                            data-tip={e2Dav}
-                            aria-label={e2Dav}
-                          >
-                            <Info className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-                          </button>
-                        ) : null}
-                      </span>
-                      <div className="min-w-0 text-right">
-                        <div
-                          className={`text-sm font-semibold tabular-nums ${signedClass(period.e2_return)}`}
-                        >
-                          {formatAmt(period.e2_return)}
-                        </div>
-                        <div
-                          className={`text-[11px] font-semibold tabular-nums ${signedClass(period.e2_pct)}`}
-                        >
-                          {formatPct(period.e2_pct)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-2 border-t border-base-300/50 pt-2">
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-base-content/80">
-                        Total
-                      </span>
-                      <div
-                        className={`text-base font-bold tabular-nums md:text-lg ${signedClass(period.total_pct)}`}
-                      >
-                        {formatPct(period.total_pct)}
-                      </div>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-[11px] leading-snug text-base-content/60">
-                    {detail}
-                    {detail ? " · " : null}
-                    E1 {period.e1_accounts} / E2 {period.e2_accounts} accounts
-                  </p>
-                </div>
-              );
-            })}
-          </div>
       ) : null}
 
       {summaryLoading && !data ? (
-        <div className="h-24 animate-pulse rounded-2xl bg-base-300/40" />
+        <FirmXirrSkeleton />
       ) : data ? (
-        <div className={`rounded-2xl border border-base-300/60 bg-base-200/35 px-4 py-3 ${summaryLoading ? "opacity-60" : ""}`}>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="text-lg font-semibold uppercase tracking-wider text-base-content">
-                XIRR
-              </div>
-              <p className="text-[11px] text-base-content/60">
-                Approved cash flow
-                {data.xirr_as_of ? ` · as of ${formatAsOf(data.xirr_as_of)}` : ""}
-              </p>
+        <div className={`space-y-3 rounded-2xl border border-base-300/60 bg-base-200/35 px-4 py-3 ${summaryLoading ? "opacity-60" : ""}`}>
+          <div>
+            <div className="text-lg font-semibold tracking-wider text-base-content">
+              Firm ROI (XIRR)
             </div>
-            <div className="flex flex-wrap gap-x-8 gap-y-2">
-              {(
-                [
-                  {
-                    label: "E1",
-                    rate: data.e1_xirr,
-                    gain: data.e1_xirr_gain,
-                    accounts: data.e1_xirr_accounts,
-                    scope: "Hedgium managed",
-                  },
-                  {
-                    label: "E2",
-                    rate: data.e2_xirr,
-                    gain: data.e2_xirr_gain,
-                    accounts: data.e2_xirr_accounts,
-                    scope: "All accounts",
-                  },
-                  {
-                    label: "Total",
-                    rate: addNullable(data.e1_xirr, data.e2_xirr),
-                    gain: addNullable(data.e1_xirr_gain, data.e2_xirr_gain),
-                    accounts: null,
-                    scope: "E1 + E2",
-                  },
-                ] as const
-              ).map((item) => (
-                <div key={item.label}>
-                  <div className="text-[11px] font-medium uppercase tracking-wide text-base-content/55">
-                    {item.label}
-                  </div>
-                  <div className={`text-lg font-bold tabular-nums ${signedClass(item.rate)}`}>
-                    {formatXirr(item.rate)}
-                  </div>
-                  <div className={`text-xs tabular-nums ${signedClass(item.gain)}`}>
-                    {formatAmt(item.gain)}
-                  </div>
-                  <div className="text-[10px] text-base-content/50">
-                    {item.accounts == null
-                      ? item.scope
-                      : `${item.accounts} · ${item.scope}`}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p className="text-[11px] text-base-content/60">
+              Approved cash flow
+              {data.xirr_as_of ? ` · as of ${formatAsOf(data.xirr_as_of)}` : ""}
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[36rem] text-sm">
+              <thead>
+                <tr className="text-[11px] font-medium uppercase tracking-wide text-base-content/55">
+                  <th className="pb-2 pr-4 text-left font-medium">Leg</th>
+                  {XIRR_COLUMNS.map(({ key, label }) => (
+                    <th key={key} className="pb-2 px-2 text-right font-medium">
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(
+                  [
+                    {
+                      label: "E1",
+                      rateKey: "e1_xirr" as const,
+                      gainKey: "e1_gain" as const,
+                      fallbackRate: data.e1_xirr,
+                      fallbackGain: data.e1_xirr_gain,
+                      scope: "Hedgium managed",
+                    },
+                    {
+                      label: "E2",
+                      rateKey: "e2_xirr" as const,
+                      gainKey: "e2_gain" as const,
+                      fallbackRate: data.e2_xirr,
+                      fallbackGain: data.e2_xirr_gain,
+                      scope: "All accounts",
+                    },
+                    {
+                      label: "Total",
+                      rateKey: "xirr" as const,
+                      gainKey: "gain" as const,
+                      fallbackRate: addNullable(data.e1_xirr, data.e2_xirr),
+                      fallbackGain: addNullable(data.e1_xirr_gain, data.e2_xirr_gain),
+                      scope: "E1 + E2",
+                    },
+                  ] as const
+                ).map((leg) => (
+                  <tr key={leg.label} className="border-t border-base-300/40">
+                    <td className="py-2.5 pr-4 align-top">
+                      <div className="font-medium text-base-content/80">{leg.label}</div>
+                      <div className="text-[10px] text-base-content/50">{leg.scope}</div>
+                    </td>
+                    {XIRR_COLUMNS.map(({ key }) => {
+                      const period = data.xirr_periods?.[key];
+                      const rate =
+                        key === "all" && period?.[leg.rateKey] == null
+                          ? leg.fallbackRate
+                          : period?.[leg.rateKey];
+                      const gain =
+                        key === "all" && period?.[leg.gainKey] == null
+                          ? leg.fallbackGain
+                          : period?.[leg.gainKey];
+                      return (
+                        <td key={key} className="px-2 py-2.5 text-right align-top">
+                          <div className={`font-bold tabular-nums ${signedClass(rate)}`}>
+                            {formatXirr(rate)}
+                          </div>
+                          <div className={`text-xs tabular-nums ${signedClass(gain)}`}>
+                            {formatAmt(gain)}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+                <tr className="border-t border-base-300/40">
+                  <td />
+                  {XIRR_COLUMNS.map(({ key, detailKey }) => {
+                    const period = data.xirr_periods?.[key];
+                    const detail = detailKey
+                      ? data[detailKey]
+                        ? `(${data[detailKey]})`
+                        : null
+                      : "(Inception → Till date)";
+                    const e1 =
+                      key === "all"
+                        ? period?.e1_accounts ?? data.e1_xirr_accounts ?? 0
+                        : period?.e1_accounts ?? 0;
+                    const e2 =
+                      key === "all"
+                        ? period?.e2_accounts ?? data.e2_xirr_accounts ?? 0
+                        : period?.e2_accounts ?? 0;
+                    return (
+                      <td
+                        key={key}
+                        className="px-2 pt-2 text-right align-top text-[11px] leading-snug text-base-content/60"
+                      >
+                        {detail}
+                        {detail ? " · " : null}
+                        E1 {e1} / E2 {e2} accounts
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       ) : null}
