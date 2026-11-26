@@ -185,6 +185,55 @@ const XIRR_COLUMNS = [
   { key: "all", label: "All", detailKey: null },
 ] as const;
 
+function FirmXirrSkeleton() {
+  const bar = "rounded bg-base-300/60";
+  return (
+    <div
+      className="animate-pulse space-y-3 rounded-2xl border border-base-300/60 bg-base-200/35 px-4 py-3"
+      aria-busy="true"
+      aria-label="Loading firm ROI"
+    >
+      <div className="space-y-1.5">
+        <div className={`h-5 w-40 ${bar}`} />
+        <div className={`h-3 w-48 ${bar}`} />
+      </div>
+      <div className="overflow-x-auto">
+        <div className="min-w-[36rem]">
+          <div className="grid grid-cols-5 gap-2 pb-2">
+            <div className={`h-3 w-10 ${bar}`} />
+            {XIRR_COLUMNS.map(({ key }) => (
+              <div key={key} className={`ml-auto h-3 w-12 ${bar}`} />
+            ))}
+          </div>
+          {["E1", "E2", "Total"].map((leg) => (
+            <div
+              key={leg}
+              className="grid grid-cols-5 gap-2 border-t border-base-300/40 py-2.5"
+            >
+              <div className="space-y-1.5">
+                <div className={`h-4 w-10 ${bar}`} />
+                <div className={`h-2.5 w-20 ${bar}`} />
+              </div>
+              {XIRR_COLUMNS.map(({ key }) => (
+                <div key={key} className="flex flex-col items-end gap-1.5">
+                  <div className={`h-4 w-16 ${bar}`} />
+                  <div className={`h-3 w-20 ${bar}`} />
+                </div>
+              ))}
+            </div>
+          ))}
+          <div className="grid grid-cols-5 gap-2 border-t border-base-300/40 pt-2">
+            <div />
+            {XIRR_COLUMNS.map(({ key }) => (
+              <div key={key} className={`ml-auto h-2.5 w-28 ${bar}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FirmRoiPanel() {
   const alert = useAlert();
   const alertRef = useRef(alert);
@@ -273,43 +322,7 @@ export default function FirmRoiPanel() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" aria-hidden />
-            <h2 className="text-lg font-semibold tracking-tight">Firm ROI</h2>
-            <button
-              type="button"
-              className="tooltip tooltip-right cursor-pointer inline-flex text-base-content/45 hover:text-base-content/70 before:z-30 before:max-w-[18rem] before:text-left before:whitespace-normal before:px-3 before:py-2 before:normal-case before:tracking-normal after:z-30"
-              data-tip={METHODOLOGY_TIP}
-              aria-label={METHODOLOGY_TIP}
-            >
-              <Info className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-            </button>
-          </div>
-          {data ? (
-            <p className="text-xs text-base-content/55">
-              {data.profiles_included} of {data.profiles_considered} active client
-              profiles included
-              {data.month || data.quarter || data.fy
-                ? ` · ${[data.month, data.quarter, data.fy].filter(Boolean).join(" / ")}`
-                : null}
-            </p>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm gap-2 self-start"
-          onClick={load}
-          disabled={summaryLoading || monthlyLoading}
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${summaryLoading || monthlyLoading ? "animate-spin" : ""}`}
-            aria-hidden
-          />
-          Refresh
-        </button>
-      </div>
+    
 
       {summaryError && !data ? (
         <p className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
@@ -318,11 +331,11 @@ export default function FirmRoiPanel() {
       ) : null}
 
       {summaryLoading && !data ? (
-        <div className="h-24 animate-pulse rounded-2xl bg-base-300/40" />
+        <FirmXirrSkeleton />
       ) : data ? (
         <div className={`space-y-3 rounded-2xl border border-base-300/60 bg-base-200/35 px-4 py-3 ${summaryLoading ? "opacity-60" : ""}`}>
           <div>
-            <div className="text-lg font-semibold uppercase tracking-wider text-base-content">
+            <div className="text-lg font-semibold tracking-wider text-base-content">
               Firm ROI (XIRR)
             </div>
             <p className="text-[11px] text-base-content/60">
