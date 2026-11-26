@@ -48,6 +48,7 @@ type FirmRoiAccount = {
   e2_base: number | null;
   e2_base_kind: "account_value" | "margin";
   xirr?: number | null;
+  e1_xirr?: number | null;
   e2_xirr?: number | null;
   periods?: Partial<Record<FirmRoiPeriodKey, FirmRoiAccountPeriod>>;
 };
@@ -62,8 +63,12 @@ type FirmRoiResponse = {
   fy: string | null;
   xirr?: number | null;
   xirr_gain?: number | null;
+  e1_xirr?: number | null;
+  e1_xirr_gain?: number | null;
+  e1_xirr_accounts?: number;
   e2_xirr?: number | null;
   e2_xirr_gain?: number | null;
+  e2_xirr_accounts?: number;
   xirr_as_of?: string | null;
   xirr_accounts?: number;
 };
@@ -71,7 +76,7 @@ type FirmRoiResponse = {
 const PAGE_SIZE = 25;
 
 const METHODOLOGY_TIP =
-  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception (never margin). E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. XIRR uses only accounts with an approved cash flow: total ends at the latest account value, E2 ends at cash in plus trade-cycle net PnL. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
+  "Active client accounts where E2 has started at least once. E1: Hedgium-managed only; base = avg daily account value from E1 inception (never margin). E2: all included accounts; base = avg daily account value if E1 Hedgium-managed, else avg utilised+net, from E2 inception (month start of first closed cycle). Firm totals days-weight each account average by days live in the period over the period's calendar days. Account rows show the unweighted account average. Total = E1% + E2%. XIRR needs an approved cash flow and a latest account value. E1 and Total are Hedgium-managed accounts. E2 is every such account. E1 ends at cash in plus all-time E1 pnl. E2 ends at cash in plus trade-cycle net PnL. Total ends at the latest account value. Monthly chart: closed months use E2 snapshot MoM; current month matches the Monthly card. Clients-tab filters do not apply.";
 
 type FirmRoiMonthlyResponse = {
   months: FirmRoiMonthPoint[];
@@ -409,33 +414,51 @@ export default function FirmRoiPanel() {
                 XIRR
               </div>
               <p className="text-[11px] text-base-content/60">
-                {data.xirr_accounts ?? 0} accounts
+                Approved cash flow
                 {data.xirr_as_of ? ` · as of ${formatAsOf(data.xirr_as_of)}` : ""}
               </p>
             </div>
             <div className="flex flex-wrap gap-x-8 gap-y-2">
-              <div>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-base-content/55">
-                  Total
+              {(
+                [
+                  {
+                    label: "E1",
+                    rate: data.e1_xirr,
+                    gain: data.e1_xirr_gain,
+                    accounts: data.e1_xirr_accounts,
+                    scope: "Hedgium managed",
+                  },
+                  {
+                    label: "E2",
+                    rate: data.e2_xirr,
+                    gain: data.e2_xirr_gain,
+                    accounts: data.e2_xirr_accounts,
+                    scope: "All accounts",
+                  },
+                  {
+                    label: "Total",
+                    rate: data.xirr,
+                    gain: data.xirr_gain,
+                    accounts: data.xirr_accounts,
+                    scope: "Hedgium managed",
+                  },
+                ] as const
+              ).map((item) => (
+                <div key={item.label}>
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-base-content/55">
+                    {item.label}
+                  </div>
+                  <div className={`text-lg font-bold tabular-nums ${signedClass(item.rate)}`}>
+                    {formatXirr(item.rate)}
+                  </div>
+                  <div className={`text-xs tabular-nums ${signedClass(item.gain)}`}>
+                    {formatAmt(item.gain)}
+                  </div>
+                  <div className="text-[10px] text-base-content/50">
+                    {item.accounts ?? 0} · {item.scope}
+                  </div>
                 </div>
-                <div className={`text-lg font-bold tabular-nums ${signedClass(data.xirr)}`}>
-                  {formatXirr(data.xirr)}
-                </div>
-                <div className={`text-xs tabular-nums ${signedClass(data.xirr_gain)}`}>
-                  {formatAmt(data.xirr_gain)}
-                </div>
-              </div>
-              <div>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-base-content/55">
-                  E2
-                </div>
-                <div className={`text-lg font-bold tabular-nums ${signedClass(data.e2_xirr)}`}>
-                  {formatXirr(data.e2_xirr)}
-                </div>
-                <div className={`text-xs tabular-nums ${signedClass(data.e2_xirr_gain)}`}>
-                  {formatAmt(data.e2_xirr_gain)}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -547,14 +570,15 @@ export default function FirmRoiPanel() {
                         <th className="text-right">E2 return</th>
                         <th className="text-right">E2 base</th>
                         <th className="text-right">E2 base kind</th>
-                        <th className="text-right">XIRR</th>
+                        <th className="text-right">E1 XIRR</th>
                         <th className="text-right">E2 XIRR</th>
+                        <th className="text-right">Total</th>
                       </tr>
                     </thead>
                     <tbody>
                       {!data ? (
                         <tr>
-                          <td colSpan={9} className="py-10 text-center text-base-content/55">
+                          <td colSpan={10} className="py-10 text-center text-base-content/55">
                             {summaryLoading ? (
                               <span className="loading loading-dots loading-sm" />
                             ) : (
@@ -565,7 +589,7 @@ export default function FirmRoiPanel() {
                       ) : pageRows.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={9}
+                            colSpan={10}
                             className="py-10 text-center text-base-content/55"
                           >
                             {data.accounts.length === 0
@@ -613,11 +637,14 @@ export default function FirmRoiPanel() {
                                 ? "Margin"
                                 : "Account value"}
                             </td>
-                            <td className={`text-right tabular-nums ${signedClass(row.xirr)}`}>
-                              {formatXirr(row.xirr)}
+                            <td className={`text-right tabular-nums ${signedClass(row.e1_xirr)}`}>
+                              {formatXirr(row.e1_xirr)}
                             </td>
                             <td className={`text-right tabular-nums ${signedClass(row.e2_xirr)}`}>
                               {formatXirr(row.e2_xirr)}
+                            </td>
+                            <td className={`text-right tabular-nums ${signedClass(row.xirr)}`}>
+                              {formatXirr(row.xirr)}
                             </td>
                           </tr>
                           );
