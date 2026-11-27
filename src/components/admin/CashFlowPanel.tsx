@@ -22,6 +22,27 @@ type CashFlowRow = {
   reviewed_at?: string | null;
 };
 
+type PeriodXirr = {
+  e1_xirr?: number | null;
+  e1_gain?: number | null;
+  e1_return?: number | null;
+  e2_xirr?: number | null;
+  e2_gain?: number | null;
+  e2_return?: number | null;
+  xirr?: number | null;
+  gain?: number | null;
+  total_return?: number | null;
+  start?: string | null;
+  as_of?: string | null;
+};
+
+type XirrPeriods = {
+  month: PeriodXirr;
+  quarter: PeriodXirr;
+  ytd: PeriodXirr;
+  all: PeriodXirr;
+};
+
 type CashFlowListResponse = {
   count: number;
   results: CashFlowRow[];
@@ -32,6 +53,25 @@ type CashFlowListResponse = {
   e2_xirr?: number | null;
   e2_xirr_gain?: number | null;
   e2_xirr_as_of?: string | null;
+  xirr_periods?: XirrPeriods | null;
+};
+
+const EMPTY_PERIOD: PeriodXirr = {
+  e1_xirr: null,
+  e1_gain: null,
+  e2_xirr: null,
+  e2_gain: null,
+  xirr: null,
+  gain: null,
+  start: null,
+  as_of: null,
+};
+
+const EMPTY_PERIODS: XirrPeriods = {
+  month: EMPTY_PERIOD,
+  quarter: EMPTY_PERIOD,
+  ytd: EMPTY_PERIOD,
+  all: EMPTY_PERIOD,
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -91,9 +131,7 @@ export default function CashFlowPanel() {
   const [profileId, setProfileId] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [rows, setRows] = useState<CashFlowRow[]>([]);
-  const [xirr, setXirr] = useState<number | null>(null);
-  const [xirrGain, setXirrGain] = useState<number | null>(null);
-  const [xirrAsOf, setXirrAsOf] = useState<string | null>(null);
+  const [xirrPeriods, setXirrPeriods] = useState<XirrPeriods>(EMPTY_PERIODS);
   const [currentValue, setCurrentValue] = useState<number | null>(null);
   const [e2Xirr, setE2Xirr] = useState<number | null>(null);
   const [e2XirrGain, setE2XirrGain] = useState<number | null>(null);
@@ -137,9 +175,7 @@ export default function CashFlowPanel() {
       }
       const data = (await res.json()) as CashFlowListResponse;
       setRows(data.results || []);
-      setXirr(data.xirr ?? null);
-      setXirrGain(data.xirr_gain ?? null);
-      setXirrAsOf(data.xirr_as_of ?? null);
+      setXirrPeriods(data.xirr_periods ?? EMPTY_PERIODS);
       setCurrentValue(data.current_value ?? null);
       setE2Xirr(data.e2_xirr ?? null);
       setE2XirrGain(data.e2_xirr_gain ?? null);
@@ -290,9 +326,15 @@ export default function CashFlowPanel() {
       };
       // Apply cached XIRR from this profile immediately (reject of approved must refresh gain).
       if (profileId && String(updated.profile_id) === profileId) {
-        setXirr(updated.xirr ?? null);
-        setXirrGain(updated.xirr_gain ?? null);
-        setXirrAsOf(updated.xirr_as_of ?? null);
+        setXirrPeriods((prev) => ({
+          ...prev,
+          all: {
+            ...prev.all,
+            xirr: updated.xirr ?? null,
+            gain: updated.xirr_gain ?? null,
+            as_of: updated.xirr_as_of ?? null,
+          },
+        }));
       }
       if (action === "approve") {
         alert.success("Cash flow approved");
@@ -455,49 +497,112 @@ export default function CashFlowPanel() {
 
       {profileId ? (
         <div className="rounded-xl border border-base-300 bg-base-100 px-4 py-3 text-sm shadow-sm">
-          <div className="flex flex-wrap gap-x-6 gap-y-1">
-            <span>
-              Total XIRR{" "}
-              <strong className={signedClass(xirr)}>{formatXirr(xirr)}</strong>
-            </span>
-            <span>
-              E2 XIRR{" "}
-              <strong className={signedClass(e2Xirr)}>{formatXirr(e2Xirr)}</strong>
-            </span>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[32rem] text-sm">
+              <thead>
+                <tr className="text-[11px] font-medium uppercase tracking-wide text-base-content/55">
+                  <th className="pb-2 pr-3 text-left font-medium">Leg</th>
+                  {(
+                    [
+                      { key: "month", label: "Month" },
+                      { key: "quarter", label: "Quarter" },
+                      { key: "ytd", label: "YTD" },
+                      { key: "all", label: "All (annual)" },
+                    ] as const
+                  ).map(({ key, label }) => (
+                    <th key={key} className="pb-2 px-2 text-right font-medium">
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(
+                  [
+                    {
+                      label: "E1",
+                      rateKey: "e1_xirr" as const,
+                      returnKey: "e1_return" as const,
+                      gainKey: "e1_gain" as const,
+                    },
+                    {
+                      label: "E2",
+                      rateKey: "e2_xirr" as const,
+                      returnKey: "e2_return" as const,
+                      gainKey: "e2_gain" as const,
+                      fallbackRate: e2Xirr,
+                      fallbackGain: e2XirrGain,
+                    },
+                    {
+                      label: "Total",
+                      rateKey: "xirr" as const,
+                      returnKey: "total_return" as const,
+                      gainKey: "gain" as const,
+                    },
+                  ] as const
+                ).map((leg) => (
+                  <tr key={leg.label} className="border-t border-base-300/50">
+                    <td className="py-2 pr-3 align-top font-medium text-base-content/80">
+                      {leg.label}
+                    </td>
+                    {(
+                      [
+                        { key: "month" },
+                        { key: "quarter" },
+                        { key: "ytd" },
+                        { key: "all" },
+                      ] as const
+                    ).map(({ key }) => {
+                      const period = xirrPeriods[key];
+                      const rate =
+                        key !== "all"
+                          ? period[leg.returnKey]
+                          : period[leg.rateKey] == null && "fallbackRate" in leg
+                            ? leg.fallbackRate
+                            : period[leg.rateKey];
+                      const gain =
+                        key === "all" &&
+                        period[leg.gainKey] == null &&
+                        "fallbackGain" in leg
+                          ? leg.fallbackGain
+                          : period[leg.gainKey];
+                      return (
+                        <td key={key} className="px-2 py-2 text-right align-top">
+                          <strong className={signedClass(rate)}>{formatXirr(rate)}</strong>
+                          <span className="mt-0.5 block text-xs text-base-content/55">
+                            <strong className={signedClass(gain)}>
+                              {gain == null ? "—" : formatMoneyIN(gain)}
+                            </strong>
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
             <span>
               Current value{" "}
               <strong className="font-medium tabular-nums">
                 {currentValue == null ? "—" : formatMoneyIN(currentValue)}
               </strong>
             </span>
-            <span>
-              Gain{" "}
-              <strong className={signedClass(xirrGain)}>
-                {xirrGain == null ? "—" : formatMoneyIN(xirrGain)}
-              </strong>
-            </span>
-            <span>
-              E2 gain{" "}
-              <strong className={signedClass(e2XirrGain)}>
-                {e2XirrGain == null ? "—" : formatMoneyIN(e2XirrGain)}
-              </strong>
-            </span>
             <span className="text-base-content/60">
-              As of {formatDate(xirrAsOf)}
-              {e2XirrAsOf ? ` · E2 ${formatDate(e2XirrAsOf)}` : ""}
+              As of {formatDate(xirrPeriods.all.as_of ?? e2XirrAsOf)}
             </span>
           </div>
           <p className="mt-1 text-xs text-base-content/50">
-            Total XIRR uses approved cash flows and the latest total account
-            value (holdings + cash). Gain is that value minus approved cash in.
-            E2 XIRR uses those same cash flows as capital, held through the same
-            as-of date. E2 gain is trade-cycle net PnL after charges, including
-            cycles still open.
+            Month, quarter, and YTD are the return for that period. All is the
+            annual XIRR. Capital is the account value before the window plus
+            later approved flows. E1 adds E1 pnl, E2 adds cycle net PnL, and
+            total is both. No approved cash flow means no XIRR.
           </p>
         </div>
       ) : (
         <p className="text-sm text-base-content/60">
-          Select a profile to see total XIRR, E2 XIRR, and current value.
+          Select a profile to see period XIRR and current value.
         </p>
       )}
 
