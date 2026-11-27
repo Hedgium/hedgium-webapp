@@ -56,6 +56,10 @@ export default function RootLayoutClient({
         return;
       }
 
+      const isTraderTerminal =
+        pathname === '/trader' || Boolean(pathname?.startsWith('/trader/'));
+      const isTraderRole = user?.role === 'trader';
+
       if (user?.kyc_skipped) {
         const legalPending = user.onboarding?.pending?.some((p) =>
           ["email_verified", "terms", "fees", "mandate"].includes(p)
@@ -64,11 +68,23 @@ export default function RootLayoutClient({
           const inAppShell = isAppShellPath(pathname);
           const isSimulation = pathname?.startsWith('/simulation');
           const isAdmin = pathname?.startsWith('/admin') || pathname?.startsWith('/myadmin');
-          if (!inAppShell && !isSimulation && !isAdmin) {
-            router.push('/home');
+          // Traders with kyc_skipped must keep /trader; do not bounce them to /home.
+          if (!inAppShell && !isSimulation && !isAdmin && !isTraderTerminal) {
+            router.push(isTraderRole ? '/trader' : '/home');
           }
           return;
         }
+      }
+
+      // Trader accounts use /trader, not the client onboarding / home shell.
+      if (isTraderRole) {
+        if (isLoginRootPath(pathname) || pathname?.startsWith('/onboarding')) {
+          const next = new URLSearchParams(window.location.search).get('next');
+          router.push(getSafeNext(next) || '/trader');
+        } else if (!isTraderTerminal && isAppShellPath(pathname)) {
+          router.push('/trader');
+        }
+        return;
       }
 
       if (isOnboardingIncomplete(user)) {
