@@ -594,13 +594,10 @@ export default function CashFlowPanel() {
             </span>
           </div>
           <p className="mt-1 text-xs text-base-content/50">
-            Month, FY quarter, and FY YTD capital starts at the later of the
-            opening cash flow and the total account value before the window,
-            plus approved external flows after that. E1 ends at capital plus
-            the period&apos;s E1 pnl. E2 ends at capital plus the period&apos;s
-            trade-cycle net PnL. Total is E1 + E2. Month, quarter, and YTD show
-            the return over that period (XIRR converted back from annual); All
-            is the annual XIRR. No approved cash flow means no XIRR.
+            Month, quarter, and YTD are the return for that period. All is the
+            annual XIRR. Capital is the account value before the window plus
+            later approved flows. E1 adds E1 pnl, E2 adds cycle net PnL, and
+            total is both. No approved cash flow means no XIRR.
           </p>
         </div>
       ) : (
