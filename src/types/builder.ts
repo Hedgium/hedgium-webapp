@@ -135,7 +135,7 @@ export interface StrategyBuilderCreate {
     exit_ws: number;
     entry_condition: string;
     exit_pnl: number;
-    strategy_template_id: number;
+    strategy_template_id?: number | null;
     margin_required?: number;
     multiplier_allowed?: boolean;
     auto_approve_adjustments?: boolean;

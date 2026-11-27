@@ -52,6 +52,8 @@ The backend API lives in `hedgium_backend` (Django + Ninja Extra).
 /about              → About page (within app shell)
 /(app)/             → Authenticated app shell
 /admin/             → Admin panel (role-gated)
+/trader/            → Trader terminal (role=trader; Builder / Strategies / Profiles / Alerts)
+/join/[code]        → Client accepts a trader invite
 /simulation/        → Simulation / paper trading
 ```
 

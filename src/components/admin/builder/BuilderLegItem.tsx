@@ -7,6 +7,8 @@ interface BuilderLegItemProps {
     leg: BuilderLeg;
     onEdit: (leg: BuilderLeg) => void;
     onDelete: (legId: number) => void;
+    /** Hide edit/delete and use a denser grid (trader create half-panel). */
+    compact?: boolean;
 }
 
 function formatQuote(value: number | null | undefined): string {
@@ -14,41 +16,60 @@ function formatQuote(value: number | null | undefined): string {
     return Number(value).toFixed(2);
 }
 
-export default function BuilderLegItem({ leg, onEdit, onDelete }: BuilderLegItemProps) {
+export default function BuilderLegItem({
+    leg,
+    onEdit,
+    onDelete,
+    compact = false,
+}: BuilderLegItemProps) {
 
     return (
-        <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg mb-2 border border-base-300">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 flex-1">
+        <div
+            className={`flex items-center justify-between bg-base-200 rounded-lg mb-2 border border-base-300 ${
+                compact ? "p-2" : "p-3"
+            }`}
+        >
+            <div
+                className={`grid flex-1 ${
+                    compact
+                        ? "grid-cols-2 gap-2 md:grid-cols-3"
+                        : "grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7"
+                }`}
+            >
+                {!compact ? (
+                    <div>
+                        <p className="text-sm text-base-content/60">Leg Index</p>
+                        <p className="font-medium">{leg.leg_index}</p>
+                    </div>
+                ) : null}
                 <div>
-                    <p className="text-sm text-base-content/60">Leg Index</p>
-                    <p className="font-medium">{leg.leg_index}</p>
+                    <p className={`text-base-content/60 ${compact ? "text-xs" : "text-sm"}`}>Symbol</p>
+                    <p className={`font-medium ${compact ? "text-sm" : ""}`}>
+                        {compact ? `${leg.leg_index}. ${leg.symbol}` : leg.symbol}
+                    </p>
                 </div>
                 <div>
-                    <p className="text-sm text-base-content/60">Symbol</p>
-                    <p className="font-medium">{leg.symbol}</p>
-                </div>
-                <div>
-                    <p className="text-sm text-base-content/60">Type</p>
+                    <p className={`text-base-content/60 ${compact ? "text-xs" : "text-sm"}`}>Type</p>
                     <span className={`px-2 py-0.5 rounded text-sm ${leg.option_type === 'CE' ? 'bg-success/20 text-success' : 'bg-error/20 text-error'}`}>
                         {leg.option_type}
                     </span>
                 </div>
                 <div>
-                    <p className="text-sm text-base-content/60">Action</p>
+                    <p className={`text-base-content/60 ${compact ? "text-xs" : "text-sm"}`}>Action</p>
                     <span className={`px-2 py-0.5 rounded text-sm ${leg.action === 'BUY' ? 'bg-primary/20 text-primary' : 'bg-warning/20 text-warning'}`}>
                         {leg.action}
                     </span>
                 </div>
                 <div>
-                    <p className="text-sm text-base-content/60">Strike</p>
-                    <p className="font-medium">{leg.strike}</p>
+                    <p className={`text-base-content/60 ${compact ? "text-xs" : "text-sm"}`}>Strike</p>
+                    <p className={`font-medium ${compact ? "text-sm" : ""}`}>{leg.strike}</p>
                     <p className="text-xs text-base-content/60">
                         {leg.strike_type} · dist {leg.strike_distance > 0 ? `+${leg.strike_distance}` : leg.strike_distance}
                     </p>
                 </div>
                 <div>
-                    <p className="text-sm text-base-content/60">Period, Expiry</p>
-                    <p className="font-medium flex items-center gap-2">
+                    <p className={`text-base-content/60 ${compact ? "text-xs" : "text-sm"}`}>Period, Expiry</p>
+                    <p className={`font-medium flex items-center gap-2 ${compact ? "text-sm" : ""}`}>
                         {formatDateOnly(leg.expiry)}
                         {leg.is_adjustment_leg && (
                             <span className="px-2 py-0.5 rounded text-xs bg-primary/20 text-primary">
@@ -58,29 +79,31 @@ export default function BuilderLegItem({ leg, onEdit, onDelete }: BuilderLegItem
                     </p>
                 </div>
                 <div>
-                    <p className="text-sm text-base-content/60">Bid / Ask / Spread</p>
-                    <p className="font-medium tabular-nums">
+                    <p className={`text-base-content/60 ${compact ? "text-xs" : "text-sm"}`}>Bid / Ask / Spread</p>
+                    <p className={`font-medium tabular-nums ${compact ? "text-sm" : ""}`}>
                         {formatQuote(leg.bid)} / {formatQuote(leg.ask)} / {formatQuote(leg.spread)}
                     </p>
                 </div>
             </div>
 
-            <div className="flex items-center space-x-2 ml-4">
-                <button
-                    onClick={() => onEdit(leg)}
-                    className="p-1.5 cursor-pointer hover:bg-base-300 rounded-full transition-colors text-blue-400"
-                    title="Edit Leg"
-                >
-                    <Edit2 size={16} />
-                </button>
-                <button
-                    onClick={() => onDelete(leg.id)}
-                    className="p-1.5 cursor-pointer hover:bg-base-300 rounded-full transition-colors text-red-400"
-                    title="Delete Leg"
-                >
-                    <Trash2 size={16} />
-                </button>
-            </div>
+            {!compact ? (
+                <div className="flex items-center space-x-2 ml-4">
+                    <button
+                        onClick={() => onEdit(leg)}
+                        className="p-1.5 cursor-pointer hover:bg-base-300 rounded-full transition-colors text-blue-400"
+                        title="Edit Leg"
+                    >
+                        <Edit2 size={16} />
+                    </button>
+                    <button
+                        onClick={() => onDelete(leg.id)}
+                        className="p-1.5 cursor-pointer hover:bg-base-300 rounded-full transition-colors text-red-400"
+                        title="Delete Leg"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
+            ) : null}
         </div>
     );
 }

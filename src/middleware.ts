@@ -19,6 +19,16 @@ function resolveClientIp(request: NextRequest): string {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (pathname.startsWith('/trader')) {
+    const session = request.cookies.get('__app_session');
+    if (!session?.value) {
+      const loginUrl = new URL('/', request.url);
+      loginUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith('/admin')) {
     const session = request.cookies.get('__app_session');
 
@@ -67,5 +77,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // /admin-site serves the Engine 1 fund-site pages shown under /admin/engine1/site;
   // it gets the same session + admin-IP checks as /admin itself.
-  matcher: ['/admin', '/admin/:path*', '/admin-site/:path*'],
+  // /trader only needs a session cookie (no admin IP gate).
+  matcher: ['/admin', '/admin/:path*', '/admin-site/:path*', '/trader', '/trader/:path*'],
 };

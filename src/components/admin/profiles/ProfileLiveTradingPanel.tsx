@@ -5,7 +5,18 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { authFetch } from "@/utils/api";
 import { formatMoneyIN } from "@/utils/formatNumber";
-import { placeOrder, placeTestOrder, modifyOrder, cancelOrder } from "@/services/liveTradingActions";
+import {
+  placeOrder as adminPlaceOrder,
+  placeTestOrder as adminPlaceTestOrder,
+  modifyOrder as adminModifyOrder,
+  cancelOrder as adminCancelOrder,
+} from "@/services/liveTradingActions";
+import {
+  traderCancelOrder,
+  traderModifyOrder,
+  traderPlaceOrder,
+  traderPlaceTestOrder,
+} from "@/services/trader";
 import useAlert from "@/hooks/useAlert";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -143,18 +154,53 @@ interface ModifyOrderFormData {
 }
 
 export type ProfileLiveTradingPanelVariant = "page" | "embedded";
+export type ProfileLiveApiScope = "admin" | "trader";
 
 export interface ProfileLiveTradingPanelProps {
   profileId: string;
   variant: ProfileLiveTradingPanelVariant;
+  /** Defaults to admin staff paths. Trader terminal uses trader-scoped APIs. */
+  apiScope?: ProfileLiveApiScope;
 }
 
-export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileLiveTradingPanelProps) {
+export default function ProfileLiveTradingPanel({
+  profileId,
+  variant,
+  apiScope = "admin",
+}: ProfileLiveTradingPanelProps) {
   const router = useRouter();
   const alert = useAlert();
   const isSuperuser = Boolean(useAuthStore((s) => s.user?.is_superuser));
+  const isTraderScope = apiScope === "trader";
+  // Holdings + Engine 1 stay superuser-only (same as staff; traders do not get them).
   const canViewHoldings = isSuperuser;
-  const canPlaceOrder = isSuperuser;
+  const canPlaceOrder = isTraderScope || isSuperuser;
+  const canUseEngine1 = isSuperuser;
+  const placeOrder = isTraderScope ? traderPlaceOrder : adminPlaceOrder;
+  const placeTestOrder = isTraderScope ? traderPlaceTestOrder : adminPlaceTestOrder;
+  const modifyOrder = isTraderScope ? traderModifyOrder : adminModifyOrder;
+  const cancelOrder = isTraderScope ? traderCancelOrder : adminCancelOrder;
+  const paths = React.useMemo(
+    () =>
+      isTraderScope
+        ? {
+            profile: `trader/profiles/${profileId}/`,
+            positions: `trader/profiles/${profileId}/live/positions/`,
+            orders: `trader/profiles/${profileId}/live/orders/`,
+            holdings: `trader/profiles/${profileId}/live/holdings/`,
+            trades: `trader/profiles/${profileId}/live/trades/`,
+            refreshMargin: `trader/profiles/${profileId}/refresh-margin/`,
+          }
+        : {
+            profile: `profiles/${profileId}/`,
+            positions: `positions/live/positions/${profileId}/`,
+            orders: `orders/live/orders/${profileId}/`,
+            holdings: `positions/live/holdings/${profileId}/`,
+            trades: `orders/live/trades/${profileId}/`,
+            refreshMargin: `profiles/refresh-margin/${profileId}/`,
+          },
+    [isTraderScope, profileId]
+  );
   const liveTabs = canViewHoldings
     ? LIVE_TAB_CONFIG
     : LIVE_TAB_CONFIG.filter((tab) => tab.id !== "holdings");
@@ -219,18 +265,32 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
 
   const fetchProfile = useCallback(async () => {
     try {
-      const response = await authFetch(`profiles/${profileId}/`);
+      const response = await authFetch(paths.profile);
       const data = await response.json();
-      setProfile(data);
+      if (isTraderScope && data && !data.user) {
+        setProfile({
+          ...data,
+          user: {
+            id: data.user_id,
+            username: data.username,
+            first_name: data.first_name,
+            last_name: data.last_name,
+          },
+          margin_equity: data.margin_equity ?? 0,
+          broker_name: data.broker_name ?? "",
+        } as Profile);
+      } else {
+        setProfile(data);
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
     }
-  }, [profileId]);
+  }, [paths.profile, isTraderScope]);
 
   const fetchPositions = useCallback(async () => {
     setLoadingPositions(true);
     try {
-      const response = await authFetch(`positions/live/positions/${profileId}/`);
+      const response = await authFetch(paths.positions);
       const data = await response.json();
 
       if (data.status === "success") {
@@ -245,12 +305,12 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     } finally {
       setLoadingPositions(false);
     }
-  }, [profileId]);
+  }, [paths.positions]);
 
   const fetchOrders = useCallback(async () => {
     setLoadingOrders(true);
     try {
-      const response = await authFetch(`orders/live/orders/${profileId}/`);
+      const response = await authFetch(paths.orders);
       const data = await response.json();
 
       if (data.status === "success") {
@@ -265,7 +325,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     } finally {
       setLoadingOrders(false);
     }
-  }, [profileId]);
+  }, [paths.orders]);
 
   const fetchHoldings = useCallback(async () => {
     if (!canViewHoldings) {
@@ -275,7 +335,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     }
     setLoadingHoldings(true);
     try {
-      const response = await authFetch(`positions/live/holdings/${profileId}/`);
+      const response = await authFetch(paths.holdings);
       const data = await response.json();
 
       if (data.status === "success") {
@@ -292,12 +352,12 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     }
     // alert is stable enough for calls; omit from deps (same pattern as other fetches).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canViewHoldings, profileId]);
+  }, [canViewHoldings, paths.holdings]);
 
   const refreshMarginForProfile = useCallback(async () => {
     setRefreshingMargin(true);
     try {
-      const response = await authFetch(`profiles/refresh-margin/${profileId}/`);
+      const response = await authFetch(paths.refreshMargin);
       const data = await response.json();
       if (!response.ok) {
         alert.error(liveApiError(data, "Failed to refresh margin"));
@@ -310,12 +370,12 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     } finally {
       setRefreshingMargin(false);
     }
-  }, [profileId]);
+  }, [paths.refreshMargin]);
 
   const fetchTrades = useCallback(async () => {
     setLoadingTrades(true);
     try {
-      const response = await authFetch(`orders/live/trades/${profileId}/`);
+      const response = await authFetch(paths.trades);
       const data = await response.json();
 
       if (data.status === "success") {
@@ -330,7 +390,7 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
     } finally {
       setLoadingTrades(false);
     }
-  }, [profileId]);
+  }, [paths.trades]);
 
   useEffect(() => {
     if (!canViewHoldings && activeTab === "holdings") {
@@ -341,9 +401,11 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
   useEffect(() => {
     if (!canPlaceOrder) {
       setShowPlaceOrderForm(false);
+    }
+    if (!canUseEngine1) {
       setShowEngine1Modal(false);
     }
-  }, [canPlaceOrder]);
+  }, [canPlaceOrder, canUseEngine1]);
 
   // Fetch once per profile — do not depend on callback identities (avoids request loops).
   useEffect(() => {
@@ -570,14 +632,16 @@ export default function ProfileLiveTradingPanel({ profileId, variant }: ProfileL
 
   const placeOrderButton = canPlaceOrder ? (
     <div className="flex shrink-0 gap-2">
-      <button
-        type="button"
-        onClick={() => setShowEngine1Modal(true)}
-        className="btn btn-outline btn-sm"
-      >
-        <PieChart size={16} />
-        Engine 1
-      </button>
+      {canUseEngine1 ? (
+        <button
+          type="button"
+          onClick={() => setShowEngine1Modal(true)}
+          className="btn btn-outline btn-sm"
+        >
+          <PieChart size={16} />
+          Engine 1
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={() => setShowPlaceOrderForm(true)}
